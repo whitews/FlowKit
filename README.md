@@ -1,2 +1,3 @@
 # FlowKit
-A Python library for high-level interaction with cytometry data
+Intuitive framework in Python for flow cytometry analysis and
+visualization.
