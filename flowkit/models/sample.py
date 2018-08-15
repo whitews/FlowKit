@@ -1,6 +1,7 @@
 import flowio
 import flowutils
 import os
+import io
 from tempfile import TemporaryFile
 import numpy as np
 from flowkit import utils
@@ -49,6 +50,8 @@ class Sample(object):
         if isinstance(fcs_path_or_data, str):
             # if a string, we only handle file paths, so try creating a FlowData object
             self._flow_data = flowio.FlowData(fcs_path_or_data)
+        elif isinstance(fcs_path_or_data, io.IOBase):
+            self._flow_data = flowio.FlowData(fcs_path_or_data)
         elif isinstance(fcs_path_or_data, flowio.FlowData):
             self._flow_data = fcs_path_or_data
         elif isinstance(fcs_path_or_data, np.ndarray):
@@ -80,14 +83,10 @@ class Sample(object):
             (-1, self._flow_data.channel_count)
         )
         self._comp_events = None
-        self._transformed_events = None
+        self._transformed_events = None  # TODO: should save transform settings
+        self.compensation = None
 
-        if compensation is not None:
-            self.compensation = utils.parse_compensation_matrix(compensation, self._pnn_labels)
-        else:
-            self.compensation = None
-
-        self._compensate()
+        self.apply_compensation(compensation)
 
         # Save sub-sampled indices if requested
         if subsample_count is not None:
@@ -173,9 +172,10 @@ class Sample(object):
 
     def _compensate(self):
         """
-        Gets compensation matrix and applies it to the given events
+        Applies compensation to sample events. If self.compensation is None, the identity
+        matrix is assumed.
 
-        Returns NumPy array of compensated events if successful
+        Saves NumPy array of compensated events to self._comp_events
         """
         # self.compensate has headers for the channel numbers, but
         # flowutils compensate() takes the plain matrix and indices as
@@ -193,6 +193,25 @@ class Sample(object):
         else:
             # assume identity matrix
             self._comp_events = self._raw_events.copy()
+
+    def apply_compensation(self, compensation):
+        """
+        Applies given compensation matrix to Sample events. If any transformation has been
+        applied, those events will be deleted
+
+        :param compensation: a compensation matrix file or string
+        :return: None
+        """
+        if compensation is not None:
+            self.compensation = utils.parse_compensation_matrix(compensation, self._pnn_labels)
+        else:
+            self.compensation = None
+
+        self._transformed_events = None
+        self._compensate()
+
+    def get_metadata(self):
+        return self._flow_data.text
 
     def get_raw_events(self, subsample=False):
         if subsample:
