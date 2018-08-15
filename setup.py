@@ -3,7 +3,7 @@ from setuptools import setup
 setup(
     name='FlowKit',
     version='0.0.1',
-    packages=['flowkit'],
+    packages=['flowkit', 'flowkit.models'],
     package_data={'': []},
     description='Flow Cytometry Toolkit',
     license='BSD',
