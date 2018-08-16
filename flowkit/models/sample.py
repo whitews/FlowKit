@@ -66,17 +66,21 @@ class Sample(object):
 
         self.event_count = self._flow_data.event_count
         self.channels = self._flow_data.channels
-        self._pnn_labels = []
+        self.pnn_labels = list()
+        self.pns_labels = list()
+        self.fluoro_indices = list()
 
         for n in sorted([int(k) for k in self.channels.keys()]):
-            self._pnn_labels.append(self.channels[str(n)]['PnN'])
+            chan_label = self.channels[str(n)]['PnN']
+            self.pnn_labels.append(chan_label)
 
-        self.fluoro_indices = list()
-        for i, param in enumerate(self._pnn_labels):
-            if param.lower()[:4] in ['fsc-', 'ssc-', 'time']:
-                continue
+            if chan_label.lower()[:4] not in ['fsc-', 'ssc-', 'time']:
+                self.fluoro_indices.append(n - 1)
+
+            if 'PnS' in self.channels[str(n)]:
+                self.pns_labels.append(self.channels[str(n)]['PnS'])
             else:
-                self.fluoro_indices.append(i)
+                self.pns_labels.append('')
 
         self._raw_events = np.reshape(
             self._flow_data.events,
@@ -115,7 +119,7 @@ class Sample(object):
     def _negative_scatter_indices(self):
         """Returns indices of negative scatter events"""
         scatter_indices = []
-        for i, p in enumerate(self._pnn_labels):
+        for i, p in enumerate(self.pnn_labels):
             if p.lower()[:4] in ['fsc-', 'ssc-']:
                 scatter_indices.append(i)
 
@@ -150,7 +154,7 @@ class Sample(object):
         if filter_anomalous_events:
             anomalous_idx = utils.filter_anomalous_events(
                 self._raw_events,
-                self._pnn_labels,
+                self.pnn_labels,
                 rng=rng,
                 ref_set_count=3
             )
@@ -203,7 +207,7 @@ class Sample(object):
         :return: None
         """
         if compensation is not None:
-            self.compensation = utils.parse_compensation_matrix(compensation, self._pnn_labels)
+            self.compensation = utils.parse_compensation_matrix(compensation, self.pnn_labels)
         else:
             self.compensation = None
 
@@ -240,7 +244,7 @@ class Sample(object):
             return self._transformed_events
 
     def get_channel_number_by_label(self, label):
-        return self._pnn_labels.index(label) + 1
+        return self.pnn_labels.index(label) + 1
 
     def get_channel_index(self, channel_label_or_number):
         if isinstance(channel_label_or_number, str):
@@ -340,8 +344,8 @@ class Sample(object):
         fig, ax = plt.subplots(figsize=fig_size)
         ax.set_xlim([x_min, x_max])
         ax.set_ylim([y_min, y_max])
-        ax.set_xlabel(self._pnn_labels[x_index])
-        ax.set_ylabel(self._pnn_labels[y_index])
+        ax.set_xlabel(self.pnn_labels[x_index])
+        ax.set_ylabel(self.pnn_labels[y_index])
         scatter_alpha = 1.0
 
         if contours:
@@ -390,7 +394,7 @@ class Sample(object):
         seaborn.distplot(
             channel_data,
             hist_kws=dict(edgecolor="w", linewidth=1),
-            label=self._pnn_labels[channel_index],
+            label=self.pnn_labels[channel_index],
             bins=bins
         )
 
@@ -411,7 +415,7 @@ class Sample(object):
         else:
             output_path = filename
 
-        header = ",".join(self._pnn_labels)
+        header = ",".join(self.pnn_labels)
 
         if subsample:
             idx = self.subsample_indices
