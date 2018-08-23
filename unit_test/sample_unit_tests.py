@@ -1,6 +1,7 @@
 import unittest
 import sys
 import os
+from pathlib import Path
 import numpy as np
 
 sys.path.append(os.path.abspath('..'))
@@ -9,12 +10,20 @@ from flowkit import Sample
 
 
 class LoadSampleTestCase(unittest.TestCase):
-    """Tests for logicle transformation"""
+    """Tests for loading FCS files as Sample objects"""
     def test_load_from_fcs_file_path(self):
         """Test creating Sample object from an FCS file path"""
         fcs_file_path = "examples/test_data_2d_01.fcs"
 
         sample = Sample(fcs_path_or_data=fcs_file_path)
+
+        self.assertIsInstance(sample, Sample)
+
+    def test_load_from_pathlib(self):
+        """Test creating Sample object from a pathlib Path object"""
+        fcs_file_path = "examples/test_data_2d_01.fcs"
+        path = Path(fcs_file_path)
+        sample = Sample(fcs_path_or_data=path)
 
         self.assertIsInstance(sample, Sample)
 

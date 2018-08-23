@@ -1,6 +1,7 @@
 import flowio
 import flowutils
 import os
+from pathlib import Path
 import io
 from tempfile import TemporaryFile
 import numpy as np
@@ -26,6 +27,7 @@ class Sample(object):
 
         :param fcs_path_or_data: FCS data, can be either:
                 - a file path or file handle to an FCS file
+                - a pathlib Path object
                 - a FlowIO FlowData object
                 - a NumPy array of FCS event data (must provide channel_labels)
                 - a Pandas DataFrame containing FCS event data (channel labels as headers)
@@ -52,6 +54,8 @@ class Sample(object):
             self._flow_data = flowio.FlowData(fcs_path_or_data)
         elif isinstance(fcs_path_or_data, io.IOBase):
             self._flow_data = flowio.FlowData(fcs_path_or_data)
+        elif isinstance(fcs_path_or_data, Path):
+            self._flow_data = flowio.FlowData(fcs_path_or_data.open('rb'))
         elif isinstance(fcs_path_or_data, flowio.FlowData):
             self._flow_data = fcs_path_or_data
         elif isinstance(fcs_path_or_data, np.ndarray):
