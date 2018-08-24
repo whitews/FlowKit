@@ -33,8 +33,10 @@ class Sample(object):
                 - a Pandas DataFrame containing FCS event data (channel labels as headers)
         :param channel_labels: A list of strings or a list of tuples to use for the channel
             labels. Required if fcs_path_or_data is a NumPy array
-        :param compensation: Compensation matrix text or path to file. Can be a text string
-            in CSV or TSV format or a path to a CSV file in CSV or TSV format
+        :param compensation: Compensation matrix. Can be either:
+                - a text string in CSV or TSV format
+                - a string path to a CSV or TSV file
+                - a pathlib Path object to a CSV or TSV file
         :param subsample_count: Number of events to use as a sub-sample. If None, then no
             sub-sampling is performed. If the number of events in the Sample is less than the
             requested sub-sample count, then the maximum number of available events is used
@@ -207,7 +209,7 @@ class Sample(object):
         Applies given compensation matrix to Sample events. If any transformation has been
         applied, those events will be deleted
 
-        :param compensation: a compensation matrix file or string
+        :param compensation: a compensation matrix NumPy array, CSV file or string file path
         :return: None
         """
         if compensation is not None:

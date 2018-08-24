@@ -52,6 +52,14 @@ class LoadSampleTestCase(unittest.TestCase):
 
         self.assertIsNotNone(sample._comp_events)
 
+    def test_comp_matrix_from_pathlib_path(self):
+        fcs_file_path = "examples/test_comp_example.fcs"
+        comp_file_path = Path("examples/comp_complete_example.csv")
+
+        sample = Sample(fcs_path_or_data=fcs_file_path, compensation=comp_file_path)
+
+        self.assertIsNotNone(sample._comp_events)
+
     def test_plot_scatter(self):
         fcs_file_path = "examples/test_comp_example.fcs"
         comp_file_path = "examples/comp_complete_example.csv"

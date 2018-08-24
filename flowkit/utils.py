@@ -1,5 +1,6 @@
 import re
 import os
+from pathlib import Path
 import numpy as np
 import pandas as pd
 from scipy import stats
@@ -136,7 +137,8 @@ def parse_compensation_matrix(compensation, channel_labels):
     Returns a NumPy array with the compensation matrix where the first row are the
     indices of the fluorescent channels
     :param compensation: Compensation matrix: may be a NumPy array, a CSV file path,
-        or a string of CSV text. If a string, both multi-line, traditional CSV and the single
+        a pathlib Path object to a CSV or TSV file or a string of CSV text.
+        If a string, both multi-line, traditional CSV and the single
         line FCS spill formats are supported. If a NumPy array, we assume the columns are in
         the same order as the channel labels
     :param channel_labels: Channel labels from the FCS file's PnN fields, must be in
@@ -173,6 +175,12 @@ def parse_compensation_matrix(compensation, channel_labels):
         else:
             # may be a CSV string
             matrix_text = compensation
+
+        matrix = convert_matrix_text_to_array(matrix_text, fluoro_labels, fluoro_indices)
+    elif isinstance(compensation, Path):
+        fh = compensation.open('r')
+        matrix_text = fh.read()
+        fh.close()
 
         matrix = convert_matrix_text_to_array(matrix_text, fluoro_labels, fluoro_indices)
     elif isinstance(compensation, np.ndarray):
