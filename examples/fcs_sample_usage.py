@@ -14,15 +14,17 @@ comp_file_path = os.path.join(fcs_dir, "CompMatrixDenny06Nov09")
 sample = Sample(
     fcs_path_or_data=fcs_file_path,
     compensation=comp_file_path,
-    subsample_count=None
+    subsample_count=50000,
+    filter_negative_scatter=True,
+    filter_anomalous_events=False
 )
-# sample.apply_logicle_transform()
-sample.apply_asinh_transform()
+sample.apply_logicle_transform()
+#sample.apply_asinh_transform()
 sample.plot_scatter(
-    18,
     3,
-    y_min=60000,
-    y_max=70000,
+    6,
+    # y_min=60000,
+    # y_max=70000,
     source='xform',
     subsample=True,
     contours=False
