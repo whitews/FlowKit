@@ -64,11 +64,18 @@ def convert_matrix_text_to_array(matrix_text, fluoro_labels, fluoro_indices):
     # (spaces can't be delimiters b/c they are allowed in the PnN value)
     header = None
     header_line_index = None
+    non_matching_labels = fluoro_labels.copy()
     for i, line in enumerate(matrix_text):
         line_values = re.split('[\t,]', line)
 
-        if len(set(fluoro_labels).symmetric_difference(line_values)) != 0:
+        label_diff = set(fluoro_labels).symmetric_difference(line_values)
+
+        if len(label_diff) != 0:
             # if any labels are missing or extra ones found, then not a valid header row
+            # And, for more informative error reporting, we keep track of the mis-matches
+            # to include in the error message
+            if len(label_diff) < len (non_matching_labels):
+                non_matching_labels = label_diff
             continue
         else:
             header = line_values
@@ -76,7 +83,14 @@ def convert_matrix_text_to_array(matrix_text, fluoro_labels, fluoro_indices):
             break
 
     if header is None:
-        raise ValueError("Number of matrix labels does not match number of fluoro channels")
+        error_message = "\n".join(
+            [
+                "Matrix labels do not match fluoro channel labels in FCS file",
+                "Mis-matched labels:",
+                ", ".join(non_matching_labels)
+            ]
+        )
+        raise ValueError(error_message)
 
     matrix_start = header_line_index + 1
     matrix_end = matrix_start + len(fluoro_labels)
