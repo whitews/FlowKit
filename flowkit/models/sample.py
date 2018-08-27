@@ -150,8 +150,8 @@ class Sample(object):
         # due to filtered negative scatter events
         raw_event_count = self._raw_events.shape[0]
         shuffled_indices = np.arange(raw_event_count)
-        neg_scatter_idx = np.empty(1)
-        anomalous_idx = np.empty(1)
+        neg_scatter_idx = np.empty(0)
+        anomalous_idx = np.empty(0)
         rng = np.random.RandomState(seed=random_seed)
 
         if filter_negative_scatter:
@@ -254,7 +254,7 @@ class Sample(object):
 
     def get_channel_index(self, channel_label_or_number):
         if isinstance(channel_label_or_number, str):
-            index = self.get_channel_number_by_label(channel_label_or_number)
+            index = self.get_channel_number_by_label(channel_label_or_number) - 1
         elif isinstance(channel_label_or_number, int):
             index = channel_label_or_number - 1
         else:
