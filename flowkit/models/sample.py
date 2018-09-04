@@ -98,13 +98,16 @@ class Sample(object):
 
         self.apply_compensation(compensation)
 
+        # if filtering anomalous events, save those in case they want to be retrieved
+        self.anomalous_indices = None
+
         # Save sub-sampled indices if requested
         if subsample_count is not None:
             self.subsample_indices = self._generate_subsample(
                 subsample_count,
                 random_seed,
                 filter_negative_scatter=filter_negative_scatter,
-                filter_anomalous_events=filter_anomalous_events
+                filter_anomalous_events=filter_anomalous_events  # will store anomalous events
             )
         else:
             self.subsample_indices = None
@@ -159,11 +162,16 @@ class Sample(object):
 
         if filter_anomalous_events:
             anomalous_idx = utils.filter_anomalous_events(
-                self._raw_events,
+                flowutils.transforms.asinh(
+                    self._raw_events,
+                    self.fluoro_indices,
+                    pre_scale=0.01
+                ),
                 self.pnn_labels,
                 rng=rng,
                 ref_set_count=3
             )
+            self.anomalous_indices = anomalous_idx
 
         bad_idx = np.unique(np.concatenate([neg_scatter_idx, anomalous_idx]))
         bad_count = bad_idx.shape[0]

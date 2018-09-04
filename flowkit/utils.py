@@ -75,7 +75,7 @@ def convert_matrix_text_to_array(matrix_text, fluoro_labels, fluoro_indices):
             # if any labels are missing or extra ones found, then not a valid header row
             # And, for more informative error reporting, we keep track of the mis-matches
             # to include in the error message
-            if len(label_diff) < len (non_matching_labels):
+            if len(label_diff) < len(non_matching_labels):
                 non_matching_labels = label_diff
             continue
         else:
@@ -212,7 +212,7 @@ def rolling_window(a, window):
     return np.lib.stride_tricks.as_strided(a, shape=shape, strides=strides)
 
 
-def plot_channel(chan_events, label, xform=False, bad_events=None):
+def plot_channel(chan_events, label, subplot_ax, xform=False, bad_events=None):
     if xform:
         chan_events = np.arcsinh(chan_events * 0.003)
 
@@ -220,17 +220,12 @@ def plot_channel(chan_events, label, xform=False, bad_events=None):
     my_cmap.set_under('w', alpha=0)
 
     bins = int(np.sqrt(chan_events.shape[0]))
-
-    fig = pyplot.figure(figsize=(16, 4))
-    ax = fig.add_subplot(1, 1, 1)
-
-    ax.set_title(label, fontsize=16)
-
-    ax.set_xlabel("Events", fontsize=14)
-
     event_range = range(0, chan_events.shape[0])
 
-    ax.hist2d(
+    subplot_ax.set_title(label, fontsize=16)
+    subplot_ax.set_xlabel("Events", fontsize=14)
+
+    subplot_ax.hist2d(
         event_range,
         chan_events,
         bins=[bins, bins],
@@ -242,7 +237,7 @@ def plot_channel(chan_events, label, xform=False, bad_events=None):
         starts, ends = get_false_bounds(bad_events)
 
         for i, s in enumerate(starts):
-            ax.axvspan(
+            subplot_ax.axvspan(
                 event_range[s],
                 event_range[ends[i] - 1],
                 facecolor='pink',
@@ -250,19 +245,16 @@ def plot_channel(chan_events, label, xform=False, bad_events=None):
                 edgecolor='deeppink'
             )
 
-    fig.tight_layout()
-
-    pyplot.show()
-
 
 def filter_anomalous_events(
         transformed_events,
         channel_labels,
-        roll=1000,
+        p_value_threshold=0.03,
+        roll=10000,
         rng=None,
-        plot=False,
         ref_set_count=3,
-        fig_size=(16, 4)
+        ref_size=10000,
+        plot=False
 ):
     if rng is None:
         rng = np.random.RandomState()
@@ -297,31 +289,37 @@ def filter_anomalous_events(
         # create reference sets, we'll average the p-values from these
         ref_sets = []
         for j in range(0, ref_set_count):
-            ref_subsample_idx = rng.choice(int(event_count * 0.2), roll, replace=False)
+            ref_subsample_idx = rng.choice(int(event_count * 0.5), ref_size, replace=False)
             ref_sets.append(chan_events[reference_indices.values[ref_subsample_idx]])
 
-        # calculate piece-wise KS test, we'll test every roll / 2 interval, cause
+        # calculate piece-wise KS test, we'll test every roll / 5 interval, cause
         # doing a true rolling window takes way too long
         strides = rolling_window(chan_events, roll)
 
         ks_x = []
         ks_y = []
+        ks_y_stats = []
 
-        test_idx = list(range(0, len(strides), int(roll / 2)))
+        test_idx = list(range(0, len(strides), int(roll / 5)))
         test_idx.append(len(strides) - 1)  # cover last stride, to get any remainder
 
         for test_i in test_idx:
             kss = []
+            kss_stats = []
 
             for ref in ref_sets:
-                kss.append(stats.ks_2samp(ref, strides[test_i]).pvalue)
+                # TODO: maybe this should be the Anderson-Darling test?
+                test_result = stats.ks_2samp(ref, strides[test_i])
+                kss.append(test_result.pvalue)
+                kss_stats.append(test_result.statistic)
 
             ks_x.append(test_i)
 
-            ks_y.append(np.mean(kss))
+            ks_y.append(np.mean(kss))  # TODO: should this be max or min?
+            ks_y_stats.append(np.mean(kss_stats))  # TODO: this isn't used yet, should it?
 
         ks_y_roll = pd.Series(ks_y).rolling(
-            7,
+            3,
             min_periods=1,
             center=True
         ).mean()
@@ -329,31 +327,19 @@ def filter_anomalous_events(
         # interpolate our piecewise tests back to number of actual events
         interp_y = np.interp(range(0, event_count), ks_x, ks_y_roll)
 
-        cutoff = 0.025
-        bad_events = np.logical_or(bad_events, interp_y < cutoff)
+        bad_events = np.logical_or(bad_events, interp_y < p_value_threshold)
 
         if plot:
-            plot_channel(chan_events, " - ".join([str(i + 1), label]), xform=False)
+            fig = pyplot.figure(figsize=(16, 12))
+            ax = fig.add_subplot(4, 1, 1)
 
-            fig = pyplot.figure(figsize=(2 * ref_set_count, 4))
+            plot_channel(chan_events, " - ".join([str(i + 1), label]), ax, xform=False)
 
-            for ref_i, reference_events in enumerate(ref_sets):
-                ax = fig.add_subplot(1, ref_set_count, ref_i + 1)
-                ax.set_xlim([0, reference_events.shape[0]])
-                pyplot.scatter(
-                    np.arange(0, reference_events.shape[0]),
-                    reference_events,
-                    s=2,
-                    edgecolors='none'
-                )
-
-            fig.tight_layout()
-            pyplot.show()
-
-            fig = pyplot.figure(figsize=fig_size)
-            ax = fig.add_subplot(1, 1, 1)
-            ax.set_title(" - ".join([str(i + 1), label, "Median Diff"]),
-                         fontsize=16)
+            ax = fig.add_subplot(4, 1, 2)
+            ax.set_title(
+                "Median Difference",
+                fontsize=16
+            )
             ax.set_xlim([0, event_count])
             pyplot.plot(
                 np.arange(0, event_count),
@@ -363,12 +349,12 @@ def filter_anomalous_events(
                 linewidth=1
             )
 
-            fig.tight_layout()
-            pyplot.show()
-
-            fig = pyplot.figure(figsize=fig_size)
-            ax = fig.add_subplot(1, 1, 1)
-            ax.set_xlim([0, ks_x[-1]])
+            ax = fig.add_subplot(4, 1, 3)
+            ax.set_title(
+                "KS Test p-value",
+                fontsize=16
+            )
+            ax.set_xlim([0, event_count])
             ax.set_ylim([0, 1])
             pyplot.plot(
                 ks_x,
@@ -378,14 +364,29 @@ def filter_anomalous_events(
                 linewidth=1
             )
             pyplot.plot(
-                ks_x,
-                ks_y_roll,
+                np.arange(0, event_count),
+                interp_y,
                 c='darkorange',
                 alpha=1.0,
                 linewidth=2
             )
 
-            ax.axhline(cutoff, linestyle='-', linewidth=1, c='coral')
+            ax.axhline(p_value_threshold, linestyle='-', linewidth=1, c='coral')
+
+            combined_refs = np.hstack(ref_sets)
+            ref_y_min = combined_refs.min()
+            ref_y_max = combined_refs.max()
+
+            for ref_i, reference_events in enumerate(ref_sets):
+                ax = fig.add_subplot(4, ref_set_count, (3 * ref_set_count) + ref_i + 1)
+                ax.set_xlim([0, reference_events.shape[0]])
+                ax.set_ylim([ref_y_min, ref_y_max])
+                pyplot.scatter(
+                    np.arange(0, reference_events.shape[0]),
+                    reference_events,
+                    s=2,
+                    edgecolors='none'
+                )
 
             fig.tight_layout()
             pyplot.show()
