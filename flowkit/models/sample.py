@@ -446,3 +446,78 @@ class Sample(object):
             np.savetxt(output_path, self._raw_events[idx, :], delimiter=',', header=header)
         else:
             raise ValueError("source must be one of 'raw', 'comp', or 'xform'")
+
+    def export_fcs(self, source='xform', subsample=False, filename=None, directory=None):
+        if self.original_filename is None and filename is None:
+            raise(
+                ValueError(
+                    "Sample has no original filename, please provide a 'filename' argument"
+                )
+            )
+        elif filename is None:
+            filename = self.original_filename
+
+        if directory is not None:
+            output_path = os.path.join(directory, filename)
+        else:
+            output_path = filename
+
+        if subsample:
+            idx = self.subsample_indices
+        else:
+            idx = np.arange(self.event_count)
+
+        if source == 'xform':
+            events = self._transformed_events[idx, :]
+        elif source == 'comp':
+            events = self._comp_events[idx, :]
+        elif source == 'raw':
+            events = self._raw_events[idx, :]
+        else:
+            raise ValueError("source must be one of 'raw', 'comp', or 'xform'")
+
+        fh = open(output_path, 'wb')
+
+        flowio.create_fcs(
+            events.flatten().tolist(),
+            channel_names=self.pnn_labels,
+            opt_channel_names=self.pns_labels,
+            file_handle=fh
+        )
+
+        fh.close()
+
+    def export_anomalous_fcs(self, source='xform', filename=None, directory=None):
+        if self.original_filename is None and filename is None:
+            raise(
+                ValueError(
+                    "Sample has no original filename, please provide a 'filename' argument"
+                )
+            )
+        elif filename is None:
+            filename = self.original_filename
+
+        if directory is not None:
+            output_path = os.path.join(directory, filename)
+        else:
+            output_path = filename
+
+        if source == 'xform':
+            events = self._transformed_events[self.anomalous_indices, :]
+        elif source == 'comp':
+            events = self._comp_events[self.anomalous_indices, :]
+        elif source == 'raw':
+            events = self._raw_events[self.anomalous_indices, :]
+        else:
+            raise ValueError("source must be one of 'raw', 'comp', or 'xform'")
+
+        fh = open(output_path, 'wb')
+
+        flowio.create_fcs(
+            events.flatten().tolist(),
+            channel_names=self.pnn_labels,
+            opt_channel_names=self.pns_labels,
+            file_handle=fh
+        )
+
+        fh.close()
