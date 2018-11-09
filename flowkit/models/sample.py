@@ -438,12 +438,28 @@ class Sample(object):
 
         if source == 'xform':
             np.savetxt(
-                output_path, self._transformed_events[idx, :], delimiter=',', header=header
+                output_path,
+                self._transformed_events[idx, :],
+                delimiter=',',
+                header=header,
+                comments=''
             )
         elif source == 'comp':
-            np.savetxt(output_path, self._comp_events[idx, :], delimiter=',', header=header)
+            np.savetxt(
+                output_path,
+                self._comp_events[idx, :],
+                delimiter=',',
+                header=header,
+                comments=''
+            )
         elif source == 'raw':
-            np.savetxt(output_path, self._raw_events[idx, :], delimiter=',', header=header)
+            np.savetxt(
+                output_path,
+                self._raw_events[idx, :],
+                delimiter=',',
+                header=header,
+                comments=''
+            )
         else:
             raise ValueError("source must be one of 'raw', 'comp', or 'xform'")
 
