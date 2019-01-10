@@ -84,13 +84,39 @@ def convert_matrix_text_to_array(matrix_text, fluoro_labels, fluoro_indices):
             break
 
     if header is None:
-        error_message = "\n".join(
-            [
-                "Matrix labels do not match fluoro channel labels in FCS file",
-                "Mis-matched labels:",
-                ", ".join(non_matching_labels)
-            ]
-        )
+        in_fcs_not_comp = []
+        in_comp_not_fcs = []
+
+        for label in non_matching_labels:
+            if label in fluoro_labels:
+                in_fcs_not_comp.append(label)
+            else:
+                in_comp_not_fcs.append(label)
+
+        error_message = "Matrix labels do not match fluorescent labels in FCS file"
+
+        if len(in_fcs_not_comp) > 0:
+            error_message = "\n".join(
+                [
+                    error_message,
+                    "",
+                    "Labels in FCS file not found in comp matrix (null channels?):",
+                    ", ".join(in_fcs_not_comp),
+                    "",
+                    "Null channels can be specified when creating a Sample instance"
+                ]
+            )
+
+        if len(in_comp_not_fcs) > 0:
+            error_message = "\n".join(
+                [
+                    error_message,
+                    "",
+                    "Labels in comp matrix not found in FCS file (wrong matrix chosen?):",
+                    ", ".join(in_comp_not_fcs)
+                ]
+            )
+
         raise ValueError(error_message)
 
     matrix_start = header_line_index + 1
@@ -132,7 +158,7 @@ def convert_matrix_text_to_array(matrix_text, fluoro_labels, fluoro_indices):
     return matrix_array
 
 
-def parse_compensation_matrix(compensation, channel_labels):
+def parse_compensation_matrix(compensation, channel_labels, null_channels=None):
     """
     Returns a NumPy array with the compensation matrix where the first row are the
     indices of the fluorescent channels
@@ -143,7 +169,11 @@ def parse_compensation_matrix(compensation, channel_labels):
         the same order as the channel labels
     :param channel_labels: Channel labels from the FCS file's PnN fields, must be in
         the same order as they appear in the FCS file
-    :return:
+    :param null_channels: Specify any empty channels that were collected and
+        present in the channel_labels argument. These will be ignored when
+        validating and creating the compensation matrix
+    :return: Compensation matrix as NumPy array where header contains the
+        channel numbers (not indices!)
     """
     non_fluoro_channels = [
         'FSC-A',
@@ -157,6 +187,9 @@ def parse_compensation_matrix(compensation, channel_labels):
 
     fluoro_indices = []
     fluoro_labels = []
+
+    if null_channels is not None:
+        non_fluoro_channels.extend(null_channels)
 
     for i, label in enumerate(channel_labels):
         if label not in non_fluoro_channels:

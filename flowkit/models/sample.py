@@ -20,7 +20,8 @@ class Sample(object):
             subsample_count=10000,
             random_seed=1,
             filter_negative_scatter=True,
-            filter_anomalous_events=True
+            filter_anomalous_events=True,
+            null_channel_list=None
     ):
         """
         Represents a single FCS sample.
@@ -48,6 +49,10 @@ class Sample(object):
             sub-sample. Anomalous events are determined via Kolmogorov-Smirnov statistical
             test performed on each channel. The reference distribution is chosen based on
             the difference from the median.
+        :param null_channel_list: List of PnN labels for channels that were collected
+            but do not contain data. Note, this should only be used if there were
+            truly no fluorochromes used targeting those detectors and the channels
+            do not contribute to compensation.
         """
         # inspect our fcs_path_or_data argument
         self._flow_data = None
@@ -70,6 +75,7 @@ class Sample(object):
 
             self._flow_data = flowio.FlowData(tmp_file)
 
+        self.null_channels = null_channel_list
         self.event_count = self._flow_data.event_count
         self.channels = self._flow_data.channels
         self.pnn_labels = list()
@@ -169,7 +175,8 @@ class Sample(object):
                 ),
                 self.pnn_labels,
                 rng=rng,
-                ref_set_count=3
+                ref_set_count=3,
+                plot=False
             )
             self.anomalous_indices = anomalous_idx
 
@@ -220,8 +227,14 @@ class Sample(object):
         :param compensation: a compensation matrix NumPy array, CSV file or string file path
         :return: None
         """
+        comp_labels = self.pnn_labels
+
         if compensation is not None:
-            self.compensation = utils.parse_compensation_matrix(compensation, self.pnn_labels)
+            self.compensation = utils.parse_compensation_matrix(
+                compensation,
+                comp_labels,
+                null_channels=self.null_channels
+            )
         else:
             self.compensation = None
 
