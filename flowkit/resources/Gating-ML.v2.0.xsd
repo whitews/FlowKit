@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+    xmlns:gating="http://www.isac-net.org/std/Gating-ML/v2.0/gating"
+    xmlns:transforms="http://www.isac-net.org/std/Gating-ML/v2.0/transformations"
+    xmlns:data-type="http://www.isac-net.org/std/Gating-ML/v2.0/datatypes"
+    targetNamespace="http://www.isac-net.org/std/Gating-ML/v2.0/gating"
+    elementFormDefault="qualified" attributeFormDefault="qualified" version="2.0.121207">
+
+    <import namespace="http://www.isac-net.org/std/Gating-ML/v2.0/transformations" schemaLocation="Transformations.v2.0.xsd" />
+    <import namespace="http://www.isac-net.org/std/Gating-ML/v2.0/datatypes" schemaLocation="DataTypes.v2.0.xsd" />
+
+    <annotation>
+        <appinfo source="http://flowcyt.sf.net/">Gating-ML: Gating Description Specification.</appinfo>
+        <documentation xml:lang="en" source="http://flowcyt.sourceforge.net/">
+            <author>
+                <name>Josef Spidlen</name>
+                <email>jspidlen@bccrc.ca</email>
+            </author>
+            <copyright>
+                Copyright (c) 2008-2014 ISAC (International Society for Advancement of
+                Cytometry). Free of charge distribution and read-only usage permited. Modification
+                and all other rights reserved. For all other uses please contact ISAC.
+            </copyright>
+        </documentation>
+    </annotation>
+
+    <element name="Gating-ML" type="gating:Gating-ML_Type" id="Gating-ML">
+        <annotation>
+            <documentation xml:lang="en">Gating-ML is the main element of an XML corresponding to this schema.</documentation>
+        </annotation>
+    </element>
+
+    <group name="Gates_Group">
+        <annotation>
+            <documentation xml:lang="en">The group includes a choice from all the types of gates.</documentation>
+        </annotation>
+        <choice>
+            <element name="RectangleGate" type="gating:RectangleGate_Type" />
+            <element name="PolygonGate" type="gating:PolygonGate_Type" />
+            <element name="EllipsoidGate" type="gating:EllipsoidGate_Type" />
+            <element name="BooleanGate" type="gating:BooleanGate_Type" />
+            <element name="QuadrantGate" type="gating:QuadrantGate_Type" />
+        </choice>
+    </group>
+
+    <complexType name="Gating-ML_Type">
+        <sequence minOccurs="1" maxOccurs="unbounded">
+            <choice>
+                <group ref="gating:Gates_Group" />
+                <group ref="transforms:Transformation_Group" />
+                <group ref="transforms:SpectrumMatrix_Group" />
+                <group ref="data-type:Custom_Group" />
+            </choice>
+        </sequence>
+    </complexType>
+
+    <complexType name="AbstractGate_Type" abstract="true">
+        <annotation>
+            <documentation xml:lang="en">Abstract type to be used as a common parent of all types of gates.</documentation>
+        </annotation>
+        <group ref="data-type:Custom_Group" minOccurs="0" />
+        <attribute name="id" type="ID" use="required" id="id" />
+        <attribute name="parent_id" type="IDREF" use="optional" id="parent_id" />
+        <anyAttribute processContents="skip"/>
+    </complexType>
+
+    <complexType name="QuadrantGate_Type">
+        <complexContent>
+            <extension base="gating:AbstractGate_Type">
+                <sequence>
+                    <element name="divider" type="gating:QuadrantGateDivider_Type" maxOccurs="unbounded" id="divider" />
+                    <element name="Quadrant" type="gating:Quadrant_Type" maxOccurs="unbounded" id="quadrant" />
+                </sequence>
+            </extension>
+        </complexContent>
+    </complexType>
+
+    <complexType name="QuadrantGateDivider_Type">
+        <complexContent>
+            <extension base="gating:Dimension_Type">
+                <sequence>
+                    <element name="value" type="float" maxOccurs="unbounded" id="dividervalue" />
+                </sequence>
+                <attribute name="id" type="ID" id="divider_id" use="required" />
+            </extension>
+        </complexContent>
+    </complexType>
+
+    <complexType name="Quadrant_Type">
+        <sequence>
+            <element name="position" maxOccurs="unbounded" id="position" type="gating:Position_Type" />
+        </sequence>
+        <attribute name="id" type="ID" use="required" id="quadrant_id" />
+    </complexType>
+
+    <complexType name="Position_Type">
+        <attribute name="divider_ref" use="required" type="IDREF" id="divider_ref" />
+        <attribute name="location" use="required" type="data-type:Float64_Type" id="location_value" />
+    </complexType>
+
+    <complexType name="RectangleGate_Type">
+        <complexContent>
+            <extension base="gating:AbstractGate_Type">
+                <sequence>
+                    <element name="dimension" type="gating:RectangleGateDimension_Type" maxOccurs="unbounded" id="dimension" />
+                </sequence>
+            </extension>
+        </complexContent>
+    </complexType>
+
+    <complexType name="PolygonGate_Type">
+        <complexContent>
+            <extension base="gating:AbstractGate_Type">
+                <sequence>
+                    <element name="dimension" type="gating:Dimension_Type" minOccurs="2" maxOccurs="2" />
+                    <element name="vertex" type="gating:Point2D_Type" minOccurs="3" maxOccurs="unbounded" />
+                </sequence>
+            </extension>
+        </complexContent>
+    </complexType>
+
+    <complexType name="EllipsoidGate_Type">
+        <complexContent>
+            <extension base="gating:AbstractGate_Type">
+                <sequence>
+                    <element name="dimension" type="gating:Dimension_Type" minOccurs="2" maxOccurs="unbounded" />
+                    <element name="mean" type="gating:PointXD_Type" minOccurs="1" maxOccurs="1" />
+                    <element name="covarianceMatrix" type="gating:Matrix_Type" minOccurs="1" maxOccurs="1" />
+                    <element name="distanceSquare" type="data-type:UValueAttribute_Type" minOccurs="1" maxOccurs="1" />
+                </sequence>
+            </extension>
+        </complexContent>
+    </complexType>
+
+    <complexType name="BooleanGate_Type">
+        <complexContent>
+            <extension base="gating:AbstractGate_Type">
+                <sequence>
+                    <choice>
+                        <element name="and" type="gating:TwoAndMoreOperands_BoolGate_Type" id="and" />
+                        <element name="or" type="gating:TwoAndMoreOperands_BoolGate_Type" id="or" />
+                        <element name="not" type="gating:OneOperand_BoolGate_Type" id="not" />
+                    </choice>
+                </sequence>
+            </extension>
+        </complexContent>
+    </complexType>
+
+    <complexType name="Dimension_Type">
+        <annotation>
+            <documentation xml:lang="en">FCS dimension plus transformation (optional) and compensation references (required: choice 'uncompensated', 'FCS' or id of a spillover matrix).</documentation>
+        </annotation>
+        <group ref="data-type:Dimensions_Group" />
+        <attribute name="transformation-ref" type="IDREF" use="optional" />
+        <attribute name="compensation-ref" type="data-type:NonEmptyString_Type" use="required" />
+    </complexType>
+
+    <complexType name="RectangleGateDimension_Type">
+        <annotation>
+            <documentation>A dimension type for a rectangle gate; the common dimension is extended by the min and max attributes. </documentation>
+        </annotation>
+        <complexContent>
+            <extension base="gating:Dimension_Type">
+                <attribute name="min" type="data-type:Float64_Type" use="optional" id="min" />
+                <attribute name="max" type="data-type:Float64_Type" use="optional" id="max" />
+            </extension>
+        </complexContent>
+    </complexType>
+
+    <complexType name="Point_Type">
+        <annotation>
+            <documentation>A point is a sequence of coordinates.</documentation>
+        </annotation>
+        <sequence>
+            <element name="coordinate" type="data-type:ValueAttribute_Type" maxOccurs="unbounded" id="coordinate" />
+        </sequence>
+    </complexType>
+
+    <complexType name="Point2D_Type">
+        <annotation>
+            <documentation>A 2D point is a sequence of two coordinates.</documentation>
+        </annotation>
+        <complexContent>
+            <restriction base="gating:Point_Type">
+                <sequence>
+                    <element name="coordinate" type="data-type:ValueAttribute_Type" minOccurs="2" maxOccurs="2" />
+                </sequence>
+            </restriction>
+        </complexContent>
+    </complexType>
+
+    <complexType name="PointXD_Type">
+        <annotation>
+            <documentation>A 2 or more dimensional point is a sequence of two or more coordinates.</documentation>
+        </annotation>
+        <complexContent>
+            <restriction base="gating:Point_Type">
+                <sequence>
+                    <element name="coordinate" type="data-type:ValueAttribute_Type" minOccurs="2" maxOccurs="unbounded" />
+                </sequence>
+            </restriction>
+        </complexContent>
+    </complexType>
+
+    <complexType name="Matrix_Type">
+        <annotation>
+            <documentation>Description of a matrix.</documentation>
+        </annotation>
+        <sequence>
+            <element name="row" type="gating:MatrixRow_Type" minOccurs="1" maxOccurs="unbounded" />
+        </sequence>
+    </complexType>
+
+    <complexType name="MatrixRow_Type">
+        <annotation>
+            <documentation>Description of a row of a matrix.</documentation>
+        </annotation>
+        <sequence>
+            <element name="entry" type="data-type:ValueAttribute_Type" minOccurs="1"
+                maxOccurs="unbounded" />
+        </sequence>
+    </complexType>
+
+    <group name="BoolGateOperands_Group">
+        <annotation>
+            <documentation xml:lang="en">An operand of a Boolean gate can be specified as gateReference or as an embedded specification of another gate.</documentation>
+        </annotation>
+        <choice>
+            <element name="gateReference" type="gating:GateReference_Type" id="gateReference" />
+        </choice>
+    </group>
+
+    <complexType name="TwoAndMoreOperands_BoolGate_Type">
+        <annotation>
+            <documentation xml:lang="en">The type of Boolean gates with two or more operands (AND and OR gates).</documentation>
+        </annotation>
+        <sequence minOccurs="2" maxOccurs="unbounded">
+            <group ref="gating:BoolGateOperands_Group" />
+        </sequence>
+    </complexType>
+
+    <complexType name="OneOperand_BoolGate_Type">
+        <annotation>
+            <documentation xml:lang="en">The type of Boolean Gates with exactly one operand (NOT gate).</documentation>
+        </annotation>
+        <sequence>
+            <group ref="gating:BoolGateOperands_Group" />
+        </sequence>
+    </complexType>
+
+    <complexType name="GateReference_Type">
+        <annotation>
+            <documentation xml:lang="en">Type of a reference to another (already defined) gate. The attribute ref references a gate by its id. </documentation>
+        </annotation>
+        <attribute name="ref" type="IDREF" use="required" id="ref" />
+        <attribute name="use-as-complement" type="boolean" default="false" use="optional" id="use-as-complement" />
+    </complexType>
+
+</schema>
