@@ -1,5 +1,7 @@
 # User-specific stuff:
 .idea
+scratch/
+*.png
 
 ### macOS template
 # General
