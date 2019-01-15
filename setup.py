@@ -4,7 +4,8 @@ setup(
     name='FlowKit',
     version='0.0.4',
     packages=['flowkit', 'flowkit.models'],
-    package_data={'': []},
+    package_data={'flowkit': ['resources/*.xsd']},
+    include_package_data=True,
     description='Flow Cytometry Toolkit',
     license='BSD',
     ext_modules=[],
@@ -14,6 +15,7 @@ setup(
         'matplotlib',
         'scipy',
         'seaborn',
-        'pandas'
+        'pandas',
+        'numpy', 'lxml'
     ]
 )
