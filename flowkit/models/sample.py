@@ -82,9 +82,16 @@ class Sample(object):
         self.pns_labels = list()
         self.fluoro_indices = list()
 
+        channel_gain = []
+
         for n in sorted([int(k) for k in self.channels.keys()]):
             chan_label = self.channels[str(n)]['PnN']
             self.pnn_labels.append(chan_label)
+
+            if 'p%dg' % n in self._flow_data.text:
+                channel_gain.append(float(self._flow_data.text['p%dg' % n]))
+            else:
+                channel_gain.append(1.0)
 
             if chan_label.lower()[:4] not in ['fsc-', 'ssc-', 'time']:
                 self.fluoro_indices.append(n - 1)
@@ -94,10 +101,13 @@ class Sample(object):
             else:
                 self.pns_labels.append('')
 
-        self._raw_events = np.reshape(
+        # Raw events need to be scaled according to channel gain,
+        # this is the only pre-processing we will do on raw events
+        raw_events = np.reshape(
             self._flow_data.events,
             (-1, self._flow_data.channel_count)
         )
+        self._raw_events = raw_events / channel_gain
         self._comp_events = None
         self._transformed_events = None  # TODO: should save transform settings
         self.compensation = None
