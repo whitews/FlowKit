@@ -4,6 +4,8 @@ from abc import ABC, abstractmethod
 # noinspection PyUnresolvedReferences
 from lxml import etree, objectify
 import numpy as np
+from flowkit import utils
+import flowutils
 
 loader = pkgutil.get_loader('flowkit.resources')
 resource_path = os.path.dirname(loader.path)
@@ -68,7 +70,14 @@ class Gate(ABC):
     """
     Represents a single flow cytometry gate
     """
-    def __init__(self, gate_element, gating_namespace, data_type_namespace):
+    def __init__(
+            self,
+            gate_element,
+            gating_namespace,
+            data_type_namespace,
+            gating_strategy
+    ):
+        self.__parent__ = gating_strategy
         self.id = gate_element.xpath(
             '@%s:id' % gating_namespace,
             namespaces=gate_element.nsmap
@@ -94,7 +103,7 @@ class Gate(ABC):
             self.dimensions.append(dim)
 
     @abstractmethod
-    def apply(self, events, pnn_labels):
+    def apply(self, sample):
         pass
 
 
@@ -111,11 +120,25 @@ class RectangleGate(Gate):
         (n = 3, i.e., three dimensions), and hyper-rectangular regions
         (n > 3, i.e., more than three dimensions).
     """
-    def __init__(self, gate_element, gating_namespace, data_type_namespace):
-        super().__init__(gate_element, gating_namespace, data_type_namespace)
+    def __init__(
+            self,
+            gate_element,
+            gating_namespace,
+            data_type_namespace,
+            gating_strategy
+    ):
+        super().__init__(
+            gate_element,
+            gating_namespace,
+            data_type_namespace,
+            gating_strategy
+        )
         pass
 
-    def apply(self, events, pnn_labels):
+    def apply(self, sample):
+        events = sample.get_raw_events()
+        pnn_labels = sample.pnn_labels
+
         if events.shape[1] != len(pnn_labels):
             raise ValueError(
                 "Number of FCS dimensions (%d) does not match label count (%d)"
@@ -125,8 +148,12 @@ class RectangleGate(Gate):
         dim_idx = []
         dim_min = []
         dim_max = []
+        dim_comp_refs = set()
 
         for dim in self.dimensions:
+            if dim.compensation_ref not in [None, 'uncompensated']:
+                dim_comp_refs.add(dim.compensation_ref)
+
             if dim.min is None and dim.max is None:
                 raise ValueError(
                     "Gate '%s' does not include a min or max value" % self.id
@@ -135,6 +162,41 @@ class RectangleGate(Gate):
             dim_idx.append(pnn_labels.index(dim.label))
             dim_min.append(dim.min)
             dim_max.append(dim.max)
+
+        spill = None
+        if len(dim_comp_refs) > 1:
+            raise NotImplementedError(
+                "Mixed compensation between individual channels is not "
+                "implemented. Never seen it, but if you are reading this "
+                "message, submit an issue to have it implemented."
+            )
+        elif len(dim_comp_refs) == 1 and 'FCS' in dim_comp_refs:
+            meta = sample.get_metadata()
+            if 'spill' not in meta or 'spillover' not in meta:
+                pass
+            elif 'spillover' in meta:  # preferred, per FCS standard
+                spill = meta['spillover']
+            elif 'spill' in meta:
+                spill = meta['spill']
+        else:
+            # TODO: implement lookup in parent for specified comp-ref
+            pass
+
+        if spill is not None:
+            events = events.copy()
+            spill = utils.parse_compensation_matrix(
+                spill,
+                sample.pnn_labels,
+                null_channels=sample.null_channels
+            )
+            indices = spill[0, :]  # headers are channel #'s
+            indices = [int(i - 1) for i in indices]
+            comp_matrix = spill[1:, :]  # just the matrix
+            events = flowutils.compensate.compensate(
+                events,
+                comp_matrix,
+                indices
+            )
 
         results = np.ones(events.shape[0], dtype=np.bool)
 
@@ -191,7 +253,12 @@ class GatingStrategy(object):
 
             for gt_gate in gt_gates:
                 constructor = globals()[gt.split(':')[1]]
-                g = constructor(gt_gate, self._gating_ns, self._data_type_ns)
+                g = constructor(
+                    gt_gate,
+                    self._gating_ns,
+                    self._data_type_ns,
+                    self
+                )
 
                 if g.id in self.gates:
                     raise ValueError(
@@ -222,6 +289,6 @@ class GatingStrategy(object):
         results = {}
 
         for gate in gates:
-            results[gate_id] = gate.apply(sample.get_raw_events(), sample.pnn_labels)
+            results[gate_id] = gate.apply(sample)
 
         return results
