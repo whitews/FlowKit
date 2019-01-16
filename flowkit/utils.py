@@ -160,13 +160,13 @@ def convert_matrix_text_to_array(matrix_text, fluoro_labels, fluoro_indices):
 
 def parse_compensation_matrix(compensation, channel_labels, null_channels=None):
     """
-    Returns a NumPy array with the compensation matrix where the first row are the
-    indices of the fluorescent channels
-    :param compensation: Compensation matrix: may be a NumPy array, a CSV file path,
-        a pathlib Path object to a CSV or TSV file or a string of CSV text.
-        If a string, both multi-line, traditional CSV and the single
-        line FCS spill formats are supported. If a NumPy array, we assume the columns are in
-        the same order as the channel labels
+    Returns a NumPy array with the compensation matrix where the first row are
+    the indices of the fluorescent channels
+    :param compensation: Compensation matrix: may be a NumPy array, a CSV file
+        path, a pathlib Path object to a CSV or TSV file or a string of CSV
+        text. If a string, both multi-line, traditional CSV, and the single
+        line FCS spill formats are supported. If a NumPy array, we assume the
+        columns are in the same order as the channel labels
     :param channel_labels: Channel labels from the FCS file's PnN fields, must be in
         the same order as they appear in the FCS file
     :param null_channels: Specify any empty channels that were collected and
