@@ -15,7 +15,11 @@ class LoadSampleTestCase(unittest.TestCase):
         """Test creating Sample object from an FCS file path"""
         fcs_file_path = "examples/test_data_2d_01.fcs"
 
-        sample = Sample(fcs_path_or_data=fcs_file_path)
+        sample = Sample(
+            fcs_path_or_data=fcs_file_path,
+            filter_negative_scatter=False,
+            filter_anomalous_events=False
+        )
 
         self.assertIsInstance(sample, Sample)
 
@@ -23,7 +27,11 @@ class LoadSampleTestCase(unittest.TestCase):
         """Test creating Sample object from a pathlib Path object"""
         fcs_file_path = "examples/test_data_2d_01.fcs"
         path = Path(fcs_file_path)
-        sample = Sample(fcs_path_or_data=path)
+        sample = Sample(
+            fcs_path_or_data=path,
+            filter_negative_scatter=False,
+            filter_anomalous_events=False
+        )
 
         self.assertIsInstance(sample, Sample)
 
@@ -40,7 +48,12 @@ class LoadSampleTestCase(unittest.TestCase):
 
         npy_data = np.fromfile(npy_file_path)
 
-        sample = Sample(npy_data, channel_labels=channels)
+        sample = Sample(
+            npy_data,
+            channel_labels=channels,
+            filter_negative_scatter=False,
+            filter_anomalous_events=False
+        )
 
         self.assertIsInstance(sample, Sample)
 
@@ -48,7 +61,12 @@ class LoadSampleTestCase(unittest.TestCase):
         fcs_file_path = "examples/test_comp_example.fcs"
         comp_file_path = "examples/comp_complete_example.csv"
 
-        sample = Sample(fcs_path_or_data=fcs_file_path, compensation=comp_file_path)
+        sample = Sample(
+            fcs_path_or_data=fcs_file_path,
+            compensation=comp_file_path,
+            filter_negative_scatter=False,
+            filter_anomalous_events=False
+        )
 
         self.assertIsNotNone(sample._comp_events)
 
@@ -56,7 +74,12 @@ class LoadSampleTestCase(unittest.TestCase):
         fcs_file_path = "examples/test_comp_example.fcs"
         comp_file_path = Path("examples/comp_complete_example.csv")
 
-        sample = Sample(fcs_path_or_data=fcs_file_path, compensation=comp_file_path)
+        sample = Sample(
+            fcs_path_or_data=fcs_file_path,
+            compensation=comp_file_path,
+            filter_negative_scatter=False,
+            filter_anomalous_events=False
+        )
 
         self.assertIsNotNone(sample._comp_events)
 
@@ -64,7 +87,12 @@ class LoadSampleTestCase(unittest.TestCase):
         fcs_file_path = "examples/test_comp_example.fcs"
         comp_file_path = "examples/comp_complete_example.csv"
 
-        sample = Sample(fcs_path_or_data=fcs_file_path, compensation=comp_file_path)
+        sample = Sample(
+            fcs_path_or_data=fcs_file_path,
+            compensation=comp_file_path,
+            filter_negative_scatter=False,
+            filter_anomalous_events=False
+        )
         sample.apply_asinh_transform()
 
         self.assertIsNotNone(sample._transformed_events)
