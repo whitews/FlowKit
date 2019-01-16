@@ -160,7 +160,8 @@ class GatingStrategy(object):
 
         val = self.gml_schema.validate(xml_document)
 
-        print(val)
+        if not val:
+            raise ValueError("Document is not valid GatingML")
 
         self.parser = etree.XMLParser(schema=self.gml_schema)
 
