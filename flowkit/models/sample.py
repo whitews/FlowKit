@@ -83,6 +83,8 @@ class Sample(object):
         self.fluoro_indices = list()
 
         channel_gain = []
+        channel_lin_log = []
+        channel_range = []
 
         for n in sorted([int(k) for k in self.channels.keys()]):
             chan_label = self.channels[str(n)]['PnN']
@@ -93,6 +95,21 @@ class Sample(object):
             else:
                 channel_gain.append(1.0)
 
+            if 'p%dr' % n in self._flow_data.text:
+                channel_range.append(float(self._flow_data.text['p%dr' % n]))
+            else:
+                channel_range.append(None)
+
+            if 'p%de' % n in self._flow_data.text:
+                (decades, log0) = [
+                    float(x) for x in self._flow_data.text['p%de' % n].split(',')
+                ]
+                if log0 == 0 and decades != 0:
+                    log0 = 1.0  # FCS std states to use 1.0 for invalid 0 value
+                channel_lin_log.append((decades, log0))
+            else:
+                channel_lin_log.append((0.0, 0.0))
+
             if chan_label.lower()[:4] not in ['fsc-', 'ssc-', 'time']:
                 self.fluoro_indices.append(n - 1)
 
@@ -101,12 +118,18 @@ class Sample(object):
             else:
                 self.pns_labels.append('')
 
-        # Raw events need to be scaled according to channel gain,
-        # this is the only pre-processing we will do on raw events
+        # Raw events need to be scaled according to channel gain, as well
+        # as corrected for proper lin/log display
+        # These are the only pre-processing we will do on raw events
         raw_events = np.reshape(
             self._flow_data.events,
             (-1, self._flow_data.channel_count)
         )
+
+        for i, (decades, log0) in enumerate(channel_lin_log):
+            if decades > 0:
+                raw_events[:, i] = (10 ** (decades * raw_events[:, i] / channel_range[i])) * log0
+
         self._raw_events = raw_events / channel_gain
         self._comp_events = None
         self._transformed_events = None  # TODO: should save transform settings
