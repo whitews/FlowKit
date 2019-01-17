@@ -16,6 +16,7 @@ setup(
         'scipy',
         'seaborn',
         'pandas',
-        'numpy', 'lxml'
+        'numpy',
+        'lxml'
     ]
 )

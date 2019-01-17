@@ -122,7 +122,7 @@ class Sample(object):
         # as corrected for proper lin/log display
         # These are the only pre-processing we will do on raw events
         raw_events = np.reshape(
-            self._flow_data.events,
+            np.array(self._flow_data.events, dtype=np.float),
             (-1, self._flow_data.channel_count)
         )
 
