@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 # noinspection PyUnresolvedReferences
 from lxml import etree, objectify
 import numpy as np
+from matplotlib.path import Path
 from flowkit import utils
 import flowutils
 
@@ -13,7 +14,8 @@ gating_ml_xsd = os.path.join(resource_path, 'Gating-ML.v2.0.xsd')
 
 
 GATE_TYPES = [
-    'RectangleGate'
+    'RectangleGate',
+    'PolygonGate'
 ]
 
 
@@ -64,6 +66,34 @@ class Dimension(object):
             raise ValueError(
                 'Dimension name not found (line %d)' % fcs_dim_els.sourceline
             )
+
+
+class Vertex(object):
+    def __init__(self, vert_element, gating_namespace, data_type_namespace):
+        self.coordinates = []
+
+        coord_els = vert_element.findall(
+            '%s:coordinate' % gating_namespace,
+            namespaces=vert_element.nsmap
+        )
+
+        if len(coord_els) != 2:
+            raise ValueError(
+                'Vertex must contain 2 coordinate values (line %d)' % vert_element.sourceline
+            )
+
+        # should be 0 or only 1 'min' attribute, but xpath returns a list, so...
+        for coord_el in coord_els:
+            value_attribs = coord_el.xpath(
+                '@%s:value' % data_type_namespace,
+                namespaces=vert_element.nsmap
+            )
+            if len(value_attribs) != 1:
+                raise ValueError(
+                    'Vertex coordinate must have only 1 value (line %d)' % coord_el.sourceline
+                )
+
+            self.coordinates.append(float(value_attribs[0]))
 
 
 class Gate(ABC):
@@ -205,6 +235,104 @@ class RectangleGate(Gate):
                 results = np.bitwise_and(results, events[:, d_idx] >= dim_min[i])
             if dim_max[i] is not None:
                 results = np.bitwise_and(results, events[:, d_idx] < dim_max[i])
+
+        return results
+
+
+class PolygonGate(Gate):
+    """
+    Represents a GatingML Polygon Gate
+
+    A PolygonGate must have exactly 2 dimensions, and must specify at least
+    three vertices. Polygons can have crossing boundaries, and interior regions
+    are defined by the winding number method:
+        https://en.wikipedia.org/wiki/Winding_number
+    """
+    def __init__(
+            self,
+            gate_element,
+            gating_namespace,
+            data_type_namespace,
+            gating_strategy
+    ):
+        super().__init__(
+            gate_element,
+            gating_namespace,
+            data_type_namespace,
+            gating_strategy
+        )
+        vert_els = gate_element.findall(
+            '%s:vertex' % gating_namespace,
+            namespaces=gate_element.nsmap
+        )
+
+        self.vertices = []
+
+        for vert_el in vert_els:
+            vert = Vertex(vert_el, gating_namespace, data_type_namespace)
+            self.vertices.append(vert)
+
+    def apply(self, sample):
+        events = sample.get_raw_events()
+        pnn_labels = sample.pnn_labels
+
+        if events.shape[1] != len(pnn_labels):
+            raise ValueError(
+                "Number of FCS dimensions (%d) does not match label count (%d)"
+                % (events.shape[1], len(pnn_labels))
+            )
+
+        dim_idx = []
+        dim_comp_refs = set()
+
+        for dim in self.dimensions:
+            if dim.compensation_ref not in [None, 'uncompensated']:
+                dim_comp_refs.add(dim.compensation_ref)
+
+            dim_idx.append(pnn_labels.index(dim.label))
+
+        spill = None
+        if len(dim_comp_refs) > 1:
+            raise NotImplementedError(
+                "Mixed compensation between individual channels is not "
+                "implemented. Never seen it, but if you are reading this "
+                "message, submit an issue to have it implemented."
+            )
+        elif len(dim_comp_refs) == 1 and 'FCS' in dim_comp_refs:
+            meta = sample.get_metadata()
+            if 'spill' not in meta or 'spillover' not in meta:
+                pass
+            elif 'spillover' in meta:  # preferred, per FCS standard
+                spill = meta['spillover']
+            elif 'spill' in meta:
+                spill = meta['spill']
+        else:
+            # TODO: implement lookup in parent for specified comp-ref
+            pass
+
+        if spill is not None:
+            events = events.copy()
+            spill = utils.parse_compensation_matrix(
+                spill,
+                sample.pnn_labels,
+                null_channels=sample.null_channels
+            )
+            indices = spill[0, :]  # headers are channel #'s
+            indices = [int(i - 1) for i in indices]
+            comp_matrix = spill[1:, :]  # just the matrix
+            events = flowutils.compensate.compensate(
+                events,
+                comp_matrix,
+                indices
+            )
+
+        path_verts = []
+
+        for vert in self.vertices:
+            path_verts.append(vert.coordinates)
+
+        poly_path = Path(path_verts)
+        results = poly_path.contains_points(events[:, dim_idx])
 
         return results
 
