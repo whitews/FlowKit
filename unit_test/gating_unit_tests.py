@@ -80,3 +80,21 @@ class RangeGateTestCase(unittest.TestCase):
         result = gs.gate_sample(sample, 'Polygon1')
 
         np.testing.assert_array_equal(truth, result['Polygon1'])
+
+    @staticmethod
+    def test_ellipse1_gate():
+        gml_path = '/home/swhite/git/flowkit/examples/gate_ref/gml_ellipse1_gate.xml'
+        fcs_path = '/home/swhite/git/flowkit/examples/gate_ref/data1.fcs'
+        res_path = '/home/swhite/git/flowkit/examples/gate_ref/Results_Ellipse1.txt'
+
+        gs = GatingStrategy(gml_path)
+        sample = Sample(
+            fcs_path,
+            filter_anomalous_events=False,
+            filter_negative_scatter=False
+        )
+        truth = np.loadtxt(res_path, dtype=np.bool)
+
+        result = gs.gate_sample(sample, 'Ellipse1')
+
+        np.testing.assert_array_equal(truth, result['Ellipse1'])
