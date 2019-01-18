@@ -11,9 +11,9 @@ from flowkit import Sample, GatingStrategy
 class RangeGateTestCase(unittest.TestCase):
     @staticmethod
     def test_min_range_gate():
-        gml_path = '/home/swhite/git/flowkit/examples/gate_ref/gml_range_gate.xml'
-        fcs_path = '/home/swhite/git/flowkit/examples/gate_ref/data1.fcs'
-        res_path = '/home/swhite/git/flowkit/examples/gate_ref/Results_Range1.txt'
+        gml_path = 'examples/gate_ref/gml_range_gate.xml'
+        fcs_path = 'examples/gate_ref/data1.fcs'
+        res_path = 'examples/gate_ref/Results_Range1.txt'
 
         gs = GatingStrategy(gml_path)
         sample = Sample(
@@ -29,9 +29,9 @@ class RangeGateTestCase(unittest.TestCase):
 
     @staticmethod
     def test_rect1_gate():
-        gml_path = '/home/swhite/git/flowkit/examples/gate_ref/gml_rect1_gate.xml'
-        fcs_path = '/home/swhite/git/flowkit/examples/gate_ref/data1.fcs'
-        res_path = '/home/swhite/git/flowkit/examples/gate_ref/Results_Rectangle1.txt'
+        gml_path = 'examples/gate_ref/gml_rect1_gate.xml'
+        fcs_path = 'examples/gate_ref/data1.fcs'
+        res_path = 'examples/gate_ref/Results_Rectangle1.txt'
 
         gs = GatingStrategy(gml_path)
         sample = Sample(
@@ -47,9 +47,9 @@ class RangeGateTestCase(unittest.TestCase):
 
     @staticmethod
     def test_rect2_gate():
-        gml_path = '/home/swhite/git/flowkit/examples/gate_ref/gml_rect2_gate.xml'
-        fcs_path = '/home/swhite/git/flowkit/examples/gate_ref/data1.fcs'
-        res_path = '/home/swhite/git/flowkit/examples/gate_ref/Results_Rectangle2.txt'
+        gml_path = 'examples/gate_ref/gml_rect2_gate.xml'
+        fcs_path = 'examples/gate_ref/data1.fcs'
+        res_path = 'examples/gate_ref/Results_Rectangle2.txt'
 
         gs = GatingStrategy(gml_path)
         sample = Sample(
@@ -65,9 +65,9 @@ class RangeGateTestCase(unittest.TestCase):
 
     @staticmethod
     def test_poly1_gate():
-        gml_path = '/home/swhite/git/flowkit/examples/gate_ref/gml_poly1_gate.xml'
-        fcs_path = '/home/swhite/git/flowkit/examples/gate_ref/data1.fcs'
-        res_path = '/home/swhite/git/flowkit/examples/gate_ref/Results_Polygon1.txt'
+        gml_path = 'examples/gate_ref/gml_poly1_gate.xml'
+        fcs_path = 'examples/gate_ref/data1.fcs'
+        res_path = 'examples/gate_ref/Results_Polygon1.txt'
 
         gs = GatingStrategy(gml_path)
         sample = Sample(
@@ -83,9 +83,9 @@ class RangeGateTestCase(unittest.TestCase):
 
     @staticmethod
     def test_ellipse1_gate():
-        gml_path = '/home/swhite/git/flowkit/examples/gate_ref/gml_ellipse1_gate.xml'
-        fcs_path = '/home/swhite/git/flowkit/examples/gate_ref/data1.fcs'
-        res_path = '/home/swhite/git/flowkit/examples/gate_ref/Results_Ellipse1.txt'
+        gml_path = 'examples/gate_ref/gml_ellipse1_gate.xml'
+        fcs_path = 'examples/gate_ref/data1.fcs'
+        res_path = 'examples/gate_ref/Results_Ellipse1.txt'
 
         gs = GatingStrategy(gml_path)
         sample = Sample(

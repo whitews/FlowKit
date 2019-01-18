@@ -97,7 +97,7 @@ class LoadSampleTestCase(unittest.TestCase):
 
         self.assertIsNotNone(sample._transformed_events)
 
-        sample.plot_scatter(4, 5, contours=True)
+        # sample.plot_scatter(4, 5, contours=True)
 
 
 if __name__ == '__main__':
