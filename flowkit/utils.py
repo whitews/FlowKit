@@ -6,6 +6,7 @@ import pandas as pd
 from scipy import stats
 from matplotlib import cm, colors
 from matplotlib import pyplot
+from matplotlib.patches import Ellipse
 import colorsys
 
 
@@ -425,3 +426,53 @@ def filter_anomalous_events(
             pyplot.show()
 
     return np.where(bad_events)[0]
+
+
+def calculate_ellipse(center_x, center_y, covariance_matrix, n_std_dev=3):
+    values, vectors = np.linalg.eigh(covariance_matrix)
+    order = values.argsort()[::-1]
+    values = values[order]
+    vectors = vectors[:, order]
+
+    theta = np.degrees(np.arctan2(*vectors[:, 0][::-1]))
+
+    # make all angles positive
+    if theta < 0:
+        theta += 360
+
+    # Width and height are "full" widths, not radius
+    width, height = 2.0 * n_std_dev * np.sqrt(values)
+
+    ellipse = Ellipse(
+        xy=(center_x, center_y),
+        width=width,
+        height=height,
+        angle=float(theta)
+    )
+
+    return ellipse
+
+
+def points_in_ellipse(ellipse, points):
+    """
+    Returns boolean array for whether an array of 2-dimensional points are
+    within the given ellipse.
+    :param ellipse: Matplotlib Ellipse instance
+    :param points: NumPy array of 2-dimensional points
+    :return:
+    """
+    # Note: this was written as matplotlib's 'contains_points' method for an
+    # ellipse gave erroneous results
+
+    cos_angle = np.cos(np.radians(180.0 - ellipse.angle))
+    sin_angle = np.sin(np.radians(180.0 - ellipse.angle))
+
+    x_from_center = points[:, 0] - ellipse.center[0]
+    y_from_center = points[:, 1] - ellipse.center[1]
+
+    xct = x_from_center * cos_angle - y_from_center * sin_angle
+    yct = x_from_center * sin_angle + y_from_center * cos_angle
+
+    rad_cc = (xct ** 2 / (ellipse.width / 2.) ** 2) + (yct ** 2 / (ellipse.height / 2.) ** 2)
+
+    return rad_cc <= 1.0
