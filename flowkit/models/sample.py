@@ -215,7 +215,8 @@ class Sample(object):
 
         bad_idx = np.unique(np.concatenate([neg_scatter_idx, anomalous_idx]))
         bad_count = bad_idx.shape[0]
-        shuffled_indices = np.delete(shuffled_indices, bad_idx)
+        if bad_count > 0:
+            shuffled_indices = np.delete(shuffled_indices, bad_idx)
 
         if (raw_event_count - bad_count) < subsample_count:
             # if total event count is less than requested subsample count,
