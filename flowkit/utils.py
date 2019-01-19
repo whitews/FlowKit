@@ -476,3 +476,59 @@ def points_in_ellipse(ellipse, points):
     rad_cc = (xct ** 2 / (ellipse.width / 2.) ** 2) + (yct ** 2 / (ellipse.height / 2.) ** 2)
 
     return rad_cc <= 1.0
+
+
+def points_in_polygon(poly_vertices, points):
+    """
+    Determines whether points in an array are inside a polygon. Points on the
+    edge of the polygon are considered inclusive. This function uses the
+    winding number method and is robust to complex polygons with crossing
+    boundaries.
+
+    This implementation is ported and modified based on the implentation in C
+    found on the web site:
+
+        http://geomalgorithms.com/a03-_inclusion.html
+
+    Original copyright notice:
+        Copyright 2000 softSurfer, 2012 Dan Sunday
+
+    :param poly_vertices: Polygon vertices (NumPy array of 2-D points)
+    :param points: Points to test for polygon inclusion
+    :return: List of boolean values for each point. True is inside polygon.
+    """
+    def point_is_left(point_a, point_b, test_point):
+        is_left = (point_b[0] - point_a[0]) * (test_point[1] - point_a[1]) - \
+                  (test_point[0] - point_a[0]) * (point_b[1] - point_a[1])
+        return is_left
+
+    bool_results = []
+
+    for p in points:
+        wind_count = 0
+
+        # loop through all edges of the polygon
+        for i in range(0, len(poly_vertices)):  
+            # edge from poly_vertices[i] to poly_vertices[i+1]
+            vert_a = poly_vertices[i]
+            if i >= len(poly_vertices) - 1:
+                vert_b = poly_vertices[0]
+            else:
+                vert_b = poly_vertices[i + 1]
+
+            if vert_a[1] <= p[1]:
+                if p[1] < vert_b[1]:
+                    # point crosses & edge travels upward
+                    if point_is_left(vert_a, vert_b, p) > 0:
+                        # point is left of edge
+                        wind_count += 1  # valid up intersection
+            else:
+                if vert_b[1] <= p[1]:
+                    # point crosses & edge travels downward
+                    if point_is_left(vert_a, vert_b, p) < 0:
+                        # point is right of edge
+                        wind_count -= 1  # valid down intersect
+        
+        bool_results.append(wind_count != 0)
+    
+    return bool_results

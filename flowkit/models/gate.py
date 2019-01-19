@@ -4,7 +4,6 @@ from abc import ABC, abstractmethod
 # noinspection PyUnresolvedReferences
 from lxml import etree, objectify
 import numpy as np
-from matplotlib.path import Path
 from flowkit import utils
 import flowutils
 
@@ -332,8 +331,7 @@ class PolygonGate(Gate):
         for vert in self.vertices:
             path_verts.append(vert.coordinates)
 
-        poly_path = Path(path_verts)
-        results = poly_path.contains_points(events[:, dim_idx])
+        results = utils.points_in_polygon(path_verts, events[:, dim_idx])
 
         return results
 
