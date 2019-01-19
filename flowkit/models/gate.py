@@ -136,6 +136,47 @@ class Gate(ABC):
     def apply(self, sample):
         pass
 
+    @staticmethod
+    def compensate_sample(dim_comp_refs, sample):
+        events = sample.get_raw_events()
+
+        spill = None
+        if len(dim_comp_refs) > 1:
+            raise NotImplementedError(
+                "Mixed compensation between individual channels is not "
+                "implemented. Never seen it, but if you are reading this "
+                "message, submit an issue to have it implemented."
+            )
+        elif len(dim_comp_refs) == 1 and 'FCS' in dim_comp_refs:
+            meta = sample.get_metadata()
+            if 'spill' not in meta or 'spillover' not in meta:
+                pass
+            elif 'spillover' in meta:  # preferred, per FCS standard
+                spill = meta['spillover']
+            elif 'spill' in meta:
+                spill = meta['spill']
+        else:
+            # TODO: implement lookup in parent for specified comp-ref
+            pass
+
+        if spill is not None:
+            events = events.copy()
+            spill = utils.parse_compensation_matrix(
+                spill,
+                sample.pnn_labels,
+                null_channels=sample.null_channels
+            )
+            indices = spill[0, :]  # headers are channel #'s
+            indices = [int(i - 1) for i in indices]
+            comp_matrix = spill[1:, :]  # just the matrix
+            events = flowutils.compensate.compensate(
+                events,
+                comp_matrix,
+                indices
+            )
+
+        return events
+
 
 class RectangleGate(Gate):
     """
@@ -193,40 +234,7 @@ class RectangleGate(Gate):
             dim_min.append(dim.min)
             dim_max.append(dim.max)
 
-        spill = None
-        if len(dim_comp_refs) > 1:
-            raise NotImplementedError(
-                "Mixed compensation between individual channels is not "
-                "implemented. Never seen it, but if you are reading this "
-                "message, submit an issue to have it implemented."
-            )
-        elif len(dim_comp_refs) == 1 and 'FCS' in dim_comp_refs:
-            meta = sample.get_metadata()
-            if 'spill' not in meta or 'spillover' not in meta:
-                pass
-            elif 'spillover' in meta:  # preferred, per FCS standard
-                spill = meta['spillover']
-            elif 'spill' in meta:
-                spill = meta['spill']
-        else:
-            # TODO: implement lookup in parent for specified comp-ref
-            pass
-
-        if spill is not None:
-            events = events.copy()
-            spill = utils.parse_compensation_matrix(
-                spill,
-                sample.pnn_labels,
-                null_channels=sample.null_channels
-            )
-            indices = spill[0, :]  # headers are channel #'s
-            indices = [int(i - 1) for i in indices]
-            comp_matrix = spill[1:, :]  # just the matrix
-            events = flowutils.compensate.compensate(
-                events,
-                comp_matrix,
-                indices
-            )
+        events = self.compensate_sample(dim_comp_refs, sample)
 
         results = np.ones(events.shape[0], dtype=np.bool)
 
@@ -291,40 +299,7 @@ class PolygonGate(Gate):
 
             dim_idx.append(pnn_labels.index(dim.label))
 
-        spill = None
-        if len(dim_comp_refs) > 1:
-            raise NotImplementedError(
-                "Mixed compensation between individual channels is not "
-                "implemented. Never seen it, but if you are reading this "
-                "message, submit an issue to have it implemented."
-            )
-        elif len(dim_comp_refs) == 1 and 'FCS' in dim_comp_refs:
-            meta = sample.get_metadata()
-            if 'spill' not in meta or 'spillover' not in meta:
-                pass
-            elif 'spillover' in meta:  # preferred, per FCS standard
-                spill = meta['spillover']
-            elif 'spill' in meta:
-                spill = meta['spill']
-        else:
-            # TODO: implement lookup in parent for specified comp-ref
-            pass
-
-        if spill is not None:
-            events = events.copy()
-            spill = utils.parse_compensation_matrix(
-                spill,
-                sample.pnn_labels,
-                null_channels=sample.null_channels
-            )
-            indices = spill[0, :]  # headers are channel #'s
-            indices = [int(i - 1) for i in indices]
-            comp_matrix = spill[1:, :]  # just the matrix
-            events = flowutils.compensate.compensate(
-                events,
-                comp_matrix,
-                indices
-            )
+        events = self.compensate_sample(dim_comp_refs, sample)
 
         path_verts = []
 
@@ -462,40 +437,7 @@ class EllipsoidGate(Gate):
 
             dim_idx.append(pnn_labels.index(dim.label))
 
-        spill = None
-        if len(dim_comp_refs) > 1:
-            raise NotImplementedError(
-                "Mixed compensation between individual channels is not "
-                "implemented. Never seen it, but if you are reading this "
-                "message, submit an issue to have it implemented."
-            )
-        elif len(dim_comp_refs) == 1 and 'FCS' in dim_comp_refs:
-            meta = sample.get_metadata()
-            if 'spill' not in meta or 'spillover' not in meta:
-                pass
-            elif 'spillover' in meta:  # preferred, per FCS standard
-                spill = meta['spillover']
-            elif 'spill' in meta:
-                spill = meta['spill']
-        else:
-            # TODO: implement lookup in parent for specified comp-ref
-            pass
-
-        if spill is not None:
-            events = events.copy()
-            spill = utils.parse_compensation_matrix(
-                spill,
-                sample.pnn_labels,
-                null_channels=sample.null_channels
-            )
-            indices = spill[0, :]  # headers are channel #'s
-            indices = [int(i - 1) for i in indices]
-            comp_matrix = spill[1:, :]  # just the matrix
-            events = flowutils.compensate.compensate(
-                events,
-                comp_matrix,
-                indices
-            )
+        events = self.compensate_sample(dim_comp_refs, sample)
 
         ellipse = utils.calculate_ellipse(
             self.coordinates[0],
