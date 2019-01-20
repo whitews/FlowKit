@@ -100,6 +100,24 @@ class RangeGateTestCase(unittest.TestCase):
         np.testing.assert_array_equal(truth, result['Polygon2'])
 
     @staticmethod
+    def test_poly3_non_solid_gate():
+        gml_path = 'examples/gate_ref/gml_poly3ns_gate.xml'
+        fcs_path = 'examples/gate_ref/data1.fcs'
+        res_path = 'examples/gate_ref/Results_Polygon3NS.txt'
+
+        gs = GatingStrategy(gml_path)
+        sample = Sample(
+            fcs_path,
+            filter_anomalous_events=False,
+            filter_negative_scatter=False
+        )
+        truth = np.loadtxt(res_path, dtype=np.bool)
+
+        result = gs.gate_sample(sample, 'Polygon3NS')
+
+        np.testing.assert_array_equal(truth, result['Polygon3NS'])
+
+    @staticmethod
     def test_ellipse1_gate():
         gml_path = 'examples/gate_ref/gml_ellipse1_gate.xml'
         fcs_path = 'examples/gate_ref/data1.fcs'
