@@ -483,7 +483,7 @@ def points_in_polygon(poly_vertices, points):
     Determines whether points in an array are inside a polygon. Points on the
     edge of the polygon are considered inclusive. This function uses the
     winding number method and is robust to complex polygons with crossing
-    boundaries.
+    boundaries, including the presence of 'holes' created by boundary crosses.
 
     This implementation is ported and modified based on the implentation in C
     found on the web site:
@@ -528,7 +528,7 @@ def points_in_polygon(poly_vertices, points):
                     if point_is_left(vert_a, vert_b, p) < 0:
                         # point is right of edge
                         wind_count -= 1  # valid down intersect
-        
-        bool_results.append(wind_count != 0)
+
+        bool_results.append((wind_count % 2) != 0)
     
     return bool_results
