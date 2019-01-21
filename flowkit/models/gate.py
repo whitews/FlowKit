@@ -32,7 +32,7 @@ class Dimension(object):
         self.max = None
 
         # should be 0 or only 1 'min' attribute, but xpath returns a list, so...
-        min_attribs = self.id = dim_element.xpath(
+        min_attribs = dim_element.xpath(
             '@%s:min' % gating_namespace,
             namespaces=dim_element.nsmap
         )
@@ -41,7 +41,7 @@ class Dimension(object):
             self.min = float(min_attribs[0])
 
         # ditto for 'max' attribute, 0 or 1 value
-        max_attribs = self.id = dim_element.xpath(
+        max_attribs = dim_element.xpath(
             '@%s:max' % gating_namespace,
             namespaces=dim_element.nsmap
         )
@@ -509,7 +509,7 @@ class GatingStrategy(object):
                     )
                 self.gates[g.id] = g
 
-    def gate_sample(self, sample, gate_id):
+    def gate_sample(self, sample, gate_id=None):
         """
         Apply a gate to a sample, returning a dictionary where gate ID is the
         key, and the value contains the event indices for events in the Sample
