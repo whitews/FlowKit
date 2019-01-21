@@ -520,17 +520,18 @@ class GatingStrategy(object):
         :param sample: an FCS Sample instance
         :param gate_id: A gate ID to evaluate on given Sample. If None, all gates
             will be evaluated
-        :return: Dictionary where keys are gate IDs, values are event indices
-            in the given Sample which are contained by the gate
+        :return: Dictionary where keys are gate IDs, values are boolean arrays
+            of length matching the number sample events. Events in the gate are
+            True.
         """
         if gate_id is None:
             gates = self.gates
         else:
-            gates = [self.gates[gate_id]]
+            gates = {gate_id: self.gates[gate_id]}
 
         results = {}
 
-        for gate in gates:
-            results[gate_id] = gate.apply(sample)
+        for g_id, gate in gates.items():
+            results[g_id] = gate.apply(sample)
 
         return results
