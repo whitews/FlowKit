@@ -152,3 +152,30 @@ class RangeGateTestCase(unittest.TestCase):
         result = gs.gate_sample(sample, 'Range2')
 
         np.testing.assert_array_equal(truth, result['Range2'])
+
+    @staticmethod
+    def test_quadrant1_gate():
+        gml_path = 'examples/gate_ref/gml_quadrant1_gate.xml'
+        fcs_path = 'examples/gate_ref/data1.fcs'
+        res1_path = 'examples/gate_ref/Results_FL2N-FL4N.txt'
+        res2_path = 'examples/gate_ref/Results_FL2N-FL4P.txt'
+        res3_path = 'examples/gate_ref/Results_FL2P-FL4N.txt'
+        res4_path = 'examples/gate_ref/Results_FL2P-FL4P.txt'
+
+        gs = GatingStrategy(gml_path)
+        sample = Sample(
+            fcs_path,
+            filter_anomalous_events=False,
+            filter_negative_scatter=False
+        )
+        truth1 = np.loadtxt(res1_path, dtype=np.bool)
+        truth2 = np.loadtxt(res2_path, dtype=np.bool)
+        truth3 = np.loadtxt(res3_path, dtype=np.bool)
+        truth4 = np.loadtxt(res4_path, dtype=np.bool)
+
+        result = gs.gate_sample(sample)
+
+        np.testing.assert_array_equal(truth1, result['Quadrant1']['FL2N-FL4N'])
+        np.testing.assert_array_equal(truth2, result['Quadrant1']['FL2N-FL4P'])
+        np.testing.assert_array_equal(truth3, result['Quadrant1']['FL2P-FL4N'])
+        np.testing.assert_array_equal(truth4, result['Quadrant1']['FL2P-FL4P'])
