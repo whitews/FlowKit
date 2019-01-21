@@ -15,12 +15,24 @@ gating_ml_xsd = os.path.join(resource_path, 'Gating-ML.v2.0.xsd')
 GATE_TYPES = [
     'RectangleGate',
     'PolygonGate',
-    'EllipsoidGate'
+    'EllipsoidGate',
+    'QuadrantGate'
 ]
 
 
 class Dimension(object):
     def __init__(self, dim_element, gating_namespace, data_type_namespace):
+        # check for presence of optional 'id' (present in quad gate dividers)
+        try:
+            self.id = str(
+                dim_element.xpath(
+                    '@%s:id' % gating_namespace,
+                    namespaces=dim_element.nsmap
+                )[0]
+            )
+        except IndexError:
+            self.id = None
+
         self.compensation_ref = str(
             dim_element.xpath(
                 '@%s:compensation-ref' % gating_namespace,
@@ -30,6 +42,7 @@ class Dimension(object):
 
         self.min = None
         self.max = None
+        self.values = []  # quad gate dims can have multiple values
 
         # should be 0 or only 1 'min' attribute, but xpath returns a list, so...
         min_attribs = dim_element.xpath(
@@ -48,6 +61,15 @@ class Dimension(object):
 
         if len(max_attribs) > 0:
             self.max = float(max_attribs[0])
+
+        # values in gating namespace, ok if not present
+        value_els = dim_element.findall(
+            '%s:value' % gating_namespace,
+            namespaces=dim_element.nsmap
+        )
+
+        for value in value_els:
+            self.values.append(float(value.text))
 
         # label be here
         fcs_dim_els = dim_element.find(
@@ -121,10 +143,17 @@ class Gate(ABC):
         else:
             self.parent = parent[0]
 
+        # most gates specify dimensions in the 'dimension' tag,
+        # but quad gates specify dimensions in the 'divider' tag
         dim_els = gate_element.findall(
-            '%s:dimension' % gating_namespace,
+            '%s:divider' % gating_namespace,
             namespaces=gate_element.nsmap
         )
+        if len(dim_els) == 0:
+            dim_els = gate_element.findall(
+                '%s:dimension' % gating_namespace,
+                namespaces=gate_element.nsmap
+            )
 
         self.dimensions = []
 
@@ -447,6 +476,152 @@ class EllipsoidGate(Gate):
         )
 
         results = utils.points_in_ellipse(ellipse, events[:, dim_idx])
+
+        return results
+
+
+class QuadrantGate(Gate):
+    """
+    Represents a GatingML Quadrant Gate
+
+    A QuadrantGate must have at least 1 divider, and must specify the labels
+    of the resulting quadrants the dividers produce. Quadrant gates are
+    different from other gate types in that they are actually a collection of
+    gates (quadrants), though even the term quadrant is misleading as they can
+    divide a plane into more than 4 sections.
+    """
+    def __init__(
+            self,
+            gate_element,
+            gating_namespace,
+            data_type_namespace,
+            gating_strategy
+    ):
+        super().__init__(
+            gate_element,
+            gating_namespace,
+            data_type_namespace,
+            gating_strategy
+        )
+
+        # First, we'll check dimension count
+        if len(self.dimensions) < 1:
+            raise ValueError(
+                'Quadrant gates must have at least 1 divider (line %d)' % gate_element.sourceline
+            )
+
+        # Next, we'll parse the Quadrant elements, each containing an
+        # id attribute, and 1 or more 'position' elements. Each position
+        # element has a 'divider-ref' and 'location' attribute.
+        quadrant_els = gate_element.findall(
+            '%s:Quadrant' % gating_namespace,
+            namespaces=gate_element.nsmap
+        )
+
+        self.quadrants = {}
+
+        for quadrant_el in quadrant_els:
+            quad_id_attribs = quadrant_el.xpath(
+                '@%s:id' % gating_namespace,
+                namespaces=gate_element.nsmap
+            )
+
+            self.quadrants[quad_id_attribs[0]] = []
+
+            position_els = quadrant_el.findall(
+                '%s:position' % gating_namespace,
+                namespaces=gate_element.nsmap
+            )
+
+            for pos_el in position_els:
+                divider_ref_attribs = pos_el.xpath(
+                    '@%s:divider_ref' % gating_namespace,
+                    namespaces=gate_element.nsmap
+                )
+                location_attribs = pos_el.xpath(
+                    '@%s:location' % gating_namespace,
+                    namespaces=gate_element.nsmap
+                )
+
+                divider = divider_ref_attribs[0]
+                location = float(location_attribs[0])
+                q_min = None
+                q_max = None
+                dim_label = None
+
+                for dim in self.dimensions:
+                    if dim.id != divider:
+                        continue
+                    else:
+                        dim_label = dim.label
+
+                    for v in sorted(dim.values):
+                        if v > location:
+                            q_max = v
+
+                            # once we have a max value, no need to
+                            break
+                        elif v <= location:
+                            q_min = v
+
+                if dim_label is None:
+                    raise ValueError(
+                        'Quadrant must define a divider reference (line %d)' % pos_el.sourceline
+                    )
+
+                self.quadrants[quad_id_attribs[0]].append(
+                    {
+                        'divider': divider,
+                        'dimension': dim_label,
+                        'location': location,
+                        'min': q_min,
+                        'max': q_max
+                    }
+                )
+
+    def apply(self, sample):
+        events = sample.get_raw_events()
+        pnn_labels = sample.pnn_labels
+
+        if events.shape[1] != len(pnn_labels):
+            raise ValueError(
+                "Number of FCS dimensions (%d) does not match label count (%d)"
+                % (events.shape[1], len(pnn_labels))
+            )
+
+        dim_idx = []
+        dim_comp_refs = set()
+
+        for dim in self.dimensions:
+            if dim.compensation_ref not in [None, 'uncompensated']:
+                dim_comp_refs.add(dim.compensation_ref)
+
+            dim_idx.append(pnn_labels.index(dim.label))
+
+        events = self.compensate_sample(dim_comp_refs, sample)
+
+        results = {}
+
+        for q_id, quadrant in self.quadrants.items():
+            q_results = np.ones(events.shape[0], dtype=np.bool)
+
+            # quadrant is a list of dicts containing quadrant bounds and
+            # the referenced dimension
+            for bound in quadrant:
+                dim_idx = pnn_labels.index(bound['dimension'])
+
+                if bound['min'] is not None:
+                    q_results = np.bitwise_and(
+                        q_results,
+                        events[:, dim_idx] >= bound['min']
+                    )
+                if bound['max'] is not None:
+                    q_results = np.bitwise_and(
+                        q_results,
+                        events[:, dim_idx] < bound['max']
+                    )
+
+                results[q_id] = q_results
 
         return results
 
