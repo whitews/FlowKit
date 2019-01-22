@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<gating:Gating-ML
+    xmlns:gating="http://www.isac-net.org/std/Gating-ML/v2.0/gating"
+    xmlns:transforms="http://www.isac-net.org/std/Gating-ML/v2.0/transformations"
+    xmlns:data-type="http://www.isac-net.org/std/Gating-ML/v2.0/datatypes">
+
+    <transforms:transformation transforms:id="FL2Rat2">
+        <transforms:fratio transforms:A="2.7" transforms:B="-100" transforms:C="-300">
+            <data-type:fcs-dimension data-type:name="FL2-H" />
+            <data-type:fcs-dimension data-type:name="FL2-A" />
+        </transforms:fratio>
+    </transforms:transformation>
+
+    <gating:RectangleGate gating:id="RatRange2">
+        <gating:dimension gating:compensation-ref="uncompensated" gating:min="0.95" gating:max="1.05">
+            <data-type:new-dimension data-type:transformation-ref="FL2Rat2" />
+        </gating:dimension>
+    </gating:RectangleGate>
+
+
+</gating:Gating-ML>
