@@ -179,3 +179,21 @@ class RangeGateTestCase(unittest.TestCase):
         np.testing.assert_array_equal(truth2, result['Quadrant1']['FL2N-FL4P'])
         np.testing.assert_array_equal(truth3, result['Quadrant1']['FL2P-FL4N'])
         np.testing.assert_array_equal(truth4, result['Quadrant1']['FL2P-FL4P'])
+
+    @staticmethod
+    def test_ratio_range1_gate():
+        gml_path = 'examples/gate_ref/gml_ratio_range1_gate.xml'
+        fcs_path = 'examples/gate_ref/data1.fcs'
+        res_path = 'examples/gate_ref/Results_RatRange1.txt'
+
+        gs = GatingStrategy(gml_path)
+        sample = Sample(
+            fcs_path,
+            filter_anomalous_events=False,
+            filter_negative_scatter=False
+        )
+        truth = np.loadtxt(res_path, dtype=np.bool)
+
+        result = gs.gate_sample(sample, 'RatRange1')
+
+        np.testing.assert_array_equal(truth, result['RatRange1'])
