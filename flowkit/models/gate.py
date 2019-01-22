@@ -33,12 +33,14 @@ class Dimension(object):
         except IndexError:
             self.id = None
 
+        self.label = None
         self.compensation_ref = str(
             dim_element.xpath(
                 '@%s:compensation-ref' % gating_namespace,
                 namespaces=dim_element.nsmap
             )[0]
         )
+        self.transformation_ref = None
 
         self.min = None
         self.max = None
@@ -77,17 +79,138 @@ class Dimension(object):
             namespaces=dim_element.nsmap
         )
 
-        label_attribs = fcs_dim_els.xpath(
-            '@%s:name' % data_type_namespace,
-            namespaces=dim_element.nsmap
+        # if no 'fcs-dimension' element is present, this might be a
+        # 'new-dimension'  made from a transformation on other dims
+        if fcs_dim_els is None:
+            new_dim_els = dim_element.find(
+                '%s:new-dimension' % data_type_namespace,
+                namespaces=dim_element.nsmap
+            )
+            if new_dim_els is None:
+                raise ValueError(
+                    "Dimension invalid: neither fcs-dimension or new-dimension "
+                    "tags found (line %d)" % dim_element.sourceline
+                )
+
+            # if we get here, there should be a 'transformation-ref' attribute
+            xform_attribs = new_dim_els.xpath(
+                '@%s:transformation-ref' % data_type_namespace,
+                namespaces=dim_element.nsmap
+            )
+
+            if len(xform_attribs) > 0:
+                self.transformation_ref = xform_attribs[0]
+        else:
+            label_attribs = fcs_dim_els.xpath(
+                '@%s:name' % data_type_namespace,
+                namespaces=dim_element.nsmap
+            )
+
+            if len(label_attribs) > 0:
+                self.label = label_attribs[0]
+            else:
+                raise ValueError(
+                    'Dimension name not found (line %d)' % fcs_dim_els.sourceline
+                )
+
+
+class Transform(ABC):
+    def __init__(
+            self,
+            xform_element,
+            xform_namespace,
+            gating_strategy
+    ):
+        self.__parent__ = gating_strategy
+        self.id = xform_element.xpath(
+            '@%s:id' % xform_namespace,
+            namespaces=xform_element.nsmap
+        )[0]
+
+        self.dimensions = []
+
+    @abstractmethod
+    def apply(self, sample):
+        pass
+
+
+class RatioTransform(Transform):
+    def __init__(
+            self,
+            xform_element,
+            xform_namespace,
+            data_type_namespace,
+            gating_strategy
+    ):
+        super().__init__(
+            xform_element,
+            xform_namespace,
+            gating_strategy
         )
 
-        if len(label_attribs) > 0:
-            self.label = label_attribs[0]
-        else:
+        f_ratio_els = xform_element.findall(
+            '%s:fratio' % xform_namespace,
+            namespaces=xform_element.nsmap
+        )
+
+        if len(f_ratio_els) == 0:
             raise ValueError(
-                'Dimension name not found (line %d)' % fcs_dim_els.sourceline
+                "Ratio transform must specify an 'fratio' element (line %d)" % xform_element.sourceline
             )
+
+        # f ratio transform has 3 parameters: A, B, and C
+        # these are attributes of the 'fratio' element
+        param_a_attribs = f_ratio_els[0].xpath(
+            '@%s:A' % xform_namespace,
+            namespaces=xform_element.nsmap
+        )
+        param_b_attribs = f_ratio_els[0].xpath(
+            '@%s:B' % xform_namespace,
+            namespaces=xform_element.nsmap
+        )
+        param_c_attribs = f_ratio_els[0].xpath(
+            '@%s:C' % xform_namespace,
+            namespaces=xform_element.nsmap
+        )
+        if len(param_a_attribs) == 0 or len(param_b_attribs) == 0 or len(param_c_attribs) == 0:
+            raise ValueError(
+                "Ratio transform must provide an 'A' attribute (line %d)" % f_ratio_els[0].sourceline
+            )
+
+        self.param_a = float(param_a_attribs[0])
+        self.param_b = float(param_b_attribs[0])
+        self.param_c = float(param_c_attribs[0])
+
+        fcs_dim_els = f_ratio_els[0].findall(
+            '%s:fcs-dimension' % data_type_namespace,
+            namespaces=xform_element.nsmap
+        )
+
+        for dim_el in fcs_dim_els:
+            label_attribs = dim_el.xpath(
+                '@%s:name' % data_type_namespace,
+                namespaces=xform_element.nsmap
+            )
+
+            if len(label_attribs) > 0:
+                label = label_attribs[0]
+            else:
+                raise ValueError(
+                    'Dimension name not found (line %d)' % dim_el.sourceline
+                )
+            self.dimensions.append(label)
+
+    def apply(self, sample):
+        events = sample.get_raw_events()
+
+        dim_x_idx = sample.pnn_labels.index(self.dimensions[0])
+        dim_y_idx = sample.pnn_labels.index(self.dimensions[1])
+        dim_x = events[:, dim_x_idx]
+        dim_y = events[:, dim_y_idx]
+
+        new_events = self.param_a * ((dim_x - self.param_b) / (dim_y - self.param_c))
+
+        return new_events
 
 
 class Vertex(object):
@@ -249,6 +372,7 @@ class RectangleGate(Gate):
         dim_min = []
         dim_max = []
         dim_comp_refs = set()
+        new_dims = []
 
         for dim in self.dimensions:
             if dim.compensation_ref not in [None, 'uncompensated']:
@@ -259,9 +383,13 @@ class RectangleGate(Gate):
                     "Gate '%s' does not include a min or max value" % self.id
                 )
 
-            dim_idx.append(pnn_labels.index(dim.label))
-            dim_min.append(dim.min)
-            dim_max.append(dim.max)
+            if dim.label is None:
+                # dimension is a transform of other dimensions
+                new_dims.append(dim)
+            else:
+                dim_idx.append(pnn_labels.index(dim.label))
+                dim_min.append(dim.min)
+                dim_max.append(dim.max)
 
         events = self.compensate_sample(dim_comp_refs, sample)
 
@@ -272,6 +400,16 @@ class RectangleGate(Gate):
                 results = np.bitwise_and(results, events[:, d_idx] >= dim_min[i])
             if dim_max[i] is not None:
                 results = np.bitwise_and(results, events[:, d_idx] < dim_max[i])
+
+        for new_dim in new_dims:
+            # new dimensions are defined by transformations of other dims
+            xform = self.__parent__.transformations[new_dim.transformation_ref]
+            xform_events = xform.apply(sample)
+
+            if new_dim.min is not None:
+                results = np.bitwise_and(results, xform_events >= new_dim.min)
+            if new_dim.max is not None:
+                results = np.bitwise_and(results, xform_events < new_dim.max)
 
         return results
 
@@ -646,6 +784,7 @@ class GatingStrategy(object):
 
         self._gating_ns = None
         self._data_type_ns = None
+        self._transform_ns = None
 
         root = xml_document.getroot()
 
@@ -657,6 +796,8 @@ class GatingStrategy(object):
                 self._gating_ns = ns
             elif url == 'http://www.isac-net.org/std/Gating-ML/v2.0/datatypes':
                 self._data_type_ns = ns
+            elif url == 'http://www.isac-net.org/std/Gating-ML/v2.0/transformations':
+                self._transform_ns = ns
 
         self._gate_types = [
             ':'.join([self._gating_ns, gt]) for gt in GATE_TYPES
@@ -683,6 +824,38 @@ class GatingStrategy(object):
                         "Duplicate gate IDs are not allowed." % g.id
                     )
                 self.gates[g.id] = g
+
+        # look for transformations
+        self.transformations = {}
+
+        if self._transform_ns is not None:
+            # types of transforms include:
+            #   - ratio
+            #   - ???
+            xform_els = root.findall(
+                '%s:transformation' % self._transform_ns,
+                namespaces=namespace_map
+            )
+
+            for xform_el in xform_els:
+                xform = None
+
+                # determine type of transformation
+                fratio_els = xform_el.findall(
+                    '%s:fratio' % self._transform_ns,
+                    namespaces=namespace_map
+                )
+
+                if len(fratio_els) > 0:
+                    xform = RatioTransform(
+                        xform_el,
+                        self._transform_ns,
+                        self._data_type_ns,
+                        self
+                    )
+
+                if xform is not None:
+                    self.transformations[xform.id] = xform
 
     def gate_sample(self, sample, gate_id=None):
         """
