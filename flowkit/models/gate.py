@@ -908,7 +908,12 @@ class BooleanGate(Gate):
             gate_ref_results = gate.apply(sample)
             all_gate_results.append(gate_ref_results)
 
-        results = np.logical_and.reduce(all_gate_results)
+        if self.type == 'and':
+            results = np.logical_and.reduce(all_gate_results)
+        elif self.type == 'or':
+            results = np.logical_or.reduce(all_gate_results)
+        else:
+            results = None
 
         return results
 
