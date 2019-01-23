@@ -389,3 +389,21 @@ class GatingMLTestCase(unittest.TestCase):
         result = gs.gate_sample(sample, 'Or2')
 
         np.testing.assert_array_equal(truth, result['Or2'])
+
+    @staticmethod
+    def test_matrix_poly4_gate():
+        gml_path = 'examples/gate_ref/gml_matrix_poly4_gate.xml'
+        fcs_path = 'examples/gate_ref/data1.fcs'
+        res_path = 'examples/gate_ref/Results_Polygon4.txt'
+
+        gs = GatingStrategy(gml_path)
+        sample = Sample(
+            fcs_path,
+            filter_anomalous_events=False,
+            filter_negative_scatter=False
+        )
+        truth = np.loadtxt(res_path, dtype=np.bool)
+
+        result = gs.gate_sample(sample, 'Polygon4')
+
+        np.testing.assert_array_equal(truth, result['Polygon4'])
