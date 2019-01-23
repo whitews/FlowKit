@@ -272,6 +272,105 @@ class LogTransform(Transform):
         return new_events
 
 
+class Matrix(object):
+    def __init__(
+        self,
+        matrix_element,
+        xform_namespace,
+        data_type_namespace,
+        gating_strategy
+    ):
+        self.__parent__ = gating_strategy
+        self.id = matrix_element.xpath(
+            '@%s:id' % xform_namespace,
+            namespaces=matrix_element.nsmap
+        )[0]
+
+        self.fluorochomes = []
+        self.detectors = []
+        self.matrix = []
+
+        fluoro_el = matrix_element.find(
+            '%s:fluorochromes' % xform_namespace,
+            namespaces=matrix_element.nsmap
+        )
+
+        fcs_dim_els = fluoro_el.findall(
+            '%s:fcs-dimension' % data_type_namespace,
+            namespaces=matrix_element.nsmap
+        )
+
+        for dim_el in fcs_dim_els:
+            label_attribs = dim_el.xpath(
+                '@%s:name' % data_type_namespace,
+                namespaces=matrix_element.nsmap
+            )
+
+            if len(label_attribs) > 0:
+                label = label_attribs[0]
+            else:
+                raise ValueError(
+                    'Dimension name not found (line %d)' % dim_el.sourceline
+                )
+            self.fluorochomes.append(label)
+
+        detectors_el = matrix_element.find(
+            '%s:detectors' % xform_namespace,
+            namespaces=matrix_element.nsmap
+        )
+
+        fcs_dim_els = detectors_el.findall(
+            '%s:fcs-dimension' % data_type_namespace,
+            namespaces=matrix_element.nsmap
+        )
+
+        for dim_el in fcs_dim_els:
+            label_attribs = dim_el.xpath(
+                '@%s:name' % data_type_namespace,
+                namespaces=matrix_element.nsmap
+            )
+
+            if len(label_attribs) > 0:
+                label = label_attribs[0]
+            else:
+                raise ValueError(
+                    'Dimension name not found (line %d)' % dim_el.sourceline
+                )
+            self.detectors.append(label)
+
+        spectrum_els = matrix_element.findall(
+            '%s:spectrum' % xform_namespace,
+            namespaces=matrix_element.nsmap
+        )
+
+        for spectrum_el in spectrum_els:
+            matrix_row = []
+
+            coefficient_els = spectrum_el.findall(
+                '%s:coefficient' % xform_namespace,
+                namespaces=matrix_element.nsmap
+            )
+
+            for co_el in coefficient_els:
+                value_attribs = co_el.xpath(
+                    '@%s:value' % xform_namespace,
+                    namespaces=matrix_element.nsmap
+                )
+                if len(value_attribs) != 1:
+                    raise ValueError(
+                        'Matrix coefficient must have only 1 value (line %d)' % co_el.sourceline
+                    )
+
+                matrix_row.append(float(value_attribs[0]))
+
+            self.matrix.append(matrix_row)
+
+        self.matrix = np.array(self.matrix)
+
+    def apply(self, sample):
+        pass
+
+
 class Vertex(object):
     def __init__(self, vert_element, gating_namespace, data_type_namespace):
         self.coordinates = []
@@ -347,12 +446,15 @@ class Gate(ABC):
     def apply(self, sample):
         pass
 
-    @staticmethod
-    def compensate_sample(dim_comp_refs, sample):
+    def compensate_sample(self, dim_comp_refs, sample):
         events = sample.get_raw_events()
 
         spill = None
-        if len(dim_comp_refs) > 1:
+        matrix = None
+
+        if len(dim_comp_refs) == 0:
+            pass
+        elif len(dim_comp_refs) > 1:
             raise NotImplementedError(
                 "Mixed compensation between individual channels is not "
                 "implemented. Never seen it, but if you are reading this "
@@ -367,8 +469,8 @@ class Gate(ABC):
             elif 'spill' in meta:
                 spill = meta['spill']
         else:
-            # TODO: implement lookup in parent for specified comp-ref
-            pass
+            # lookup specified comp-ref in parent strategy
+            matrix = self.__parent__.comp_matrices[list(dim_comp_refs)[0]]
 
         if spill is not None:
             events = events.copy()
@@ -383,6 +485,15 @@ class Gate(ABC):
             events = flowutils.compensate.compensate(
                 events,
                 comp_matrix,
+                indices
+            )
+        elif matrix is not None:
+            indices = [
+                sample.get_channel_index(d) for d in matrix.detectors
+            ]
+            events = flowutils.compensate.compensate(
+                events,
+                matrix.matrix,
                 indices
             )
 
@@ -527,7 +638,17 @@ class PolygonGate(Gate):
             if dim.compensation_ref not in [None, 'uncompensated']:
                 dim_comp_refs.add(dim.compensation_ref)
 
-            dim_idx.append(pnn_labels.index(dim.label))
+            try:
+                dim_idx.append(pnn_labels.index(dim.label))
+            except ValueError:
+                # for a referenced comp, the label may have been the
+                # fluorochrome instead of the channel's PnN label. If so,
+                # the referenced matrix object will also have the detector
+                # names that will match
+                matrix = self.__parent__.comp_matrices[dim.compensation_ref]
+                matrix_dim_idx = matrix.fluorochomes.index(dim.label)
+                detector = matrix.detectors[matrix_dim_idx]
+                dim_idx.append(pnn_labels.index(detector))
 
         events = self.compensate_sample(dim_comp_refs, sample)
 
@@ -1059,6 +1180,26 @@ class GatingStrategy(object):
 
                 if xform is not None:
                     self.transformations[xform.id] = xform
+
+        # look for comp matrices
+        self.comp_matrices = {}
+
+        if self._transform_ns is not None:
+            # comp matrices are defined by the 'spectrumMatrix' element
+            matrix_els = root.findall(
+                '%s:spectrumMatrix' % self._transform_ns,
+                namespaces=namespace_map
+            )
+
+            for matrix_el in matrix_els:
+                matrix = Matrix(
+                    matrix_el,
+                    self._transform_ns,
+                    self._data_type_ns,
+                    self
+                )
+
+                self.comp_matrices[matrix.id] = matrix
 
     def gate_sample(self, sample, gate_id=None):
         """
