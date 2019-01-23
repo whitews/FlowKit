@@ -927,8 +927,13 @@ class BooleanGate(Gate):
             results = np.logical_and.reduce(all_gate_results)
         elif self.type == 'or':
             results = np.logical_or.reduce(all_gate_results)
+        elif self.type == 'not':
+            # gml spec states only 1 reference is allowed for 'not' gate
+            results = np.logical_not(all_gate_results[0])
         else:
-            results = None
+            raise ValueError(
+                "Boolean gate must specify one of 'and', 'or', or 'not'"
+            )
 
         return results
 
