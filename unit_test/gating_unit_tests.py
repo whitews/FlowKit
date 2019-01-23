@@ -181,6 +181,36 @@ class GatingMLTestCase(unittest.TestCase):
         np.testing.assert_array_equal(truth4, result['Quadrant1']['FL2P-FL4P'])
 
     @staticmethod
+    def test_quadrant2_gate():
+        gml_path = 'examples/gate_ref/gml_quadrant2_gate.xml'
+        fcs_path = 'examples/gate_ref/data1.fcs'
+        res1_path = 'examples/gate_ref/Results_FSCN-SSCN.txt'
+        res2_path = 'examples/gate_ref/Results_FSCD-SSCN-FL1N.txt'
+        res3_path = 'examples/gate_ref/Results_FSCP-SSCN-FL1N.txt'
+        res4_path = 'examples/gate_ref/Results_FSCD-FL1P.txt'
+        res5_path = 'examples/gate_ref/Results_FSCN-SSCP-FL1P.txt'
+
+        gs = GatingStrategy(gml_path)
+        sample = Sample(
+            fcs_path,
+            filter_anomalous_events=False,
+            filter_negative_scatter=False
+        )
+        truth1 = np.loadtxt(res1_path, dtype=np.bool)
+        truth2 = np.loadtxt(res2_path, dtype=np.bool)
+        truth3 = np.loadtxt(res3_path, dtype=np.bool)
+        truth4 = np.loadtxt(res4_path, dtype=np.bool)
+        truth5 = np.loadtxt(res5_path, dtype=np.bool)
+
+        result = gs.gate_sample(sample)
+
+        np.testing.assert_array_equal(truth1, result['Quadrant2']['FSCN-SSCN'])
+        np.testing.assert_array_equal(truth2, result['Quadrant2']['FSCD-SSCN-FL1N'])
+        np.testing.assert_array_equal(truth3, result['Quadrant2']['FSCP-SSCN-FL1N'])
+        np.testing.assert_array_equal(truth4, result['Quadrant2']['FSCD-FL1P'])
+        np.testing.assert_array_equal(truth5, result['Quadrant2']['FSCN-SSCP-FL1P'])
+
+    @staticmethod
     def test_ratio_range1_gate():
         gml_path = 'examples/gate_ref/gml_ratio_range1_gate.xml'
         fcs_path = 'examples/gate_ref/data1.fcs'
