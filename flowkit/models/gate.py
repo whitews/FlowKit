@@ -174,7 +174,8 @@ class RatioTransform(Transform):
         )
         if len(param_a_attribs) == 0 or len(param_b_attribs) == 0 or len(param_c_attribs) == 0:
             raise ValueError(
-                "Ratio transform must provide an 'A' attribute (line %d)" % f_ratio_els[0].sourceline
+                "Ratio transform must provide an 'A', a 'B', and a 'C' "
+                "attribute (line %d)" % f_ratio_els[0].sourceline
             )
 
         self.param_a = float(param_a_attribs[0])
