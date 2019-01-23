@@ -915,8 +915,24 @@ class BooleanGate(Gate):
         all_gate_results = []
 
         for gate_ref_dict in self.gate_refs:
-            gate = self.__parent__.gates[gate_ref_dict['ref']]
+            is_quad_gate = False
+            try:
+                gate = self.__parent__.gates[gate_ref_dict['ref']]
+            except KeyError as e:
+                # may be in a Quadrant gate
+                gate = None
+                for g_id, g in self.__parent__.gates.items():
+                    if isinstance(g, QuadrantGate):
+                        if gate_ref_dict['ref'] in g.quadrants:
+                            gate = g
+                            is_quad_gate = True
+                if gate is None:
+                    raise e
+
             gate_ref_results = gate.apply(sample)
+
+            if is_quad_gate:
+                gate_ref_results = gate_ref_results[gate_ref_dict['ref']]
 
             if gate_ref_dict['complement']:
                 gate_ref_results = ~gate_ref_results
