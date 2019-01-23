@@ -895,17 +895,32 @@ class BooleanGate(Gate):
                     "Boolean gate reference must specify a 'ref' attribute (line %d)" % gate_ref_el.sourceline
                 )
 
-            self.gate_refs.append(gate_ref_attribs[0])
+            use_complement_attribs = gate_ref_el.xpath(
+                '@%s:use-as-complement' % gating_namespace,
+                namespaces=gate_element.nsmap
+            )
+            if len(use_complement_attribs) > 0:
+                use_complement = use_complement_attribs[0] == 'true'
+            else:
+                use_complement = False
+
+            self.gate_refs.append(
+                {
+                    'ref': gate_ref_attribs[0],
+                    'complement': use_complement
+                }
+            )
 
     def apply(self, sample):
-        events = sample.get_raw_events()
-        pnn_labels = sample.pnn_labels
-
         all_gate_results = []
 
-        for gate_ref in self.gate_refs:
-            gate = self.__parent__.gates[gate_ref]
+        for gate_ref_dict in self.gate_refs:
+            gate = self.__parent__.gates[gate_ref_dict['ref']]
             gate_ref_results = gate.apply(sample)
+
+            if gate_ref_dict['complement']:
+                gate_ref_results = ~gate_ref_results
+
             all_gate_results.append(gate_ref_results)
 
         if self.type == 'and':
