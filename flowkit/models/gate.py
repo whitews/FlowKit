@@ -16,7 +16,8 @@ GATE_TYPES = [
     'RectangleGate',
     'PolygonGate',
     'EllipsoidGate',
-    'QuadrantGate'
+    'QuadrantGate',
+    'BooleanGate'
 ]
 
 
@@ -826,6 +827,92 @@ class QuadrantGate(Gate):
         return results
 
 
+class BooleanGate(Gate):
+    """
+    Represents a GatingML Boolean Gate
+
+    A BooleanGate performs the boolean operations AND, OR, or NOT on one or
+    more other gates. Note, the boolean operation XOR is not supported in the
+    GatingML specification but can be implemented using a combination of the
+    supported operations.
+    """
+    def __init__(
+            self,
+            gate_element,
+            gating_namespace,
+            data_type_namespace,
+            gating_strategy
+    ):
+        super().__init__(
+            gate_element,
+            gating_namespace,
+            data_type_namespace,
+            gating_strategy
+        )
+        # boolean gates do not mix multiple operations, so there should be only
+        # one of the following: 'and', 'or', or 'not'
+        and_els = gate_element.findall(
+            '%s:and' % gating_namespace,
+            namespaces=gate_element.nsmap
+        )
+        or_els = gate_element.findall(
+            '%s:or' % gating_namespace,
+            namespaces=gate_element.nsmap
+        )
+        not_els = gate_element.findall(
+            '%s:not' % gating_namespace,
+            namespaces=gate_element.nsmap
+        )
+
+        if len(and_els) > 0:
+            self.type = 'and'
+            bool_op_el = and_els[0]
+        elif len(or_els) > 0:
+            self.type = 'or'
+            bool_op_el = or_els[0]
+        elif len(not_els) > 0:
+            self.type = 'not'
+            bool_op_el = not_els[0]
+        else:
+            raise ValueError(
+                "Boolean gate must specify one of 'and', 'or', or 'not' (line %d)" % gate_element.sourceline
+            )
+
+        gate_ref_els = bool_op_el.findall(
+            '%s:gateReference' % gating_namespace,
+            namespaces=gate_element.nsmap
+        )
+
+        self.gate_refs = []
+
+        for gate_ref_el in gate_ref_els:
+            gate_ref_attribs = gate_ref_el.xpath(
+                '@%s:ref' % gating_namespace,
+                namespaces=gate_element.nsmap
+            )
+            if len(gate_ref_attribs) == 0:
+                raise ValueError(
+                    "Boolean gate reference must specify a 'ref' attribute (line %d)" % gate_ref_el.sourceline
+                )
+
+            self.gate_refs.append(gate_ref_attribs[0])
+
+    def apply(self, sample):
+        events = sample.get_raw_events()
+        pnn_labels = sample.pnn_labels
+
+        all_gate_results = []
+
+        for gate_ref in self.gate_refs:
+            gate = self.__parent__.gates[gate_ref]
+            gate_ref_results = gate.apply(sample)
+            all_gate_results.append(gate_ref_results)
+
+        results = np.logical_and.reduce(all_gate_results)
+
+        return results
+
+
 class GatingStrategy(object):
     """
     Represents an entire flow cytometry gating strategy, including instructions
@@ -893,6 +980,7 @@ class GatingStrategy(object):
         if self._transform_ns is not None:
             # types of transforms include:
             #   - ratio
+            #   - log10
             #   - ???
             xform_els = root.findall(
                 '%s:transformation' % self._transform_ns,
