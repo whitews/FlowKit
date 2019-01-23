@@ -371,3 +371,21 @@ class GatingMLTestCase(unittest.TestCase):
         result = gs.gate_sample(sample, 'And4')
 
         np.testing.assert_array_equal(truth, result['And4'])
+
+    @staticmethod
+    def test_boolean_or2_not_gate():
+        gml_path = 'examples/gate_ref/gml_boolean_or2_gate.xml'
+        fcs_path = 'examples/gate_ref/data1.fcs'
+        res_path = 'examples/gate_ref/Results_Or2.txt'
+
+        gs = GatingStrategy(gml_path)
+        sample = Sample(
+            fcs_path,
+            filter_anomalous_events=False,
+            filter_negative_scatter=False
+        )
+        truth = np.loadtxt(res_path, dtype=np.bool)
+
+        result = gs.gate_sample(sample, 'Or2')
+
+        np.testing.assert_array_equal(truth, result['Or2'])
