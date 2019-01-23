@@ -40,7 +40,16 @@ class Dimension(object):
                 namespaces=dim_element.nsmap
             )[0]
         )
-        self.transformation_ref = None
+        try:
+            self.transformation_ref = str(
+                dim_element.xpath(
+                    '@%s:transformation-ref' % gating_namespace,
+                    namespaces=dim_element.nsmap
+                )[0]
+            )
+        except IndexError:
+            self.transformation_ref = None
+        self.new_dim_transformation_ref = None
 
         self.min = None
         self.max = None
@@ -99,7 +108,7 @@ class Dimension(object):
             )
 
             if len(xform_attribs) > 0:
-                self.transformation_ref = xform_attribs[0]
+                self.new_dim_transformation_ref = xform_attribs[0]
         else:
             label_attribs = fcs_dim_els.xpath(
                 '@%s:name' % data_type_namespace,
@@ -210,6 +219,54 @@ class RatioTransform(Transform):
         dim_y = events[:, dim_y_idx]
 
         new_events = self.param_a * ((dim_x - self.param_b) / (dim_y - self.param_c))
+
+        return new_events
+
+
+class LogTransform(Transform):
+    def __init__(
+            self,
+            xform_element,
+            xform_namespace,
+            gating_strategy
+    ):
+        super().__init__(
+            xform_element,
+            xform_namespace,
+            gating_strategy
+        )
+
+        f_log_els = xform_element.findall(
+            '%s:flog' % xform_namespace,
+            namespaces=xform_element.nsmap
+        )
+
+        if len(f_log_els) == 0:
+            raise ValueError(
+                "Log transform must specify an 'flog' element (line %d)" % xform_element.sourceline
+            )
+
+        # f log transform has 2 parameters: T and M
+        # these are attributes of the 'fratio' element
+        param_t_attribs = f_log_els[0].xpath(
+            '@%s:T' % xform_namespace,
+            namespaces=xform_element.nsmap
+        )
+        param_m_attribs = f_log_els[0].xpath(
+            '@%s:M' % xform_namespace,
+            namespaces=xform_element.nsmap
+        )
+
+        if len(param_t_attribs) == 0 or len(param_m_attribs) == 0:
+            raise ValueError(
+                "Log transform must provide an 'T' attribute (line %d)" % f_log_els[0].sourceline
+            )
+
+        self.param_t = float(param_t_attribs[0])
+        self.param_m = float(param_m_attribs[0])
+
+    def apply(self, events):
+        new_events = (1. / self.param_m) * np.log10(events.copy() / self.param_t) + 1.
 
         return new_events
 
@@ -404,8 +461,12 @@ class RectangleGate(Gate):
 
         for new_dim in new_dims:
             # new dimensions are defined by transformations of other dims
-            xform = self.__parent__.transformations[new_dim.transformation_ref]
-            xform_events = xform.apply(sample)
+            new_dim_xform = self.__parent__.transformations[new_dim.new_dim_transformation_ref]
+            xform_events = new_dim_xform.apply(sample)
+
+            if new_dim.transformation_ref is not None:
+                xform = self.__parent__.transformations[new_dim.transformation_ref]
+                xform_events = xform.apply(xform_events)
 
             if new_dim.min is not None:
                 results = np.bitwise_and(results, xform_events >= new_dim.min)
@@ -852,6 +913,18 @@ class GatingStrategy(object):
                         xform_el,
                         self._transform_ns,
                         self._data_type_ns,
+                        self
+                    )
+
+                flog_els = xform_el.findall(
+                    '%s:flog' % self._transform_ns,
+                    namespaces=namespace_map
+                )
+
+                if len(flog_els) > 0:
+                    xform = LogTransform(
+                        xform_el,
+                        self._transform_ns,
                         self
                     )
 
