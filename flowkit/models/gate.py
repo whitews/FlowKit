@@ -499,6 +499,51 @@ class Gate(ABC):
 
         return events
 
+    def preprocess_sample_events(self, sample):
+        events = sample.get_raw_events()
+        pnn_labels = sample.pnn_labels
+
+        if events.shape[1] != len(pnn_labels):
+            raise ValueError(
+                "Number of FCS dimensions (%d) does not match label count (%d)"
+                % (events.shape[1], len(pnn_labels))
+            )
+
+        dim_idx = []
+        dim_min = []
+        dim_max = []
+        dim_comp_refs = set()
+        new_dims = []
+
+        for dim in self.dimensions:
+            if dim.compensation_ref not in [None, 'uncompensated']:
+                dim_comp_refs.add(dim.compensation_ref)
+
+            if dim.label is None:
+                # dimension is a transform of other dimensions
+                new_dims.append(dim)
+                continue
+
+            try:
+                dim_idx.append(pnn_labels.index(dim.label))
+                dim_min.append(dim.min)
+                dim_max.append(dim.max)
+            except ValueError:
+                # for a referenced comp, the label may have been the
+                # fluorochrome instead of the channel's PnN label. If so,
+                # the referenced matrix object will also have the detector
+                # names that will match
+                matrix = self.__parent__.comp_matrices[dim.compensation_ref]
+                matrix_dim_idx = matrix.fluorochomes.index(dim.label)
+                detector = matrix.detectors[matrix_dim_idx]
+                dim_idx.append(pnn_labels.index(detector))
+                dim_min.append(dim.min)
+                dim_max.append(dim.max)
+
+        events = self.compensate_sample(dim_comp_refs, sample)
+
+        return events, dim_idx, dim_min, dim_max, new_dims
+
 
 class RectangleGate(Gate):
     """
@@ -529,39 +574,7 @@ class RectangleGate(Gate):
         pass
 
     def apply(self, sample):
-        events = sample.get_raw_events()
-        pnn_labels = sample.pnn_labels
-
-        if events.shape[1] != len(pnn_labels):
-            raise ValueError(
-                "Number of FCS dimensions (%d) does not match label count (%d)"
-                % (events.shape[1], len(pnn_labels))
-            )
-
-        dim_idx = []
-        dim_min = []
-        dim_max = []
-        dim_comp_refs = set()
-        new_dims = []
-
-        for dim in self.dimensions:
-            if dim.compensation_ref not in [None, 'uncompensated']:
-                dim_comp_refs.add(dim.compensation_ref)
-
-            if dim.min is None and dim.max is None:
-                raise ValueError(
-                    "Gate '%s' does not include a min or max value" % self.id
-                )
-
-            if dim.label is None:
-                # dimension is a transform of other dimensions
-                new_dims.append(dim)
-            else:
-                dim_idx.append(pnn_labels.index(dim.label))
-                dim_min.append(dim.min)
-                dim_max.append(dim.max)
-
-        events = self.compensate_sample(dim_comp_refs, sample)
+        events, dim_idx, dim_min, dim_max, new_dims = super().preprocess_sample_events(sample)
 
         results = np.ones(events.shape[0], dtype=np.bool)
 
@@ -622,36 +635,7 @@ class PolygonGate(Gate):
             self.vertices.append(vert)
 
     def apply(self, sample):
-        events = sample.get_raw_events()
-        pnn_labels = sample.pnn_labels
-
-        if events.shape[1] != len(pnn_labels):
-            raise ValueError(
-                "Number of FCS dimensions (%d) does not match label count (%d)"
-                % (events.shape[1], len(pnn_labels))
-            )
-
-        dim_idx = []
-        dim_comp_refs = set()
-
-        for dim in self.dimensions:
-            if dim.compensation_ref not in [None, 'uncompensated']:
-                dim_comp_refs.add(dim.compensation_ref)
-
-            try:
-                dim_idx.append(pnn_labels.index(dim.label))
-            except ValueError:
-                # for a referenced comp, the label may have been the
-                # fluorochrome instead of the channel's PnN label. If so,
-                # the referenced matrix object will also have the detector
-                # names that will match
-                matrix = self.__parent__.comp_matrices[dim.compensation_ref]
-                matrix_dim_idx = matrix.fluorochomes.index(dim.label)
-                detector = matrix.detectors[matrix_dim_idx]
-                dim_idx.append(pnn_labels.index(detector))
-
-        events = self.compensate_sample(dim_comp_refs, sample)
-
+        events, dim_idx, dim_min, dim_max, new_dims = super().preprocess_sample_events(sample)
         path_verts = []
 
         for vert in self.vertices:
@@ -770,25 +754,7 @@ class EllipsoidGate(Gate):
         self.distance_square = float(dist_square_value_attribs[0])
 
     def apply(self, sample):
-        events = sample.get_raw_events()
-        pnn_labels = sample.pnn_labels
-
-        if events.shape[1] != len(pnn_labels):
-            raise ValueError(
-                "Number of FCS dimensions (%d) does not match label count (%d)"
-                % (events.shape[1], len(pnn_labels))
-            )
-
-        dim_idx = []
-        dim_comp_refs = set()
-
-        for dim in self.dimensions:
-            if dim.compensation_ref not in [None, 'uncompensated']:
-                dim_comp_refs.add(dim.compensation_ref)
-
-            dim_idx.append(pnn_labels.index(dim.label))
-
-        events = self.compensate_sample(dim_comp_refs, sample)
+        events, dim_idx, dim_min, dim_max, new_dims = super().preprocess_sample_events(sample)
 
         ellipse = utils.calculate_ellipse(
             self.coordinates[0],
@@ -902,25 +868,7 @@ class QuadrantGate(Gate):
                 )
 
     def apply(self, sample):
-        events = sample.get_raw_events()
-        pnn_labels = sample.pnn_labels
-
-        if events.shape[1] != len(pnn_labels):
-            raise ValueError(
-                "Number of FCS dimensions (%d) does not match label count (%d)"
-                % (events.shape[1], len(pnn_labels))
-            )
-
-        dim_idx = []
-        dim_comp_refs = set()
-
-        for dim in self.dimensions:
-            if dim.compensation_ref not in [None, 'uncompensated']:
-                dim_comp_refs.add(dim.compensation_ref)
-
-            dim_idx.append(pnn_labels.index(dim.label))
-
-        events = self.compensate_sample(dim_comp_refs, sample)
+        events, dim_idx, dim_min, dim_max, new_dims = super().preprocess_sample_events(sample)
 
         results = {}
 
@@ -930,7 +878,7 @@ class QuadrantGate(Gate):
             # quadrant is a list of dicts containing quadrant bounds and
             # the referenced dimension
             for bound in quadrant:
-                dim_idx = pnn_labels.index(bound['dimension'])
+                dim_idx = sample.pnn_labels.index(bound['dimension'])
 
                 if bound['min'] is not None:
                     q_results = np.bitwise_and(
