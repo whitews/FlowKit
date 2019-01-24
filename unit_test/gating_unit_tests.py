@@ -533,3 +533,21 @@ class GatingMLTestCase(unittest.TestCase):
         result = gs.gate_sample(sample, 'ScaleRange4')
 
         np.testing.assert_array_equal(truth, result['ScaleRange4'])
+
+    @staticmethod
+    def test_transform_logicle_range5_gate():
+        gml_path = 'examples/gate_ref/gml_transform_logicle_range5_gate.xml'
+        fcs_path = 'examples/gate_ref/data1.fcs'
+        res_path = 'examples/gate_ref/Results_ScaleRange5.txt'
+
+        gs = GatingStrategy(gml_path)
+        sample = Sample(
+            fcs_path,
+            filter_anomalous_events=False,
+            filter_negative_scatter=False
+        )
+        truth = np.loadtxt(res_path, dtype=np.bool)
+
+        result = gs.gate_sample(sample, 'ScaleRange5')
+
+        np.testing.assert_array_equal(truth, result['ScaleRange5'])
