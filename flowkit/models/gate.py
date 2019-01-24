@@ -272,6 +272,76 @@ class LogTransform(Transform):
         return new_events
 
 
+class HyperlogTransform(Transform):
+    def __init__(
+            self,
+            xform_element,
+            xform_namespace,
+            gating_strategy
+    ):
+        super().__init__(
+            xform_element,
+            xform_namespace,
+            gating_strategy
+        )
+
+        f_hlog_els = xform_element.findall(
+            '%s:hyperlog' % xform_namespace,
+            namespaces=xform_element.nsmap
+        )
+
+        if len(f_hlog_els) == 0:
+            raise ValueError(
+                "Hyperlog transform must specify an 'hyperlog' element (line %d)" % xform_element.sourceline
+            )
+
+        # f hyperlog transform has 3 parameters: T, M, and A
+        # these are attributes of the 'hyperlog' element
+        param_t_attribs = f_hlog_els[0].xpath(
+            '@%s:T' % xform_namespace,
+            namespaces=xform_element.nsmap
+        )
+        param_w_attribs = f_hlog_els[0].xpath(
+            '@%s:W' % xform_namespace,
+            namespaces=xform_element.nsmap
+        )
+        param_m_attribs = f_hlog_els[0].xpath(
+            '@%s:M' % xform_namespace,
+            namespaces=xform_element.nsmap
+        )
+        param_a_attribs = f_hlog_els[0].xpath(
+            '@%s:A' % xform_namespace,
+            namespaces=xform_element.nsmap
+        )
+
+        if len(param_t_attribs) == 0 or len(param_w_attribs) == 0 or \
+                len(param_m_attribs) == 0 or len(param_a_attribs) == 0:
+            raise ValueError(
+                "Hyperlog transform must provide 'T', 'W', 'M', and 'A' "
+                "attributes (line %d)" % f_hlog_els[0].sourceline
+            )
+
+        self.param_t = float(param_t_attribs[0])
+        self.param_w = float(param_w_attribs[0])
+        self.param_m = float(param_m_attribs[0])
+        self.param_a = float(param_a_attribs[0])
+
+    def apply(self, events):
+        hyperlog = utils.Hyperlog(
+            self.param_t,
+            self.param_w,
+            self.param_m,
+            self.param_a
+        )
+
+        new_events = []
+
+        for e in events.copy():
+            new_events.append(hyperlog.scale(e))
+
+        return np.array(new_events)
+
+
 class AsinhTransform(Transform):
     def __init__(
             self,
@@ -296,7 +366,7 @@ class AsinhTransform(Transform):
             )
 
         # f asinh transform has 3 parameters: T, M, and A
-        # these are attributes of the 'fratio' element
+        # these are attributes of the 'fasinh' element
         param_t_attribs = f_asinh_els[0].xpath(
             '@%s:T' % xform_namespace,
             namespaces=xform_element.nsmap
@@ -312,7 +382,7 @@ class AsinhTransform(Transform):
 
         if len(param_t_attribs) == 0 or len(param_m_attribs) == 0 or len(param_a_attribs) == 0:
             raise ValueError(
-                "Log transform must provide an 'T' attribute (line %d)" % f_asinh_els[0].sourceline
+                "Asinh transform must provide an 'T' attribute (line %d)" % f_asinh_els[0].sourceline
             )
 
         self.param_t = float(param_t_attribs[0])
@@ -1198,6 +1268,18 @@ class GatingStrategy(object):
 
                 if len(fasinh_els) > 0:
                     xform = AsinhTransform(
+                        xform_el,
+                        self._transform_ns,
+                        self
+                    )
+
+                hyperlog_els = xform_el.findall(
+                    '%s:hyperlog' % self._transform_ns,
+                    namespaces=namespace_map
+                )
+
+                if len(hyperlog_els) > 0:
+                    xform = HyperlogTransform(
                         xform_el,
                         self._transform_ns,
                         self
