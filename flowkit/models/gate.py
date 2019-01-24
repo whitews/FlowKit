@@ -224,6 +224,54 @@ class RatioTransform(Transform):
         return new_events
 
 
+class LinearTransform(Transform):
+    def __init__(
+            self,
+            xform_element,
+            xform_namespace,
+            gating_strategy
+    ):
+        super().__init__(
+            xform_element,
+            xform_namespace,
+            gating_strategy
+        )
+
+        f_lin_els = xform_element.findall(
+            '%s:flin' % xform_namespace,
+            namespaces=xform_element.nsmap
+        )
+
+        if len(f_lin_els) == 0:
+            raise ValueError(
+                "Linear transform must specify an 'flin' element (line %d)" % xform_element.sourceline
+            )
+
+        # f log transform has 2 parameters: T and M
+        # these are attributes of the 'fratio' element
+        param_t_attribs = f_lin_els[0].xpath(
+            '@%s:T' % xform_namespace,
+            namespaces=xform_element.nsmap
+        )
+        param_a_attribs = f_lin_els[0].xpath(
+            '@%s:A' % xform_namespace,
+            namespaces=xform_element.nsmap
+        )
+
+        if len(param_t_attribs) == 0 or len(param_a_attribs) == 0:
+            raise ValueError(
+                "Log transform must provide 'T' and 'A' attributes (line %d)" % f_lin_els[0].sourceline
+            )
+
+        self.param_t = float(param_t_attribs[0])
+        self.param_a = float(param_a_attribs[0])
+
+    def apply(self, events):
+        new_events = (events.copy() + self.param_a) / (self.param_t + self.param_a)
+
+        return new_events
+
+
 class LogTransform(Transform):
     def __init__(
             self,
@@ -1227,6 +1275,8 @@ class GatingStrategy(object):
             #   - ratio
             #   - log10
             #   - asinh
+            #   - hyperlog
+            #   - linear
             xform_els = root.findall(
                 '%s:transformation' % self._transform_ns,
                 namespaces=namespace_map
@@ -1280,6 +1330,18 @@ class GatingStrategy(object):
 
                 if len(hyperlog_els) > 0:
                     xform = HyperlogTransform(
+                        xform_el,
+                        self._transform_ns,
+                        self
+                    )
+
+                flin_els = xform_el.findall(
+                    '%s:flin' % self._transform_ns,
+                    namespaces=namespace_map
+                )
+
+                if len(flin_els) > 0:
+                    xform = LinearTransform(
                         xform_el,
                         self._transform_ns,
                         self
