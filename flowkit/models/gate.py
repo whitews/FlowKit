@@ -333,31 +333,31 @@ class HyperlogTransform(Transform):
             gating_strategy
         )
 
-        f_hlog_els = xform_element.findall(
+        hlog_els = xform_element.findall(
             '%s:hyperlog' % xform_namespace,
             namespaces=xform_element.nsmap
         )
 
-        if len(f_hlog_els) == 0:
+        if len(hlog_els) == 0:
             raise ValueError(
                 "Hyperlog transform must specify an 'hyperlog' element (line %d)" % xform_element.sourceline
             )
 
-        # f hyperlog transform has 3 parameters: T, M, and A
+        # hyperlog transform has 4 parameters: T, W, M, and A
         # these are attributes of the 'hyperlog' element
-        param_t_attribs = f_hlog_els[0].xpath(
+        param_t_attribs = hlog_els[0].xpath(
             '@%s:T' % xform_namespace,
             namespaces=xform_element.nsmap
         )
-        param_w_attribs = f_hlog_els[0].xpath(
+        param_w_attribs = hlog_els[0].xpath(
             '@%s:W' % xform_namespace,
             namespaces=xform_element.nsmap
         )
-        param_m_attribs = f_hlog_els[0].xpath(
+        param_m_attribs = hlog_els[0].xpath(
             '@%s:M' % xform_namespace,
             namespaces=xform_element.nsmap
         )
-        param_a_attribs = f_hlog_els[0].xpath(
+        param_a_attribs = hlog_els[0].xpath(
             '@%s:A' % xform_namespace,
             namespaces=xform_element.nsmap
         )
@@ -366,7 +366,7 @@ class HyperlogTransform(Transform):
                 len(param_m_attribs) == 0 or len(param_a_attribs) == 0:
             raise ValueError(
                 "Hyperlog transform must provide 'T', 'W', 'M', and 'A' "
-                "attributes (line %d)" % f_hlog_els[0].sourceline
+                "attributes (line %d)" % hlog_els[0].sourceline
             )
 
         self.param_t = float(param_t_attribs[0])
@@ -388,6 +388,82 @@ class HyperlogTransform(Transform):
             new_events.append(hyperlog.scale(e))
 
         return np.array(new_events)
+
+
+class LogicleTransform(Transform):
+    def __init__(
+            self,
+            xform_element,
+            xform_namespace,
+            gating_strategy
+    ):
+        super().__init__(
+            xform_element,
+            xform_namespace,
+            gating_strategy
+        )
+
+        logicle_els = xform_element.findall(
+            '%s:logicle' % xform_namespace,
+            namespaces=xform_element.nsmap
+        )
+
+        if len(logicle_els) == 0:
+            raise ValueError(
+                "Logicle transform must specify an 'logicle' element (line %d)" % xform_element.sourceline
+            )
+
+        # logicle transform has 4 parameters: T, W, M, and A
+        # these are attributes of the 'logicle' element
+        param_t_attribs = logicle_els[0].xpath(
+            '@%s:T' % xform_namespace,
+            namespaces=xform_element.nsmap
+        )
+        param_w_attribs = logicle_els[0].xpath(
+            '@%s:W' % xform_namespace,
+            namespaces=xform_element.nsmap
+        )
+        param_m_attribs = logicle_els[0].xpath(
+            '@%s:M' % xform_namespace,
+            namespaces=xform_element.nsmap
+        )
+        param_a_attribs = logicle_els[0].xpath(
+            '@%s:A' % xform_namespace,
+            namespaces=xform_element.nsmap
+        )
+
+        if len(param_t_attribs) == 0 or len(param_w_attribs) == 0 or \
+                len(param_m_attribs) == 0 or len(param_a_attribs) == 0:
+            raise ValueError(
+                "Logicle transform must provide 'T', 'W', 'M', and 'A' "
+                "attributes (line %d)" % logicle_els[0].sourceline
+            )
+
+        self.param_t = float(param_t_attribs[0])
+        self.param_w = float(param_w_attribs[0])
+        self.param_m = float(param_m_attribs[0])
+        self.param_a = float(param_a_attribs[0])
+
+    def apply(self, events):
+        reshape = False
+
+        if len(events.shape) == 1:
+            events = events.copy().reshape(-1, 1)
+            reshape = True
+
+        new_events = flowutils.transforms.logicle(
+            events,
+            range(events.shape[1]),
+            t=self.param_t,
+            m=self.param_m,
+            w=self.param_w,
+            a=self.param_a
+        )
+
+        if reshape:
+            new_events = new_events.reshape(-1)
+
+        return new_events
 
 
 class AsinhTransform(Transform):
@@ -1277,6 +1353,7 @@ class GatingStrategy(object):
             #   - asinh
             #   - hyperlog
             #   - linear
+            #   - logicle
             xform_els = root.findall(
                 '%s:transformation' % self._transform_ns,
                 namespaces=namespace_map
@@ -1342,6 +1419,18 @@ class GatingStrategy(object):
 
                 if len(flin_els) > 0:
                     xform = LinearTransform(
+                        xform_el,
+                        self._transform_ns,
+                        self
+                    )
+
+                logicle_els = xform_el.findall(
+                    '%s:logicle' % self._transform_ns,
+                    namespaces=namespace_map
+                )
+
+                if len(logicle_els) > 0:
+                    xform = LogicleTransform(
                         xform_el,
                         self._transform_ns,
                         self
