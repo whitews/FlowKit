@@ -272,6 +272,63 @@ class LogTransform(Transform):
         return new_events
 
 
+class AsinhTransform(Transform):
+    def __init__(
+            self,
+            xform_element,
+            xform_namespace,
+            gating_strategy
+    ):
+        super().__init__(
+            xform_element,
+            xform_namespace,
+            gating_strategy
+        )
+
+        f_asinh_els = xform_element.findall(
+            '%s:fasinh' % xform_namespace,
+            namespaces=xform_element.nsmap
+        )
+
+        if len(f_asinh_els) == 0:
+            raise ValueError(
+                "Asinh transform must specify an 'fasinh' element (line %d)" % xform_element.sourceline
+            )
+
+        # f asinh transform has 3 parameters: T, M, and A
+        # these are attributes of the 'fratio' element
+        param_t_attribs = f_asinh_els[0].xpath(
+            '@%s:T' % xform_namespace,
+            namespaces=xform_element.nsmap
+        )
+        param_m_attribs = f_asinh_els[0].xpath(
+            '@%s:M' % xform_namespace,
+            namespaces=xform_element.nsmap
+        )
+        param_a_attribs = f_asinh_els[0].xpath(
+            '@%s:A' % xform_namespace,
+            namespaces=xform_element.nsmap
+        )
+
+        if len(param_t_attribs) == 0 or len(param_m_attribs) == 0 or len(param_a_attribs) == 0:
+            raise ValueError(
+                "Log transform must provide an 'T' attribute (line %d)" % f_asinh_els[0].sourceline
+            )
+
+        self.param_t = float(param_t_attribs[0])
+        self.param_m = float(param_m_attribs[0])
+        self.param_a = float(param_a_attribs[0])
+
+    def apply(self, events):
+        x_pre_scale = np.sinh(self.param_m * np.log(10)) / self.param_t
+        x_transpose = self.param_a * np.log(10)
+        x_divisor = (self.param_m + self.param_a) * np.log(10)
+
+        new_events = (np.arcsinh(events.copy() * x_pre_scale) + x_transpose) / x_divisor
+
+        return new_events
+
+
 class Matrix(object):
     def __init__(
         self,
@@ -514,6 +571,7 @@ class Gate(ABC):
         dim_max = []
         dim_comp_refs = set()
         new_dims = []
+        dim_xform = []
 
         for dim in self.dimensions:
             if dim.compensation_ref not in [None, 'uncompensated']:
@@ -528,6 +586,7 @@ class Gate(ABC):
                 dim_idx.append(pnn_labels.index(dim.label))
                 dim_min.append(dim.min)
                 dim_max.append(dim.max)
+                dim_xform.append(dim.transformation_ref)
             except ValueError:
                 # for a referenced comp, the label may have been the
                 # fluorochrome instead of the channel's PnN label. If so,
@@ -539,8 +598,14 @@ class Gate(ABC):
                 dim_idx.append(pnn_labels.index(detector))
                 dim_min.append(dim.min)
                 dim_max.append(dim.max)
+                dim_xform.append(dim.transformation_ref)
 
         events = self.compensate_sample(dim_comp_refs, sample)
+
+        for i, dim in enumerate(dim_idx):
+            if dim_xform[i] is not None:
+                xform = self.__parent__.transformations[dim_xform[i]]
+                events[:, dim] = xform.apply(events[:, dim])
 
         return events, dim_idx, dim_min, dim_max, new_dims
 
@@ -1091,7 +1156,7 @@ class GatingStrategy(object):
             # types of transforms include:
             #   - ratio
             #   - log10
-            #   - ???
+            #   - asinh
             xform_els = root.findall(
                 '%s:transformation' % self._transform_ns,
                 namespaces=namespace_map
@@ -1121,6 +1186,18 @@ class GatingStrategy(object):
 
                 if len(flog_els) > 0:
                     xform = LogTransform(
+                        xform_el,
+                        self._transform_ns,
+                        self
+                    )
+
+                fasinh_els = xform_el.findall(
+                    '%s:fasinh' % self._transform_ns,
+                    namespaces=namespace_map
+                )
+
+                if len(fasinh_els) > 0:
+                    xform = AsinhTransform(
                         xform_el,
                         self._transform_ns,
                         self
