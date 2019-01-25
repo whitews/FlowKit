@@ -857,6 +857,11 @@ class RectangleGate(Gate):
             if new_dim.max is not None:
                 results = np.bitwise_and(results, xform_events < new_dim.max)
 
+        if self.parent is not None:
+            parent_gate = self.__parent__.gates[self.parent]
+            parent_events = parent_gate.apply(sample)
+            results = np.logical_and(parent_events, results)
+
         return results
 
 
