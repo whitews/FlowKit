@@ -667,7 +667,7 @@ class Gate(ABC):
             namespaces=gate_element.nsmap
         )[0]
         parent = gate_element.xpath(
-            '@%s:parent' % gating_namespace,
+            '@%s:parent_id' % gating_namespace,
             namespaces=gate_element.nsmap
         )
         if len(parent) == 0:
@@ -1278,6 +1278,11 @@ class BooleanGate(Gate):
             raise ValueError(
                 "Boolean gate must specify one of 'and', 'or', or 'not'"
             )
+
+        if self.parent is not None:
+            parent_gate = self.__parent__.gates[self.parent]
+            parent_events = parent_gate.apply(sample)
+            results = np.logical_and(parent_events, results)
 
         return results
 
