@@ -713,3 +713,21 @@ class GatingMLTestCase(unittest.TestCase):
         result = gs.gate_sample(sample, 'ParAnd3')
 
         np.testing.assert_array_equal(truth, result['ParAnd3'])
+
+    @staticmethod
+    def test_parent_rect1_rect_par1_gate():
+        gml_path = 'examples/gate_ref/gml/gml_parent_rect1_rect_par1_gate.xml'
+        fcs_path = 'examples/gate_ref/data1.fcs'
+        res_path = 'examples/gate_ref/truth/Results_ScalePar1.txt'
+
+        gs = GatingStrategy(gml_path)
+        sample = Sample(
+            fcs_path,
+            filter_anomalous_events=False,
+            filter_negative_scatter=False
+        )
+        truth = np.loadtxt(res_path, dtype=np.bool)
+
+        result = gs.gate_sample(sample, 'ScalePar1')
+
+        np.testing.assert_array_equal(truth, result['ScalePar1'])
