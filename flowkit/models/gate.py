@@ -907,6 +907,11 @@ class PolygonGate(Gate):
 
         results = utils.points_in_polygon(path_verts, events[:, dim_idx])
 
+        if self.parent is not None:
+            parent_gate = self.__parent__.gates[self.parent]
+            parent_events = parent_gate.apply(sample)
+            results = np.logical_and(parent_events, results)
+
         return results
 
 
@@ -1028,6 +1033,11 @@ class EllipsoidGate(Gate):
         )
 
         results = utils.points_in_ellipse(ellipse, events[:, dim_idx])
+
+        if self.parent is not None:
+            parent_gate = self.__parent__.gates[self.parent]
+            parent_events = parent_gate.apply(sample)
+            results = np.logical_and(parent_events, results)
 
         return results
 
@@ -1156,6 +1166,8 @@ class QuadrantGate(Gate):
                     )
 
                 results[q_id] = q_results
+
+        # TODO: figure out how to properly apply a parent gate
 
         return results
 
