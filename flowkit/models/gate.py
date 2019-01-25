@@ -506,7 +506,7 @@ class AsinhTransform(Transform):
 
         if len(param_t_attribs) == 0 or len(param_m_attribs) == 0 or len(param_a_attribs) == 0:
             raise ValueError(
-                "Asinh transform must provide an 'T' attribute (line %d)" % f_asinh_els[0].sourceline
+                "Asinh transform must provide 'T', 'M', and 'A' attributes (line %d)" % f_asinh_els[0].sourceline
             )
 
         self.param_t = float(param_t_attribs[0])
