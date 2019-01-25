@@ -11,9 +11,9 @@ from flowkit import Sample, GatingStrategy
 class GatingMLTestCase(unittest.TestCase):
     @staticmethod
     def test_min_range_gate():
-        gml_path = 'examples/gate_ref/gml_range_gate.xml'
+        gml_path = 'examples/gate_ref/gml/gml_range_gate.xml'
         fcs_path = 'examples/gate_ref/data1.fcs'
-        res_path = 'examples/gate_ref/Results_Range1.txt'
+        res_path = 'examples/gate_ref/truth/Results_Range1.txt'
 
         gs = GatingStrategy(gml_path)
         sample = Sample(
@@ -29,9 +29,9 @@ class GatingMLTestCase(unittest.TestCase):
 
     @staticmethod
     def test_rect1_gate():
-        gml_path = 'examples/gate_ref/gml_rect1_gate.xml'
+        gml_path = 'examples/gate_ref/gml/gml_rect1_gate.xml'
         fcs_path = 'examples/gate_ref/data1.fcs'
-        res_path = 'examples/gate_ref/Results_Rectangle1.txt'
+        res_path = 'examples/gate_ref/truth/Results_Rectangle1.txt'
 
         gs = GatingStrategy(gml_path)
         sample = Sample(
@@ -47,9 +47,9 @@ class GatingMLTestCase(unittest.TestCase):
 
     @staticmethod
     def test_rect2_gate():
-        gml_path = 'examples/gate_ref/gml_rect2_gate.xml'
+        gml_path = 'examples/gate_ref/gml/gml_rect2_gate.xml'
         fcs_path = 'examples/gate_ref/data1.fcs'
-        res_path = 'examples/gate_ref/Results_Rectangle2.txt'
+        res_path = 'examples/gate_ref/truth/Results_Rectangle2.txt'
 
         gs = GatingStrategy(gml_path)
         sample = Sample(
@@ -65,9 +65,9 @@ class GatingMLTestCase(unittest.TestCase):
 
     @staticmethod
     def test_poly1_gate():
-        gml_path = 'examples/gate_ref/gml_poly1_gate.xml'
+        gml_path = 'examples/gate_ref/gml/gml_poly1_gate.xml'
         fcs_path = 'examples/gate_ref/data1.fcs'
-        res_path = 'examples/gate_ref/Results_Polygon1.txt'
+        res_path = 'examples/gate_ref/truth/Results_Polygon1.txt'
 
         gs = GatingStrategy(gml_path)
         sample = Sample(
@@ -83,9 +83,9 @@ class GatingMLTestCase(unittest.TestCase):
 
     @staticmethod
     def test_poly2_gate():
-        gml_path = 'examples/gate_ref/gml_poly2_gate.xml'
+        gml_path = 'examples/gate_ref/gml/gml_poly2_gate.xml'
         fcs_path = 'examples/gate_ref/data1.fcs'
-        res_path = 'examples/gate_ref/Results_Polygon2.txt'
+        res_path = 'examples/gate_ref/truth/Results_Polygon2.txt'
 
         gs = GatingStrategy(gml_path)
         sample = Sample(
@@ -101,9 +101,9 @@ class GatingMLTestCase(unittest.TestCase):
 
     @staticmethod
     def test_poly3_non_solid_gate():
-        gml_path = 'examples/gate_ref/gml_poly3ns_gate.xml'
+        gml_path = 'examples/gate_ref/gml/gml_poly3ns_gate.xml'
         fcs_path = 'examples/gate_ref/data1.fcs'
-        res_path = 'examples/gate_ref/Results_Polygon3NS.txt'
+        res_path = 'examples/gate_ref/truth/Results_Polygon3NS.txt'
 
         gs = GatingStrategy(gml_path)
         sample = Sample(
@@ -119,9 +119,9 @@ class GatingMLTestCase(unittest.TestCase):
 
     @staticmethod
     def test_ellipse1_gate():
-        gml_path = 'examples/gate_ref/gml_ellipse1_gate.xml'
+        gml_path = 'examples/gate_ref/gml/gml_ellipse1_gate.xml'
         fcs_path = 'examples/gate_ref/data1.fcs'
-        res_path = 'examples/gate_ref/Results_Ellipse1.txt'
+        res_path = 'examples/gate_ref/truth/Results_Ellipse1.txt'
 
         gs = GatingStrategy(gml_path)
         sample = Sample(
@@ -137,9 +137,9 @@ class GatingMLTestCase(unittest.TestCase):
 
     @staticmethod
     def test_time_range_gate():
-        gml_path = 'examples/gate_ref/gml_time_range_gate.xml'
+        gml_path = 'examples/gate_ref/gml/gml_time_range_gate.xml'
         fcs_path = 'examples/gate_ref/data1.fcs'
-        res_path = 'examples/gate_ref/Results_Range2.txt'
+        res_path = 'examples/gate_ref/truth/Results_Range2.txt'
 
         gs = GatingStrategy(gml_path)
         sample = Sample(
@@ -155,12 +155,12 @@ class GatingMLTestCase(unittest.TestCase):
 
     @staticmethod
     def test_quadrant1_gate():
-        gml_path = 'examples/gate_ref/gml_quadrant1_gate.xml'
+        gml_path = 'examples/gate_ref/gml/gml_quadrant1_gate.xml'
         fcs_path = 'examples/gate_ref/data1.fcs'
-        res1_path = 'examples/gate_ref/Results_FL2N-FL4N.txt'
-        res2_path = 'examples/gate_ref/Results_FL2N-FL4P.txt'
-        res3_path = 'examples/gate_ref/Results_FL2P-FL4N.txt'
-        res4_path = 'examples/gate_ref/Results_FL2P-FL4P.txt'
+        res1_path = 'examples/gate_ref/truth/Results_FL2N-FL4N.txt'
+        res2_path = 'examples/gate_ref/truth/Results_FL2N-FL4P.txt'
+        res3_path = 'examples/gate_ref/truth/Results_FL2P-FL4N.txt'
+        res4_path = 'examples/gate_ref/truth/Results_FL2P-FL4P.txt'
 
         gs = GatingStrategy(gml_path)
         sample = Sample(
@@ -182,13 +182,13 @@ class GatingMLTestCase(unittest.TestCase):
 
     @staticmethod
     def test_quadrant2_gate():
-        gml_path = 'examples/gate_ref/gml_quadrant2_gate.xml'
+        gml_path = 'examples/gate_ref/gml/gml_quadrant2_gate.xml'
         fcs_path = 'examples/gate_ref/data1.fcs'
-        res1_path = 'examples/gate_ref/Results_FSCN-SSCN.txt'
-        res2_path = 'examples/gate_ref/Results_FSCD-SSCN-FL1N.txt'
-        res3_path = 'examples/gate_ref/Results_FSCP-SSCN-FL1N.txt'
-        res4_path = 'examples/gate_ref/Results_FSCD-FL1P.txt'
-        res5_path = 'examples/gate_ref/Results_FSCN-SSCP-FL1P.txt'
+        res1_path = 'examples/gate_ref/truth/Results_FSCN-SSCN.txt'
+        res2_path = 'examples/gate_ref/truth/Results_FSCD-SSCN-FL1N.txt'
+        res3_path = 'examples/gate_ref/truth/Results_FSCP-SSCN-FL1N.txt'
+        res4_path = 'examples/gate_ref/truth/Results_FSCD-FL1P.txt'
+        res5_path = 'examples/gate_ref/truth/Results_FSCN-SSCP-FL1P.txt'
 
         gs = GatingStrategy(gml_path)
         sample = Sample(
@@ -212,9 +212,9 @@ class GatingMLTestCase(unittest.TestCase):
 
     @staticmethod
     def test_ratio_range1_gate():
-        gml_path = 'examples/gate_ref/gml_ratio_range1_gate.xml'
+        gml_path = 'examples/gate_ref/gml/gml_ratio_range1_gate.xml'
         fcs_path = 'examples/gate_ref/data1.fcs'
-        res_path = 'examples/gate_ref/Results_RatRange1.txt'
+        res_path = 'examples/gate_ref/truth/Results_RatRange1.txt'
 
         gs = GatingStrategy(gml_path)
         sample = Sample(
@@ -230,9 +230,9 @@ class GatingMLTestCase(unittest.TestCase):
 
     @staticmethod
     def test_ratio_range2_gate():
-        gml_path = 'examples/gate_ref/gml_ratio_range2_gate.xml'
+        gml_path = 'examples/gate_ref/gml/gml_ratio_range2_gate.xml'
         fcs_path = 'examples/gate_ref/data1.fcs'
-        res_path = 'examples/gate_ref/Results_RatRange2.txt'
+        res_path = 'examples/gate_ref/truth/Results_RatRange2.txt'
 
         gs = GatingStrategy(gml_path)
         sample = Sample(
@@ -248,9 +248,9 @@ class GatingMLTestCase(unittest.TestCase):
 
     @staticmethod
     def test_log_ratio_range1_gate():
-        gml_path = 'examples/gate_ref/gml_log_ratio_range1_gate.xml'
+        gml_path = 'examples/gate_ref/gml/gml_log_ratio_range1_gate.xml'
         fcs_path = 'examples/gate_ref/data1.fcs'
-        res_path = 'examples/gate_ref/Results_RatRange1a.txt'
+        res_path = 'examples/gate_ref/truth/Results_RatRange1a.txt'
 
         gs = GatingStrategy(gml_path)
         sample = Sample(
@@ -266,9 +266,9 @@ class GatingMLTestCase(unittest.TestCase):
 
     @staticmethod
     def test_boolean_and1_gate():
-        gml_path = 'examples/gate_ref/gml_boolean_and1_gate.xml'
+        gml_path = 'examples/gate_ref/gml/gml_boolean_and1_gate.xml'
         fcs_path = 'examples/gate_ref/data1.fcs'
-        res_path = 'examples/gate_ref/Results_And1.txt'
+        res_path = 'examples/gate_ref/truth/Results_And1.txt'
 
         gs = GatingStrategy(gml_path)
         sample = Sample(
@@ -284,9 +284,9 @@ class GatingMLTestCase(unittest.TestCase):
 
     @staticmethod
     def test_boolean_and2_gate():
-        gml_path = 'examples/gate_ref/gml_boolean_and2_gate.xml'
+        gml_path = 'examples/gate_ref/gml/gml_boolean_and2_gate.xml'
         fcs_path = 'examples/gate_ref/data1.fcs'
-        res_path = 'examples/gate_ref/Results_And2.txt'
+        res_path = 'examples/gate_ref/truth/Results_And2.txt'
 
         gs = GatingStrategy(gml_path)
         sample = Sample(
@@ -302,9 +302,9 @@ class GatingMLTestCase(unittest.TestCase):
 
     @staticmethod
     def test_boolean_or1_gate():
-        gml_path = 'examples/gate_ref/gml_boolean_or1_gate.xml'
+        gml_path = 'examples/gate_ref/gml/gml_boolean_or1_gate.xml'
         fcs_path = 'examples/gate_ref/data1.fcs'
-        res_path = 'examples/gate_ref/Results_Or1.txt'
+        res_path = 'examples/gate_ref/truth/Results_Or1.txt'
 
         gs = GatingStrategy(gml_path)
         sample = Sample(
@@ -320,9 +320,9 @@ class GatingMLTestCase(unittest.TestCase):
 
     @staticmethod
     def test_boolean_and3_complement_gate():
-        gml_path = 'examples/gate_ref/gml_boolean_and3_complement_gate.xml'
+        gml_path = 'examples/gate_ref/gml/gml_boolean_and3_complement_gate.xml'
         fcs_path = 'examples/gate_ref/data1.fcs'
-        res_path = 'examples/gate_ref/Results_And3.txt'
+        res_path = 'examples/gate_ref/truth/Results_And3.txt'
 
         gs = GatingStrategy(gml_path)
         sample = Sample(
@@ -338,9 +338,9 @@ class GatingMLTestCase(unittest.TestCase):
 
     @staticmethod
     def test_boolean_not1_gate():
-        gml_path = 'examples/gate_ref/gml_boolean_not1_gate.xml'
+        gml_path = 'examples/gate_ref/gml/gml_boolean_not1_gate.xml'
         fcs_path = 'examples/gate_ref/data1.fcs'
-        res_path = 'examples/gate_ref/Results_Not1.txt'
+        res_path = 'examples/gate_ref/truth/Results_Not1.txt'
 
         gs = GatingStrategy(gml_path)
         sample = Sample(
@@ -356,9 +356,9 @@ class GatingMLTestCase(unittest.TestCase):
 
     @staticmethod
     def test_boolean_and4_not_gate():
-        gml_path = 'examples/gate_ref/gml_boolean_and4_not_gate.xml'
+        gml_path = 'examples/gate_ref/gml/gml_boolean_and4_not_gate.xml'
         fcs_path = 'examples/gate_ref/data1.fcs'
-        res_path = 'examples/gate_ref/Results_And4.txt'
+        res_path = 'examples/gate_ref/truth/Results_And4.txt'
 
         gs = GatingStrategy(gml_path)
         sample = Sample(
@@ -374,9 +374,9 @@ class GatingMLTestCase(unittest.TestCase):
 
     @staticmethod
     def test_boolean_or2_not_gate():
-        gml_path = 'examples/gate_ref/gml_boolean_or2_gate.xml'
+        gml_path = 'examples/gate_ref/gml/gml_boolean_or2_gate.xml'
         fcs_path = 'examples/gate_ref/data1.fcs'
-        res_path = 'examples/gate_ref/Results_Or2.txt'
+        res_path = 'examples/gate_ref/truth/Results_Or2.txt'
 
         gs = GatingStrategy(gml_path)
         sample = Sample(
@@ -392,9 +392,9 @@ class GatingMLTestCase(unittest.TestCase):
 
     @staticmethod
     def test_matrix_poly4_gate():
-        gml_path = 'examples/gate_ref/gml_matrix_poly4_gate.xml'
+        gml_path = 'examples/gate_ref/gml/gml_matrix_poly4_gate.xml'
         fcs_path = 'examples/gate_ref/data1.fcs'
-        res_path = 'examples/gate_ref/Results_Polygon4.txt'
+        res_path = 'examples/gate_ref/truth/Results_Polygon4.txt'
 
         gs = GatingStrategy(gml_path)
         sample = Sample(
@@ -410,9 +410,9 @@ class GatingMLTestCase(unittest.TestCase):
 
     @staticmethod
     def test_matrix_rect3_gate():
-        gml_path = 'examples/gate_ref/gml_matrix_rect3_gate.xml'
+        gml_path = 'examples/gate_ref/gml/gml_matrix_rect3_gate.xml'
         fcs_path = 'examples/gate_ref/data1.fcs'
-        res_path = 'examples/gate_ref/Results_Rectangle3.txt'
+        res_path = 'examples/gate_ref/truth/Results_Rectangle3.txt'
 
         gs = GatingStrategy(gml_path)
         sample = Sample(
@@ -428,9 +428,9 @@ class GatingMLTestCase(unittest.TestCase):
 
     @staticmethod
     def test_matrix_rect4_gate():
-        gml_path = 'examples/gate_ref/gml_matrix_rect4_gate.xml'
+        gml_path = 'examples/gate_ref/gml/gml_matrix_rect4_gate.xml'
         fcs_path = 'examples/gate_ref/data1.fcs'
-        res_path = 'examples/gate_ref/Results_Rectangle4.txt'
+        res_path = 'examples/gate_ref/truth/Results_Rectangle4.txt'
 
         gs = GatingStrategy(gml_path)
         sample = Sample(
@@ -446,9 +446,9 @@ class GatingMLTestCase(unittest.TestCase):
 
     @staticmethod
     def test_matrix_rect5_gate():
-        gml_path = 'examples/gate_ref/gml_matrix_rect5_gate.xml'
+        gml_path = 'examples/gate_ref/gml/gml_matrix_rect5_gate.xml'
         fcs_path = 'examples/gate_ref/data1.fcs'
-        res_path = 'examples/gate_ref/Results_Rectangle5.txt'
+        res_path = 'examples/gate_ref/truth/Results_Rectangle5.txt'
 
         gs = GatingStrategy(gml_path)
         sample = Sample(
@@ -464,9 +464,9 @@ class GatingMLTestCase(unittest.TestCase):
 
     @staticmethod
     def test_transform_asinh_range1_gate():
-        gml_path = 'examples/gate_ref/gml_transform_asinh_range1_gate.xml'
+        gml_path = 'examples/gate_ref/gml/gml_transform_asinh_range1_gate.xml'
         fcs_path = 'examples/gate_ref/data1.fcs'
-        res_path = 'examples/gate_ref/Results_ScaleRange1.txt'
+        res_path = 'examples/gate_ref/truth/Results_ScaleRange1.txt'
 
         gs = GatingStrategy(gml_path)
         sample = Sample(
@@ -482,9 +482,9 @@ class GatingMLTestCase(unittest.TestCase):
 
     @staticmethod
     def test_transform_hyperlog_range2_gate():
-        gml_path = 'examples/gate_ref/gml_transform_hyperlog_range2_gate.xml'
+        gml_path = 'examples/gate_ref/gml/gml_transform_hyperlog_range2_gate.xml'
         fcs_path = 'examples/gate_ref/data1.fcs'
-        res_path = 'examples/gate_ref/Results_ScaleRange2.txt'
+        res_path = 'examples/gate_ref/truth/Results_ScaleRange2.txt'
 
         gs = GatingStrategy(gml_path)
         sample = Sample(
@@ -500,9 +500,9 @@ class GatingMLTestCase(unittest.TestCase):
 
     @staticmethod
     def test_transform_linear_range3_gate():
-        gml_path = 'examples/gate_ref/gml_transform_linear_range3_gate.xml'
+        gml_path = 'examples/gate_ref/gml/gml_transform_linear_range3_gate.xml'
         fcs_path = 'examples/gate_ref/data1.fcs'
-        res_path = 'examples/gate_ref/Results_ScaleRange3.txt'
+        res_path = 'examples/gate_ref/truth/Results_ScaleRange3.txt'
 
         gs = GatingStrategy(gml_path)
         sample = Sample(
@@ -518,9 +518,9 @@ class GatingMLTestCase(unittest.TestCase):
 
     @staticmethod
     def test_transform_logicle_range4_gate():
-        gml_path = 'examples/gate_ref/gml_transform_logicle_range4_gate.xml'
+        gml_path = 'examples/gate_ref/gml/gml_transform_logicle_range4_gate.xml'
         fcs_path = 'examples/gate_ref/data1.fcs'
-        res_path = 'examples/gate_ref/Results_ScaleRange4.txt'
+        res_path = 'examples/gate_ref/truth/Results_ScaleRange4.txt'
 
         gs = GatingStrategy(gml_path)
         sample = Sample(
@@ -536,9 +536,9 @@ class GatingMLTestCase(unittest.TestCase):
 
     @staticmethod
     def test_transform_logicle_range5_gate():
-        gml_path = 'examples/gate_ref/gml_transform_logicle_range5_gate.xml'
+        gml_path = 'examples/gate_ref/gml/gml_transform_logicle_range5_gate.xml'
         fcs_path = 'examples/gate_ref/data1.fcs'
-        res_path = 'examples/gate_ref/Results_ScaleRange5.txt'
+        res_path = 'examples/gate_ref/truth/Results_ScaleRange5.txt'
 
         gs = GatingStrategy(gml_path)
         sample = Sample(
@@ -554,9 +554,9 @@ class GatingMLTestCase(unittest.TestCase):
 
     @staticmethod
     def test_transform_log_range6_gate():
-        gml_path = 'examples/gate_ref/gml_transform_log_range6_gate.xml'
+        gml_path = 'examples/gate_ref/gml/gml_transform_log_range6_gate.xml'
         fcs_path = 'examples/gate_ref/data1.fcs'
-        res_path = 'examples/gate_ref/Results_ScaleRange6.txt'
+        res_path = 'examples/gate_ref/truth/Results_ScaleRange6.txt'
 
         gs = GatingStrategy(gml_path)
         sample = Sample(
@@ -572,9 +572,9 @@ class GatingMLTestCase(unittest.TestCase):
 
     @staticmethod
     def test_matrix_transform_asinh_range1c_gate():
-        gml_path = 'examples/gate_ref/gml_matrix_transform_asinh_range1c_gate.xml'
+        gml_path = 'examples/gate_ref/gml/gml_matrix_transform_asinh_range1c_gate.xml'
         fcs_path = 'examples/gate_ref/data1.fcs'
-        res_path = 'examples/gate_ref/Results_ScaleRange1c.txt'
+        res_path = 'examples/gate_ref/truth/Results_ScaleRange1c.txt'
 
         gs = GatingStrategy(gml_path)
         sample = Sample(
@@ -590,9 +590,9 @@ class GatingMLTestCase(unittest.TestCase):
 
     @staticmethod
     def test_matrix_transform_hyperlog_range2c_gate():
-        gml_path = 'examples/gate_ref/gml_matrix_transform_hyperlog_range2c_gate.xml'
+        gml_path = 'examples/gate_ref/gml/gml_matrix_transform_hyperlog_range2c_gate.xml'
         fcs_path = 'examples/gate_ref/data1.fcs'
-        res_path = 'examples/gate_ref/Results_ScaleRange2c.txt'
+        res_path = 'examples/gate_ref/truth/Results_ScaleRange2c.txt'
 
         gs = GatingStrategy(gml_path)
         sample = Sample(
@@ -608,9 +608,9 @@ class GatingMLTestCase(unittest.TestCase):
 
     @staticmethod
     def test_matrix_transform_linear_range3c_gate():
-        gml_path = 'examples/gate_ref/gml_matrix_transform_linear_range3c_gate.xml'
+        gml_path = 'examples/gate_ref/gml/gml_matrix_transform_linear_range3c_gate.xml'
         fcs_path = 'examples/gate_ref/data1.fcs'
-        res_path = 'examples/gate_ref/Results_ScaleRange3c.txt'
+        res_path = 'examples/gate_ref/truth/Results_ScaleRange3c.txt'
 
         gs = GatingStrategy(gml_path)
         sample = Sample(
@@ -626,9 +626,9 @@ class GatingMLTestCase(unittest.TestCase):
 
     @staticmethod
     def test_matrix_transform_logicle_range4c_gate():
-        gml_path = 'examples/gate_ref/gml_matrix_transform_logicle_range4c_gate.xml'
+        gml_path = 'examples/gate_ref/gml/gml_matrix_transform_logicle_range4c_gate.xml'
         fcs_path = 'examples/gate_ref/data1.fcs'
-        res_path = 'examples/gate_ref/Results_ScaleRange4c.txt'
+        res_path = 'examples/gate_ref/truth/Results_ScaleRange4c.txt'
 
         gs = GatingStrategy(gml_path)
         sample = Sample(
@@ -644,9 +644,9 @@ class GatingMLTestCase(unittest.TestCase):
 
     @staticmethod
     def test_matrix_transform_logicle_range5c_gate():
-        gml_path = 'examples/gate_ref/gml_matrix_transform_logicle_range5c_gate.xml'
+        gml_path = 'examples/gate_ref/gml/gml_matrix_transform_logicle_range5c_gate.xml'
         fcs_path = 'examples/gate_ref/data1.fcs'
-        res_path = 'examples/gate_ref/Results_ScaleRange5c.txt'
+        res_path = 'examples/gate_ref/truth/Results_ScaleRange5c.txt'
 
         gs = GatingStrategy(gml_path)
         sample = Sample(
