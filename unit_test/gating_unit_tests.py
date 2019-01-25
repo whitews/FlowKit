@@ -661,6 +661,60 @@ class GatingMLTestCase(unittest.TestCase):
         np.testing.assert_array_equal(truth, result['ScaleRange5c'])
 
     @staticmethod
+    def test_matrix_transform_asinh_range6c_gate():
+        gml_path = 'examples/gate_ref/gml/gml_matrix_transform_asinh_range6c_gate.xml'
+        fcs_path = 'examples/gate_ref/data1.fcs'
+        res_path = 'examples/gate_ref/truth/Results_ScaleRange6c.txt'
+
+        gs = GatingStrategy(gml_path)
+        sample = Sample(
+            fcs_path,
+            filter_anomalous_events=False,
+            filter_negative_scatter=False
+        )
+        truth = np.loadtxt(res_path, dtype=np.bool)
+
+        result = gs.gate_sample(sample, 'ScaleRange6c')
+
+        np.testing.assert_array_equal(truth, result['ScaleRange6c'])
+
+    @staticmethod
+    def test_matrix_transform_hyperlog_range7c_gate():
+        gml_path = 'examples/gate_ref/gml/gml_matrix_transform_hyperlog_range7c_gate.xml'
+        fcs_path = 'examples/gate_ref/data1.fcs'
+        res_path = 'examples/gate_ref/truth/Results_ScaleRange7c.txt'
+
+        gs = GatingStrategy(gml_path)
+        sample = Sample(
+            fcs_path,
+            filter_anomalous_events=False,
+            filter_negative_scatter=False
+        )
+        truth = np.loadtxt(res_path, dtype=np.bool)
+
+        result = gs.gate_sample(sample, 'ScaleRange7c')
+
+        np.testing.assert_array_equal(truth, result['ScaleRange7c'])
+
+    @staticmethod
+    def test_matrix_transform_logicle_range8c_gate():
+        gml_path = 'examples/gate_ref/gml/gml_matrix_transform_logicle_range8c_gate.xml'
+        fcs_path = 'examples/gate_ref/data1.fcs'
+        res_path = 'examples/gate_ref/truth/Results_ScaleRange8c.txt'
+
+        gs = GatingStrategy(gml_path)
+        sample = Sample(
+            fcs_path,
+            filter_anomalous_events=False,
+            filter_negative_scatter=False
+        )
+        truth = np.loadtxt(res_path, dtype=np.bool)
+
+        result = gs.gate_sample(sample, 'ScaleRange8c')
+
+        np.testing.assert_array_equal(truth, result['ScaleRange8c'])
+
+    @staticmethod
     def test_matrix_transform_logicle_rect1_gate():
         gml_path = 'examples/gate_ref/gml/gml_matrix_transform_logicle_rect1_gate.xml'
         fcs_path = 'examples/gate_ref/data1.fcs'
