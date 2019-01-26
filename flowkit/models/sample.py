@@ -457,6 +457,12 @@ class Sample(object):
         channel_data = self.get_channel_data(channel_index, source=source, subsample=subsample)
 
         _, ax = plt.subplots(figsize=fig_size)
+
+        if x_min is None:
+            x_min = channel_data.min()
+        if x_max is None:
+            x_max = channel_data.max()
+
         ax.set_xlim([x_min, x_max])
 
         seaborn.distplot(
