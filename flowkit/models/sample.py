@@ -12,6 +12,10 @@ import seaborn
 
 
 class Sample(object):
+    """
+    Represents a single FCS sample from an FCS file, NumPy array or Pandas
+    DataFrame.
+    """
     def __init__(
             self,
             fcs_path_or_data,
@@ -24,8 +28,6 @@ class Sample(object):
             null_channel_list=None
     ):
         """
-        Represents a single FCS sample.
-
         :param fcs_path_or_data: FCS data, can be either:
                 - a file path or file handle to an FCS file
                 - a pathlib Path object
@@ -50,7 +52,7 @@ class Sample(object):
             test performed on each channel. The reference distribution is chosen based on
             the difference from the median.
         :param null_channel_list: List of PnN labels for channels that were collected
-            but do not contain data. Note, this should only be used if there were
+            but do not contain useful data. Note, this should only be used if there were
             truly no fluorochromes used targeting those detectors and the channels
             do not contribute to compensation.
         """
