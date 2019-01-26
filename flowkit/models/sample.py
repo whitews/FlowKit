@@ -283,15 +283,34 @@ class Sample(object):
         self._compensate()
 
     def get_metadata(self):
+        """
+        Returns FCS metadata
+        :return: Dictionary of FCS metadata
+        """
         return self._flow_data.text
 
     def get_raw_events(self, subsample=False):
+        """
+        Returns 'raw' events, i.e. not compensated or transformed.
+
+        :param subsample: Whether to return all events or just the sub-sampled
+            events. Default is False (all events)
+        :return: NumPy array of raw events
+        """
         if subsample:
             return self._raw_events[self.subsample_indices]
         else:
             return self._raw_events
 
     def get_comp_events(self, subsample=False):
+        """
+        Returns compensated events, (not transformed)
+
+        :param subsample: Whether to return all events or just the sub-sampled
+            events. Default is False (all events)
+        :return: NumPy array of compensated events or None if no compensation
+            matrix has been applied.
+        """
         if self._comp_events is None:
             # TODO: should issue warning instructing user to call compensate
             return None
@@ -302,6 +321,15 @@ class Sample(object):
             return self._comp_events
 
     def get_transformed_events(self, subsample=False):
+        """
+        Returns transformed events. Note, if a compensation matrix has been
+        applied then the events returned will be compensated and transformed.
+
+        :param subsample: Whether to return all events or just the sub-sampled
+            events. Default is False (all events)
+        :return: NumPy array of transformed events or None if no transform
+            has been applied.
+        """
         if self._transformed_events is None:
             # TODO: should issue warning instructing user to call a transform
             return None
@@ -312,9 +340,22 @@ class Sample(object):
             return self._transformed_events
 
     def get_channel_number_by_label(self, label):
+        """
+        Returns the channel number for the given PnN label. Note, this is the
+        channel number as defined in the FCS data (not the channel index), so
+        the 1st channel's number is 1 (not 0).
+        :param label: PnN label of a channel
+        :return: Channel number (not index)
+        """
         return self.pnn_labels.index(label) + 1
 
     def get_channel_index(self, channel_label_or_number):
+        """
+        Returns the channel index for the given PnN label. Note, this is
+        different from the channel number. The 1st channel's index is 0 (not 1).
+        :param label: PnN label of a channel
+        :return: Channel index
+        """
         if isinstance(channel_label_or_number, str):
             index = self.get_channel_number_by_label(channel_label_or_number) - 1
         elif isinstance(channel_label_or_number, int):
@@ -325,6 +366,16 @@ class Sample(object):
         return index
 
     def get_channel_data(self, channel_index, source='xform', subsample=False):
+        """
+        Returns a NumPy array of event data for the specified channel index.
+
+        :param channel_index: Channel index for which data is returned
+        :param source: 'raw', 'comp', 'xform' for whether the raw, compensated
+            or transformed events will be returned
+        :param subsample: Whether to return all events or just the sub-sampled
+            events. Default is False (all events)
+        :return: NumPy array of event data for the specified channel index
+        """
         if subsample:
             idx = self.subsample_indices
         else:
@@ -345,7 +396,7 @@ class Sample(object):
         """
         Applies logicle transform to compensated data
 
-        Saves transformed data to self._transformed_events
+        Retrieve transformed data via get_transformed_events
         """
         # only transform fluorescent channels
         self._transformed_events = flowutils.transforms.logicle(
@@ -362,7 +413,7 @@ class Sample(object):
         By default, the compensated data will be transformed and the default
         pre-scale factor is 0.01
 
-        Saves transformed data to self._transformed_events
+        Retrieve transformed data via get_transformed_events
         """
         # only transform fluorescent channels
         self._transformed_events = flowutils.transforms.asinh(
@@ -438,7 +489,7 @@ class Sample(object):
             alpha=scatter_alpha
         )
 
-        plt.show()
+        return fig
 
     def plot_scatter_matrix(self, source='xform'):
         raise NotImplementedError('Scatter matrix is not yet implemented')
