@@ -1,3 +1,2 @@
 # FlowKit
-Intuitive framework in Python for flow cytometry analysis and
-visualization.
+Intuitive Python framework for flow cytometry analysis and visualization, including GatingML support.
