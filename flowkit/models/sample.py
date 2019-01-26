@@ -77,6 +77,11 @@ class Sample(object):
 
             self._flow_data = flowio.FlowData(tmp_file)
 
+        try:
+            self.version = self._flow_data.header['version']
+        except KeyError:
+            self.version = None
+
         self.null_channels = null_channel_list
         self.event_count = self._flow_data.event_count
         self.channels = self._flow_data.channels
