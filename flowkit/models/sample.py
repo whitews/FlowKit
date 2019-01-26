@@ -441,7 +441,7 @@ class Sample(object):
         plt.show()
 
     def plot_scatter_matrix(self, source='xform'):
-        pass
+        raise NotImplementedError('Scatter matrix is not yet implemented')
 
     def plot_histogram(
             self,
