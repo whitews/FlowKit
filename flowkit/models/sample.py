@@ -23,8 +23,8 @@ class Sample(object):
             compensation=None,
             subsample_count=10000,
             random_seed=1,
-            filter_negative_scatter=True,
-            filter_anomalous_events=True,
+            filter_negative_scatter=False,
+            filter_anomalous_events=False,
             null_channel_list=None
     ):
         """
