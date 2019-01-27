@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 from matplotlib import colors
 import seaborn
 from bokeh.plotting import figure
+from bokeh.layouts import gridplot
 import warnings
 
 
@@ -579,8 +580,37 @@ class Sample(object):
 
         return p
 
-    def plot_scatter_matrix(self, source='xform'):
-        raise NotImplementedError('Scatter matrix is not yet implemented')
+    def plot_scatter_matrix(
+            self,
+            source='xform',
+            subsample=False,
+            color_density=False
+    ):
+        plots = []
+
+        for channel_y in self.pnn_labels:
+            if channel_y == 'Time':
+                continue
+            row = []
+            for channel_x in self.pnn_labels:
+                if channel_x == 'Time':
+                    continue
+
+                plot = self.plot_scatter(
+                    channel_x,
+                    channel_y,
+                    source=source,
+                    subsample=subsample,
+                    color_density=color_density
+                )
+                plot.height = 196
+                plot.width = 196
+                row.append(plot)
+            plots.append(row)
+
+        grid = gridplot(plots)
+
+        return grid
 
     def plot_histogram(
             self,
