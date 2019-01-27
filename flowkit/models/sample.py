@@ -6,9 +6,12 @@ import io
 from tempfile import TemporaryFile
 import numpy as np
 from flowkit import utils
-from scipy import stats
+from scipy.interpolate import interpn
 import matplotlib.pyplot as plt
+from matplotlib import colors
 import seaborn
+from bokeh.plotting import figure
+import warnings
 
 
 class Sample(object):
@@ -312,7 +315,10 @@ class Sample(object):
             matrix has been applied.
         """
         if self._comp_events is None:
-            # TODO: should issue warning instructing user to call compensate
+            warnings.warn(
+                "No compensation has been applied, call 'compensate' method first.",
+                UserWarning
+            )
             return None
 
         if subsample:
@@ -331,7 +337,10 @@ class Sample(object):
             has been applied.
         """
         if self._transformed_events is None:
-            # TODO: should issue warning instructing user to call a transform
+            warnings.warn(
+                "No transform has been applied, call a transform method first.",
+                UserWarning
+            )
             return None
 
         if subsample:
@@ -353,7 +362,7 @@ class Sample(object):
         """
         Returns the channel index for the given PnN label. Note, this is
         different from the channel number. The 1st channel's index is 0 (not 1).
-        :param label: PnN label of a channel
+        :param channel_label_or_number: A channel's PnN label or number
         :return: Channel index
         """
         if isinstance(channel_label_or_number, str):
@@ -422,13 +431,12 @@ class Sample(object):
             pre_scale=pre_scale
         )
 
-    def plot_scatter(
+    def plot_contour(
             self,
             x_label_or_number,
             y_label_or_number,
             source='xform',
             subsample=False,
-            contours=False,
             x_min=None,
             x_max=None,
             y_min=None,
@@ -454,42 +462,98 @@ class Sample(object):
         if y_max is None:
             y_max = y.max() + pad_y
 
-        values = np.vstack([x, y])
-        kernel = stats.gaussian_kde(values, bw_method='silverman')
-        h = kernel.silverman_factor() / 2.0
-        kernel.set_bandwidth(h)
-        z = kernel.evaluate(values)
-
         fig, ax = plt.subplots(figsize=fig_size)
+        ax.set_title(self.original_filename)
+
         ax.set_xlim([x_min, x_max])
         ax.set_ylim([y_min, y_max])
         ax.set_xlabel(self.pnn_labels[x_index])
         ax.set_ylabel(self.pnn_labels[y_index])
-        scatter_alpha = 1.0
 
-        if contours:
-            scatter_alpha = 0.4
-            seaborn.kdeplot(
-                x,
-                y,
-                bw='scott',
-                cmap=utils.new_jet,
-                linewidths=2,
-                alpha=1
-            )
-
-        seaborn.scatterplot(
+        seaborn.kdeplot(
             x,
             y,
-            hue=z,
-            palette=utils.new_jet,
-            legend=False,
-            s=5,
-            linewidth=0,
-            alpha=scatter_alpha
+            bw='scott',
+            cmap=utils.new_jet,
+            linewidths=2,
+            alpha=1
         )
 
         return fig
+
+    def plot_scatter(
+            self,
+            x_label_or_number,
+            y_label_or_number,
+            source='xform',
+            subsample=False,
+            x_min=None,
+            x_max=None,
+            y_min=None,
+            y_max=None
+    ):
+        x_index = self.get_channel_index(x_label_or_number)
+        y_index = self.get_channel_index(y_label_or_number)
+
+        x = self.get_channel_data(x_index, source=source, subsample=subsample)
+        y = self.get_channel_data(y_index, source=source, subsample=subsample)
+
+        # determine padding to keep min/max events off the edge,
+        # but only if user didn't specify the limits
+        pad_x = max(abs(x.min()), abs(x.max())) * 0.02
+        pad_y = max(abs(y.min()), abs(y.max())) * 0.02
+
+        if x_min is None:
+            x_min = x.min() - pad_x
+        if x_max is None:
+            x_max = x.max() + pad_x
+        if y_min is None:
+            y_min = y.min() - pad_y
+        if y_max is None:
+            y_max = y.max() + pad_y
+
+        data, x_e, y_e = np.histogram2d(x, y, bins=[38, 38])
+        z = interpn(
+            (0.5 * (x_e[1:] + x_e[:-1]), 0.5 * (y_e[1:] + y_e[:-1])),
+            data,
+            np.vstack([x, y]).T,
+            method="splinef2d",
+            bounds_error=False
+        )
+        z[np.isnan(z)] = 0
+
+        # sort by density (z) so the more dense points are on top for better
+        # color display
+        idx = z.argsort()
+        x, y, z = x[idx], y[idx], z[idx]
+
+        colors_array = utils.new_jet(colors.Normalize()(z))
+        z_colors = [
+            "#%02x%02x%02x" % (int(c[0] * 255), int(c[1] * 255), int(c[2] * 255)) for c in colors_array
+        ]
+
+        tools = "crosshair,pan,zoom_in,zoom_out,box_zoom,undo,redo,reset,save,"
+        p = figure(
+            tools=tools,
+            x_range=(x_min, x_max),
+            y_range=(y_min, y_max),
+            title=self.original_filename
+        )
+        p.title.align = 'center'
+
+        p.xaxis.axis_label = self.pnn_labels[x_index]
+        p.yaxis.axis_label = self.pnn_labels[y_index]
+
+        p.scatter(
+            x,
+            y,
+            radius=0.5,
+            fill_color=z_colors,
+            fill_alpha=0.4,
+            line_color=None
+        )
+
+        return p
 
     def plot_scatter_matrix(self, source='xform'):
         raise NotImplementedError('Scatter matrix is not yet implemented')
@@ -507,7 +571,8 @@ class Sample(object):
         channel_index = self.get_channel_index(channel_label_or_number)
         channel_data = self.get_channel_data(channel_index, source=source, subsample=subsample)
 
-        _, ax = plt.subplots(figsize=fig_size)
+        fig, ax = plt.subplots(figsize=fig_size)
+        ax.set_title(self.original_filename)
 
         if x_min is None:
             x_min = channel_data.min()
@@ -515,6 +580,7 @@ class Sample(object):
             x_max = channel_data.max()
 
         ax.set_xlim([x_min, x_max])
+        ax.set_xlabel(self.pnn_labels[channel_index])
 
         seaborn.distplot(
             channel_data,
@@ -523,7 +589,7 @@ class Sample(object):
             bins=bins
         )
 
-        plt.show()
+        return fig
 
     def export_csv(self, source='xform', subsample=False, filename=None, directory=None):
         if self.original_filename is None and filename is None:
