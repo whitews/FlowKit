@@ -560,10 +560,18 @@ class Sample(object):
         p.xaxis.axis_label = self.pnn_labels[x_index]
         p.yaxis.axis_label = self.pnn_labels[y_index]
 
+        if y_max > x_max:
+            radius_dimension = 'y'
+            radius = 0.003 * y_max
+        else:
+            radius_dimension = 'x'
+            radius = 0.003 * x_max
+
         p.scatter(
             x,
             y,
-            radius=0.5,
+            radius=radius,
+            radius_dimension=radius_dimension,
             fill_color=z_colors,
             fill_alpha=0.4,
             line_color=None
