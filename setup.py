@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='FlowKit',
-    version='0.0.6',
+    version='0.0.7',
     packages=['flowkit', 'flowkit.models'],
     package_data={'flowkit': ['resources/*.xsd']},
     include_package_data=True,
