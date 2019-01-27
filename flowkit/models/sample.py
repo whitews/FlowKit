@@ -499,6 +499,7 @@ class Sample(object):
             y_label_or_number,
             source='xform',
             subsample=False,
+            color_density=True,
             x_min=None,
             x_max=None,
             y_min=None,
@@ -524,20 +525,23 @@ class Sample(object):
         if y_max is None:
             y_max = y.max() + pad_y
 
-        data, x_e, y_e = np.histogram2d(x, y, bins=[38, 38])
-        z = interpn(
-            (0.5 * (x_e[1:] + x_e[:-1]), 0.5 * (y_e[1:] + y_e[:-1])),
-            data,
-            np.vstack([x, y]).T,
-            method="splinef2d",
-            bounds_error=False
-        )
-        z[np.isnan(z)] = 0
+        if color_density:
+            data, x_e, y_e = np.histogram2d(x, y, bins=[38, 38])
+            z = interpn(
+                (0.5 * (x_e[1:] + x_e[:-1]), 0.5 * (y_e[1:] + y_e[:-1])),
+                data,
+                np.vstack([x, y]).T,
+                method="splinef2d",
+                bounds_error=False
+            )
+            z[np.isnan(z)] = 0
 
-        # sort by density (z) so the more dense points are on top for better
-        # color display
-        idx = z.argsort()
-        x, y, z = x[idx], y[idx], z[idx]
+            # sort by density (z) so the more dense points are on top for better
+            # color display
+            idx = z.argsort()
+            x, y, z = x[idx], y[idx], z[idx]
+        else:
+            z = np.zeros(len(x))
 
         colors_array = utils.new_jet(colors.Normalize()(z))
         z_colors = [
