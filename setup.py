@@ -17,6 +17,7 @@ setup(
         'seaborn',
         'pandas',
         'numpy',
-        'lxml'
+        'lxml',
+        'bokeh'
     ]
 )
