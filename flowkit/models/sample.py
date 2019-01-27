@@ -437,6 +437,7 @@ class Sample(object):
             y_label_or_number,
             source='xform',
             subsample=False,
+            plot_events=False,
             x_min=None,
             x_max=None,
             y_min=None,
@@ -469,6 +470,17 @@ class Sample(object):
         ax.set_ylim([y_min, y_max])
         ax.set_xlabel(self.pnn_labels[x_index])
         ax.set_ylabel(self.pnn_labels[y_index])
+
+        if plot_events:
+            seaborn.scatterplot(
+                x,
+                y,
+                palette=utils.new_jet,
+                legend=False,
+                s=5,
+                linewidth=0,
+                alpha=0.4
+            )
 
         seaborn.kdeplot(
             x,
