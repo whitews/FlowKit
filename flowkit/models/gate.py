@@ -213,6 +213,7 @@ class RatioTransform(Transform):
 
     def apply(self, sample):
         events = sample.get_raw_events()
+        events = events.copy()
 
         dim_x_idx = sample.pnn_labels.index(self.dimensions[0])
         dim_y_idx = sample.pnn_labels.index(self.dimensions[1])
@@ -699,6 +700,7 @@ class Gate(ABC):
 
     def compensate_sample(self, dim_comp_refs, sample):
         events = sample.get_raw_events()
+        events = events.copy()
 
         spill = None
         matrix = None
@@ -724,7 +726,6 @@ class Gate(ABC):
             matrix = self.__parent__.comp_matrices[list(dim_comp_refs)[0]]
 
         if spill is not None:
-            events = events.copy()
             spill = utils.parse_compensation_matrix(
                 spill,
                 sample.pnn_labels,
@@ -752,6 +753,7 @@ class Gate(ABC):
 
     def preprocess_sample_events(self, sample):
         events = sample.get_raw_events()
+        events = events.copy()
         pnn_labels = sample.pnn_labels
 
         if events.shape[1] != len(pnn_labels):
