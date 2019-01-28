@@ -1,6 +1,8 @@
 import unittest
 import sys
 import os
+import glob
+import re
 import numpy as np
 
 sys.path.append(os.path.abspath('..'))
@@ -736,7 +738,7 @@ class GatingMLTestCase(unittest.TestCase):
     def test_parent_poly1_boolean_and2_gate():
         gml_path = 'examples/gate_ref/gml/gml_parent_poly1_boolean_and2_gate.xml'
         fcs_path = 'examples/gate_ref/data1.fcs'
-        res_path = 'examples/gate_ref/truth/Results_And2.txt'
+        res_path = 'examples/gate_ref/truth/Results_ParAnd2.txt'
 
         gs = GatingStrategy(gml_path)
         sample = Sample(
@@ -754,7 +756,7 @@ class GatingMLTestCase(unittest.TestCase):
     def test_parent_range1_boolean_and3_gate():
         gml_path = 'examples/gate_ref/gml/gml_parent_range1_boolean_and3_gate.xml'
         fcs_path = 'examples/gate_ref/data1.fcs'
-        res_path = 'examples/gate_ref/truth/Results_And3.txt'
+        res_path = 'examples/gate_ref/truth/Results_ParAnd3.txt'
 
         gs = GatingStrategy(gml_path)
         sample = Sample(
@@ -785,3 +787,42 @@ class GatingMLTestCase(unittest.TestCase):
         result = gs.gate_sample(sample, 'ScalePar1')
 
         np.testing.assert_array_equal(truth, result['ScalePar1'])
+
+    @staticmethod
+    def test_all_gates():
+        gml_path = 'examples/gate_ref/gml/gml_all_gates.xml'
+        fcs_path = 'examples/gate_ref/data1.fcs'
+        truth_pattern = 'examples/gate_ref/truth/Results*.txt'
+
+        res_files = glob.glob(truth_pattern)
+
+        truth_dict = {}
+
+        for res_path in res_files:
+            match = re.search("Results_(.+)\\.txt$", res_path)
+            if match is not None:
+                g_id = match.group(1)
+                truth = np.loadtxt(res_path, dtype=np.bool)
+
+                truth_dict[g_id] = truth
+
+        gs = GatingStrategy(gml_path)
+        sample = Sample(
+            fcs_path,
+            filter_anomalous_events=False,
+            filter_negative_scatter=False
+        )
+        gs_results = gs.gate_sample(sample)
+
+        for g_id, res in gs_results.items():
+            if isinstance(res, dict):
+                for sub_g_id, sub_res in res.items():
+                    np.testing.assert_array_equal(
+                        truth_dict[sub_g_id],
+                        sub_res
+                    )
+            else:
+                np.testing.assert_array_equal(
+                    truth_dict[g_id],
+                    res
+                )
