@@ -531,7 +531,7 @@ def points_in_polygon(poly_vertices, points):
 
         bool_results.append((wind_count % 2) != 0)
     
-    return bool_results
+    return np.array(bool_results)
 
 
 class Hyperlog(object):
