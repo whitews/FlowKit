@@ -32,6 +32,8 @@ class Sample(object):
             null_channel_list=None
     ):
         """
+        Create a Sample instance
+
         :param fcs_path_or_data: FCS data, can be either:
                 - a file path or file handle to an FCS file
                 - a pathlib Path object
@@ -266,10 +268,20 @@ class Sample(object):
 
     def apply_compensation(self, compensation):
         """
-        Applies given compensation matrix to Sample events. If any transformation has been
-        applied, those events will be deleted
+        Applies given compensation matrix to Sample events. If any
+        transformation has been applied, those events will be deleted.
+        Compensated events can be retrieved afterward by calling
+        `get_comp_events`.
 
-        :param compensation: a compensation matrix NumPy array, CSV file or string file path
+        :param compensation: Compensation matrix, which can be a:
+                - NumPy array
+                - CSV file path
+                - pathlib Path object to a CSV or TSV file
+                - string of CSV text
+
+            If a string, both multi-line traditional CSV, and the single
+            line FCS spill formats are supported. If a NumPy array, we
+            assume the columns are in the same order as the channel labels.
         :return: None
         """
         comp_labels = self.pnn_labels
@@ -288,7 +300,8 @@ class Sample(object):
 
     def get_metadata(self):
         """
-        Returns FCS metadata
+        Retrieve FCS metadata
+
         :return: Dictionary of FCS metadata
         """
         return self._flow_data.text
@@ -354,6 +367,7 @@ class Sample(object):
         Returns the channel number for the given PnN label. Note, this is the
         channel number as defined in the FCS data (not the channel index), so
         the 1st channel's number is 1 (not 0).
+
         :param label: PnN label of a channel
         :return: Channel number (not index)
         """
@@ -363,6 +377,7 @@ class Sample(object):
         """
         Returns the channel index for the given PnN label. Note, this is
         different from the channel number. The 1st channel's index is 0 (not 1).
+
         :param channel_label_or_number: A channel's PnN label or number
         :return: Channel index
         """
@@ -406,7 +421,7 @@ class Sample(object):
         """
         Applies logicle transform to compensated data
 
-        Retrieve transformed data via get_transformed_events
+        Retrieve transformed data via `get_transformed_events`
         """
         # only transform fluorescent channels
         self._transformed_events = flowutils.transforms.logicle(
@@ -423,7 +438,7 @@ class Sample(object):
         By default, the compensated data will be transformed and the default
         pre-scale factor is 0.01
 
-        Retrieve transformed data via get_transformed_events
+        Retrieve transformed data via `get_transformed_events`
         """
         # only transform fluorescent channels
         self._transformed_events = flowutils.transforms.asinh(
@@ -445,6 +460,33 @@ class Sample(object):
             y_max=None,
             fig_size=(8, 8)
     ):
+        """
+        Returns a contour plot of the specified channel events, available
+        as raw, compensated, or transformed data.
+
+        :param x_label_or_number:  A channel's PnN label or number for x-axis
+            data
+        :param y_label_or_number: A channel's PnN label or number for y-axis
+            data
+        :param source: 'raw', 'comp', 'xform' for whether the raw, compensated
+            or transformed events are used for plotting
+        :param subsample: Whether to use all events for plotting or just the
+            sub-sampled events. Default is False (all events). Plotting
+            sub-sampled events can be much faster.
+        :param plot_events: Whether to display the event data points in
+            addition to the contours. Default is False.
+        :param x_min: Lower bound of x-axis. If None, channel's min value will
+            be used with some padding to keep events off the edge of the plot.
+        :param x_max: Upper bound of x-axis. If None, channel's max value will
+            be used with some padding to keep events off the edge of the plot.
+        :param y_min: Lower bound of y-axis. If None, channel's min value will
+            be used with some padding to keep events off the edge of the plot.
+        :param y_max: Upper bound of y-axis. If None, channel's max value will
+            be used with some padding to keep events off the edge of the plot.
+        :param fig_size: Tuple of 2 values specifying the size of the returned
+            figure. Values are in Matplotlib size units.
+        :return: Matplotlib figure of the contour plot
+        """
         x_index = self.get_channel_index(x_label_or_number)
         y_index = self.get_channel_index(y_label_or_number)
 
@@ -506,6 +548,30 @@ class Sample(object):
             y_min=None,
             y_max=None
     ):
+        """
+        Returns an interactive scatter plot for the specified channel data.
+
+        :param x_label_or_number:  A channel's PnN label or number for x-axis
+            data
+        :param y_label_or_number: A channel's PnN label or number for y-axis
+            data
+        :param source: 'raw', 'comp', 'xform' for whether the raw, compensated
+            or transformed events are used for plotting
+        :param subsample: Whether to use all events for plotting or just the
+            sub-sampled events. Default is False (all events). Plotting
+            sub-sampled events can be much faster.
+        :param color_density: Whether to color the events by density, similar
+            to a heat map. Default is True.
+        :param x_min: Lower bound of x-axis. If None, channel's min value will
+            be used with some padding to keep events off the edge of the plot.
+        :param x_max: Upper bound of x-axis. If None, channel's max value will
+            be used with some padding to keep events off the edge of the plot.
+        :param y_min: Lower bound of y-axis. If None, channel's min value will
+            be used with some padding to keep events off the edge of the plot.
+        :param y_max: Upper bound of y-axis. If None, channel's max value will
+            be used with some padding to keep events off the edge of the plot.
+        :return: A Bokeh Figure object containing the interactive scatter plot.
+        """
         x_index = self.get_channel_index(x_label_or_number)
         y_index = self.get_channel_index(y_label_or_number)
 
@@ -586,6 +652,20 @@ class Sample(object):
             subsample=False,
             color_density=False
     ):
+        """
+        Returns an interactive scatter plot matrix for all channel combinations
+        except for the Time channel.
+
+        :param source: 'raw', 'comp', 'xform' for whether the raw, compensated
+            or transformed events are used for plotting
+        :param subsample: Whether to use all events for plotting or just the
+            sub-sampled events. Default is False (all events). Plotting
+            sub-sampled events can be much faster.
+        :param color_density: Whether to color the events by density, similar
+            to a heat map. Default is False.
+        :return: A Bokeh Figure object containing the interactive scatter plot
+            matrix.
+        """
         plots = []
 
         for channel_y in self.pnn_labels:
@@ -622,6 +702,29 @@ class Sample(object):
             x_max=None,
             fig_size=(15, 7)
     ):
+        """
+        Returns a histogram plot of the specified channel events, available
+        as raw, compensated, or transformed data. Plot also contains a curve
+        of the gaussian kernel density estimate.
+
+        :param channel_label_or_number:  A channel's PnN label or number to use
+            for plotting the histogram
+        :param source: 'raw', 'comp', 'xform' for whether the raw, compensated
+            or transformed events are used for plotting
+        :param subsample: Whether to use all events for plotting or just the
+            sub-sampled events. Default is False (all events). Plotting
+            sub-sampled events can be much faster.
+        :param bins: Number of bins to use for the histogram. If None, the
+            number of bins is determined by the Freedman-Diaconis rule.
+        :param x_min: Lower bound of x-axis. If None, channel's min value will
+            be used with some padding to keep events off the edge of the plot.
+        :param x_max: Upper bound of x-axis. If None, channel's max value will
+            be used with some padding to keep events off the edge of the plot.
+        :param fig_size: Tuple of 2 values specifying the size of the returned
+            figure. Values are in Matplotlib size units.
+        :return: Matplotlib figure of the histogram plot with KDE curve.
+        """
+
         channel_index = self.get_channel_index(channel_label_or_number)
         channel_data = self.get_channel_data(channel_index, source=source, subsample=subsample)
 
@@ -645,7 +748,25 @@ class Sample(object):
 
         return fig
 
-    def export_csv(self, source='xform', subsample=False, filename=None, directory=None):
+    def export_csv(
+            self,
+            source='xform',
+            subsample=False,
+            filename=None,
+            directory=None
+    ):
+        """
+        Export event data to a CSV file.
+
+        :param source: 'raw', 'comp', 'xform' for whether the raw, compensated
+            or transformed events are used for exporting
+        :param subsample: Whether to export all events or just the
+            sub-sampled events. Default is False (all events).
+        :param filename: Text string to use for the exported file name. If
+            None, the FCS file's original file name will be used (if present).
+        :param directory: Directory path where the CSV will be saved
+        :return: None
+        """
         if self.original_filename is None and filename is None:
             raise(
                 ValueError(
@@ -694,7 +815,25 @@ class Sample(object):
         else:
             raise ValueError("source must be one of 'raw', 'comp', or 'xform'")
 
-    def export_fcs(self, source='xform', subsample=False, filename=None, directory=None):
+    def export_fcs(
+            self,
+            source='xform',
+            subsample=False,
+            filename=None,
+            directory=None
+    ):
+        """
+        Export event data to a new FCS file.
+
+        :param source: 'raw', 'comp', 'xform' for whether the raw, compensated
+            or transformed events are used for exporting
+        :param subsample: Whether to export all events or just the
+            sub-sampled events. Default is False (all events).
+        :param filename: Text string to use for the exported file name. If
+            None, the FCS file's original file name will be used (if present).
+        :param directory: Directory path where the FCS file will be saved
+        :return: None
+        """
         if self.original_filename is None and filename is None:
             raise(
                 ValueError(
@@ -735,6 +874,16 @@ class Sample(object):
         fh.close()
 
     def export_anomalous_fcs(self, source='xform', filename=None, directory=None):
+        """
+        Export anomalous event data to a new FCS file.
+
+        :param source: 'raw', 'comp', 'xform' for whether the raw, compensated
+            or transformed events are used for exporting
+        :param filename: Text string to use for the exported file name. If
+            None, the FCS file's original file name will be used (if present).
+        :param directory: Directory path where the FCS file will be saved
+        :return: None
+        """
         if self.original_filename is None and filename is None:
             raise(
                 ValueError(
