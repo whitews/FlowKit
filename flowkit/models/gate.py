@@ -1,16 +1,10 @@
-import pkgutil
-import os
 from abc import ABC, abstractmethod
 # noinspection PyUnresolvedReferences
 from lxml import etree, objectify
 import numpy as np
 from flowkit import utils
 import flowutils
-
-loader = pkgutil.get_loader('flowkit.resources')
-resource_path = os.path.dirname(loader.path)
-gating_ml_xsd = os.path.join(resource_path, 'Gating-ML.v2.0.xsd')
-
+from flowkit.resources import gml_schema
 
 GATE_TYPES = [
     'RectangleGate',
@@ -1313,7 +1307,7 @@ class GatingStrategy(object):
     document as an input.
     """
     def __init__(self, gating_ml_file_path):
-        self.gml_schema = etree.XMLSchema(etree.parse(gating_ml_xsd))
+        self.gml_schema = gml_schema
 
         xml_document = etree.parse(gating_ml_file_path)
 

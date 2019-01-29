@@ -1,10 +1,10 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
     name='FlowKit',
-    version='0.0.8',
-    packages=['flowkit', 'flowkit.models'],
-    package_data={'flowkit': ['resources/*.xsd']},
+    version='0.0.9b',
+    packages=find_packages(),
+    package_data={'': ['*.xsd']},
     include_package_data=True,
     description='Flow Cytometry Toolkit',
     license='BSD',
