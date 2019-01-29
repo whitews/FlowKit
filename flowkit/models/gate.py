@@ -1486,14 +1486,18 @@ class GatingStrategy(object):
         is None, then all gates will be evaluated.
 
         :param sample: an FCS Sample instance
-        :param gate_id: A gate ID to evaluate on given Sample. If None, all gates
-            will be evaluated
+        :param gate_id: A gate ID or list of gate IDs to evaluate on given
+            Sample. If None, all gates will be evaluated
         :return: Dictionary where keys are gate IDs, values are boolean arrays
             of length matching the number sample events. Events in the gate are
             True.
         """
         if gate_id is None:
             gates = self.gates
+        elif isinstance(gate_id, list):
+            gates = {}
+            for g_id in gate_id:
+                gates[g_id] = self.gates[g_id]
         else:
             gates = {gate_id: self.gates[gate_id]}
 
