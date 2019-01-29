@@ -117,6 +117,12 @@ class Dimension(object):
                     'Dimension name not found (line %d)' % fcs_dim_els.sourceline
                 )
 
+    def __repr__(self):
+        return (
+            f'{self.__class__.__name__}('
+            f'{self.id}, label: {self.label})'
+        )
+
 
 class Transform(ABC):
     def __init__(
@@ -205,6 +211,12 @@ class RatioTransform(Transform):
                 )
             self.dimensions.append(label)
 
+    def __repr__(self):
+        return (
+            f'{self.__class__.__name__}('
+            f'{self.id}, t: {self.param_a}, w: {self.param_b}, c: {self.param_c})'
+        )
+
     def apply(self, sample):
         events = sample.get_raw_events()
         events = events.copy()
@@ -261,6 +273,12 @@ class LinearTransform(Transform):
         self.param_t = float(param_t_attribs[0])
         self.param_a = float(param_a_attribs[0])
 
+    def __repr__(self):
+        return (
+            f'{self.__class__.__name__}('
+            f'{self.id}, t: {self.param_t}, a: {self.param_a})'
+        )
+
     def apply(self, events):
         new_events = (events.copy() + self.param_a) / (self.param_t + self.param_a)
 
@@ -308,6 +326,12 @@ class LogTransform(Transform):
 
         self.param_t = float(param_t_attribs[0])
         self.param_m = float(param_m_attribs[0])
+
+    def __repr__(self):
+        return (
+            f'{self.__class__.__name__}('
+            f'{self.id}, t: {self.param_t}, m: {self.param_m})'
+        )
 
     def apply(self, events):
         new_events = (1. / self.param_m) * np.log10(events.copy() / self.param_t) + 1.
@@ -368,6 +392,13 @@ class HyperlogTransform(Transform):
         self.param_w = float(param_w_attribs[0])
         self.param_m = float(param_m_attribs[0])
         self.param_a = float(param_a_attribs[0])
+
+    def __repr__(self):
+        return (
+            f'{self.__class__.__name__}('
+            f'{self.id}, t: {self.param_t}, w: {self.param_w},'
+            f'm: {self.param_m}, a: {self.param_a})'
+        )
 
     def apply(self, events):
         hyperlog = utils.Hyperlog(
@@ -439,6 +470,13 @@ class LogicleTransform(Transform):
         self.param_m = float(param_m_attribs[0])
         self.param_a = float(param_a_attribs[0])
 
+    def __repr__(self):
+        return (
+            f'{self.__class__.__name__}('
+            f'{self.id}, t: {self.param_t}, w: {self.param_w},'
+            f'm: {self.param_m}, a: {self.param_a})'
+        )
+
     def apply(self, events):
         reshape = False
 
@@ -507,6 +545,12 @@ class AsinhTransform(Transform):
         self.param_t = float(param_t_attribs[0])
         self.param_m = float(param_m_attribs[0])
         self.param_a = float(param_a_attribs[0])
+
+    def __repr__(self):
+        return (
+            f'{self.__class__.__name__}('
+            f'{self.id}, t: {self.param_t}, m: {self.param_m}, a: {self.param_a})'
+        )
 
     def apply(self, events):
         x_pre_scale = np.sinh(self.param_m * np.log(10)) / self.param_t
@@ -613,6 +657,12 @@ class Matrix(object):
 
         self.matrix = np.array(self.matrix)
 
+    def __repr__(self):
+        return (
+            f'{self.__class__.__name__}('
+            f'{self.id}, dims: {len(self.fluorochomes)})'
+        )
+
     def apply(self, sample):
         pass
 
@@ -643,6 +693,11 @@ class Vertex(object):
                 )
 
             self.coordinates.append(float(value_attribs[0]))
+
+    def __repr__(self):
+        return (
+            f'{self.__class__.__name__}({self.coordinates})'
+        )
 
 
 class Gate(ABC):
@@ -828,6 +883,12 @@ class RectangleGate(Gate):
         )
         pass
 
+    def __repr__(self):
+        return (
+            f'{self.__class__.__name__}('
+            f'{self.id}, parent: {self.parent}, dims: {len(self.dimensions)})'
+        )
+
     def apply(self, sample):
         events, dim_idx, dim_min, dim_max, new_dims = super().preprocess_sample_events(sample)
 
@@ -893,6 +954,12 @@ class PolygonGate(Gate):
         for vert_el in vert_els:
             vert = Vertex(vert_el, gating_namespace, data_type_namespace)
             self.vertices.append(vert)
+
+    def __repr__(self):
+        return (
+            f'{self.__class__.__name__}('
+            f'{self.id}, parent: {self.parent}, vertices: {len(self.vertices)})'
+        )
 
     def apply(self, sample):
         events, dim_idx, dim_min, dim_max, new_dims = super().preprocess_sample_events(sample)
@@ -1018,6 +1085,12 @@ class EllipsoidGate(Gate):
 
         self.distance_square = float(dist_square_value_attribs[0])
 
+    def __repr__(self):
+        return (
+            f'{self.__class__.__name__}('
+            f'{self.id}, parent: {self.parent}, coords: {self.coordinates})'
+        )
+
     def apply(self, sample):
         events, dim_idx, dim_min, dim_max, new_dims = super().preprocess_sample_events(sample)
 
@@ -1137,6 +1210,12 @@ class QuadrantGate(Gate):
                     }
                 )
 
+    def __repr__(self):
+        return (
+            f'{self.__class__.__name__}('
+            f'{self.id}, parent: {self.parent}, quadrants: {len(self.quadrants)})'
+        )
+
     def apply(self, sample):
         events, dim_idx, dim_min, dim_max, new_dims = super().preprocess_sample_events(sample)
 
@@ -1251,6 +1330,12 @@ class BooleanGate(Gate):
                     'complement': use_complement
                 }
             )
+
+    def __repr__(self):
+        return (
+            f'{self.__class__.__name__}('
+            f'{self.id}, parent: {self.parent}, type: {self.type})'
+        )
 
     def apply(self, sample):
         all_gate_results = []
@@ -1476,6 +1561,13 @@ class GatingStrategy(object):
                 )
 
                 self.comp_matrices[matrix.id] = matrix
+
+    def __repr__(self):
+        return (
+            f'{self.__class__.__name__}('
+            f'{len(self.gates)} gates, {len(self.transformations)} transforms, '
+            f'{len(self.comp_matrices)} compensations)'
+        )
 
     def gate_sample(self, sample, gate_id=None):
         """
