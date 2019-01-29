@@ -3,5 +3,7 @@ python:
   - "3.4"
   - "3.5"
   - "3.6"
+install:
+  - pip install requirements.txt
 script:
-  - python3 run_tests.py
+  - python run_tests.py
