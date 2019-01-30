@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.com/whitews/FlowKit.svg?branch=master)](https://travis-ci.com/whitews/FlowKit)
+
 # FlowKit
 Intuitive Python framework for flow cytometry analysis and visualization, including GatingML support.
 
