@@ -1633,12 +1633,17 @@ class GatingStrategy(object):
 
             return "\n".join(lines)
         elif output == 'json':
-            exporter = anytree.exporter.DictExporter()
+            exporter = anytree.exporter.JsonExporter()
             gs_json = exporter.export(root)
 
             return gs_json
+        elif output == 'dict':
+            exporter = anytree.exporter.DictExporter()
+            gs_dict = exporter.export(root)
+
+            return gs_dict
         else:
-            raise ValueError("'output' must be either 'ascii' or 'json'")
+            raise ValueError("'output' must be either 'ascii', 'json', or 'dict'")
 
     def export_gate_hierarchy_image(self, output_file_path):
         """
