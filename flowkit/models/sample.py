@@ -177,6 +177,13 @@ class Sample(object):
             else:
                 self.original_filename = None
 
+    def __repr__(self):
+        return (
+            f'{self.__class__.__name__}('
+            f'v{self.version}, {self.original_filename}, '
+            f'{len(self.pnn_labels)} channels, {self.event_count} events)'
+        )
+
     def _negative_scatter_indices(self):
         """Returns indices of negative scatter events"""
         scatter_indices = []
