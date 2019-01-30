@@ -572,6 +572,13 @@ class Sample(object):
             be used with some padding to keep events off the edge of the plot.
         :return: A Bokeh Figure object containing the interactive scatter plot.
         """
+        # First, sanity check on requested source type
+        if source == 'xform' and self._transformed_events is None:
+            raise AttributeError(
+                "Transformed events were requested but do not exist.\n"
+                "Have you called a transform method?"
+            )
+
         x_index = self.get_channel_index(x_label_or_number)
         y_index = self.get_channel_index(y_label_or_number)
 
@@ -650,6 +657,7 @@ class Sample(object):
             self,
             source='xform',
             subsample=False,
+            channel_labels_or_numbers=None,
             color_density=False
     ):
         """
@@ -661,18 +669,32 @@ class Sample(object):
         :param subsample: Whether to use all events for plotting or just the
             sub-sampled events. Default is False (all events). Plotting
             sub-sampled events can be much faster.
+        :param channel_labels_or_numbers: List of channel PnN labels or channel
+            numbers to use for the scatter plot matrix. If None, then all
+            channels will be plotted (except Time).
         :param color_density: Whether to color the events by density, similar
             to a heat map. Default is False.
         :return: A Bokeh Figure object containing the interactive scatter plot
             matrix.
         """
         plots = []
+        channels = []
 
-        for channel_y in self.pnn_labels:
+        if channel_labels_or_numbers is None:
+            channels = self.pnn_labels
+        else:
+            for c in channel_labels_or_numbers:
+                c_index = self.get_channel_index(c)
+                c_label = self.pnn_labels[c_index]
+
+                if c_label not in channels:
+                    channels.append(c_label)
+
+        for channel_y in channels:
             if channel_y == 'Time':
                 continue
             row = []
-            for channel_x in self.pnn_labels:
+            for channel_x in channels:
                 if channel_x == 'Time':
                     continue
 
