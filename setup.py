@@ -24,6 +24,7 @@ setup(
         'pandas',
         'numpy',
         'lxml',
-        'bokeh'
+        'bokeh',
+        'anytree'
     ]
 )

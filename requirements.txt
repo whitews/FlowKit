@@ -7,3 +7,4 @@ pandas>=0.19
 numpy>=0.15
 lxml>=4.2
 bokeh>=1.0
+anytree>=2.4
