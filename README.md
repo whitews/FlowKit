@@ -33,4 +33,6 @@ cd flowkit
 python setup.py install
 ```
 
+## Usage
 
+See the [notebook tutorial](https://github.com/whitews/FlowKit/blob/master/examples/flowkit-tutorial.ipynb).
