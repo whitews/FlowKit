@@ -3,6 +3,8 @@
 # FlowKit
 Intuitive Python framework for flow cytometry analysis and visualization, including GatingML support.
 
+<img alt="Screenshot of scatterplot" src="examples/fk_scatterplot.png" style="width:200px;" />
+
 ## Requirements
 
 FlowKit supports Python version 3.6 or above. All dependencies are installable 
