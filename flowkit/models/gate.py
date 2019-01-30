@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 # noinspection PyUnresolvedReferences
 from lxml import etree, objectify
+import anytree
+from anytree.exporter import DotExporter
 import numpy as np
 from flowkit import utils
 import flowutils
@@ -1568,6 +1570,95 @@ class GatingStrategy(object):
             f'{len(self.gates)} gates, {len(self.transformations)} transforms, '
             f'{len(self.comp_matrices)} compensations)'
         )
+
+    def _build_hierarchy_tree(self):
+        nodes = {}
+
+        root = anytree.Node('root')
+
+        for g_id, gate in self.gates.items():
+            if gate.parent is not None:
+                # we'll get children nodes after
+                continue
+
+            nodes[gate.id] = anytree.Node(
+                gate.id,
+                parent=root
+            )
+
+            if isinstance(gate, QuadrantGate):
+                for q_id, quad in gate.quadrants.items():
+                    nodes[q_id] = anytree.Node(
+                        q_id,
+                        parent=nodes[gate.id]
+                    )
+
+        for g_id, gate in self.gates.items():
+            if gate.parent is None:
+                # at root level, we already got it
+                continue
+
+            nodes[gate.id] = anytree.Node(
+                gate.id,
+                parent=nodes[gate.parent]
+            )
+
+            if isinstance(gate, QuadrantGate):
+                for q_id, quad in gate.quadrants.items():
+                    nodes[q_id] = anytree.Node(
+                        q_id,
+                        parent=nodes[gate.id]
+                    )
+
+        return root
+
+    def get_gate_hierarchy(self, output='ascii'):
+        """
+        Show hierarchy of gates in multiple formats, including text,
+        dictionary, or JSON,
+
+        :param output: Determines format of hierarchy returned, either 'text',
+            'dict', or 'JSON' (default is 'text')
+        :return: either a text string or a dictionary
+        """
+        root = self._build_hierarchy_tree()
+
+        tree = anytree.RenderTree(root, style=anytree.render.ContRoundStyle())
+
+        if output == 'ascii':
+            lines = []
+
+            for row in tree:
+                lines.append("%s%s" % (row.pre, row.node.name))
+
+            return "\n".join(lines)
+        elif output == 'json':
+            exporter = anytree.exporter.DictExporter()
+            gs_json = exporter.export(root)
+
+            return gs_json
+        else:
+            raise ValueError("'output' must be either 'ascii' or 'json'")
+
+    def export_gate_hierarchy_image(self, output_file_path):
+        """
+        Saves an image of the gate hierarchy in many common formats
+        according to the extension given in `output_file_path`, including
+          - SVG  ('svg')
+          - PNG  ('png')
+          - JPEG ('jpeg', 'jpg')
+          - TIFF ('tiff', 'tif')
+          - GIF  ('gif')
+          - PS   ('ps')
+          - PDF  ('pdf')
+
+        *Requires that `graphviz` is installed.*
+
+        :param output_file_path: File path (including file name) of image
+        :return: None
+        """
+        root = self._build_hierarchy_tree()
+        DotExporter(root).to_picture(output_file_path)
 
     def gate_sample(self, sample, gate_id=None):
         """
