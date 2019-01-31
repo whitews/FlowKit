@@ -745,6 +745,21 @@ class Gate(ABC):
             dim = Dimension(dim_el, gating_namespace, data_type_namespace)
             self.dimensions.append(dim)
 
+    def apply_parent_gate(self, sample, results):
+        if self.parent is not None:
+            parent_gate = self.__parent__.get_gate_by_reference(self.parent)
+
+            parent_events = parent_gate.apply(sample)
+
+            if isinstance(parent_gate, QuadrantGate):
+                parent_events = parent_events[self.parent]
+
+            results_and_parent = np.logical_and(parent_events, results)
+        else:
+            results_and_parent = results
+
+        return results_and_parent
+
     @abstractmethod
     def apply(self, sample):
         pass
@@ -916,10 +931,7 @@ class RectangleGate(Gate):
             if new_dim.max is not None:
                 results = np.bitwise_and(results, xform_events < new_dim.max)
 
-        if self.parent is not None:
-            parent_gate = self.__parent__.gates[self.parent]
-            parent_events = parent_gate.apply(sample)
-            results = np.logical_and(parent_events, results)
+        results = self.apply_parent_gate(sample, results)
 
         return results
 
@@ -972,10 +984,7 @@ class PolygonGate(Gate):
 
         results = utils.points_in_polygon(path_verts, events[:, dim_idx])
 
-        if self.parent is not None:
-            parent_gate = self.__parent__.gates[self.parent]
-            parent_events = parent_gate.apply(sample)
-            results = np.logical_and(parent_events, results)
+        results = self.apply_parent_gate(sample, results)
 
         return results
 
@@ -1105,10 +1114,7 @@ class EllipsoidGate(Gate):
 
         results = utils.points_in_ellipse(ellipse, events[:, dim_idx])
 
-        if self.parent is not None:
-            parent_gate = self.__parent__.gates[self.parent]
-            parent_events = parent_gate.apply(sample)
-            results = np.logical_and(parent_events, results)
+        results = self.apply_parent_gate(sample, results)
 
         return results
 
@@ -1122,6 +1128,10 @@ class QuadrantGate(Gate):
     different from other gate types in that they are actually a collection of
     gates (quadrants), though even the term quadrant is misleading as they can
     divide a plane into more than 4 sections.
+
+    Note: Only specific quadrants may be referenced as parent gates or as a
+    component of a Boolean gate. If a QuadrantGate has a parent, then the
+    parent gate is applicable to all quadrants in the QuadrantGate.
     """
     def __init__(
             self,
@@ -1218,6 +1228,26 @@ class QuadrantGate(Gate):
             f'{self.id}, parent: {self.parent}, quadrants: {len(self.quadrants)})'
         )
 
+    def apply_parent_gate(self, sample, results):
+        if self.parent is not None:
+            parent_gate = self.__parent__.get_gate_by_reference(self.parent)
+
+            parent_events = parent_gate.apply(sample)
+
+            if isinstance(parent_gate, QuadrantGate):
+                parent_events = parent_events[self.parent]
+
+            results_and_parent = {}
+            for q_id, q_result in results.items():
+                results_and_parent[q_id] = np.logical_and(
+                    parent_events,
+                    q_result
+                )
+        else:
+            results_and_parent = results
+
+        return results_and_parent
+
     def apply(self, sample):
         events, dim_idx, dim_min, dim_max, new_dims = super().preprocess_sample_events(sample)
 
@@ -1244,7 +1274,7 @@ class QuadrantGate(Gate):
 
                 results[q_id] = q_results
 
-        # TODO: figure out how to properly apply a parent gate
+        results = self.apply_parent_gate(sample, results)
 
         return results
 
@@ -1343,23 +1373,10 @@ class BooleanGate(Gate):
         all_gate_results = []
 
         for gate_ref_dict in self.gate_refs:
-            is_quad_gate = False
-            try:
-                gate = self.__parent__.gates[gate_ref_dict['ref']]
-            except KeyError as e:
-                # may be in a Quadrant gate
-                gate = None
-                for g_id, g in self.__parent__.gates.items():
-                    if isinstance(g, QuadrantGate):
-                        if gate_ref_dict['ref'] in g.quadrants:
-                            gate = g
-                            is_quad_gate = True
-                if gate is None:
-                    raise e
-
+            gate = self.__parent__.get_gate_by_reference(gate_ref_dict['ref'])
             gate_ref_results = gate.apply(sample)
 
-            if is_quad_gate:
+            if isinstance(gate, QuadrantGate):
                 gate_ref_results = gate_ref_results[gate_ref_dict['ref']]
 
             if gate_ref_dict['complement']:
@@ -1379,10 +1396,7 @@ class BooleanGate(Gate):
                 "Boolean gate must specify one of 'and', 'or', or 'not'"
             )
 
-        if self.parent is not None:
-            parent_gate = self.__parent__.gates[self.parent]
-            parent_events = parent_gate.apply(sample)
-            results = np.logical_and(parent_events, results)
+        results = self.apply_parent_gate(sample, results)
 
         return results
 
@@ -1611,6 +1625,29 @@ class GatingStrategy(object):
                     )
 
         return root
+
+    def get_gate_by_reference(self, gate_id):
+        """
+        For gates to lookup any reference gates in their parent gating
+        strategy. It's not safe to just look at the gates dictionary as
+        QuadrantGate IDs cannot be parents themselves, only their component
+        Quadrant IDs can be parents.
+        :return: Subclass of a Gate object
+        """
+        try:
+            gate = self.gates[gate_id]
+        except KeyError as e:
+            # may be in a Quadrant gate
+            gate = None
+            for g_id, g in self.gates.items():
+                if isinstance(g, QuadrantGate):
+                    if gate_id in g.quadrants:
+                        gate = g
+                        continue
+            if gate is None:
+                raise e
+
+        return gate
 
     def get_gate_hierarchy(self, output='ascii'):
         """
