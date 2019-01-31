@@ -789,6 +789,24 @@ class GatingMLTestCase(unittest.TestCase):
         np.testing.assert_array_equal(truth, result['ScalePar1'])
 
     @staticmethod
+    def test_parent_quadrant_rect_gate():
+        gml_path = 'examples/gate_ref/gml/gml_parent_quadrant_rect_gate.xml'
+        fcs_path = 'examples/gate_ref/data1.fcs'
+        res_path = 'examples/gate_ref/truth/Results_ParQuadRect.txt'
+
+        gs = GatingStrategy(gml_path)
+        sample = Sample(
+            fcs_path,
+            filter_anomalous_events=False,
+            filter_negative_scatter=False
+        )
+        truth = np.loadtxt(res_path, dtype=np.bool)
+
+        result = gs.gate_sample(sample, 'ParRectangle1')
+
+        np.testing.assert_array_equal(truth, result['ParRectangle1'])
+
+    @staticmethod
     def test_all_gates():
         gml_path = 'examples/gate_ref/gml/gml_all_gates.xml'
         fcs_path = 'examples/gate_ref/data1.fcs'
