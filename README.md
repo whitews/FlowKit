@@ -1,6 +1,11 @@
+# FlowKit
+
+[![PyPI license](https://img.shields.io/pypi/l/flowkit.svg?colorB=dodgerblue)](https://pypi.python.org/pypi/flowkit/)
+[![PyPI version](https://img.shields.io/pypi/v/flowkit.svg?colorB=blue)](https://pypi.python.org/pypi/flowkit/)
 [![Build Status](https://travis-ci.com/whitews/FlowKit.svg?branch=master)](https://travis-ci.com/whitews/FlowKit)
 
-# FlowKit
+## Overview
+
 Intuitive Python framework for flow cytometry analysis and visualization, including GatingML support.
 
 <img alt="Screenshot of scatterplot" src="examples/fk_scatterplot.png" style="width:200px;" />
