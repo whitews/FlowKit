@@ -6,7 +6,35 @@
 
 ## Overview
 
-Intuitive Python framework for flow cytometry analysis and visualization, including GatingML support.
+FlowKit is an intuitive Python toolkit for flow cytometry analysis and visualization, including GatingML 2.0 support. Features include:
+
+* Reading Flow Cytometry Standard (FCS) files, including FCS versions:
+  * 2.0
+  * 3.0
+  * 3.1
+* Exporting FCS data in any of the following formats:
+  * A new FCS 3.1 file, with modified metadata and/or filtered events
+  * NumPy array
+  * Pandas DataFrame
+  * CSV text file
+* Compensating FCS events using spillover matrices in multiple formats:
+  * As the $SPILL or $SPILLOVER keyword value format
+  * FlowJo tab-delimited text format
+  * NumPy array
+  * GatingML 2.0 spectrumMatrix XML element
+* Tranformation of original or compensated events in a variety of transforms used in the flow community:
+  * Logicle
+  * Inverse hyperbolic sine (arcsinh)
+  * Hyperlog
+  * Logarithmic
+  * Channel ratios
+  * Linear
+* Optional, automatic filtering of negative scatter events and/or anomalous events
+* Plotting FCS event data:
+  * Histogram of single channel data with a Gaussian kernel density estimate curve
+  * Contour density plot of two channels
+  * Interactive scatter plot of two channels
+  * Interactive scatter plot matrix of any combination of channels
 
 <img alt="Screenshot of scatterplot" src="examples/fk_scatterplot.png" style="width:200px;" />
 
