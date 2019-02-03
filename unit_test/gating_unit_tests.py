@@ -138,6 +138,24 @@ class GatingMLTestCase(unittest.TestCase):
         np.testing.assert_array_equal(truth, result['Ellipse1'])
 
     @staticmethod
+    def test_ellipsoid_3d_gate():
+        gml_path = 'examples/gate_ref/gml/gml_ellipsoid3d_gate.xml'
+        fcs_path = 'examples/gate_ref/data1.fcs'
+        res_path = 'examples/gate_ref/truth/Results_Ellipsoid3D.txt'
+
+        gs = GatingStrategy(gml_path)
+        sample = Sample(
+            fcs_path,
+            filter_anomalous_events=False,
+            filter_negative_scatter=False
+        )
+        truth = np.loadtxt(res_path, dtype=np.bool)
+
+        result = gs.gate_sample(sample, 'Ellipsoid3D')
+
+        np.testing.assert_array_equal(truth, result['Ellipsoid3D'])
+
+    @staticmethod
     def test_time_range_gate():
         gml_path = 'examples/gate_ref/gml/gml_time_range_gate.xml'
         fcs_path = 'examples/gate_ref/data1.fcs'
