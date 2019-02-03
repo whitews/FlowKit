@@ -478,6 +478,33 @@ def points_in_ellipse(ellipse, points):
     return rad_cc <= 1.0
 
 
+def points_in_ellipsoid(
+        ellipsoid_covariance_matrix,
+        ellipsoid_means,
+        ellipsoid_distance_square,
+        points
+):
+    # we only take points that have already been filtered by the correct
+    # columns (i.e. those columns that are included in the ellipsoid
+
+    # First, subtract ellipse centers (consider the ellipse at the origin)
+    points_translated = points - ellipsoid_means
+
+    # Get the inverse covariance matrix
+    ell_cov_mat_inv = np.linalg.inv(ellipsoid_covariance_matrix)
+
+    # Matrix multiplication of translated points by inverse covariance matrix,
+    # rotates the points instead of rotating the ellipse
+    points_rot = np.dot(points_translated, ell_cov_mat_inv)
+    points_rot = points_rot * points_translated
+
+    # Points are inclusive if they are <= than the distance square
+    # since boundary points are considered inclusive
+    results = points_rot.sum(axis=1) <= ellipsoid_distance_square
+
+    return results
+
+
 def points_in_polygon(poly_vertices, points):
     """
     Determines whether points in an array are inside a polygon. Points on the
