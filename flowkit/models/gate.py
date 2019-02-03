@@ -1025,11 +1025,7 @@ class EllipsoidGate(Gate):
             namespaces=gate_element.nsmap
         )
 
-        if len(coord_els) > 2:
-            raise NotImplementedError(
-                'Ellipsoids over 2 dimensions are not yet supported (line %d)' % gate_element.sourceline
-            )
-        elif len(coord_els) == 1:
+        if len(coord_els) == 1:
             raise ValueError(
                 'Ellipsoids must have at least 2 dimensions (line %d)' % gate_element.sourceline
             )
@@ -1075,9 +1071,9 @@ class EllipsoidGate(Gate):
 
                 entry_vals.append(float(value_attribs[0]))
 
-            if len(entry_vals) != 2:
+            if len(entry_vals) != len(self.coordinates):
                 raise ValueError(
-                    'A covariance row entry must have 2 values (line %d)' % row_el.sourceline
+                    'Covariance row entry value count must match # of dimensions (line %d)' % row_el.sourceline
                 )
 
             self.covariance_matrix.append(entry_vals)
@@ -1105,14 +1101,12 @@ class EllipsoidGate(Gate):
     def apply(self, sample):
         events, dim_idx, dim_min, dim_max, new_dims = super().preprocess_sample_events(sample)
 
-        ellipse = utils.calculate_ellipse(
-            self.coordinates[0],
-            self.coordinates[1],
+        results = utils.points_in_ellipsoid(
             self.covariance_matrix,
-            n_std_dev=self.distance_square
+            self.coordinates,
+            self.distance_square,
+            events[:, dim_idx]
         )
-
-        results = utils.points_in_ellipse(ellipse, events[:, dim_idx])
 
         results = self.apply_parent_gate(sample, results)
 
