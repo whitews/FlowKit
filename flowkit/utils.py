@@ -44,6 +44,24 @@ sample = [
 new_jet = generate_custom_colormap(sample, cm.jet)
 
 
+def find_attribute_value(xml_el, namespace, attribute_name):
+    attribs = xml_el.xpath(
+        '@%s:%s' % (namespace, attribute_name),
+        namespaces=xml_el.nsmap
+    )
+
+    if len(attribs) > 1:
+        raise ValueError(
+            "Multiple %s attributes found (line %d)" % (
+                attribute_name, xml_el.sourceline
+            )
+        )
+    elif len(attribs) == 0:
+        return None
+
+    return attribs[0]
+
+
 def convert_matrix_text_to_array(matrix_text, fluoro_labels, fluoro_indices):
     """
     Converts a CSV text string to a NumPy array
