@@ -418,7 +418,46 @@ class HyperlogGMLTransform(GMLTransform, HyperlogTransform):
         return events
 
 
-class LogicleGMLTransform(GMLTransform):
+class LogicleTransform(Transform):
+    def __init__(
+        self,
+        gating_strategy,
+        transform_id,
+        param_t,
+        param_w,
+        param_m,
+        param_a
+    ):
+        Transform.__init__(self, gating_strategy, transform_id)
+
+        self.param_a = param_a
+        self.param_m = param_m
+        self.param_t = param_t
+        self.param_w = param_w
+
+    def apply(self, events):
+        reshape = False
+
+        if len(events.shape) == 1:
+            events = events.copy().reshape(-1, 1)
+            reshape = True
+
+        new_events = flowutils.transforms.logicle(
+            events,
+            range(events.shape[1]),
+            t=self.param_t,
+            m=self.param_m,
+            w=self.param_w,
+            a=self.param_a
+        )
+
+        if reshape:
+            new_events = new_events.reshape(-1)
+
+        return new_events
+
+
+class LogicleGMLTransform(GMLTransform, LogicleTransform):
     def __init__(
             self,
             xform_element,
@@ -468,10 +507,15 @@ class LogicleGMLTransform(GMLTransform):
                 "attributes (line %d)" % logicle_els[0].sourceline
             )
 
-        self.param_t = float(param_t_attribs[0])
-        self.param_w = float(param_w_attribs[0])
-        self.param_m = float(param_m_attribs[0])
-        self.param_a = float(param_a_attribs[0])
+        LogicleTransform.__init__(
+            self,
+            gating_strategy,
+            self.id,
+            float(param_t_attribs[0]),
+            float(param_w_attribs[0]),
+            float(param_m_attribs[0]),
+            float(param_a_attribs[0])
+        )
 
     def __repr__(self):
         return (
@@ -480,26 +524,9 @@ class LogicleGMLTransform(GMLTransform):
             f'm: {self.param_m}, a: {self.param_a})'
         )
 
-    def apply(self, events):
-        reshape = False
-
-        if len(events.shape) == 1:
-            events = events.copy().reshape(-1, 1)
-            reshape = True
-
-        new_events = flowutils.transforms.logicle(
-            events,
-            range(events.shape[1]),
-            t=self.param_t,
-            m=self.param_m,
-            w=self.param_w,
-            a=self.param_a
-        )
-
-        if reshape:
-            new_events = new_events.reshape(-1)
-
-        return new_events
+    def apply(self, sample):
+        events = LogicleTransform.apply(self, sample)
+        return events
 
 
 class AsinhGMLTransform(GMLTransform):
