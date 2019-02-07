@@ -132,10 +132,8 @@ class Matrix(object):
         self,
         matrix_element,
         xform_namespace,
-        data_type_namespace,
-        gating_strategy
+        data_type_namespace
     ):
-        self.__parent__ = gating_strategy
         self.id = matrix_element.xpath(
             '@%s:id' % xform_namespace,
             namespaces=matrix_element.nsmap
@@ -1123,8 +1121,7 @@ class GatingStrategy(object):
                 matrix = Matrix(
                     matrix_el,
                     self._transform_ns,
-                    self._data_type_ns,
-                    self
+                    self._data_type_ns
                 )
 
                 self.comp_matrices[matrix.id] = matrix
