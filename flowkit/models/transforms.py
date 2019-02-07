@@ -235,7 +235,26 @@ class LinearGMLTransform(GMLTransform, LinearTransform):
         return events
 
 
-class LogGMLTransform(GMLTransform):
+class LogTransform(Transform):
+    def __init__(
+        self,
+        gating_strategy,
+        transform_id,
+        param_t,
+        param_m
+    ):
+        Transform.__init__(self, gating_strategy, transform_id)
+
+        self.param_m = param_m
+        self.param_t = param_t
+
+    def apply(self, events):
+        new_events = (1. / self.param_m) * np.log10(events.copy() / self.param_t) + 1.
+
+        return new_events
+
+
+class LogGMLTransform(GMLTransform, LogTransform):
     def __init__(
             self,
             xform_element,
@@ -275,8 +294,13 @@ class LogGMLTransform(GMLTransform):
                 "Log transform must provide an 'T' attribute (line %d)" % f_log_els[0].sourceline
             )
 
-        self.param_t = float(param_t_attribs[0])
-        self.param_m = float(param_m_attribs[0])
+        LogTransform.__init__(
+            self,
+            gating_strategy,
+            self.id,
+            float(param_t_attribs[0]),
+            float(param_m_attribs[0])
+        )
 
     def __repr__(self):
         return (
@@ -284,10 +308,9 @@ class LogGMLTransform(GMLTransform):
             f'{self.id}, t: {self.param_t}, m: {self.param_m})'
         )
 
-    def apply(self, events):
-        new_events = (1. / self.param_m) * np.log10(events.copy() / self.param_t) + 1.
-
-        return new_events
+    def apply(self, sample):
+        events = LogTransform.apply(self, sample)
+        return events
 
 
 class HyperlogGMLTransform(GMLTransform):
