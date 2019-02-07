@@ -1048,8 +1048,7 @@ class GatingStrategy(object):
                     xform = transforms.RatioGMLTransform(
                         xform_el,
                         self._transform_ns,
-                        self._data_type_ns,
-                        self
+                        self._data_type_ns
                     )
 
                 flog_els = xform_el.findall(
@@ -1060,8 +1059,7 @@ class GatingStrategy(object):
                 if len(flog_els) > 0:
                     xform = transforms.LogGMLTransform(
                         xform_el,
-                        self._transform_ns,
-                        self
+                        self._transform_ns
                     )
 
                 fasinh_els = xform_el.findall(
@@ -1072,8 +1070,7 @@ class GatingStrategy(object):
                 if len(fasinh_els) > 0:
                     xform = transforms.AsinhGMLTransform(
                         xform_el,
-                        self._transform_ns,
-                        self
+                        self._transform_ns
                     )
 
                 hyperlog_els = xform_el.findall(
@@ -1084,8 +1081,7 @@ class GatingStrategy(object):
                 if len(hyperlog_els) > 0:
                     xform = transforms.HyperlogGMLTransform(
                         xform_el,
-                        self._transform_ns,
-                        self
+                        self._transform_ns
                     )
 
                 flin_els = xform_el.findall(
@@ -1096,8 +1092,7 @@ class GatingStrategy(object):
                 if len(flin_els) > 0:
                     xform = transforms.LinearGMLTransform(
                         xform_el,
-                        self._transform_ns,
-                        self
+                        self._transform_ns
                     )
 
                 logicle_els = xform_el.findall(
@@ -1108,8 +1103,7 @@ class GatingStrategy(object):
                 if len(logicle_els) > 0:
                     xform = transforms.LogicleGMLTransform(
                         xform_el,
-                        self._transform_ns,
-                        self
+                        self._transform_ns
                     )
 
                 if xform is not None:

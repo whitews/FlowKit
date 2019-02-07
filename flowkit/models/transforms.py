@@ -7,10 +7,8 @@ from flowkit import utils
 class Transform(ABC):
     def __init__(
             self,
-            gating_strategy,
             transform_id
     ):
-        self.__parent__ = gating_strategy
         self.id = transform_id
         self.dimensions = []
 
@@ -20,12 +18,12 @@ class Transform(ABC):
 
 
 class GMLTransform(Transform):
-    def __init__(self, xform_element, xform_namespace, gating_strategy):
+    def __init__(self, xform_element, xform_namespace):
         t_id = xform_element.xpath(
             '@%s:id' % xform_namespace,
             namespaces=xform_element.nsmap
         )[0]
-        Transform.__init__(self, gating_strategy, t_id)
+        Transform.__init__(self, t_id)
 
     @abstractmethod
     def apply(self, sample):
@@ -35,14 +33,13 @@ class GMLTransform(Transform):
 class RatioTransform(Transform):
     def __init__(
             self,
-            gating_strategy,
             transform_id,
             dim_labels,
             param_a,
             param_b,
             param_c
     ):
-        Transform.__init__(self, gating_strategy, transform_id)
+        Transform.__init__(self, transform_id)
 
         self.dimensions = dim_labels
 
@@ -75,14 +72,12 @@ class RatioGMLTransform(GMLTransform, RatioTransform):
             self,
             xform_element,
             xform_namespace,
-            data_type_namespace,
-            gating_strategy
+            data_type_namespace
     ):
         GMLTransform.__init__(
             self,
             xform_element,
-            xform_namespace,
-            gating_strategy
+            xform_namespace
         )
 
         f_ratio_els = xform_element.findall(
@@ -138,7 +133,6 @@ class RatioGMLTransform(GMLTransform, RatioTransform):
 
         RatioTransform.__init__(
             self,
-            gating_strategy,
             self.id,
             dim_labels,
             float(param_a_attribs[0]),
@@ -154,12 +148,11 @@ class RatioGMLTransform(GMLTransform, RatioTransform):
 class LinearTransform(Transform):
     def __init__(
             self,
-            gating_strategy,
             transform_id,
             param_t,
             param_a
     ):
-        Transform.__init__(self, gating_strategy, transform_id)
+        Transform.__init__(self, transform_id)
 
         self.param_a = param_a
         self.param_t = param_t
@@ -180,14 +173,12 @@ class LinearGMLTransform(GMLTransform, LinearTransform):
     def __init__(
             self,
             xform_element,
-            xform_namespace,
-            gating_strategy
+            xform_namespace
     ):
         GMLTransform.__init__(
             self,
             xform_element,
-            xform_namespace,
-            gating_strategy
+            xform_namespace
         )
 
         f_lin_els = xform_element.findall(
@@ -218,7 +209,6 @@ class LinearGMLTransform(GMLTransform, LinearTransform):
 
         LinearTransform.__init__(
             self,
-            gating_strategy,
             self.id,
             float(param_t_attribs[0]),
             float(param_a_attribs[0])
@@ -232,12 +222,11 @@ class LinearGMLTransform(GMLTransform, LinearTransform):
 class LogTransform(Transform):
     def __init__(
         self,
-        gating_strategy,
         transform_id,
         param_t,
         param_m
     ):
-        Transform.__init__(self, gating_strategy, transform_id)
+        Transform.__init__(self, transform_id)
 
         self.param_m = param_m
         self.param_t = param_t
@@ -258,14 +247,12 @@ class LogGMLTransform(GMLTransform, LogTransform):
     def __init__(
             self,
             xform_element,
-            xform_namespace,
-            gating_strategy
+            xform_namespace
     ):
         GMLTransform.__init__(
             self,
             xform_element,
-            xform_namespace,
-            gating_strategy
+            xform_namespace
         )
 
         f_log_els = xform_element.findall(
@@ -296,7 +283,6 @@ class LogGMLTransform(GMLTransform, LogTransform):
 
         LogTransform.__init__(
             self,
-            gating_strategy,
             self.id,
             float(param_t_attribs[0]),
             float(param_m_attribs[0])
@@ -310,14 +296,13 @@ class LogGMLTransform(GMLTransform, LogTransform):
 class HyperlogTransform(Transform):
     def __init__(
         self,
-        gating_strategy,
         transform_id,
         param_t,
         param_w,
         param_m,
         param_a
     ):
-        Transform.__init__(self, gating_strategy, transform_id)
+        Transform.__init__(self, transform_id)
 
         self.param_a = param_a
         self.param_m = param_m
@@ -351,14 +336,12 @@ class HyperlogGMLTransform(GMLTransform, HyperlogTransform):
     def __init__(
             self,
             xform_element,
-            xform_namespace,
-            gating_strategy
+            xform_namespace
     ):
         GMLTransform.__init__(
             self,
             xform_element,
-            xform_namespace,
-            gating_strategy
+            xform_namespace
         )
 
         hlog_els = xform_element.findall(
@@ -399,7 +382,6 @@ class HyperlogGMLTransform(GMLTransform, HyperlogTransform):
 
         HyperlogTransform.__init__(
             self,
-            gating_strategy,
             self.id,
             float(param_t_attribs[0]),
             float(param_w_attribs[0]),
@@ -415,14 +397,13 @@ class HyperlogGMLTransform(GMLTransform, HyperlogTransform):
 class LogicleTransform(Transform):
     def __init__(
         self,
-        gating_strategy,
         transform_id,
         param_t,
         param_w,
         param_m,
         param_a
     ):
-        Transform.__init__(self, gating_strategy, transform_id)
+        Transform.__init__(self, transform_id)
 
         self.param_a = param_a
         self.param_m = param_m
@@ -462,14 +443,12 @@ class LogicleGMLTransform(GMLTransform, LogicleTransform):
     def __init__(
             self,
             xform_element,
-            xform_namespace,
-            gating_strategy
+            xform_namespace
     ):
         GMLTransform.__init__(
             self,
             xform_element,
-            xform_namespace,
-            gating_strategy
+            xform_namespace
         )
 
         logicle_els = xform_element.findall(
@@ -510,7 +489,6 @@ class LogicleGMLTransform(GMLTransform, LogicleTransform):
 
         LogicleTransform.__init__(
             self,
-            gating_strategy,
             self.id,
             float(param_t_attribs[0]),
             float(param_w_attribs[0]),
@@ -526,13 +504,12 @@ class LogicleGMLTransform(GMLTransform, LogicleTransform):
 class AsinhTransform(Transform):
     def __init__(
         self,
-        gating_strategy,
         transform_id,
         param_t,
         param_m,
         param_a
     ):
-        Transform.__init__(self, gating_strategy, transform_id)
+        Transform.__init__(self, transform_id)
 
         self.param_a = param_a
         self.param_m = param_m
@@ -558,14 +535,12 @@ class AsinhGMLTransform(GMLTransform, AsinhTransform):
     def __init__(
             self,
             xform_element,
-            xform_namespace,
-            gating_strategy
+            xform_namespace
     ):
         GMLTransform.__init__(
             self,
             xform_element,
-            xform_namespace,
-            gating_strategy
+            xform_namespace
         )
 
         f_asinh_els = xform_element.findall(
@@ -600,7 +575,6 @@ class AsinhGMLTransform(GMLTransform, AsinhTransform):
 
         AsinhTransform.__init__(
             self,
-            gating_strategy,
             self.id,
             float(param_t_attribs[0]),
             float(param_m_attribs[0]),
