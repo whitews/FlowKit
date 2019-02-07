@@ -157,7 +157,26 @@ class RatioGMLTransform(GMLTransform, RatioTransform):
         return events
 
 
-class LinearGMLTransform(GMLTransform):
+class LinearTransform(Transform):
+    def __init__(
+            self,
+            gating_strategy,
+            transform_id,
+            param_t,
+            param_a
+    ):
+        Transform.__init__(self, gating_strategy, transform_id)
+
+        self.param_a = param_a
+        self.param_t = param_t
+
+    def apply(self, events):
+        new_events = (events.copy() + self.param_a) / (self.param_t + self.param_a)
+
+        return new_events
+
+
+class LinearGMLTransform(GMLTransform, LinearTransform):
     def __init__(
             self,
             xform_element,
@@ -197,8 +216,13 @@ class LinearGMLTransform(GMLTransform):
                 "Linear transform must provide 'T' and 'A' attributes (line %d)" % f_lin_els[0].sourceline
             )
 
-        self.param_t = float(param_t_attribs[0])
-        self.param_a = float(param_a_attribs[0])
+        LinearTransform.__init__(
+            self,
+            gating_strategy,
+            self.id,
+            float(param_t_attribs[0]),
+            float(param_a_attribs[0])
+        )
 
     def __repr__(self):
         return (
@@ -206,10 +230,9 @@ class LinearGMLTransform(GMLTransform):
             f'{self.id}, t: {self.param_t}, a: {self.param_a})'
         )
 
-    def apply(self, events):
-        new_events = (events.copy() + self.param_a) / (self.param_t + self.param_a)
-
-        return new_events
+    def apply(self, sample):
+        events = LinearTransform.apply(self, sample)
+        return events
 
 
 class LogGMLTransform(GMLTransform):
