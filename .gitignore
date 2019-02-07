@@ -1,6 +1,6 @@
 # User-specific stuff:
 .idea
-scratch/
+scratch/*
 *.png
 
 ### macOS template
