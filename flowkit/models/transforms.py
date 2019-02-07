@@ -146,12 +146,6 @@ class RatioGMLTransform(GMLTransform, RatioTransform):
             float(param_c_attribs[0])
         )
 
-    def __repr__(self):
-        return (
-            f'{self.__class__.__name__}('
-            f'{self.id}, t: {self.param_a}, w: {self.param_b}, c: {self.param_c})'
-        )
-
     def apply(self, sample):
         events = RatioTransform.apply(self, sample)
         return events
@@ -169,6 +163,12 @@ class LinearTransform(Transform):
 
         self.param_a = param_a
         self.param_t = param_t
+
+    def __repr__(self):
+        return (
+            f'{self.__class__.__name__}('
+            f'{self.id}, t: {self.param_t}, a: {self.param_a})'
+        )
 
     def apply(self, events):
         new_events = (events.copy() + self.param_a) / (self.param_t + self.param_a)
@@ -224,12 +224,6 @@ class LinearGMLTransform(GMLTransform, LinearTransform):
             float(param_a_attribs[0])
         )
 
-    def __repr__(self):
-        return (
-            f'{self.__class__.__name__}('
-            f'{self.id}, t: {self.param_t}, a: {self.param_a})'
-        )
-
     def apply(self, sample):
         events = LinearTransform.apply(self, sample)
         return events
@@ -247,6 +241,12 @@ class LogTransform(Transform):
 
         self.param_m = param_m
         self.param_t = param_t
+
+    def __repr__(self):
+        return (
+            f'{self.__class__.__name__}('
+            f'{self.id}, t: {self.param_t}, m: {self.param_m})'
+        )
 
     def apply(self, events):
         new_events = (1. / self.param_m) * np.log10(events.copy() / self.param_t) + 1.
@@ -302,12 +302,6 @@ class LogGMLTransform(GMLTransform, LogTransform):
             float(param_m_attribs[0])
         )
 
-    def __repr__(self):
-        return (
-            f'{self.__class__.__name__}('
-            f'{self.id}, t: {self.param_t}, m: {self.param_m})'
-        )
-
     def apply(self, sample):
         events = LogTransform.apply(self, sample)
         return events
@@ -329,6 +323,13 @@ class HyperlogTransform(Transform):
         self.param_m = param_m
         self.param_t = param_t
         self.param_w = param_w
+
+    def __repr__(self):
+        return (
+            f'{self.__class__.__name__}('
+            f'{self.id}, t: {self.param_t}, w: {self.param_w},'
+            f'm: {self.param_m}, a: {self.param_a})'
+        )
 
     def apply(self, events):
         hyperlog = utils.Hyperlog(
@@ -406,13 +407,6 @@ class HyperlogGMLTransform(GMLTransform, HyperlogTransform):
             float(param_a_attribs[0])
         )
 
-    def __repr__(self):
-        return (
-            f'{self.__class__.__name__}('
-            f'{self.id}, t: {self.param_t}, w: {self.param_w},'
-            f'm: {self.param_m}, a: {self.param_a})'
-        )
-
     def apply(self, sample):
         events = HyperlogTransform.apply(self, sample)
         return events
@@ -434,6 +428,13 @@ class LogicleTransform(Transform):
         self.param_m = param_m
         self.param_t = param_t
         self.param_w = param_w
+
+    def __repr__(self):
+        return (
+            f'{self.__class__.__name__}('
+            f'{self.id}, t: {self.param_t}, w: {self.param_w},'
+            f'm: {self.param_m}, a: {self.param_a})'
+        )
 
     def apply(self, events):
         reshape = False
@@ -517,13 +518,6 @@ class LogicleGMLTransform(GMLTransform, LogicleTransform):
             float(param_a_attribs[0])
         )
 
-    def __repr__(self):
-        return (
-            f'{self.__class__.__name__}('
-            f'{self.id}, t: {self.param_t}, w: {self.param_w},'
-            f'm: {self.param_m}, a: {self.param_a})'
-        )
-
     def apply(self, sample):
         events = LogicleTransform.apply(self, sample)
         return events
@@ -543,6 +537,12 @@ class AsinhTransform(Transform):
         self.param_a = param_a
         self.param_m = param_m
         self.param_t = param_t
+
+    def __repr__(self):
+        return (
+            f'{self.__class__.__name__}('
+            f'{self.id}, t: {self.param_t}, m: {self.param_m}, a: {self.param_a})'
+        )
 
     def apply(self, events):
         x_pre_scale = np.sinh(self.param_m * np.log(10)) / self.param_t
@@ -605,12 +605,6 @@ class AsinhGMLTransform(GMLTransform, AsinhTransform):
             float(param_t_attribs[0]),
             float(param_m_attribs[0]),
             float(param_a_attribs[0])
-        )
-
-    def __repr__(self):
-        return (
-            f'{self.__class__.__name__}('
-            f'{self.id}, t: {self.param_t}, m: {self.param_m}, a: {self.param_a})'
         )
 
     def apply(self, sample):
