@@ -164,7 +164,8 @@ class LinearGMLTransform(GMLTransform):
             xform_namespace,
             gating_strategy
     ):
-        super().__init__(
+        GMLTransform.__init__(
+            self,
             xform_element,
             xform_namespace,
             gating_strategy
@@ -218,7 +219,8 @@ class LogGMLTransform(GMLTransform):
             xform_namespace,
             gating_strategy
     ):
-        super().__init__(
+        GMLTransform.__init__(
+            self,
             xform_element,
             xform_namespace,
             gating_strategy
@@ -272,7 +274,8 @@ class HyperlogGMLTransform(GMLTransform):
             xform_namespace,
             gating_strategy
     ):
-        super().__init__(
+        GMLTransform.__init__(
+            self,
             xform_element,
             xform_namespace,
             gating_strategy
@@ -349,7 +352,8 @@ class LogicleGMLTransform(GMLTransform):
             xform_namespace,
             gating_strategy
     ):
-        super().__init__(
+        GMLTransform.__init__(
+            self,
             xform_element,
             xform_namespace,
             gating_strategy
@@ -432,7 +436,8 @@ class AsinhGMLTransform(GMLTransform):
             xform_namespace,
             gating_strategy
     ):
-        super().__init__(
+        GMLTransform.__init__(
+            self,
             xform_element,
             xform_namespace,
             gating_strategy
