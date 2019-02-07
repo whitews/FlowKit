@@ -313,7 +313,40 @@ class LogGMLTransform(GMLTransform, LogTransform):
         return events
 
 
-class HyperlogGMLTransform(GMLTransform):
+class HyperlogTransform(Transform):
+    def __init__(
+        self,
+        gating_strategy,
+        transform_id,
+        param_t,
+        param_w,
+        param_m,
+        param_a
+    ):
+        Transform.__init__(self, gating_strategy, transform_id)
+
+        self.param_a = param_a
+        self.param_m = param_m
+        self.param_t = param_t
+        self.param_w = param_w
+
+    def apply(self, events):
+        hyperlog = utils.Hyperlog(
+            self.param_t,
+            self.param_w,
+            self.param_m,
+            self.param_a
+        )
+
+        new_events = []
+
+        for e in events.copy():
+            new_events.append(hyperlog.scale(e))
+
+        return np.array(new_events)
+
+
+class HyperlogGMLTransform(GMLTransform, HyperlogTransform):
     def __init__(
             self,
             xform_element,
@@ -363,10 +396,15 @@ class HyperlogGMLTransform(GMLTransform):
                 "attributes (line %d)" % hlog_els[0].sourceline
             )
 
-        self.param_t = float(param_t_attribs[0])
-        self.param_w = float(param_w_attribs[0])
-        self.param_m = float(param_m_attribs[0])
-        self.param_a = float(param_a_attribs[0])
+        HyperlogTransform.__init__(
+            self,
+            gating_strategy,
+            self.id,
+            float(param_t_attribs[0]),
+            float(param_w_attribs[0]),
+            float(param_m_attribs[0]),
+            float(param_a_attribs[0])
+        )
 
     def __repr__(self):
         return (
@@ -375,20 +413,9 @@ class HyperlogGMLTransform(GMLTransform):
             f'm: {self.param_m}, a: {self.param_a})'
         )
 
-    def apply(self, events):
-        hyperlog = utils.Hyperlog(
-            self.param_t,
-            self.param_w,
-            self.param_m,
-            self.param_a
-        )
-
-        new_events = []
-
-        for e in events.copy():
-            new_events.append(hyperlog.scale(e))
-
-        return np.array(new_events)
+    def apply(self, sample):
+        events = HyperlogTransform.apply(self, sample)
+        return events
 
 
 class LogicleGMLTransform(GMLTransform):
