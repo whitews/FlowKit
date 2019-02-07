@@ -7,10 +7,11 @@ from flowkit import utils
 class Transform(ABC):
     def __init__(
             self,
-            gating_strategy
+            gating_strategy,
+            transform_id
     ):
         self.__parent__ = gating_strategy
-        self.id = None
+        self.id = transform_id
         self.dimensions = []
 
     @abstractmethod
@@ -20,19 +21,56 @@ class Transform(ABC):
 
 class GMLTransform(Transform):
     def __init__(self, xform_element, xform_namespace, gating_strategy):
-
-        super().__init__(gating_strategy)
-        self.id = xform_element.xpath(
+        t_id = xform_element.xpath(
             '@%s:id' % xform_namespace,
             namespaces=xform_element.nsmap
         )[0]
+        Transform.__init__(self, gating_strategy, t_id)
 
     @abstractmethod
     def apply(self, sample):
         pass
 
 
-class RatioGMLTransform(GMLTransform):
+class RatioTransform(Transform):
+    def __init__(
+            self,
+            gating_strategy,
+            transform_id,
+            dim_labels,
+            param_a,
+            param_b,
+            param_c
+    ):
+        Transform.__init__(self, gating_strategy, transform_id)
+
+        self.dimensions = dim_labels
+
+        self.param_a = param_a
+        self.param_b = param_b
+        self.param_c = param_c
+
+    def __repr__(self):
+        return (
+            f'{self.__class__.__name__}('
+            f't: {self.param_a}, w: {self.param_b}, c: {self.param_c})'
+        )
+
+    def apply(self, sample):
+        events = sample.get_raw_events()
+        events = events.copy()
+
+        dim_x_idx = sample.pnn_labels.index(self.dimensions[0])
+        dim_y_idx = sample.pnn_labels.index(self.dimensions[1])
+        dim_x = events[:, dim_x_idx]
+        dim_y = events[:, dim_y_idx]
+
+        new_events = self.param_a * ((dim_x - self.param_b) / (dim_y - self.param_c))
+
+        return new_events
+
+
+class RatioGMLTransform(GMLTransform, RatioTransform):
     def __init__(
             self,
             xform_element,
@@ -40,7 +78,8 @@ class RatioGMLTransform(GMLTransform):
             data_type_namespace,
             gating_strategy
     ):
-        super().__init__(
+        GMLTransform.__init__(
+            self,
             xform_element,
             xform_namespace,
             gating_strategy
@@ -76,14 +115,12 @@ class RatioGMLTransform(GMLTransform):
                 "attribute (line %d)" % f_ratio_els[0].sourceline
             )
 
-        self.param_a = float(param_a_attribs[0])
-        self.param_b = float(param_b_attribs[0])
-        self.param_c = float(param_c_attribs[0])
-
         fcs_dim_els = f_ratio_els[0].findall(
             '%s:fcs-dimension' % data_type_namespace,
             namespaces=xform_element.nsmap
         )
+
+        dim_labels = []
 
         for dim_el in fcs_dim_els:
             label_attribs = dim_el.xpath(
@@ -97,7 +134,17 @@ class RatioGMLTransform(GMLTransform):
                 raise ValueError(
                     'Dimension name not found (line %d)' % dim_el.sourceline
                 )
-            self.dimensions.append(label)
+            dim_labels.append(label)
+
+        RatioTransform.__init__(
+            self,
+            gating_strategy,
+            self.id,
+            dim_labels,
+            float(param_a_attribs[0]),
+            float(param_b_attribs[0]),
+            float(param_c_attribs[0])
+        )
 
     def __repr__(self):
         return (
@@ -106,17 +153,8 @@ class RatioGMLTransform(GMLTransform):
         )
 
     def apply(self, sample):
-        events = sample.get_raw_events()
-        events = events.copy()
-
-        dim_x_idx = sample.pnn_labels.index(self.dimensions[0])
-        dim_y_idx = sample.pnn_labels.index(self.dimensions[1])
-        dim_x = events[:, dim_x_idx]
-        dim_y = events[:, dim_y_idx]
-
-        new_events = self.param_a * ((dim_x - self.param_b) / (dim_y - self.param_c))
-
-        return new_events
+        events = RatioTransform.apply(self, sample)
+        return events
 
 
 class LinearGMLTransform(GMLTransform):
