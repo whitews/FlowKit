@@ -17,19 +17,6 @@ class Transform(ABC):
         pass
 
 
-class GMLTransform(Transform):
-    def __init__(self, xform_element, xform_namespace):
-        t_id = xform_element.xpath(
-            '@%s:id' % xform_namespace,
-            namespaces=xform_element.nsmap
-        )[0]
-        Transform.__init__(self, t_id)
-
-    @abstractmethod
-    def apply(self, sample):
-        pass
-
-
 class RatioTransform(Transform):
     def __init__(
             self,
@@ -67,84 +54,6 @@ class RatioTransform(Transform):
         return new_events
 
 
-class RatioGMLTransform(GMLTransform, RatioTransform):
-    def __init__(
-            self,
-            xform_element,
-            xform_namespace,
-            data_type_namespace
-    ):
-        GMLTransform.__init__(
-            self,
-            xform_element,
-            xform_namespace
-        )
-
-        f_ratio_els = xform_element.findall(
-            '%s:fratio' % xform_namespace,
-            namespaces=xform_element.nsmap
-        )
-
-        if len(f_ratio_els) == 0:
-            raise ValueError(
-                "Ratio transform must specify an 'fratio' element (line %d)" % xform_element.sourceline
-            )
-
-        # f ratio transform has 3 parameters: A, B, and C
-        # these are attributes of the 'fratio' element
-        param_a_attribs = f_ratio_els[0].xpath(
-            '@%s:A' % xform_namespace,
-            namespaces=xform_element.nsmap
-        )
-        param_b_attribs = f_ratio_els[0].xpath(
-            '@%s:B' % xform_namespace,
-            namespaces=xform_element.nsmap
-        )
-        param_c_attribs = f_ratio_els[0].xpath(
-            '@%s:C' % xform_namespace,
-            namespaces=xform_element.nsmap
-        )
-        if len(param_a_attribs) == 0 or len(param_b_attribs) == 0 or len(param_c_attribs) == 0:
-            raise ValueError(
-                "Ratio transform must provide an 'A', a 'B', and a 'C' "
-                "attribute (line %d)" % f_ratio_els[0].sourceline
-            )
-
-        fcs_dim_els = f_ratio_els[0].findall(
-            '%s:fcs-dimension' % data_type_namespace,
-            namespaces=xform_element.nsmap
-        )
-
-        dim_labels = []
-
-        for dim_el in fcs_dim_els:
-            label_attribs = dim_el.xpath(
-                '@%s:name' % data_type_namespace,
-                namespaces=xform_element.nsmap
-            )
-
-            if len(label_attribs) > 0:
-                label = label_attribs[0]
-            else:
-                raise ValueError(
-                    'Dimension name not found (line %d)' % dim_el.sourceline
-                )
-            dim_labels.append(label)
-
-        RatioTransform.__init__(
-            self,
-            self.id,
-            dim_labels,
-            float(param_a_attribs[0]),
-            float(param_b_attribs[0]),
-            float(param_c_attribs[0])
-        )
-
-    def apply(self, sample):
-        events = RatioTransform.apply(self, sample)
-        return events
-
-
 class LinearTransform(Transform):
     def __init__(
             self,
@@ -169,56 +78,6 @@ class LinearTransform(Transform):
         return new_events
 
 
-class LinearGMLTransform(GMLTransform, LinearTransform):
-    def __init__(
-            self,
-            xform_element,
-            xform_namespace
-    ):
-        GMLTransform.__init__(
-            self,
-            xform_element,
-            xform_namespace
-        )
-
-        f_lin_els = xform_element.findall(
-            '%s:flin' % xform_namespace,
-            namespaces=xform_element.nsmap
-        )
-
-        if len(f_lin_els) == 0:
-            raise ValueError(
-                "Linear transform must specify an 'flin' element (line %d)" % xform_element.sourceline
-            )
-
-        # f linear transform has 2 parameters: T and A
-        # these are attributes of the 'flin' element
-        param_t_attribs = f_lin_els[0].xpath(
-            '@%s:T' % xform_namespace,
-            namespaces=xform_element.nsmap
-        )
-        param_a_attribs = f_lin_els[0].xpath(
-            '@%s:A' % xform_namespace,
-            namespaces=xform_element.nsmap
-        )
-
-        if len(param_t_attribs) == 0 or len(param_a_attribs) == 0:
-            raise ValueError(
-                "Linear transform must provide 'T' and 'A' attributes (line %d)" % f_lin_els[0].sourceline
-            )
-
-        LinearTransform.__init__(
-            self,
-            self.id,
-            float(param_t_attribs[0]),
-            float(param_a_attribs[0])
-        )
-
-    def apply(self, sample):
-        events = LinearTransform.apply(self, sample)
-        return events
-
-
 class LogTransform(Transform):
     def __init__(
         self,
@@ -241,56 +100,6 @@ class LogTransform(Transform):
         new_events = (1. / self.param_m) * np.log10(events.copy() / self.param_t) + 1.
 
         return new_events
-
-
-class LogGMLTransform(GMLTransform, LogTransform):
-    def __init__(
-            self,
-            xform_element,
-            xform_namespace
-    ):
-        GMLTransform.__init__(
-            self,
-            xform_element,
-            xform_namespace
-        )
-
-        f_log_els = xform_element.findall(
-            '%s:flog' % xform_namespace,
-            namespaces=xform_element.nsmap
-        )
-
-        if len(f_log_els) == 0:
-            raise ValueError(
-                "Log transform must specify an 'flog' element (line %d)" % xform_element.sourceline
-            )
-
-        # f log transform has 2 parameters: T and M
-        # these are attributes of the 'flog' element
-        param_t_attribs = f_log_els[0].xpath(
-            '@%s:T' % xform_namespace,
-            namespaces=xform_element.nsmap
-        )
-        param_m_attribs = f_log_els[0].xpath(
-            '@%s:M' % xform_namespace,
-            namespaces=xform_element.nsmap
-        )
-
-        if len(param_t_attribs) == 0 or len(param_m_attribs) == 0:
-            raise ValueError(
-                "Log transform must provide an 'T' attribute (line %d)" % f_log_els[0].sourceline
-            )
-
-        LogTransform.__init__(
-            self,
-            self.id,
-            float(param_t_attribs[0]),
-            float(param_m_attribs[0])
-        )
-
-    def apply(self, sample):
-        events = LogTransform.apply(self, sample)
-        return events
 
 
 class HyperlogTransform(Transform):
@@ -330,68 +139,6 @@ class HyperlogTransform(Transform):
             new_events.append(hyperlog.scale(e))
 
         return np.array(new_events)
-
-
-class HyperlogGMLTransform(GMLTransform, HyperlogTransform):
-    def __init__(
-            self,
-            xform_element,
-            xform_namespace
-    ):
-        GMLTransform.__init__(
-            self,
-            xform_element,
-            xform_namespace
-        )
-
-        hlog_els = xform_element.findall(
-            '%s:hyperlog' % xform_namespace,
-            namespaces=xform_element.nsmap
-        )
-
-        if len(hlog_els) == 0:
-            raise ValueError(
-                "Hyperlog transform must specify an 'hyperlog' element (line %d)" % xform_element.sourceline
-            )
-
-        # hyperlog transform has 4 parameters: T, W, M, and A
-        # these are attributes of the 'hyperlog' element
-        param_t_attribs = hlog_els[0].xpath(
-            '@%s:T' % xform_namespace,
-            namespaces=xform_element.nsmap
-        )
-        param_w_attribs = hlog_els[0].xpath(
-            '@%s:W' % xform_namespace,
-            namespaces=xform_element.nsmap
-        )
-        param_m_attribs = hlog_els[0].xpath(
-            '@%s:M' % xform_namespace,
-            namespaces=xform_element.nsmap
-        )
-        param_a_attribs = hlog_els[0].xpath(
-            '@%s:A' % xform_namespace,
-            namespaces=xform_element.nsmap
-        )
-
-        if len(param_t_attribs) == 0 or len(param_w_attribs) == 0 or \
-                len(param_m_attribs) == 0 or len(param_a_attribs) == 0:
-            raise ValueError(
-                "Hyperlog transform must provide 'T', 'W', 'M', and 'A' "
-                "attributes (line %d)" % hlog_els[0].sourceline
-            )
-
-        HyperlogTransform.__init__(
-            self,
-            self.id,
-            float(param_t_attribs[0]),
-            float(param_w_attribs[0]),
-            float(param_m_attribs[0]),
-            float(param_a_attribs[0])
-        )
-
-    def apply(self, sample):
-        events = HyperlogTransform.apply(self, sample)
-        return events
 
 
 class LogicleTransform(Transform):
@@ -439,68 +186,6 @@ class LogicleTransform(Transform):
         return new_events
 
 
-class LogicleGMLTransform(GMLTransform, LogicleTransform):
-    def __init__(
-            self,
-            xform_element,
-            xform_namespace
-    ):
-        GMLTransform.__init__(
-            self,
-            xform_element,
-            xform_namespace
-        )
-
-        logicle_els = xform_element.findall(
-            '%s:logicle' % xform_namespace,
-            namespaces=xform_element.nsmap
-        )
-
-        if len(logicle_els) == 0:
-            raise ValueError(
-                "Logicle transform must specify an 'logicle' element (line %d)" % xform_element.sourceline
-            )
-
-        # logicle transform has 4 parameters: T, W, M, and A
-        # these are attributes of the 'logicle' element
-        param_t_attribs = logicle_els[0].xpath(
-            '@%s:T' % xform_namespace,
-            namespaces=xform_element.nsmap
-        )
-        param_w_attribs = logicle_els[0].xpath(
-            '@%s:W' % xform_namespace,
-            namespaces=xform_element.nsmap
-        )
-        param_m_attribs = logicle_els[0].xpath(
-            '@%s:M' % xform_namespace,
-            namespaces=xform_element.nsmap
-        )
-        param_a_attribs = logicle_els[0].xpath(
-            '@%s:A' % xform_namespace,
-            namespaces=xform_element.nsmap
-        )
-
-        if len(param_t_attribs) == 0 or len(param_w_attribs) == 0 or \
-                len(param_m_attribs) == 0 or len(param_a_attribs) == 0:
-            raise ValueError(
-                "Logicle transform must provide 'T', 'W', 'M', and 'A' "
-                "attributes (line %d)" % logicle_els[0].sourceline
-            )
-
-        LogicleTransform.__init__(
-            self,
-            self.id,
-            float(param_t_attribs[0]),
-            float(param_w_attribs[0]),
-            float(param_m_attribs[0]),
-            float(param_a_attribs[0])
-        )
-
-    def apply(self, sample):
-        events = LogicleTransform.apply(self, sample)
-        return events
-
-
 class AsinhTransform(Transform):
     def __init__(
         self,
@@ -529,58 +214,3 @@ class AsinhTransform(Transform):
         new_events = (np.arcsinh(events.copy() * x_pre_scale) + x_transpose) / x_divisor
 
         return new_events
-
-
-class AsinhGMLTransform(GMLTransform, AsinhTransform):
-    def __init__(
-            self,
-            xform_element,
-            xform_namespace
-    ):
-        GMLTransform.__init__(
-            self,
-            xform_element,
-            xform_namespace
-        )
-
-        f_asinh_els = xform_element.findall(
-            '%s:fasinh' % xform_namespace,
-            namespaces=xform_element.nsmap
-        )
-
-        if len(f_asinh_els) == 0:
-            raise ValueError(
-                "Asinh transform must specify an 'fasinh' element (line %d)" % xform_element.sourceline
-            )
-
-        # f asinh transform has 3 parameters: T, M, and A
-        # these are attributes of the 'fasinh' element
-        param_t_attribs = f_asinh_els[0].xpath(
-            '@%s:T' % xform_namespace,
-            namespaces=xform_element.nsmap
-        )
-        param_m_attribs = f_asinh_els[0].xpath(
-            '@%s:M' % xform_namespace,
-            namespaces=xform_element.nsmap
-        )
-        param_a_attribs = f_asinh_els[0].xpath(
-            '@%s:A' % xform_namespace,
-            namespaces=xform_element.nsmap
-        )
-
-        if len(param_t_attribs) == 0 or len(param_m_attribs) == 0 or len(param_a_attribs) == 0:
-            raise ValueError(
-                "Asinh transform must provide 'T', 'M', and 'A' attributes (line %d)" % f_asinh_els[0].sourceline
-            )
-
-        AsinhTransform.__init__(
-            self,
-            self.id,
-            float(param_t_attribs[0]),
-            float(param_m_attribs[0]),
-            float(param_a_attribs[0])
-        )
-
-    def apply(self, sample):
-        events = AsinhTransform.apply(self, sample)
-        return events

@@ -7,7 +7,7 @@ import numpy as np
 import flowutils
 from flowkit import utils
 from flowkit.resources import gml_schema
-from flowkit.models import transforms
+from flowkit.models import gml_transforms
 
 GATE_TYPES = [
     'RectangleGate',
@@ -1043,7 +1043,7 @@ class GatingStrategy(object):
                 )
 
                 if len(fratio_els) > 0:
-                    xform = transforms.RatioGMLTransform(
+                    xform = gml_transforms.RatioGMLTransform(
                         xform_el,
                         self._transform_ns,
                         self._data_type_ns
@@ -1055,7 +1055,7 @@ class GatingStrategy(object):
                 )
 
                 if len(flog_els) > 0:
-                    xform = transforms.LogGMLTransform(
+                    xform = gml_transforms.LogGMLTransform(
                         xform_el,
                         self._transform_ns
                     )
@@ -1066,7 +1066,7 @@ class GatingStrategy(object):
                 )
 
                 if len(fasinh_els) > 0:
-                    xform = transforms.AsinhGMLTransform(
+                    xform = gml_transforms.AsinhGMLTransform(
                         xform_el,
                         self._transform_ns
                     )
@@ -1077,7 +1077,7 @@ class GatingStrategy(object):
                 )
 
                 if len(hyperlog_els) > 0:
-                    xform = transforms.HyperlogGMLTransform(
+                    xform = gml_transforms.HyperlogGMLTransform(
                         xform_el,
                         self._transform_ns
                     )
@@ -1088,7 +1088,7 @@ class GatingStrategy(object):
                 )
 
                 if len(flin_els) > 0:
-                    xform = transforms.LinearGMLTransform(
+                    xform = gml_transforms.LinearGMLTransform(
                         xform_el,
                         self._transform_ns
                     )
@@ -1099,7 +1099,7 @@ class GatingStrategy(object):
                 )
 
                 if len(logicle_els) > 0:
-                    xform = transforms.LogicleGMLTransform(
+                    xform = gml_transforms.LogicleGMLTransform(
                         xform_el,
                         self._transform_ns
                     )
