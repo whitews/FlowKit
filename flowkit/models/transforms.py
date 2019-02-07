@@ -529,7 +529,32 @@ class LogicleGMLTransform(GMLTransform, LogicleTransform):
         return events
 
 
-class AsinhGMLTransform(GMLTransform):
+class AsinhTransform(Transform):
+    def __init__(
+        self,
+        gating_strategy,
+        transform_id,
+        param_t,
+        param_m,
+        param_a
+    ):
+        Transform.__init__(self, gating_strategy, transform_id)
+
+        self.param_a = param_a
+        self.param_m = param_m
+        self.param_t = param_t
+
+    def apply(self, events):
+        x_pre_scale = np.sinh(self.param_m * np.log(10)) / self.param_t
+        x_transpose = self.param_a * np.log(10)
+        x_divisor = (self.param_m + self.param_a) * np.log(10)
+
+        new_events = (np.arcsinh(events.copy() * x_pre_scale) + x_transpose) / x_divisor
+
+        return new_events
+
+
+class AsinhGMLTransform(GMLTransform, AsinhTransform):
     def __init__(
             self,
             xform_element,
@@ -573,9 +598,14 @@ class AsinhGMLTransform(GMLTransform):
                 "Asinh transform must provide 'T', 'M', and 'A' attributes (line %d)" % f_asinh_els[0].sourceline
             )
 
-        self.param_t = float(param_t_attribs[0])
-        self.param_m = float(param_m_attribs[0])
-        self.param_a = float(param_a_attribs[0])
+        AsinhTransform.__init__(
+            self,
+            gating_strategy,
+            self.id,
+            float(param_t_attribs[0]),
+            float(param_m_attribs[0]),
+            float(param_a_attribs[0])
+        )
 
     def __repr__(self):
         return (
@@ -583,11 +613,6 @@ class AsinhGMLTransform(GMLTransform):
             f'{self.id}, t: {self.param_t}, m: {self.param_m}, a: {self.param_a})'
         )
 
-    def apply(self, events):
-        x_pre_scale = np.sinh(self.param_m * np.log(10)) / self.param_t
-        x_transpose = self.param_a * np.log(10)
-        x_divisor = (self.param_m + self.param_a) * np.log(10)
-
-        new_events = (np.arcsinh(events.copy() * x_pre_scale) + x_transpose) / x_divisor
-
-        return new_events
+    def apply(self, sample):
+        events = AsinhTransform.apply(self, sample)
+        return events
