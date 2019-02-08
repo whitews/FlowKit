@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from flowkit.utils import find_attribute_value
-from flowkit.models.transforms import \
-    Transform, \
+from .base_transform import Transform
+from .transforms import \
     RatioTransform, \
     LinearTransform, \
     LogTransform, \

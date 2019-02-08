@@ -7,7 +7,7 @@ import numpy as np
 import flowutils
 from flowkit import utils
 from flowkit.resources import gml_schema
-from flowkit.models import gml_transforms
+from .transforms import gml_transforms
 
 GATE_TYPES = [
     'RectangleGate',

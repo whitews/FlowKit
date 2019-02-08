@@ -1,20 +1,16 @@
-from abc import ABC, abstractmethod
 import numpy as np
 import flowutils
 from flowkit import utils
+from.base_transform import Transform
 
-
-class Transform(ABC):
-    def __init__(
-            self,
-            transform_id
-    ):
-        self.id = transform_id
-        self.dimensions = []
-
-    @abstractmethod
-    def apply(self, sample):
-        pass
+__all__ = [
+    'LinearTransform',
+    'LogTransform',
+    'RatioTransform',
+    'HyperlogTransform',
+    'LogicleTransform',
+    'AsinhTransform'
+]
 
 
 class RatioTransform(Transform):
