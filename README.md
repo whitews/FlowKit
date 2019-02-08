@@ -70,4 +70,7 @@ python setup.py install
 
 ## Usage
 
-See the [notebook tutorial](https://github.com/whitews/FlowKit/blob/master/examples/flowkit-tutorial.ipynb).
+Check out the example notebooks:
+
+* [General Overview](https://github.com/whitews/FlowKit/blob/master/examples/flowkit-tutorial.ipynb)
+* [Applying Transforms to a Sample](https://github.com/whitews/FlowKit/blob/master/examples/sample_transforms.ipynb)
