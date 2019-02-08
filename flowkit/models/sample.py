@@ -143,9 +143,10 @@ class Sample(object):
             if decades > 0:
                 raw_events[:, i] = (10 ** (decades * raw_events[:, i] / channel_range[i])) * log0
 
+        self.transform = None
         self._raw_events = raw_events / channel_gain
         self._comp_events = None
-        self._transformed_events = None  # TODO: should save transform settings
+        self._transformed_events = None
         self.compensation = None
 
         self.apply_compensation(compensation)
@@ -423,6 +424,14 @@ class Sample(object):
             raise ValueError("source must be one of 'raw', 'comp', or 'xform'")
 
         return channel_data
+
+    def apply_transform(self, transform):
+        self._transformed_events = self._comp_events.copy()
+
+        self._transformed_events[:, self.fluoro_indices] = transform.apply(
+            self._transformed_events[:, self.fluoro_indices]
+        )
+        self.transform = transform
 
     def apply_logicle_transform(self, logicle_t=262144, logicle_w=0.5):
         """
