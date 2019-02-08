@@ -131,8 +131,16 @@ class HyperlogTransform(Transform):
 
         new_events = []
 
+        # TODO: This is slow, is there a way to vectorize the scale method?
         for e in events.copy():
-            new_events.append(hyperlog.scale(e))
+            if len(events.shape) > 1:
+                new_row_events = []
+                for row_e in e:
+                    new_row_events.append(hyperlog.scale(row_e))
+
+                new_events.append(new_row_events)
+            else:
+                new_events.append(hyperlog.scale(e))
 
         return np.array(new_events)
 
