@@ -6,7 +6,7 @@ import numpy as np
 
 sys.path.append(os.path.abspath('..'))
 
-from flowkit import Sample
+from flowkit import Sample, transforms
 
 
 class LoadSampleTestCase(unittest.TestCase):
@@ -99,6 +99,32 @@ class LoadSampleTestCase(unittest.TestCase):
 
         # sample.plot_scatter(4, 5, contours=True)
 
+    def test_transform_sample_asinh(self):
+        fcs_path = 'examples/gate_ref/data1.fcs'
+        sample = Sample(fcs_path, subsample_count=None)
+
+        xform = transforms.AsinhTransform('asinh', param_t=10000, param_m=4.5, param_a=0)
+        sample.apply_transform(xform)
+
+        self.assertIsInstance(sample._transformed_events, np.ndarray)
+
+    def test_transform_sample_logical(self):
+        fcs_path = 'examples/gate_ref/data1.fcs'
+        sample = Sample(fcs_path, subsample_count=None)
+
+        xform = transforms.LogicleTransform('logicle', param_t=10000, param_w=0.5, param_m=4.5, param_a=0)
+        sample.apply_transform(xform)
+
+        self.assertIsInstance(sample._transformed_events, np.ndarray)
+
+    def test_transform_sample_hyperlog(self):
+        fcs_path = 'examples/gate_ref/data1.fcs'
+        sample = Sample(fcs_path, subsample_count=None)
+
+        xform = transforms.HyperlogTransform('hyper', param_t=10000, param_w=0.5, param_m=4.5, param_a=0)
+        sample.apply_transform(xform)
+
+        self.assertIsInstance(sample._transformed_events, np.ndarray)
 
 if __name__ == '__main__':
     unittest.main()
