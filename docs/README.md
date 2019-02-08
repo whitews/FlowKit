@@ -1,4 +1,4 @@
-# <img alt="FlowKit" src="../flowkit/resources/flowkit.png" />
+# <img alt="FlowKit" src="flowkit.png" />
 
 [![PyPI license](https://img.shields.io/pypi/l/flowkit.svg?colorB=dodgerblue)](https://pypi.python.org/pypi/flowkit/)
 [![PyPI version](https://img.shields.io/pypi/v/flowkit.svg?colorB=blue)](https://pypi.python.org/pypi/flowkit/)
@@ -36,7 +36,7 @@ FlowKit is an intuitive Python toolkit for flow cytometry analysis and visualiza
   * Interactive scatter plot of two channels
   * Interactive scatter plot matrix of any combination of channels
 
-<img alt="Screenshot of scatterplot" src="../examples/fk_scatterplot.png" style="width:200px;" />
+<img alt="Screenshot of scatterplot" src="fk_scatterplot.png" style="width:200px;" />
 
 ## Requirements
 
