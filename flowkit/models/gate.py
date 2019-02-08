@@ -21,55 +21,28 @@ GATE_TYPES = [
 class Dimension(object):
     def __init__(self, dim_element, gating_namespace, data_type_namespace):
         # check for presence of optional 'id' (present in quad gate dividers)
-        try:
-            self.id = str(
-                dim_element.xpath(
-                    '@%s:id' % gating_namespace,
-                    namespaces=dim_element.nsmap
-                )[0]
-            )
-        except IndexError:
-            self.id = None
+        self.id = utils.find_attribute_value(dim_element, gating_namespace, 'id')
 
         self.label = None
-        self.compensation_ref = str(
-            dim_element.xpath(
-                '@%s:compensation-ref' % gating_namespace,
-                namespaces=dim_element.nsmap
-            )[0]
-        )
-        try:
-            self.transformation_ref = str(
-                dim_element.xpath(
-                    '@%s:transformation-ref' % gating_namespace,
-                    namespaces=dim_element.nsmap
-                )[0]
-            )
-        except IndexError:
-            self.transformation_ref = None
+        self.compensation_ref = utils.find_attribute_value(dim_element, gating_namespace, 'compensation-ref')
+        self.transformation_ref = utils.find_attribute_value(dim_element, gating_namespace, 'transformation-ref')
         self.new_dim_transformation_ref = None
 
         self.min = None
         self.max = None
         self.values = []  # quad gate dims can have multiple values
 
-        # should be 0 or only 1 'min' attribute, but xpath returns a list, so...
-        min_attribs = dim_element.xpath(
-            '@%s:min' % gating_namespace,
-            namespaces=dim_element.nsmap
-        )
+        # should be 0 or only 1 'min' attribute
+        _min = utils.find_attribute_value(dim_element, gating_namespace, 'min')
 
-        if len(min_attribs) > 0:
-            self.min = float(min_attribs[0])
+        if _min is not None:
+            self.min = float(_min)
 
         # ditto for 'max' attribute, 0 or 1 value
-        max_attribs = dim_element.xpath(
-            '@%s:max' % gating_namespace,
-            namespaces=dim_element.nsmap
-        )
+        _max = utils.find_attribute_value(dim_element, gating_namespace, 'max')
 
-        if len(max_attribs) > 0:
-            self.max = float(max_attribs[0])
+        if _max is not None:
+            self.max = float(_max)
 
         # values in gating namespace, ok if not present
         value_els = dim_element.findall(
@@ -89,33 +62,24 @@ class Dimension(object):
         # if no 'fcs-dimension' element is present, this might be a
         # 'new-dimension'  made from a transformation on other dims
         if fcs_dim_els is None:
-            new_dim_els = dim_element.find(
+            new_dim_el = dim_element.find(
                 '%s:new-dimension' % data_type_namespace,
                 namespaces=dim_element.nsmap
             )
-            if new_dim_els is None:
+            if new_dim_el is None:
                 raise ValueError(
                     "Dimension invalid: neither fcs-dimension or new-dimension "
                     "tags found (line %d)" % dim_element.sourceline
                 )
 
             # if we get here, there should be a 'transformation-ref' attribute
-            xform_attribs = new_dim_els.xpath(
-                '@%s:transformation-ref' % data_type_namespace,
-                namespaces=dim_element.nsmap
-            )
+            xform_ref = utils.find_attribute_value(new_dim_el, data_type_namespace, 'transformation-ref')
 
-            if len(xform_attribs) > 0:
-                self.new_dim_transformation_ref = xform_attribs[0]
+            if xform_ref is not None:
+                self.new_dim_transformation_ref = xform_ref
         else:
-            label_attribs = fcs_dim_els.xpath(
-                '@%s:name' % data_type_namespace,
-                namespaces=dim_element.nsmap
-            )
-
-            if len(label_attribs) > 0:
-                self.label = label_attribs[0]
-            else:
+            self.label = utils.find_attribute_value(fcs_dim_els, data_type_namespace, 'name')
+            if self.label is None:
                 raise ValueError(
                     'Dimension name not found (line %d)' % fcs_dim_els.sourceline
                 )
@@ -134,11 +98,7 @@ class Matrix(object):
         xform_namespace,
         data_type_namespace
     ):
-        self.id = matrix_element.xpath(
-            '@%s:id' % xform_namespace,
-            namespaces=matrix_element.nsmap
-        )[0]
-
+        self.id = utils.find_attribute_value(matrix_element, xform_namespace, 'id')
         self.fluorochomes = []
         self.detectors = []
         self.matrix = []
@@ -154,14 +114,9 @@ class Matrix(object):
         )
 
         for dim_el in fcs_dim_els:
-            label_attribs = dim_el.xpath(
-                '@%s:name' % data_type_namespace,
-                namespaces=matrix_element.nsmap
-            )
+            label = utils.find_attribute_value(dim_el, data_type_namespace, 'name')
 
-            if len(label_attribs) > 0:
-                label = label_attribs[0]
-            else:
+            if label is None:
                 raise ValueError(
                     'Dimension name not found (line %d)' % dim_el.sourceline
                 )
@@ -178,14 +133,9 @@ class Matrix(object):
         )
 
         for dim_el in fcs_dim_els:
-            label_attribs = dim_el.xpath(
-                '@%s:name' % data_type_namespace,
-                namespaces=matrix_element.nsmap
-            )
+            label = utils.find_attribute_value(dim_el, data_type_namespace, 'name')
 
-            if len(label_attribs) > 0:
-                label = label_attribs[0]
-            else:
+            if label is None:
                 raise ValueError(
                     'Dimension name not found (line %d)' % dim_el.sourceline
                 )
@@ -205,16 +155,13 @@ class Matrix(object):
             )
 
             for co_el in coefficient_els:
-                value_attribs = co_el.xpath(
-                    '@%s:value' % xform_namespace,
-                    namespaces=matrix_element.nsmap
-                )
-                if len(value_attribs) != 1:
+                value = utils.find_attribute_value(co_el, xform_namespace, 'value')
+                if value is None:
                     raise ValueError(
                         'Matrix coefficient must have only 1 value (line %d)' % co_el.sourceline
                     )
 
-                matrix_row.append(float(value_attribs[0]))
+                matrix_row.append(float(value))
 
             self.matrix.append(matrix_row)
 
@@ -244,18 +191,15 @@ class Vertex(object):
                 'Vertex must contain 2 coordinate values (line %d)' % vert_element.sourceline
             )
 
-        # should be 0 or only 1 'min' attribute, but xpath returns a list, so...
+        # should be 0 or only 1 'min' attribute,
         for coord_el in coord_els:
-            value_attribs = coord_el.xpath(
-                '@%s:value' % data_type_namespace,
-                namespaces=vert_element.nsmap
-            )
-            if len(value_attribs) != 1:
+            value = utils.find_attribute_value(coord_el, data_type_namespace, 'value')
+            if value is None:
                 raise ValueError(
                     'Vertex coordinate must have only 1 value (line %d)' % coord_el.sourceline
                 )
 
-            self.coordinates.append(float(value_attribs[0]))
+            self.coordinates.append(float(value))
 
     def __repr__(self):
         return (
@@ -275,18 +219,8 @@ class Gate(ABC):
             gating_strategy
     ):
         self.__parent__ = gating_strategy
-        self.id = gate_element.xpath(
-            '@%s:id' % gating_namespace,
-            namespaces=gate_element.nsmap
-        )[0]
-        parent = gate_element.xpath(
-            '@%s:parent_id' % gating_namespace,
-            namespaces=gate_element.nsmap
-        )
-        if len(parent) == 0:
-            self.parent = None
-        else:
-            self.parent = parent[0]
+        self.id = utils.find_attribute_value(gate_element, gating_namespace, 'id')
+        self.parent = utils.find_attribute_value(gate_element, gating_namespace, 'parent_id')
 
         # most gates specify dimensions in the 'dimension' tag,
         # but quad gates specify dimensions in the 'divider' tag
@@ -592,16 +526,13 @@ class EllipsoidGate(Gate):
             )
 
         for coord_el in coord_els:
-            value_attribs = coord_el.xpath(
-                '@%s:value' % data_type_namespace,
-                namespaces=gate_element.nsmap
-            )
-            if len(value_attribs) != 1:
+            value = utils.find_attribute_value(coord_el, data_type_namespace, 'value')
+            if value is None:
                 raise ValueError(
                     'A coordinate must have only 1 value (line %d)' % coord_el.sourceline
                 )
 
-            self.coordinates.append(float(value_attribs[0]))
+            self.coordinates.append(float(value))
 
         # Next, we'll parse the covariance matrix, containing 2 'row'
         # elements, each containing 2 'entry' elements w/ value attributes
@@ -625,12 +556,8 @@ class EllipsoidGate(Gate):
 
             entry_vals = []
             for entry_el in row_entry_els:
-                value_attribs = entry_el.xpath(
-                    '@%s:value' % data_type_namespace,
-                    namespaces=gate_element.nsmap
-                )
-
-                entry_vals.append(float(value_attribs[0]))
+                value = utils.find_attribute_value(entry_el, data_type_namespace, 'value')
+                entry_vals.append(float(value))
 
             if len(entry_vals) != len(self.coordinates):
                 raise ValueError(
@@ -646,12 +573,8 @@ class EllipsoidGate(Gate):
             namespaces=gate_element.nsmap
         )
 
-        dist_square_value_attribs = distance_square_el.xpath(
-            '@%s:value' % data_type_namespace,
-            namespaces=gate_element.nsmap
-        )
-
-        self.distance_square = float(dist_square_value_attribs[0])
+        dist_square_value = utils.find_attribute_value(distance_square_el, data_type_namespace, 'value')
+        self.distance_square = float(dist_square_value)
 
     def __repr__(self):
         return (
@@ -719,12 +642,8 @@ class QuadrantGate(Gate):
         self.quadrants = {}
 
         for quadrant_el in quadrant_els:
-            quad_id_attribs = quadrant_el.xpath(
-                '@%s:id' % gating_namespace,
-                namespaces=gate_element.nsmap
-            )
-
-            self.quadrants[quad_id_attribs[0]] = []
+            quad_id = utils.find_attribute_value(quadrant_el, gating_namespace, 'id')
+            self.quadrants[quad_id] = []
 
             position_els = quadrant_el.findall(
                 '%s:position' % gating_namespace,
@@ -732,17 +651,11 @@ class QuadrantGate(Gate):
             )
 
             for pos_el in position_els:
-                divider_ref_attribs = pos_el.xpath(
-                    '@%s:divider_ref' % gating_namespace,
-                    namespaces=gate_element.nsmap
-                )
-                location_attribs = pos_el.xpath(
-                    '@%s:location' % gating_namespace,
-                    namespaces=gate_element.nsmap
-                )
+                divider_ref = utils.find_attribute_value(pos_el, gating_namespace, 'divider_ref')
+                location = utils.find_attribute_value(pos_el, gating_namespace, 'location')
 
-                divider = divider_ref_attribs[0]
-                location = float(location_attribs[0])
+                divider = divider_ref
+                location = float(location)
                 q_min = None
                 q_max = None
                 dim_label = None
@@ -767,7 +680,7 @@ class QuadrantGate(Gate):
                         'Quadrant must define a divider reference (line %d)' % pos_el.sourceline
                     )
 
-                self.quadrants[quad_id_attribs[0]].append(
+                self.quadrants[quad_id].append(
                     {
                         'divider': divider,
                         'dimension': dim_label,
@@ -893,27 +806,21 @@ class BooleanGate(Gate):
         self.gate_refs = []
 
         for gate_ref_el in gate_ref_els:
-            gate_ref_attribs = gate_ref_el.xpath(
-                '@%s:ref' % gating_namespace,
-                namespaces=gate_element.nsmap
-            )
-            if len(gate_ref_attribs) == 0:
+            gate_ref = utils.find_attribute_value(gate_ref_el, gating_namespace, 'ref')
+            if gate_ref is None:
                 raise ValueError(
                     "Boolean gate reference must specify a 'ref' attribute (line %d)" % gate_ref_el.sourceline
                 )
 
-            use_complement_attribs = gate_ref_el.xpath(
-                '@%s:use-as-complement' % gating_namespace,
-                namespaces=gate_element.nsmap
-            )
-            if len(use_complement_attribs) > 0:
-                use_complement = use_complement_attribs[0] == 'true'
+            use_complement = utils.find_attribute_value(gate_ref_el, gating_namespace, 'use-as-complement')
+            if use_complement is not None:
+                use_complement = use_complement == 'true'
             else:
                 use_complement = False
 
             self.gate_refs.append(
                 {
-                    'ref': gate_ref_attribs[0],
+                    'ref': gate_ref,
                     'complement': use_complement
                 }
             )
