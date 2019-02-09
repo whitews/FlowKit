@@ -83,22 +83,6 @@ class LoadSampleTestCase(unittest.TestCase):
 
         self.assertIsNotNone(sample._comp_events)
 
-    def test_plot_scatter(self):
-        fcs_file_path = "examples/test_comp_example.fcs"
-        comp_file_path = "examples/comp_complete_example.csv"
-
-        sample = Sample(
-            fcs_path_or_data=fcs_file_path,
-            compensation=comp_file_path,
-            filter_negative_scatter=False,
-            filter_anomalous_events=False
-        )
-        sample.apply_asinh_transform()
-
-        self.assertIsNotNone(sample._transformed_events)
-
-        # sample.plot_scatter(4, 5, contours=True)
-
     def test_transform_sample_asinh(self):
         fcs_path = 'examples/gate_ref/data1.fcs'
         sample = Sample(fcs_path, subsample_count=None)
