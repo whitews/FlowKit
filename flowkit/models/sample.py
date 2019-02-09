@@ -433,36 +433,6 @@ class Sample(object):
         )
         self.transform = transform
 
-    def apply_logicle_transform(self, logicle_t=262144, logicle_w=0.5):
-        """
-        Applies logicle transform to compensated data
-
-        Retrieve transformed data via `get_transformed_events`
-        """
-        # only transform fluorescent channels
-        self._transformed_events = flowutils.transforms.logicle(
-            self._comp_events,
-            self.fluoro_indices,
-            t=logicle_t,
-            w=logicle_w
-        )
-
-    def apply_asinh_transform(self, pre_scale=0.01):
-        """
-        Applies inverse hyperbolic sine transform on compensated events
-
-        By default, the compensated data will be transformed and the default
-        pre-scale factor is 0.01
-
-        Retrieve transformed data via `get_transformed_events`
-        """
-        # only transform fluorescent channels
-        self._transformed_events = flowutils.transforms.asinh(
-            self._comp_events,
-            self.fluoro_indices,
-            pre_scale=pre_scale
-        )
-
     def plot_contour(
             self,
             x_label_or_number,
