@@ -2,6 +2,7 @@
 .idea
 scratch/*
 *.png
+*.html
 
 ### macOS template
 # General
