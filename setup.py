@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name='FlowKit',
-    version='0.1.0',
+    version='0.1.1b1',
     packages=find_packages(),
     package_data={'': ['*.xsd']},
     include_package_data=True,
