@@ -1,31 +1,31 @@
-from flowkit import Sample
-import os
+import flowkit as fk
+from bokeh.plotting import show
 
-fcs_dir = "/media/sf_vbox_share/cliburn_projects/eqapol_2018-07/EQAPOL_normal"
+fcs_file_path = "test_comp_example.fcs"
+comp_file_path = "comp_complete_example.csv"
 
-#fcs_file_path = "test_comp_example.fcs"
-#comp_file_path = "comp_complete_example.csv"
-
-#fcs_file_path = "test_data_2d_01.fcs"
-
-fcs_file_path = os.path.join(fcs_dir, "AMJ_5L_CMV pp65.fcs")
-comp_file_path = os.path.join(fcs_dir, "CompMatrixDenny06Nov09")
-
-sample = Sample(
+sample = fk.Sample(
     fcs_path_or_data=fcs_file_path,
     compensation=comp_file_path,
     subsample_count=50000,
     filter_negative_scatter=True,
     filter_anomalous_events=False
 )
-sample.apply_logicle_transform()
-#sample.apply_asinh_transform()
-sample.plot_scatter(
+
+xform = fk.transforms.LogicleTransform(
+    'logicle',
+    param_t=262144,
+    param_w=0.5,
+    param_m=4.5,
+    param_a=0
+)
+sample.apply_transform(xform)
+
+fig = sample.plot_scatter(
     3,
     6,
-    # y_min=60000,
-    # y_max=70000,
     source='xform',
-    subsample=True,
-    contours=False
+    subsample=True
 )
+
+show(fig)
