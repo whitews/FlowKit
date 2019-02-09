@@ -1,3 +1,3 @@
 from .models.sample import Sample
-from .models.gate import GatingStrategy
+from .models.gating_strategy import GatingStrategy
 from .models import transforms
