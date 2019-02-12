@@ -200,6 +200,26 @@ class GatingMLTestCase(unittest.TestCase):
         np.testing.assert_array_equal(truth3, result['Quadrant1']['FL2P-FL4N']['events'])
         np.testing.assert_array_equal(truth4, result['Quadrant1']['FL2P-FL4P']['events'])
 
+    def test_quadrant_gate_relative_percent(self):
+        gml_path = 'examples/gate_ref/gml/gml_quadrant1_gate.xml'
+        fcs_path = 'examples/gate_ref/data1.fcs'
+
+        gs = GatingStrategy(gml_path)
+        sample = Sample(
+            fcs_path,
+            filter_anomalous_events=False,
+            filter_negative_scatter=False
+        )
+
+        result = gs.gate_sample(sample)
+
+        total_percent = result['Quadrant1']['FL2N-FL4N']['relative_percent'] + \
+            result['Quadrant1']['FL2N-FL4P']['relative_percent'] + \
+            result['Quadrant1']['FL2P-FL4N']['relative_percent'] + \
+            result['Quadrant1']['FL2P-FL4P']['relative_percent']
+
+        self.assertEqual(100.0, total_percent)
+
     @staticmethod
     def test_quadrant2_gate():
         gml_path = 'examples/gate_ref/gml/gml_quadrant2_gate.xml'
