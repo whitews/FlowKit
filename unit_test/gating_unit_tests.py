@@ -853,13 +853,10 @@ class GatingMLTestCase(unittest.TestCase):
         for g_id, res in gs_results.items():
             if 'events' not in res:
                 for sub_g_id, sub_res in res.items():
-                    try:
-                        np.testing.assert_array_equal(
-                            truth_dict[sub_g_id],
-                            sub_res['events']
-                        )
-                    except KeyError:
-                        print('adf')
+                    np.testing.assert_array_equal(
+                        truth_dict[sub_g_id],
+                        sub_res['events']
+                    )
             else:
                 np.testing.assert_array_equal(
                     truth_dict[g_id],
