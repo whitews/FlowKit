@@ -27,7 +27,7 @@ class GatingMLTestCase(unittest.TestCase):
 
         result = gs.gate_sample(sample, 'Range1')
 
-        np.testing.assert_array_equal(truth, result['Range1'])
+        np.testing.assert_array_equal(truth, result['Range1']['events'])
 
     @staticmethod
     def test_rect1_gate():
@@ -45,7 +45,7 @@ class GatingMLTestCase(unittest.TestCase):
 
         result = gs.gate_sample(sample, 'Rectangle1')
 
-        np.testing.assert_array_equal(truth, result['Rectangle1'])
+        np.testing.assert_array_equal(truth, result['Rectangle1']['events'])
 
     @staticmethod
     def test_rect2_gate():
@@ -63,7 +63,7 @@ class GatingMLTestCase(unittest.TestCase):
 
         result = gs.gate_sample(sample, 'Rectangle2')
 
-        np.testing.assert_array_equal(truth, result['Rectangle2'])
+        np.testing.assert_array_equal(truth, result['Rectangle2']['events'])
 
     @staticmethod
     def test_poly1_gate():
@@ -81,7 +81,7 @@ class GatingMLTestCase(unittest.TestCase):
 
         result = gs.gate_sample(sample, 'Polygon1')
 
-        np.testing.assert_array_equal(truth, result['Polygon1'])
+        np.testing.assert_array_equal(truth, result['Polygon1']['events'])
 
     @staticmethod
     def test_poly2_gate():
@@ -99,7 +99,7 @@ class GatingMLTestCase(unittest.TestCase):
 
         result = gs.gate_sample(sample, 'Polygon2')
 
-        np.testing.assert_array_equal(truth, result['Polygon2'])
+        np.testing.assert_array_equal(truth, result['Polygon2']['events'])
 
     @staticmethod
     def test_poly3_non_solid_gate():
@@ -117,7 +117,7 @@ class GatingMLTestCase(unittest.TestCase):
 
         result = gs.gate_sample(sample, 'Polygon3NS')
 
-        np.testing.assert_array_equal(truth, result['Polygon3NS'])
+        np.testing.assert_array_equal(truth, result['Polygon3NS']['events'])
 
     @staticmethod
     def test_ellipse1_gate():
@@ -135,7 +135,7 @@ class GatingMLTestCase(unittest.TestCase):
 
         result = gs.gate_sample(sample, 'Ellipse1')
 
-        np.testing.assert_array_equal(truth, result['Ellipse1'])
+        np.testing.assert_array_equal(truth, result['Ellipse1']['events'])
 
     @staticmethod
     def test_ellipsoid_3d_gate():
@@ -153,7 +153,7 @@ class GatingMLTestCase(unittest.TestCase):
 
         result = gs.gate_sample(sample, 'Ellipsoid3D')
 
-        np.testing.assert_array_equal(truth, result['Ellipsoid3D'])
+        np.testing.assert_array_equal(truth, result['Ellipsoid3D']['events'])
 
     @staticmethod
     def test_time_range_gate():
@@ -171,7 +171,7 @@ class GatingMLTestCase(unittest.TestCase):
 
         result = gs.gate_sample(sample, 'Range2')
 
-        np.testing.assert_array_equal(truth, result['Range2'])
+        np.testing.assert_array_equal(truth, result['Range2']['events'])
 
     @staticmethod
     def test_quadrant1_gate():
@@ -195,10 +195,10 @@ class GatingMLTestCase(unittest.TestCase):
 
         result = gs.gate_sample(sample)
 
-        np.testing.assert_array_equal(truth1, result['Quadrant1']['FL2N-FL4N'])
-        np.testing.assert_array_equal(truth2, result['Quadrant1']['FL2N-FL4P'])
-        np.testing.assert_array_equal(truth3, result['Quadrant1']['FL2P-FL4N'])
-        np.testing.assert_array_equal(truth4, result['Quadrant1']['FL2P-FL4P'])
+        np.testing.assert_array_equal(truth1, result['Quadrant1']['FL2N-FL4N']['events'])
+        np.testing.assert_array_equal(truth2, result['Quadrant1']['FL2N-FL4P']['events'])
+        np.testing.assert_array_equal(truth3, result['Quadrant1']['FL2P-FL4N']['events'])
+        np.testing.assert_array_equal(truth4, result['Quadrant1']['FL2P-FL4P']['events'])
 
     @staticmethod
     def test_quadrant2_gate():
@@ -224,11 +224,11 @@ class GatingMLTestCase(unittest.TestCase):
 
         result = gs.gate_sample(sample)
 
-        np.testing.assert_array_equal(truth1, result['Quadrant2']['FSCN-SSCN'])
-        np.testing.assert_array_equal(truth2, result['Quadrant2']['FSCD-SSCN-FL1N'])
-        np.testing.assert_array_equal(truth3, result['Quadrant2']['FSCP-SSCN-FL1N'])
-        np.testing.assert_array_equal(truth4, result['Quadrant2']['FSCD-FL1P'])
-        np.testing.assert_array_equal(truth5, result['Quadrant2']['FSCN-SSCP-FL1P'])
+        np.testing.assert_array_equal(truth1, result['Quadrant2']['FSCN-SSCN']['events'])
+        np.testing.assert_array_equal(truth2, result['Quadrant2']['FSCD-SSCN-FL1N']['events'])
+        np.testing.assert_array_equal(truth3, result['Quadrant2']['FSCP-SSCN-FL1N']['events'])
+        np.testing.assert_array_equal(truth4, result['Quadrant2']['FSCD-FL1P']['events'])
+        np.testing.assert_array_equal(truth5, result['Quadrant2']['FSCN-SSCP-FL1P']['events'])
 
     @staticmethod
     def test_ratio_range1_gate():
@@ -246,7 +246,7 @@ class GatingMLTestCase(unittest.TestCase):
 
         result = gs.gate_sample(sample, 'RatRange1')
 
-        np.testing.assert_array_equal(truth, result['RatRange1'])
+        np.testing.assert_array_equal(truth, result['RatRange1']['events'])
 
     @staticmethod
     def test_ratio_range2_gate():
@@ -264,7 +264,7 @@ class GatingMLTestCase(unittest.TestCase):
 
         result = gs.gate_sample(sample, 'RatRange2')
 
-        np.testing.assert_array_equal(truth, result['RatRange2'])
+        np.testing.assert_array_equal(truth, result['RatRange2']['events'])
 
     @staticmethod
     def test_log_ratio_range1_gate():
@@ -282,7 +282,7 @@ class GatingMLTestCase(unittest.TestCase):
 
         result = gs.gate_sample(sample, 'RatRange1a')
 
-        np.testing.assert_array_equal(truth, result['RatRange1a'])
+        np.testing.assert_array_equal(truth, result['RatRange1a']['events'])
 
     @staticmethod
     def test_boolean_and1_gate():
@@ -300,7 +300,7 @@ class GatingMLTestCase(unittest.TestCase):
 
         result = gs.gate_sample(sample, 'And1')
 
-        np.testing.assert_array_equal(truth, result['And1'])
+        np.testing.assert_array_equal(truth, result['And1']['events'])
 
     @staticmethod
     def test_boolean_and2_gate():
@@ -318,7 +318,7 @@ class GatingMLTestCase(unittest.TestCase):
 
         result = gs.gate_sample(sample, 'And2')
 
-        np.testing.assert_array_equal(truth, result['And2'])
+        np.testing.assert_array_equal(truth, result['And2']['events'])
 
     @staticmethod
     def test_boolean_or1_gate():
@@ -336,7 +336,7 @@ class GatingMLTestCase(unittest.TestCase):
 
         result = gs.gate_sample(sample, 'Or1')
 
-        np.testing.assert_array_equal(truth, result['Or1'])
+        np.testing.assert_array_equal(truth, result['Or1']['events'])
 
     @staticmethod
     def test_boolean_and3_complement_gate():
@@ -354,7 +354,7 @@ class GatingMLTestCase(unittest.TestCase):
 
         result = gs.gate_sample(sample, 'And3')
 
-        np.testing.assert_array_equal(truth, result['And3'])
+        np.testing.assert_array_equal(truth, result['And3']['events'])
 
     @staticmethod
     def test_boolean_not1_gate():
@@ -372,7 +372,7 @@ class GatingMLTestCase(unittest.TestCase):
 
         result = gs.gate_sample(sample, 'Not1')
 
-        np.testing.assert_array_equal(truth, result['Not1'])
+        np.testing.assert_array_equal(truth, result['Not1']['events'])
 
     @staticmethod
     def test_boolean_and4_not_gate():
@@ -390,7 +390,7 @@ class GatingMLTestCase(unittest.TestCase):
 
         result = gs.gate_sample(sample, 'And4')
 
-        np.testing.assert_array_equal(truth, result['And4'])
+        np.testing.assert_array_equal(truth, result['And4']['events'])
 
     @staticmethod
     def test_boolean_or2_not_gate():
@@ -408,7 +408,7 @@ class GatingMLTestCase(unittest.TestCase):
 
         result = gs.gate_sample(sample, 'Or2')
 
-        np.testing.assert_array_equal(truth, result['Or2'])
+        np.testing.assert_array_equal(truth, result['Or2']['events'])
 
     @staticmethod
     def test_matrix_poly4_gate():
@@ -426,7 +426,7 @@ class GatingMLTestCase(unittest.TestCase):
 
         result = gs.gate_sample(sample, 'Polygon4')
 
-        np.testing.assert_array_equal(truth, result['Polygon4'])
+        np.testing.assert_array_equal(truth, result['Polygon4']['events'])
 
     @staticmethod
     def test_matrix_rect3_gate():
@@ -444,7 +444,7 @@ class GatingMLTestCase(unittest.TestCase):
 
         result = gs.gate_sample(sample, 'Rectangle3')
 
-        np.testing.assert_array_equal(truth, result['Rectangle3'])
+        np.testing.assert_array_equal(truth, result['Rectangle3']['events'])
 
     @staticmethod
     def test_matrix_rect4_gate():
@@ -462,7 +462,7 @@ class GatingMLTestCase(unittest.TestCase):
 
         result = gs.gate_sample(sample, 'Rectangle4')
 
-        np.testing.assert_array_equal(truth, result['Rectangle4'])
+        np.testing.assert_array_equal(truth, result['Rectangle4']['events'])
 
     @staticmethod
     def test_matrix_rect5_gate():
@@ -480,7 +480,7 @@ class GatingMLTestCase(unittest.TestCase):
 
         result = gs.gate_sample(sample, 'Rectangle5')
 
-        np.testing.assert_array_equal(truth, result['Rectangle5'])
+        np.testing.assert_array_equal(truth, result['Rectangle5']['events'])
 
     @staticmethod
     def test_transform_asinh_range1_gate():
@@ -498,7 +498,7 @@ class GatingMLTestCase(unittest.TestCase):
 
         result = gs.gate_sample(sample, 'ScaleRange1')
 
-        np.testing.assert_array_equal(truth, result['ScaleRange1'])
+        np.testing.assert_array_equal(truth, result['ScaleRange1']['events'])
 
     @staticmethod
     def test_transform_hyperlog_range2_gate():
@@ -516,7 +516,7 @@ class GatingMLTestCase(unittest.TestCase):
 
         result = gs.gate_sample(sample, 'ScaleRange2')
 
-        np.testing.assert_array_equal(truth, result['ScaleRange2'])
+        np.testing.assert_array_equal(truth, result['ScaleRange2']['events'])
 
     @staticmethod
     def test_transform_linear_range3_gate():
@@ -534,7 +534,7 @@ class GatingMLTestCase(unittest.TestCase):
 
         result = gs.gate_sample(sample, 'ScaleRange3')
 
-        np.testing.assert_array_equal(truth, result['ScaleRange3'])
+        np.testing.assert_array_equal(truth, result['ScaleRange3']['events'])
 
     @staticmethod
     def test_transform_logicle_range4_gate():
@@ -552,7 +552,7 @@ class GatingMLTestCase(unittest.TestCase):
 
         result = gs.gate_sample(sample, 'ScaleRange4')
 
-        np.testing.assert_array_equal(truth, result['ScaleRange4'])
+        np.testing.assert_array_equal(truth, result['ScaleRange4']['events'])
 
     @staticmethod
     def test_transform_logicle_range5_gate():
@@ -570,7 +570,7 @@ class GatingMLTestCase(unittest.TestCase):
 
         result = gs.gate_sample(sample, 'ScaleRange5')
 
-        np.testing.assert_array_equal(truth, result['ScaleRange5'])
+        np.testing.assert_array_equal(truth, result['ScaleRange5']['events'])
 
     @staticmethod
     def test_transform_log_range6_gate():
@@ -588,7 +588,7 @@ class GatingMLTestCase(unittest.TestCase):
 
         result = gs.gate_sample(sample, 'ScaleRange6')
 
-        np.testing.assert_array_equal(truth, result['ScaleRange6'])
+        np.testing.assert_array_equal(truth, result['ScaleRange6']['events'])
 
     @staticmethod
     def test_matrix_transform_asinh_range1c_gate():
@@ -606,7 +606,7 @@ class GatingMLTestCase(unittest.TestCase):
 
         result = gs.gate_sample(sample, 'ScaleRange1c')
 
-        np.testing.assert_array_equal(truth, result['ScaleRange1c'])
+        np.testing.assert_array_equal(truth, result['ScaleRange1c']['events'])
 
     @staticmethod
     def test_matrix_transform_hyperlog_range2c_gate():
@@ -624,7 +624,7 @@ class GatingMLTestCase(unittest.TestCase):
 
         result = gs.gate_sample(sample, 'ScaleRange2c')
 
-        np.testing.assert_array_equal(truth, result['ScaleRange2c'])
+        np.testing.assert_array_equal(truth, result['ScaleRange2c']['events'])
 
     @staticmethod
     def test_matrix_transform_linear_range3c_gate():
@@ -642,7 +642,7 @@ class GatingMLTestCase(unittest.TestCase):
 
         result = gs.gate_sample(sample, 'ScaleRange3c')
 
-        np.testing.assert_array_equal(truth, result['ScaleRange3c'])
+        np.testing.assert_array_equal(truth, result['ScaleRange3c']['events'])
 
     @staticmethod
     def test_matrix_transform_logicle_range4c_gate():
@@ -660,7 +660,7 @@ class GatingMLTestCase(unittest.TestCase):
 
         result = gs.gate_sample(sample, 'ScaleRange4c')
 
-        np.testing.assert_array_equal(truth, result['ScaleRange4c'])
+        np.testing.assert_array_equal(truth, result['ScaleRange4c']['events'])
 
     @staticmethod
     def test_matrix_transform_logicle_range5c_gate():
@@ -678,7 +678,7 @@ class GatingMLTestCase(unittest.TestCase):
 
         result = gs.gate_sample(sample, 'ScaleRange5c')
 
-        np.testing.assert_array_equal(truth, result['ScaleRange5c'])
+        np.testing.assert_array_equal(truth, result['ScaleRange5c']['events'])
 
     @staticmethod
     def test_matrix_transform_asinh_range6c_gate():
@@ -696,7 +696,7 @@ class GatingMLTestCase(unittest.TestCase):
 
         result = gs.gate_sample(sample, 'ScaleRange6c')
 
-        np.testing.assert_array_equal(truth, result['ScaleRange6c'])
+        np.testing.assert_array_equal(truth, result['ScaleRange6c']['events'])
 
     @staticmethod
     def test_matrix_transform_hyperlog_range7c_gate():
@@ -714,7 +714,7 @@ class GatingMLTestCase(unittest.TestCase):
 
         result = gs.gate_sample(sample, 'ScaleRange7c')
 
-        np.testing.assert_array_equal(truth, result['ScaleRange7c'])
+        np.testing.assert_array_equal(truth, result['ScaleRange7c']['events'])
 
     @staticmethod
     def test_matrix_transform_logicle_range8c_gate():
@@ -732,7 +732,7 @@ class GatingMLTestCase(unittest.TestCase):
 
         result = gs.gate_sample(sample, 'ScaleRange8c')
 
-        np.testing.assert_array_equal(truth, result['ScaleRange8c'])
+        np.testing.assert_array_equal(truth, result['ScaleRange8c']['events'])
 
     @staticmethod
     def test_matrix_transform_logicle_rect1_gate():
@@ -750,7 +750,7 @@ class GatingMLTestCase(unittest.TestCase):
 
         result = gs.gate_sample(sample, 'ScaleRect1')
 
-        np.testing.assert_array_equal(truth, result['ScaleRect1'])
+        np.testing.assert_array_equal(truth, result['ScaleRect1']['events'])
 
     @staticmethod
     def test_parent_poly1_boolean_and2_gate():
@@ -768,7 +768,7 @@ class GatingMLTestCase(unittest.TestCase):
 
         result = gs.gate_sample(sample, 'ParAnd2')
 
-        np.testing.assert_array_equal(truth, result['ParAnd2'])
+        np.testing.assert_array_equal(truth, result['ParAnd2']['events'])
 
     @staticmethod
     def test_parent_range1_boolean_and3_gate():
@@ -786,7 +786,7 @@ class GatingMLTestCase(unittest.TestCase):
 
         result = gs.gate_sample(sample, 'ParAnd3')
 
-        np.testing.assert_array_equal(truth, result['ParAnd3'])
+        np.testing.assert_array_equal(truth, result['ParAnd3']['events'])
 
     @staticmethod
     def test_parent_rect1_rect_par1_gate():
@@ -804,7 +804,7 @@ class GatingMLTestCase(unittest.TestCase):
 
         result = gs.gate_sample(sample, 'ScalePar1')
 
-        np.testing.assert_array_equal(truth, result['ScalePar1'])
+        np.testing.assert_array_equal(truth, result['ScalePar1']['events'])
 
     @staticmethod
     def test_parent_quadrant_rect_gate():
@@ -822,7 +822,7 @@ class GatingMLTestCase(unittest.TestCase):
 
         result = gs.gate_sample(sample, 'ParRectangle1')
 
-        np.testing.assert_array_equal(truth, result['ParRectangle1'])
+        np.testing.assert_array_equal(truth, result['ParRectangle1']['events'])
 
     @staticmethod
     def test_all_gates():
@@ -851,14 +851,17 @@ class GatingMLTestCase(unittest.TestCase):
         gs_results = gs.gate_sample(sample)
 
         for g_id, res in gs_results.items():
-            if isinstance(res, dict):
+            if 'events' not in res:
                 for sub_g_id, sub_res in res.items():
-                    np.testing.assert_array_equal(
-                        truth_dict[sub_g_id],
-                        sub_res
-                    )
+                    try:
+                        np.testing.assert_array_equal(
+                            truth_dict[sub_g_id],
+                            sub_res['events']
+                        )
+                    except KeyError:
+                        print('adf')
             else:
                 np.testing.assert_array_equal(
                     truth_dict[g_id],
-                    res
+                    res['events']
                 )
