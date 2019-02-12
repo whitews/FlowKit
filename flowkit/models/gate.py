@@ -146,16 +146,27 @@ class Gate(ABC):
         if self.parent is not None:
             parent_gate = self.__parent__.get_gate_by_reference(self.parent)
 
-            parent_events = parent_gate.apply(sample)
+            parent_result = parent_gate.apply(sample)
 
             if isinstance(parent_gate, QuadrantGate):
-                parent_events = parent_events[self.parent]
+                parent_result = parent_result[self.parent]
 
-            results_and_parent = np.logical_and(parent_events, results)
+            parent_count = parent_result['count']
+            results_and_parent = np.logical_and(parent_result['events'], results)
         else:
             results_and_parent = results
+            parent_count = sample.event_count
 
-        return results_and_parent
+        event_count = results_and_parent.sum()
+
+        final_results = {
+            'events': results_and_parent,
+            'count': event_count,
+            'absolute_percent': (event_count / float(sample.event_count)) * 100.0,
+            'relative_percent': (event_count / float(parent_count)) * 100.0,
+        }
+
+        return final_results
 
     @abstractmethod
     def apply(self, sample):
@@ -606,6 +617,9 @@ class QuadrantGate(Gate):
 
             if isinstance(parent_gate, QuadrantGate):
                 parent_events = parent_events[self.parent]
+                parent_count = parent_events.sum()
+            else:
+                parent_count = parent_events['events'].sum()
 
             results_and_parent = {}
             for q_id, q_result in results.items():
@@ -615,8 +629,21 @@ class QuadrantGate(Gate):
                 )
         else:
             results_and_parent = results
+            parent_count = sample.event_count
 
-        return results_and_parent
+        final_results = {}
+
+        for q_id, q_result in results_and_parent.items():
+            q_event_count = q_result.sum()
+
+            final_results[q_id] = {
+                'events': q_result,
+                'count': q_event_count,
+                'absolute_percent': (q_event_count / float(sample.event_count)) * 100.0,
+                'relative_percent': (q_event_count / float(parent_count)) * 100.0,
+            }
+
+        return final_results
 
     def apply(self, sample):
         events, dim_idx, dim_min, dim_max, new_dims = super().preprocess_sample_events(sample)
@@ -741,12 +768,14 @@ class BooleanGate(Gate):
             gate_ref_results = gate.apply(sample)
 
             if isinstance(gate, QuadrantGate):
-                gate_ref_results = gate_ref_results[gate_ref_dict['ref']]
+                gate_ref_events = gate_ref_results[gate_ref_dict['ref']]['events']
+            else:
+                gate_ref_events = gate_ref_results['events']
 
             if gate_ref_dict['complement']:
-                gate_ref_results = ~gate_ref_results
+                gate_ref_events = ~gate_ref_events
 
-            all_gate_results.append(gate_ref_results)
+            all_gate_results.append(gate_ref_events)
 
         if self.type == 'and':
             results = np.logical_and.reduce(all_gate_results)
