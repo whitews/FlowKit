@@ -147,6 +147,7 @@ class Gate(ABC):
             parent_gate = self.__parent__.get_gate_by_reference(self.parent)
 
             parent_result = parent_gate.apply(sample)
+            parent_id = parent_gate.id
 
             if isinstance(parent_gate, QuadrantGate):
                 parent_result = parent_result[self.parent]
@@ -156,14 +157,17 @@ class Gate(ABC):
         else:
             results_and_parent = results
             parent_count = sample.event_count
+            parent_id = None
 
         event_count = results_and_parent.sum()
 
         final_results = {
+            'sample': sample.original_filename,
             'events': results_and_parent,
             'count': event_count,
             'absolute_percent': (event_count / float(sample.event_count)) * 100.0,
             'relative_percent': (event_count / float(parent_count)) * 100.0,
+            'parent': parent_id
         }
 
         return final_results
@@ -612,7 +616,7 @@ class QuadrantGate(Gate):
     def apply_parent_gate(self, sample, results):
         if self.parent is not None:
             parent_gate = self.__parent__.get_gate_by_reference(self.parent)
-
+            parent_id = self.parent
             parent_events = parent_gate.apply(sample)
 
             if isinstance(parent_gate, QuadrantGate):
@@ -630,6 +634,7 @@ class QuadrantGate(Gate):
         else:
             results_and_parent = results
             parent_count = sample.event_count
+            parent_id = None
 
         final_results = {}
 
@@ -637,10 +642,12 @@ class QuadrantGate(Gate):
             q_event_count = q_result.sum()
 
             final_results[q_id] = {
+                'sample': sample.original_filename,
                 'events': q_result,
                 'count': q_event_count,
                 'absolute_percent': (q_event_count / float(sample.event_count)) * 100.0,
                 'relative_percent': (q_event_count / float(parent_count)) * 100.0,
+                'parent': parent_id
             }
 
         return final_results
