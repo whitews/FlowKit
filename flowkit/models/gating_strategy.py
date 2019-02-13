@@ -2,6 +2,7 @@ from lxml import etree
 from .transforms import gml_transforms
 import anytree
 from anytree.exporter import DotExporter
+import pandas as pd
 from flowkit.resources import gml_schema
 from flowkit.models.transforms.matrix import Matrix
 # noinspection PyUnresolvedReferences
@@ -345,4 +346,70 @@ class GatingStrategy(object):
         for g_id, gate in gates.items():
             results[g_id] = gate.apply(sample)
 
-        return results
+        return GatingResults(results, sample_id=sample.original_filename)
+
+
+class GatingResults(object):
+    def __init__(self, results_dict, sample_id):
+        self._raw_results = results_dict
+        self.report = None
+        self.sample_id = sample_id
+        self._update_report()
+
+    @staticmethod
+    def _get_pd_result_dict(res_dict, gate_id):
+        return {
+            'sample': res_dict['sample'],
+            'parent': res_dict['parent'],
+            'gate_id': gate_id,
+            'count': res_dict['count'],
+            'absolute_percent': res_dict['absolute_percent'],
+            'relative_percent': res_dict['relative_percent'],
+            'quadrant_parent': None
+        }
+
+    def _update_report(self):
+        pd_list = []
+
+        for g_id, res in self._raw_results.items():
+            if 'events' not in res:
+                # it's a quad gate with sub-gates
+                for sub_g_id, sub_res in res.items():
+                    pd_dict = self._get_pd_result_dict(sub_res, sub_g_id)
+                    pd_dict['quadrant_parent'] = g_id
+                    pd_list.append(pd_dict)
+            else:
+                pd_list.append(self._get_pd_result_dict(res, g_id))
+
+        df = pd.DataFrame(
+            pd_list,
+            columns=[
+                'sample',
+                'gate_id',
+                'quadrant_parent',
+                'parent',
+                'count',
+                'absolute_percent',
+                'relative_percent'
+            ]
+        )
+
+        self.report = df.set_index(['sample', 'gate_id'])
+
+    def get_gate_indices(self, gate_id):
+        gate_series = self.report.loc[(self.sample_id, gate_id)]
+        quad_parent = gate_series['quadrant_parent']
+
+        if quad_parent is not None:
+            return self._raw_results[quad_parent][gate_id]['events']
+        else:
+            return self._raw_results[gate_id]['events']
+
+    def get_gate_count(self, gate_id):
+        return self.report.loc[(self.sample_id, gate_id), 'count']
+
+    def get_gate_absolute_percent(self, gate_id):
+        return self.report.loc[(self.sample_id, gate_id), 'absolute_percent']
+
+    def get_gate_relative_percent(self, gate_id):
+        return self.report.loc[(self.sample_id, gate_id), 'relative_percent']
