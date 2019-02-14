@@ -70,7 +70,7 @@ python setup.py install
 
 ## Usage
 
-Check out the example notebooks:
+Click on the links below to a few Jupyter notebooks that demonstrate basic usage of the library. Note, the interactive scatterplots do not render on Github. Clone the repo (or download the example notebooks), and run them locally to see the fully interactive plots.
 
 * [General Overview](https://github.com/whitews/FlowKit/blob/master/examples/flowkit-tutorial.ipynb)
 * [Applying Transforms to a Sample](https://github.com/whitews/FlowKit/blob/master/examples/sample_transforms.ipynb)
