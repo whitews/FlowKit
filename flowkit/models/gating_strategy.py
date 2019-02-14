@@ -1,9 +1,9 @@
 from lxml import etree
-from .transforms import gml_transforms
 import anytree
 from anytree.exporter import DotExporter
 import pandas as pd
 from flowkit.resources import gml_schema
+from flowkit.models.transforms import gml_transforms
 from flowkit.models.transforms.matrix import Matrix
 # noinspection PyUnresolvedReferences
 from flowkit.models.gate import \
@@ -29,21 +29,36 @@ class GatingStrategy(object):
     for compensation and transformation. Takes an optional, valid GatingML
     document as an input.
     """
-    def __init__(self, gating_ml_file_path):
+    def __init__(self, gating_ml_file_path=None):
         self.gml_schema = gml_schema
 
+        self._gating_ns = None
+        self._data_type_ns = None
+        self._transform_ns = None
+
+        # keys are the object's ID (gate, xform, or matrix,
+        # values are the object itself
+        self.gates = {}
+        self.transformations = {}
+        self.comp_matrices = {}
+
+        if gating_ml_file_path is not None:
+            self._parse_gml(gating_ml_file_path)
+
+    def __repr__(self):
+        return (
+            f'{self.__class__.__name__}('
+            f'{len(self.gates)} gates, {len(self.transformations)} transforms, '
+            f'{len(self.comp_matrices)} compensations)'
+        )
+
+    def _parse_gml(self, gating_ml_file_path):
         xml_document = etree.parse(gating_ml_file_path)
 
         val = self.gml_schema.validate(xml_document)
 
         if not val:
             raise ValueError("Document is not valid GatingML")
-
-        self.parser = etree.XMLParser(schema=self.gml_schema)
-
-        self._gating_ns = None
-        self._data_type_ns = None
-        self._transform_ns = None
 
         root = xml_document.getroot()
 
@@ -61,9 +76,6 @@ class GatingStrategy(object):
         self._gate_types = [
             ':'.join([self._gating_ns, gt]) for gt in GATE_TYPES
         ]
-
-        # keys will be gate ID, value is the gate object itself
-        self.gates = {}
 
         for gt in self._gate_types:
             gt_gates = root.findall(gt, namespace_map)
@@ -83,9 +95,6 @@ class GatingStrategy(object):
                         "Duplicate gate IDs are not allowed." % g.id
                     )
                 self.gates[g.id] = g
-
-        # look for transformations
-        self.transformations = {}
 
         if self._transform_ns is not None:
             # types of transforms include:
@@ -174,9 +183,6 @@ class GatingStrategy(object):
                 if xform is not None:
                     self.transformations[xform.id] = xform
 
-        # look for comp matrices
-        self.comp_matrices = {}
-
         if self._transform_ns is not None:
             # comp matrices are defined by the 'spectrumMatrix' element
             matrix_els = root.findall(
@@ -192,13 +198,6 @@ class GatingStrategy(object):
                 )
 
                 self.comp_matrices[matrix.id] = matrix
-
-    def __repr__(self):
-        return (
-            f'{self.__class__.__name__}('
-            f'{len(self.gates)} gates, {len(self.transformations)} transforms, '
-            f'{len(self.comp_matrices)} compensations)'
-        )
 
     def _build_hierarchy_tree(self):
         nodes = {}
