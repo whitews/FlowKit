@@ -547,9 +547,9 @@ def points_in_polygon(poly_vertices, points):
                   (test_point[0] - point_a[0]) * (point_b[1] - point_a[1])
         return is_left
 
-    bool_results = []
+    wind_counts = np.zeros(len(points), dtype=np.int8)
 
-    for p in points:
+    for i_p, p in enumerate(points):
         wind_count = 0
 
         # loop through all edges of the polygon
@@ -574,9 +574,8 @@ def points_in_polygon(poly_vertices, points):
                         # point is right of edge
                         wind_count -= 1  # valid down intersect
 
-        bool_results.append((wind_count % 2) != 0)
-    
-    return np.array(bool_results)
+        wind_counts[i_p] = wind_count
+    return wind_counts % 2 != 0
 
 
 class Hyperlog(object):
