@@ -199,13 +199,20 @@ class GatingStrategy(object):
 
                 self.comp_matrices[matrix.id] = matrix
 
-    def _build_hierarchy_tree(self):
+    def _build_hierarchy_tree(self, gates=None):
         nodes = {}
 
         root = anytree.Node('root')
+        parent_gates = set()
 
-        for g_id, gate in self.gates.items():
+        if gates is None:
+            gates = self.gates
+
+        for g_id, gate in gates.items():
             if gate.parent is not None:
+                # record the set of parents so we can find the leaves later
+                parent_gates.add(gate.parent)
+
                 # we'll get children nodes after
                 continue
 
@@ -221,13 +228,43 @@ class GatingStrategy(object):
                         parent=nodes[gate.id]
                     )
 
-        for g_id, gate in self.gates.items():
-            if gate.parent is None:
-                # at root level, we already got it
+        parent_gates.difference_update(set(nodes.keys()))
+        # Now we have all the root-level nodes and the set of parents.
+        # Process the parent gates
+        parents_remaining = len(parent_gates)
+        while parents_remaining > 0:
+            discard = []
+            for gate_id in parent_gates:
+                gate = self.get_gate_by_reference(gate_id)
+                parent_id = gate.parent
+                if parent_id in nodes or parent_id is None:
+                    nodes[gate_id] = anytree.Node(
+                        gate_id,
+                        parent=root if parent_id is None else nodes[parent_id]
+                    )
+
+                    if isinstance(gate, QuadrantGate):
+                        if gate.id not in nodes:
+                            nodes[gate.id] = anytree.Node(
+                                gate.id,
+                                parent=root if parent_id is None else nodes[parent_id]
+                            )
+                        for q_id, quad in gate.quadrants.items():
+                            nodes[q_id] = anytree.Node(
+                                q_id,
+                                parent=nodes[gate.id]
+                            )
+                    discard.append(gate_id)
+            parent_gates.difference_update(set(discard))
+            parents_remaining = len(parent_gates)
+
+        # Process remaining leaves
+        for g_id, gate in gates.items():
+            if g_id in nodes:
                 continue
 
-            nodes[gate.id] = anytree.Node(
-                gate.id,
+            nodes[g_id] = anytree.Node(
+                g_id,
                 parent=nodes[gate.parent]
             )
 
@@ -235,7 +272,7 @@ class GatingStrategy(object):
                 for q_id, quad in gate.quadrants.items():
                     nodes[q_id] = anytree.Node(
                         q_id,
-                        parent=nodes[gate.id]
+                        parent=nodes[g_id]
                     )
 
         return root
@@ -316,7 +353,7 @@ class GatingStrategy(object):
         root = self._build_hierarchy_tree()
         DotExporter(root).to_picture(output_file_path)
 
-    def gate_sample(self, sample, gate_id=None):
+    def gate_sample(self, sample, gate_id=None, verbose=False):
         """
         Apply a gate to a sample, returning a dictionary where gate ID is the
         key, and the value contains the event indices for events in the Sample
@@ -327,6 +364,7 @@ class GatingStrategy(object):
         :param sample: an FCS Sample instance
         :param gate_id: A gate ID or list of gate IDs to evaluate on given
             Sample. If None, all gates will be evaluated
+        :param verbose: If True, print a line for each gate processed
         :return: Dictionary where keys are gate IDs, values are boolean arrays
             of length matching the number sample events. Events in the gate are
             True.
@@ -342,8 +380,29 @@ class GatingStrategy(object):
 
         results = {}
 
-        for g_id, gate in gates.items():
-            results[g_id] = gate.apply(sample)
+        # anytree's tree allows us to iterate from the root down to the leaves
+        # in an order that follows the hierarchy, thereby avoiding duplicate
+        # processing of parent gates
+        root = self._build_hierarchy_tree(gates)
+        tree = anytree.RenderTree(root)
+
+        for item in tree:
+            g_id = item.node.name
+            if g_id == 'root':
+                continue
+            gate = self.get_gate_by_reference(g_id)
+            if isinstance(gate, QuadrantGate) and g_id in gate.quadrants:
+                # This is a sub-gate, we'll process the sub-gates all at once
+                # with the main QuadrantGate ID
+                continue
+
+            if verbose:
+                print("Sample: %s, processing gate: %s" % (sample, g_id))
+            if gate.parent is not None and gate.parent in results:
+                parent_results = results[gate.parent]
+            else:
+                parent_results = None
+            results[g_id] = gate.apply(sample, parent_results)
 
         return GatingResults(results, sample_id=sample.original_filename)
 
@@ -393,10 +452,13 @@ class GatingResults(object):
             ]
         )
 
-        self.report = df.set_index(['sample', 'gate_id'])
+        self.report = df.set_index(['sample', 'gate_id']).sort_index()
 
     def get_gate_indices(self, gate_id):
         gate_series = self.report.loc[(self.sample_id, gate_id)]
+        if isinstance(gate_series, pd.DataFrame):
+            gate_series = gate_series.iloc[0]
+
         quad_parent = gate_series['quadrant_parent']
 
         if quad_parent is not None:

@@ -142,22 +142,27 @@ class Gate(ABC):
             dim = Dimension(dim_el, gating_namespace, data_type_namespace)
             self.dimensions.append(dim)
 
-    def apply_parent_gate(self, sample, results):
+    def apply_parent_gate(self, sample, results, parent_results):
         if self.parent is not None:
             parent_gate = self.__parent__.get_gate_by_reference(self.parent)
-
-            parent_result = parent_gate.apply(sample)
             parent_id = parent_gate.id
 
-            if isinstance(parent_gate, QuadrantGate):
-                parent_result = parent_result[self.parent]
+            if parent_results is not None:
+                results_and_parent = np.logical_and(parent_results['events'], results)
+                parent_count = parent_results['count']
+            else:
+                parent_result = parent_gate.apply(sample, parent_results)
 
-            parent_count = parent_result['count']
-            results_and_parent = np.logical_and(parent_result['events'], results)
+                if isinstance(parent_gate, QuadrantGate):
+                    parent_result = parent_result[self.parent]
+
+                parent_count = parent_result['count']
+                results_and_parent = np.logical_and(parent_result['events'], results)
         else:
-            results_and_parent = results
-            parent_count = sample.event_count
+            # no parent, so results are unchanged & parent count is total count
             parent_id = None
+            parent_count = sample.event_count
+            results_and_parent = results
 
         event_count = results_and_parent.sum()
 
@@ -173,7 +178,7 @@ class Gate(ABC):
         return final_results
 
     @abstractmethod
-    def apply(self, sample):
+    def apply(self, sample, parent_results):
         pass
 
     def compensate_sample(self, dim_comp_refs, sample):
@@ -233,6 +238,7 @@ class Gate(ABC):
         events = sample.get_raw_events()
         events = events.copy()
         pnn_labels = sample.pnn_labels
+        pns_labels = sample.pns_labels
 
         if events.shape[1] != len(pnn_labels):
             raise ValueError(
@@ -248,31 +254,37 @@ class Gate(ABC):
         dim_xform = []
 
         for dim in self.dimensions:
+            dim_comp = False
             if dim.compensation_ref not in [None, 'uncompensated']:
                 dim_comp_refs.add(dim.compensation_ref)
+                dim_comp = True
 
             if dim.label is None:
                 # dimension is a transform of other dimensions
                 new_dims.append(dim)
                 continue
 
-            try:
+            if dim.label in pnn_labels:
                 dim_idx.append(pnn_labels.index(dim.label))
-                dim_min.append(dim.min)
-                dim_max.append(dim.max)
-                dim_xform.append(dim.transformation_ref)
-            except ValueError:
+            elif dim.label in pns_labels:
+                dim_idx.append(pns_labels.index(dim.label))
+            else:
                 # for a referenced comp, the label may have been the
                 # fluorochrome instead of the channel's PnN label. If so,
                 # the referenced matrix object will also have the detector
                 # names that will match
+                if not dim_comp:
+                    raise LookupError(
+                        "%s is not found as a channel label or channel reference in %s" % (dim.label, sample)
+                    )
                 matrix = self.__parent__.comp_matrices[dim.compensation_ref]
                 matrix_dim_idx = matrix.fluorochomes.index(dim.label)
                 detector = matrix.detectors[matrix_dim_idx]
                 dim_idx.append(pnn_labels.index(detector))
-                dim_min.append(dim.min)
-                dim_max.append(dim.max)
-                dim_xform.append(dim.transformation_ref)
+
+            dim_min.append(dim.min)
+            dim_max.append(dim.max)
+            dim_xform.append(dim.transformation_ref)
 
         events = self.compensate_sample(dim_comp_refs, sample)
 
@@ -318,7 +330,7 @@ class RectangleGate(Gate):
             f'{self.id}, parent: {self.parent}, dims: {len(self.dimensions)})'
         )
 
-    def apply(self, sample):
+    def apply(self, sample, parent_results):
         events, dim_idx, dim_min, dim_max, new_dims = super().preprocess_sample_events(sample)
 
         results = np.ones(events.shape[0], dtype=np.bool)
@@ -343,7 +355,7 @@ class RectangleGate(Gate):
             if new_dim.max is not None:
                 results = np.bitwise_and(results, xform_events < new_dim.max)
 
-        results = self.apply_parent_gate(sample, results)
+        results = self.apply_parent_gate(sample, results, parent_results)
 
         return results
 
@@ -387,7 +399,7 @@ class PolygonGate(Gate):
             f'{self.id}, parent: {self.parent}, vertices: {len(self.vertices)})'
         )
 
-    def apply(self, sample):
+    def apply(self, sample, parent_results):
         events, dim_idx, dim_min, dim_max, new_dims = super().preprocess_sample_events(sample)
         path_verts = []
 
@@ -396,7 +408,7 @@ class PolygonGate(Gate):
 
         results = utils.points_in_polygon(path_verts, events[:, dim_idx])
 
-        results = self.apply_parent_gate(sample, results)
+        results = self.apply_parent_gate(sample, results, parent_results)
 
         return results
 
@@ -499,7 +511,7 @@ class EllipsoidGate(Gate):
             f'{self.id}, parent: {self.parent}, coords: {self.coordinates})'
         )
 
-    def apply(self, sample):
+    def apply(self, sample, parent_results):
         events, dim_idx, dim_min, dim_max, new_dims = super().preprocess_sample_events(sample)
 
         results = utils.points_in_ellipsoid(
@@ -509,7 +521,7 @@ class EllipsoidGate(Gate):
             events[:, dim_idx]
         )
 
-        results = self.apply_parent_gate(sample, results)
+        results = self.apply_parent_gate(sample, results, parent_results)
 
         return results
 
@@ -613,8 +625,8 @@ class QuadrantGate(Gate):
             f'{self.id}, parent: {self.parent}, quadrants: {len(self.quadrants)})'
         )
 
-    def apply_parent_gate(self, sample, results):
-        if self.parent is not None:
+    def apply_parent_gate(self, sample, results, parent_results):
+        if self.parent is not None and parent_results is not None:
             parent_gate = self.__parent__.get_gate_by_reference(self.parent)
             parent_id = self.parent
             parent_events = parent_gate.apply(sample)
@@ -632,7 +644,13 @@ class QuadrantGate(Gate):
                     q_result
                 )
         else:
-            results_and_parent = results
+            if parent_results is not None:
+                results_and_parent = np.logical_and(
+                    parent_results,
+                    results
+                )
+            else:
+                results_and_parent = results
             parent_count = sample.event_count
             parent_id = None
 
@@ -652,7 +670,7 @@ class QuadrantGate(Gate):
 
         return final_results
 
-    def apply(self, sample):
+    def apply(self, sample, parent_results):
         events, dim_idx, dim_min, dim_max, new_dims = super().preprocess_sample_events(sample)
 
         results = {}
@@ -678,7 +696,7 @@ class QuadrantGate(Gate):
 
                 results[q_id] = q_results
 
-        results = self.apply_parent_gate(sample, results)
+        results = self.apply_parent_gate(sample, results, parent_results)
 
         return results
 
@@ -767,12 +785,12 @@ class BooleanGate(Gate):
             f'{self.id}, parent: {self.parent}, type: {self.type})'
         )
 
-    def apply(self, sample):
+    def apply(self, sample, parent_results):
         all_gate_results = []
 
         for gate_ref_dict in self.gate_refs:
             gate = self.__parent__.get_gate_by_reference(gate_ref_dict['ref'])
-            gate_ref_results = gate.apply(sample)
+            gate_ref_results = gate.apply(sample, parent_results)
 
             if isinstance(gate, QuadrantGate):
                 gate_ref_events = gate_ref_results[gate_ref_dict['ref']]['events']
@@ -796,6 +814,6 @@ class BooleanGate(Gate):
                 "Boolean gate must specify one of 'and', 'or', or 'not'"
             )
 
-        results = self.apply_parent_gate(sample, results)
+        results = self.apply_parent_gate(sample, results, parent_results)
 
         return results
