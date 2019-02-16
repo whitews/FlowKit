@@ -235,16 +235,8 @@ class Gate(ABC):
         return events
 
     def preprocess_sample_events(self, sample):
-        events = sample.get_raw_events()
-        events = events.copy()
         pnn_labels = sample.pnn_labels
         pns_labels = sample.pns_labels
-
-        if events.shape[1] != len(pnn_labels):
-            raise ValueError(
-                "Number of FCS dimensions (%d) does not match label count (%d)"
-                % (events.shape[1], len(pnn_labels))
-            )
 
         dim_idx = []
         dim_min = []
