@@ -38,7 +38,6 @@ class RatioTransform(Transform):
 
     def apply(self, sample):
         events = sample.get_raw_events()
-        events = events.copy()
 
         dim_x_idx = sample.pnn_labels.index(self.dimensions[0])
         dim_y_idx = sample.pnn_labels.index(self.dimensions[1])
@@ -69,7 +68,7 @@ class LinearTransform(Transform):
         )
 
     def apply(self, events):
-        new_events = (events.copy() + self.param_a) / (self.param_t + self.param_a)
+        new_events = (events + self.param_a) / (self.param_t + self.param_a)
 
         return new_events
 
@@ -93,7 +92,7 @@ class LogTransform(Transform):
         )
 
     def apply(self, events):
-        new_events = (1. / self.param_m) * np.log10(events.copy() / self.param_t) + 1.
+        new_events = (1. / self.param_m) * np.log10(events / self.param_t) + 1.
 
         return new_events
 
@@ -130,10 +129,11 @@ class HyperlogTransform(Transform):
         )
 
         new_events = []
+        events_shape_len = len(events.shape)
 
         # TODO: This is slow, is there a way to vectorize the scale method?
-        for e in events.copy():
-            if len(events.shape) > 1:
+        for e in events:
+            if events_shape_len > 1:
                 new_row_events = []
                 for row_e in e:
                     new_row_events.append(hyperlog.scale(row_e))
@@ -169,12 +169,6 @@ class LogicleTransform(Transform):
         )
 
     def apply(self, events):
-        reshape = False
-
-        if len(events.shape) == 1:
-            events = events.copy().reshape(-1, 1)
-            reshape = True
-
         new_events = flowutils.transforms.logicle(
             events,
             range(events.shape[1]),
@@ -183,9 +177,6 @@ class LogicleTransform(Transform):
             w=self.param_w,
             a=self.param_a
         )
-
-        if reshape:
-            new_events = new_events.reshape(-1)
 
         return new_events
 
@@ -215,6 +206,6 @@ class AsinhTransform(Transform):
         x_transpose = self.param_a * np.log(10)
         x_divisor = (self.param_m + self.param_a) * np.log(10)
 
-        new_events = (np.arcsinh(events.copy() * x_pre_scale) + x_transpose) / x_divisor
+        new_events = (np.arcsinh(events * x_pre_scale) + x_transpose) / x_divisor
 
         return new_events

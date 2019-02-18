@@ -188,15 +188,17 @@ class Gate(ABC):
         spill = None
         matrix = None
 
-        if len(dim_comp_refs) == 0:
+        dim_comp_ref_count = len(dim_comp_refs)
+
+        if dim_comp_ref_count == 0:
             pass
-        elif len(dim_comp_refs) > 1:
+        elif dim_comp_ref_count > 1:
             raise NotImplementedError(
                 "Mixed compensation between individual channels is not "
                 "implemented. Never seen it, but if you are reading this "
                 "message, submit an issue to have it implemented."
             )
-        elif len(dim_comp_refs) == 1 and 'FCS' in dim_comp_refs:
+        elif dim_comp_ref_count == 1 and 'FCS' in dim_comp_refs:
             meta = sample.get_metadata()
             if 'spill' not in meta or 'spillover' not in meta:
                 pass
@@ -283,7 +285,7 @@ class Gate(ABC):
         for i, dim in enumerate(dim_idx):
             if dim_xform[i] is not None:
                 xform = self.__parent__.transformations[dim_xform[i]]
-                events[:, dim] = xform.apply(events[:, dim])
+                events[:, [dim]] = xform.apply(events[:, [dim]])
 
         return events, dim_idx, dim_min, dim_max, new_dims
 
