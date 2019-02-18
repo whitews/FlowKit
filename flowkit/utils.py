@@ -548,15 +548,16 @@ def points_in_polygon(poly_vertices, points):
         return is_left
 
     wind_counts = np.zeros(len(points), dtype=np.int8)
+    poly_vert_count = len(poly_vertices)
 
     for i_p, p in enumerate(points):
         wind_count = 0
 
         # loop through all edges of the polygon
-        for i in range(0, len(poly_vertices)):  
+        for i in range(0, poly_vert_count):
             # edge from poly_vertices[i] to poly_vertices[i+1]
             vert_a = poly_vertices[i]
-            if i >= len(poly_vertices) - 1:
+            if i >= poly_vert_count - 1:
                 vert_b = poly_vertices[0]
             else:
                 vert_b = poly_vertices[i + 1]
