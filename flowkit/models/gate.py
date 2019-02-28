@@ -336,8 +336,18 @@ class RectangleGate(Gate):
                 results = np.bitwise_and(results, events[:, d_idx] < dim_max[i])
 
         for new_dim in new_dims:
+            # TODO: RatioTransforms aren't limited to rect gates, refactor to
+            # allow other gate classes to handle new dimensions created from
+            # ratio transforms. Also, the ratio transform's apply method is
+            # different from other xforms in that it takes a sample argument
+            # and not an events arguments
+
             # new dimensions are defined by transformations of other dims
-            new_dim_xform = self.__parent__.transformations[new_dim.new_dim_transformation_ref]
+            try:
+                new_dim_xform = self.__parent__.transformations[new_dim.new_dim_transformation_ref]
+            except KeyError:
+                raise KeyError("New dimensions must provide a transformation")
+
             xform_events = new_dim_xform.apply(sample)
 
             if new_dim.transformation_ref is not None:

@@ -37,6 +37,11 @@ class RatioTransform(Transform):
         )
 
     def apply(self, sample):
+        # RatioTransform is a bit of an oddball in that it references
+        # 2 distinct channels of event data. Since the indices of those
+        # channels could vary across different FCS files, we need the Sample
+        # instance to introspect for the correct channels. All other Transform
+        # sub-classes take an events array as the argument to the apply method.
         events = sample.get_raw_events()
 
         dim_x_idx = sample.pnn_labels.index(self.dimensions[0])
