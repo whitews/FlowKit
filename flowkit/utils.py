@@ -8,7 +8,7 @@ from matplotlib import cm, colors
 from matplotlib import pyplot
 from matplotlib.patches import Ellipse
 import colorsys
-from flowkit.utils_c import calc_wind_count
+from flowkit import utils_c
 
 
 def generate_custom_colormap(cmap_sample_indices, base_cmap):
@@ -546,7 +546,7 @@ def points_in_polygon(poly_vertices, points):
     poly_vert_count = len(poly_vertices)
 
     for i_p, p in enumerate(points):
-        wind_count = calc_wind_count(p[0], p[1], poly_vert_count, poly_vertices)
+        wind_count = utils_c.calc_wind_count(p[0], p[1], poly_vert_count, poly_vertices)
         wind_counts[i_p] = wind_count
 
     return wind_counts % 2 != 0
