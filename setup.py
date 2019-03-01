@@ -10,7 +10,7 @@ utils_extension = Extension(
         'flowkit/utils_c_ext/_utils.c',
         'flowkit/utils_c_ext/utils.c'
     ],
-    include_dirs=[np.get_include()]
+    include_dirs=[np.get_include()],
     extra_compile_args=['-std=c99']
 )
 
