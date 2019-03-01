@@ -1,4 +1,5 @@
 from setuptools import setup, find_packages, Extension
+import numpy as np
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
@@ -9,6 +10,7 @@ utils_extension = Extension(
         'flowkit/utils_c_ext/_utils.c',
         'flowkit/utils_c_ext/utils.c'
     ],
+    include_dirs=[np.get_include()]
     extra_compile_args=['-std=c99']
 )
 
