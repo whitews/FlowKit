@@ -1,11 +1,20 @@
-from setuptools import setup, find_packages
+from setuptools import setup, find_packages, Extension
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
+utils_extension = Extension(
+    'flowkit.utils_c',
+    sources=[
+        'flowkit/utils_c_ext/_utils.c',
+        'flowkit/utils_c_ext/utils.c'
+    ],
+    extra_compile_args=['-std=c99']
+)
+
 setup(
     name='FlowKit',
-    version='0.1.3b1',
+    version='0.1.3b2',
     packages=find_packages(),
     package_data={'': ['*.xsd']},
     include_package_data=True,
@@ -15,7 +24,7 @@ setup(
     author="Scott White",
     license='BSD',
     url="https://github.com/whitews/flowkit",
-    ext_modules=[],
+    ext_modules=[utils_extension],
     install_requires=[
         'flowio',
         'flowutils',

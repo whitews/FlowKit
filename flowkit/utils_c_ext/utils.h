@@ -1,0 +1,1 @@
+int calc_wind_count(double point_x, double point_y, int vert_count, double *poly_vertices);

@@ -166,6 +166,7 @@ class Gate(ABC):
 
         event_count = results_and_parent.sum()
 
+        # TODO: check parent_count for div by zero
         final_results = {
             'sample': sample.original_filename,
             'events': results_and_parent,
@@ -410,7 +411,7 @@ class PolygonGate(Gate):
         for vert in self.vertices:
             path_verts.append(vert.coordinates)
 
-        results = utils.points_in_polygon(path_verts, events[:, dim_idx])
+        results = utils.points_in_polygon(np.array(path_verts, dtype='double'), events[:, dim_idx])
 
         results = self.apply_parent_gate(sample, results, parent_results)
 
