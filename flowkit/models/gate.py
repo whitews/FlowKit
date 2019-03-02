@@ -183,56 +183,71 @@ class Gate(ABC):
         pass
 
     def compensate_sample(self, dim_comp_refs, sample):
-        events = sample.get_raw_events()
-        events = events.copy()
-
-        spill = None
-        matrix = None
-
+        comp_matrix = None
+        indices = None
         dim_comp_ref_count = len(dim_comp_refs)
 
         if dim_comp_ref_count == 0:
-            pass
+            events = sample.get_raw_events()
+            return events.copy()
         elif dim_comp_ref_count > 1:
             raise NotImplementedError(
                 "Mixed compensation between individual channels is not "
                 "implemented. Never seen it, but if you are reading this "
                 "message, submit an issue to have it implemented."
             )
-        elif dim_comp_ref_count == 1 and 'FCS' in dim_comp_refs:
+        else:
+            comp_ref = list(dim_comp_refs)[0]
+
+        if comp_ref == 'FCS':
             meta = sample.get_metadata()
+            spill = None
             if 'spill' not in meta or 'spillover' not in meta:
                 pass
             elif 'spillover' in meta:  # preferred, per FCS standard
                 spill = meta['spillover']
             elif 'spill' in meta:
                 spill = meta['spill']
+
+            if spill is not None:
+                spill = utils.parse_compensation_matrix(
+                    spill,
+                    sample.pnn_labels,
+                    null_channels=sample.null_channels
+                )
+                indices = spill[0, :]  # headers are channel #'s
+                indices = [int(i - 1) for i in indices]
+                comp_matrix = spill[1:, :]
         else:
             # lookup specified comp-ref in parent strategy
-            matrix = self.__parent__.comp_matrices[list(dim_comp_refs)[0]]
+            matrix = self.__parent__.comp_matrices[comp_ref]
+            indices = [
+                sample.get_channel_index(d) for d in matrix.detectors
+            ]
+            comp_matrix = matrix.matrix
 
-        if spill is not None:
-            spill = utils.parse_compensation_matrix(
-                spill,
-                sample.pnn_labels,
-                null_channels=sample.null_channels
-            )
-            indices = spill[0, :]  # headers are channel #'s
-            indices = [int(i - 1) for i in indices]
-            comp_matrix = spill[1:, :]  # just the matrix
+        events = self.__parent__.get_cached_compensation(
+            sample,
+            comp_ref
+        )
+
+        if events is None:
+            events = sample.get_raw_events()
+            events = events.copy()
+        else:
+            return events
+
+        if comp_matrix is not None:
             events = flowutils.compensate.compensate(
                 events,
                 comp_matrix,
                 indices
             )
-        elif matrix is not None:
-            indices = [
-                sample.get_channel_index(d) for d in matrix.detectors
-            ]
-            events = flowutils.compensate.compensate(
-                events,
-                matrix.matrix,
-                indices
+            # cache the comp events
+            self.__parent__.cache_compensated_events(
+                sample,
+                comp_ref,
+                events
             )
 
         return events

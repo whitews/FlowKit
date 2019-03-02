@@ -35,6 +35,7 @@ class GatingStrategy(object):
         self._gating_ns = None
         self._data_type_ns = None
         self._transform_ns = None
+        self._cached_compensations = {}
 
         # keys are the object's ID (gate, xform, or matrix,
         # values are the object itself
@@ -352,6 +353,21 @@ class GatingStrategy(object):
         """
         root = self._build_hierarchy_tree()
         DotExporter(root).to_picture(output_file_path)
+
+    def get_cached_compensation(self, sample, comp_ref):
+        try:
+            # return a copy of cached events in case downstream modifies them
+            return self._cached_compensations[sample.original_filename][comp_ref].copy()
+        except KeyError:
+            return None
+
+    def cache_compensated_events(self, sample, comp_ref, comp_events):
+        if sample.original_filename not in self._cached_compensations:
+            self._cached_compensations[sample.original_filename] = {
+                comp_ref: comp_events
+            }
+        else:
+            self._cached_compensations[sample.original_filename][comp_ref] = comp_events
 
     def gate_sample(self, sample, gate_id=None, verbose=False):
         """
