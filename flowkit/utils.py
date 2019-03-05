@@ -8,6 +8,7 @@ from matplotlib import cm, colors
 from matplotlib import pyplot
 from matplotlib.patches import Ellipse
 import colorsys
+# noinspection PyUnresolvedReferences
 from flowkit import utils_c
 
 
@@ -35,14 +36,14 @@ def generate_custom_colormap(cmap_sample_indices, base_cmap):
     )
 
 
-sample = [
+cm_sample = [
     0, 8, 16, 24, 32, 40, 48, 52, 60, 64, 72, 80, 92,
     100, 108, 116, 124, 132,
     139, 147, 155, 159,
     163, 167, 171, 175, 179, 183, 187, 191, 195, 199, 215, 231, 239
 ]
 
-new_jet = generate_custom_colormap(sample, cm.jet)
+new_jet = generate_custom_colormap(cm_sample, cm.get_cmap('jet'))
 
 
 def find_attribute_value(xml_el, namespace, attribute_name):
@@ -166,8 +167,8 @@ def convert_matrix_text_to_array(matrix_text, fluoro_labels, fluoro_indices):
     # convert the matrix text to numpy array
     for line in matrix_text:
         line_values = re.split('[\t,]', line)
-        for i, value in enumerate(line_values):
-            line_values[i] = float(line_values[i])
+        line_values = [float(value) for value in line_values]
+
         if len(line_values) > len(fluoro_labels):
             raise ValueError("Too many values in line: %s" % line)
         elif len(line_values) < len(fluoro_labels):
@@ -362,9 +363,9 @@ def filter_anomalous_events(
 
             for ref in ref_sets:
                 # TODO: maybe this should be the Anderson-Darling test?
-                test_result = stats.ks_2samp(ref, strides[test_i])
-                kss.append(test_result.pvalue)
-                kss_stats.append(test_result.statistic)
+                ks_stat, p_value = stats.ks_2samp(ref, strides[test_i])
+                kss.append(p_value)
+                kss_stats.append(ks_stat)
 
             ks_x.append(test_i)
 
@@ -542,13 +543,7 @@ def points_in_polygon(poly_vertices, points):
     :param points: Points to test for polygon inclusion
     :return: List of boolean values for each point. True is inside polygon.
     """
-    wind_counts = np.zeros(len(points), dtype=np.int8)
-    poly_vert_count = len(poly_vertices)
-
-    for i_p, p in enumerate(points):
-        wind_count = utils_c.calc_wind_count(p[0], p[1], poly_vert_count, poly_vertices)
-        wind_counts[i_p] = wind_count
-
+    wind_counts = utils_c.points_in_polygon(poly_vertices, len(poly_vertices), points, len(points))
     return wind_counts % 2 != 0
 
 

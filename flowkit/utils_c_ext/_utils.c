@@ -12,10 +12,6 @@ static PyObject *wrap_calc_wind_count(PyObject *self, PyObject *args) {
         return NULL;
     }
 
-    //double poly_vertices_c = *(double *) poly_vertices->data;
-//    double poly_vertices_c[vert_count][2];
-//    memcpy(poly_vertices_c, &poly_vertices, vert_count);
-
     PyObject *poly_vert_array = PyArray_FROM_OTF(poly_vertices, NPY_DOUBLE, NPY_IN_ARRAY);
     double *poly_vertices_c = (double *) PyArray_DATA(poly_vert_array);
 
@@ -27,8 +23,40 @@ static PyObject *wrap_calc_wind_count(PyObject *self, PyObject *args) {
     return Py_BuildValue("i", wind_count);
 }
 
+static PyObject *wrap_points_in_polygon(PyObject *self, PyObject *args) {
+    PyObject *poly_vertices;
+    PyObject *points;
+    int vert_count;
+    int point_count;
+
+    // parse the input args tuple
+    if (!PyArg_ParseTuple(args, "OiOi", &poly_vertices, &vert_count, &points, &point_count)) {
+        return NULL;
+    }
+
+    PyObject *poly_vert_array = PyArray_FROM_OTF(poly_vertices, NPY_DOUBLE, NPY_IN_ARRAY);
+    double *poly_vertices_c = (double *) PyArray_DATA(poly_vert_array);
+
+    PyObject *points_array = PyArray_FROM_OTF(points, NPY_DOUBLE, NPY_IN_ARRAY);
+    double *points_c = (double *) PyArray_DATA(points_array);
+
+    // now we can call our function!
+    int *is_in_polygon = malloc(point_count * sizeof(int));
+
+    is_in_polygon = points_in_polygon(poly_vertices_c, vert_count, points_c, point_count);
+
+    Py_DECREF(poly_vert_array);
+    Py_DECREF(points_array);
+
+    long int dims[1];
+    dims[0] = point_count;
+
+    return PyArray_SimpleNewFromData(1, dims, NPY_INT32, is_in_polygon);
+}
+
 static PyMethodDef module_methods[] = {
     {"calc_wind_count", wrap_calc_wind_count, METH_VARARGS, NULL},
+    {"points_in_polygon", wrap_points_in_polygon, METH_VARARGS, NULL},
     {NULL, NULL, 0, NULL}
 };
 

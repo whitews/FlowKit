@@ -1,4 +1,4 @@
-#include <stdio.h>
+#include <stdlib.h>
 #include "utils.h"
 
 double point_is_left(
@@ -59,4 +59,40 @@ int calc_wind_count(double point_x, double point_y, int vert_count, double *poly
     }
 
     return wind_count;
+}
+
+int * points_in_polygon(double *poly_vertices, int vert_count, double *points, int point_count) {
+    /*
+    Determines whether points in an array are inside a polygon. Points on the
+    edge of the polygon are considered inclusive. This function uses the
+    winding number method and is robust to complex polygons with crossing
+    boundaries, including the presence of 'holes' created by boundary crosses.
+
+    This implementation is based on the C implementation here:
+
+        http://geomalgorithms.com/a03-_inclusion.html
+
+    Original copyright notice:
+        Copyright 2000 softSurfer, 2012 Dan Sunday
+
+    :param poly_vertices: Polygon vertices (array of 2-D points)
+    :param vert_count: Number of vertices in polygon
+    :param points: Points to test for polygon inclusion
+    :param point_count: Number of points
+    :return: Array of boolean values for each point. True is inside polygon.
+    */
+    int *wind_counts = malloc(point_count * sizeof(int));
+    int wind_count;
+
+    for (int i=0; i<point_count; i++) {
+        wind_count = calc_wind_count(
+            points[i * 2],
+            points[(i * 2) + 1],
+            vert_count,
+            poly_vertices
+        );
+        wind_counts[i] = wind_count;
+    }
+
+    return wind_counts;
 }
