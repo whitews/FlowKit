@@ -3,6 +3,59 @@ from glob import glob
 import pandas as pd
 from flowkit import Sample, GatingStrategy
 
+try:
+    import multiprocessing as mp
+    multi_proc = True
+except ImportError as e:
+    mp = None
+    multi_proc = False
+
+# multi_proc = False
+
+
+def get_samples_from_paths(sample_paths):
+    if multi_proc:
+        if len(sample_paths) < mp.cpu_count():
+            proc_count = len(sample_paths)
+        else:
+            proc_count = mp.cpu_count() - 1  # leave a CPU free just to be nice
+
+        pool = mp.Pool(processes=proc_count)
+        samples = pool.map(Sample, sample_paths)
+    else:
+        samples = []
+        for path in sample_paths:
+            samples.append(Sample(path))
+
+    return samples
+
+
+def gate_sample(data):
+    gating_strategy = data[0]
+    sample = data[1]
+    verbose = data[2]
+    return gating_strategy.gate_sample(sample, verbose=verbose)
+
+
+def gate_samples(gating_strategy, samples, verbose):
+    if multi_proc:
+        if len(samples) < mp.cpu_count():
+            proc_count = len(samples)
+        else:
+            proc_count = mp.cpu_count() - 1  # leave a CPU free just to be nice
+
+        pool = mp.Pool(processes=proc_count)
+        data = [(gating_strategy, sample, verbose) for sample in samples]
+        all_results = pool.map(gate_sample, data)
+        reports = [results.report for results in all_results]
+    else:
+        reports = []
+        for sample in samples:
+            results = gating_strategy.gate_sample(sample, verbose=verbose)
+            reports.append(results.report)
+
+    return pd.concat(reports)
+
 
 class Session(object):
     def __init__(self, fcs_samples=None, gating_strategy=None):
@@ -24,10 +77,7 @@ class Session(object):
             if Sample in sample_types:
                 self.samples = fcs_samples
             elif str in sample_types:
-                for path in fcs_samples:
-                    self.samples.append(
-                        Sample(path)
-                    )
+                self.samples = get_samples_from_paths(fcs_samples)
         elif isinstance(fcs_samples, Sample):
             # 'fcs_samples' is a Sample instance
             self.samples = [fcs_samples]
@@ -36,8 +86,7 @@ class Session(object):
             # If directory, search non-recursively for files w/ .fcs extension
             if os.path.isdir(fcs_samples):
                 fcs_paths = glob(os.path.join(fcs_samples, '*.fcs'))
-                for fcs_path in fcs_paths:
-                    self.samples.append(Sample(fcs_path))
+                self.samples = get_samples_from_paths(fcs_paths)
 
         if isinstance(gating_strategy, GatingStrategy):
             self.gating_strategy = gating_strategy
@@ -52,10 +101,4 @@ class Session(object):
             )
 
     def analyze_samples(self, verbose=False):
-        reports = []
-
-        for sample in self.samples:
-            results = self.gating_strategy.gate_sample(sample, verbose=verbose)
-            reports.append(results.report)
-
-        self.report = pd.concat(reports)
+        self.report = gate_samples(self.gating_strategy, self.samples, verbose)
