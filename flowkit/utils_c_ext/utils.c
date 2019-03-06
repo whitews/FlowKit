@@ -83,14 +83,49 @@ int * points_in_polygon(double *poly_vertices, int vert_count, double *points, i
     */
     int *wind_counts = malloc(point_count * sizeof(int));
     int wind_count;
+    double point_x;
+    double point_y;
+
+    // First, find the polygon's bounding box & store the min/max values
+    double min_x = poly_vertices[0];
+    double max_x = poly_vertices[0];
+    double min_y = poly_vertices[1];
+    double max_y = poly_vertices[1];
+    double vert_x, vert_y;
+    
+    for (int i=1; i<vert_count; i++) {
+        vert_x = poly_vertices[(i * 2) + 0];
+        vert_y = poly_vertices[(i * 2) + 1];
+        
+        if (vert_x < min_x) {
+            min_x = vert_x;
+        }
+        else if (vert_x > max_x) {
+            max_x = vert_x;
+        }
+        if (vert_y < min_y) {
+            min_y = vert_y;
+        }
+        else if (vert_y > max_y) {
+            max_y = vert_y;
+        }
+    }
 
     for (int i=0; i<point_count; i++) {
-        wind_count = calc_wind_count(
-            points[i * 2],
-            points[(i * 2) + 1],
-            vert_count,
-            poly_vertices
-        );
+        point_x = points[i * 2];
+        point_y = points[(i * 2) + 1];
+
+        if (point_x < min_x || point_x > max_x || point_y < min_y || point_y > max_y) {
+            wind_count = 0;
+        } else {
+            wind_count = calc_wind_count(
+                point_x,
+                point_y,
+                vert_count,
+                poly_vertices
+            );
+        }
+
         wind_counts[i] = wind_count;
     }
 
