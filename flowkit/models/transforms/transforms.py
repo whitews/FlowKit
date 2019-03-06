@@ -1,6 +1,5 @@
 import numpy as np
 import flowutils
-from flowkit import utils
 from.base_transform import Transform
 
 __all__ = [
