@@ -126,28 +126,14 @@ class HyperlogTransform(Transform):
         )
 
     def apply(self, events):
-        hyperlog = utils.Hyperlog(
-            self.param_t,
-            self.param_w,
-            self.param_m,
-            self.param_a
+        return flowutils.transforms.hyperlog(
+            events,
+            range(events.shape[1]),
+            t=self.param_t,
+            m=self.param_m,
+            w=self.param_w,
+            a=self.param_a
         )
-
-        new_events = []
-        events_shape_len = len(events.shape)
-
-        # TODO: This is slow, is there a way to vectorize the scale method?
-        for e in events:
-            if events_shape_len > 1:
-                new_row_events = []
-                for row_e in e:
-                    new_row_events.append(hyperlog.scale(row_e))
-
-                new_events.append(new_row_events)
-            else:
-                new_events.append(hyperlog.scale(e))
-
-        return np.array(new_events)
 
 
 class LogicleTransform(Transform):
@@ -174,7 +160,7 @@ class LogicleTransform(Transform):
         )
 
     def apply(self, events):
-        new_events = flowutils.transforms.logicle(
+        return flowutils.transforms.logicle(
             events,
             range(events.shape[1]),
             t=self.param_t,
@@ -182,8 +168,6 @@ class LogicleTransform(Transform):
             w=self.param_w,
             a=self.param_a
         )
-
-        return new_events
 
 
 class AsinhTransform(Transform):
