@@ -63,16 +63,15 @@ class Sample(object):
             do not contribute to compensation.
         """
         # inspect our fcs_path_or_data argument
-        self._flow_data = None
         if isinstance(fcs_path_or_data, str):
             # if a string, we only handle file paths, so try creating a FlowData object
-            self._flow_data = flowio.FlowData(fcs_path_or_data)
+            flow_data = flowio.FlowData(fcs_path_or_data)
         elif isinstance(fcs_path_or_data, io.IOBase):
-            self._flow_data = flowio.FlowData(fcs_path_or_data)
+            flow_data = flowio.FlowData(fcs_path_or_data)
         elif isinstance(fcs_path_or_data, Path):
-            self._flow_data = flowio.FlowData(fcs_path_or_data.open('rb'))
+            flow_data = flowio.FlowData(fcs_path_or_data.open('rb'))
         elif isinstance(fcs_path_or_data, flowio.FlowData):
-            self._flow_data = fcs_path_or_data
+            flow_data = fcs_path_or_data
         elif isinstance(fcs_path_or_data, np.ndarray):
             tmp_file = TemporaryFile()
             flowio.create_fcs(
@@ -81,16 +80,18 @@ class Sample(object):
                 file_handle=tmp_file
             )
 
-            self._flow_data = flowio.FlowData(tmp_file)
+            flow_data = flowio.FlowData(tmp_file)
+        else:
+            raise ValueError("'fcs_path_or_data' is not a supported type")
 
         try:
-            self.version = self._flow_data.header['version']
+            self.version = flow_data.header['version']
         except KeyError:
             self.version = None
 
         self.null_channels = null_channel_list
-        self.event_count = self._flow_data.event_count
-        self.channels = self._flow_data.channels
+        self.event_count = flow_data.event_count
+        self.channels = flow_data.channels
         self.pnn_labels = list()
         self.pns_labels = list()
         self.fluoro_indices = list()
@@ -98,24 +99,25 @@ class Sample(object):
         channel_gain = []
         channel_lin_log = []
         channel_range = []
+        self.metadata = flow_data.text
 
         for n in sorted([int(k) for k in self.channels.keys()]):
             chan_label = self.channels[str(n)]['PnN']
             self.pnn_labels.append(chan_label)
 
-            if 'p%dg' % n in self._flow_data.text:
-                channel_gain.append(float(self._flow_data.text['p%dg' % n]))
+            if 'p%dg' % n in self.metadata:
+                channel_gain.append(float(self.metadata['p%dg' % n]))
             else:
                 channel_gain.append(1.0)
 
-            if 'p%dr' % n in self._flow_data.text:
-                channel_range.append(float(self._flow_data.text['p%dr' % n]))
+            if 'p%dr' % n in self.metadata:
+                channel_range.append(float(self.metadata['p%dr' % n]))
             else:
                 channel_range.append(None)
 
-            if 'p%de' % n in self._flow_data.text:
+            if 'p%de' % n in self.metadata:
                 (decades, log0) = [
-                    float(x) for x in self._flow_data.text['p%de' % n].split(',')
+                    float(x) for x in self.metadata['p%de' % n].split(',')
                 ]
                 if log0 == 0 and decades != 0:
                     log0 = 1.0  # FCS std states to use 1.0 for invalid 0 value
@@ -135,8 +137,8 @@ class Sample(object):
         # as corrected for proper lin/log display
         # These are the only pre-processing we will do on raw events
         raw_events = np.reshape(
-            np.array(self._flow_data.events, dtype=np.float),
-            (-1, self._flow_data.channel_count)
+            np.array(flow_data.events, dtype=np.float),
+            (-1, flow_data.channel_count)
         )
 
         for i, (decades, log0) in enumerate(channel_lin_log):
@@ -166,12 +168,12 @@ class Sample(object):
             self.subsample_indices = None
 
         try:
-            self.acquisition_date = self._flow_data.text['date']
+            self.acquisition_date = self.metadata['date']
         except KeyError:
             self.acquisition_date = None
 
         try:
-            self.original_filename = self._flow_data.text['fil']
+            self.original_filename = self.metadata['fil']
         except KeyError:
             if isinstance(fcs_path_or_data, str):
                 self.original_filename = os.path.basename(fcs_path_or_data)
@@ -312,7 +314,7 @@ class Sample(object):
 
         :return: Dictionary of FCS metadata
         """
-        return self._flow_data.text
+        return self.metadata
 
     def get_raw_events(self, subsample=False):
         """
