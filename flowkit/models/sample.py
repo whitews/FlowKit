@@ -272,9 +272,6 @@ class Sample(object):
                 comp_matrix,
                 indices
             )
-        else:
-            # assume identity matrix
-            self._comp_events = self._raw_events.copy()
 
     def apply_compensation(self, compensation):
         """
@@ -428,7 +425,10 @@ class Sample(object):
         return channel_data
 
     def apply_transform(self, transform):
-        self._transformed_events = self._comp_events.copy()
+        if self._comp_events is not None:
+            self._transformed_events = self._comp_events.copy()
+        else:
+            self._transformed_events = self._raw_events.copy()
 
         self._transformed_events[:, self.fluoro_indices] = transform.apply(
             self._transformed_events[:, self.fluoro_indices]
