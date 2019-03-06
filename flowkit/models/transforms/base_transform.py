@@ -10,5 +10,5 @@ class Transform(ABC):
         self.dimensions = []
 
     @abstractmethod
-    def apply(self, sample):
+    def apply(self, events_or_sample):
         pass

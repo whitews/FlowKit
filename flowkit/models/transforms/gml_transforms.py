@@ -16,7 +16,7 @@ class GMLTransform(Transform):
         Transform.__init__(self, t_id)
 
     @abstractmethod
-    def apply(self, sample):
+    def apply(self, events_or_sample):
         pass
 
 
@@ -124,8 +124,8 @@ class LinearGMLTransform(GMLTransform, LinearTransform):
             float(param_a)
         )
 
-    def apply(self, sample):
-        events = LinearTransform.apply(self, sample)
+    def apply(self, events):
+        events = LinearTransform.apply(self, events)
         return events
 
 
@@ -168,8 +168,8 @@ class LogGMLTransform(GMLTransform, LogTransform):
             float(param_m)
         )
 
-    def apply(self, sample):
-        events = LogTransform.apply(self, sample)
+    def apply(self, events):
+        events = LogTransform.apply(self, events)
         return events
 
 
@@ -217,8 +217,8 @@ class HyperlogGMLTransform(GMLTransform, HyperlogTransform):
             float(param_a)
         )
 
-    def apply(self, sample):
-        events = HyperlogTransform.apply(self, sample)
+    def apply(self, events):
+        events = HyperlogTransform.apply(self, events)
         return events
 
 
@@ -266,8 +266,8 @@ class LogicleGMLTransform(GMLTransform, LogicleTransform):
             float(param_a)
         )
 
-    def apply(self, sample):
-        events = LogicleTransform.apply(self, sample)
+    def apply(self, events):
+        events = LogicleTransform.apply(self, events)
         return events
 
 
@@ -312,6 +312,6 @@ class AsinhGMLTransform(GMLTransform, AsinhTransform):
             float(param_a)
         )
 
-    def apply(self, sample):
-        events = AsinhTransform.apply(self, sample)
+    def apply(self, events):
+        events = AsinhTransform.apply(self, events)
         return events
