@@ -30,8 +30,6 @@ class GatingStrategy(object):
     document as an input.
     """
     def __init__(self, gating_ml_file_path=None):
-        self.gml_schema = gml_schema
-
         self._gating_ns = None
         self._data_type_ns = None
         self._transform_ns = None
@@ -56,7 +54,7 @@ class GatingStrategy(object):
     def _parse_gml(self, gating_ml_file_path):
         xml_document = etree.parse(gating_ml_file_path)
 
-        val = self.gml_schema.validate(xml_document)
+        val = gml_schema.validate(xml_document)
 
         if not val:
             raise ValueError("Document is not valid GatingML")
