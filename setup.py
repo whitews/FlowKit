@@ -16,7 +16,7 @@ utils_extension = Extension(
 
 setup(
     name='FlowKit',
-    version='0.1.3b3',
+    version='0.1.4b1',
     packages=find_packages(),
     package_data={'': ['*.xsd']},
     include_package_data=True,
