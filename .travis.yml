@@ -9,9 +9,9 @@ python:
   - "3.6"
   - "3.7"
 install:
-  - sudo ln -s /usr/bin/gcc-7 /usr/bin/gcc
   - pip install -r requirements.txt
   - python setup.py build_ext --inplace
 script:
+  - export CC=gcc-7
   - gcc --version
   - python run_tests.py
