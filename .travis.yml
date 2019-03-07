@@ -9,6 +9,7 @@ python:
   - "3.6"
   - "3.7"
 install:
+  - which gcc-7
   - export CC=/usr/bin/gcc-7
   - pip install -r requirements.txt
   - python setup.py build_ext --inplace
