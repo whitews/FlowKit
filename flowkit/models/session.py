@@ -10,8 +10,6 @@ except ImportError as e:
     mp = None
     multi_proc = False
 
-# multi_proc = False
-
 
 def get_samples_from_paths(sample_paths):
     if multi_proc:

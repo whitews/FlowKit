@@ -6,20 +6,28 @@ from flowkit.resources import gml_schema
 from flowkit.models.transforms import gml_transforms
 from flowkit.models.transforms.matrix import Matrix
 # noinspection PyUnresolvedReferences
-from flowkit.models.gate import \
-    QuadrantGate, \
-    RectangleGate, \
-    BooleanGate, \
-    PolygonGate, \
-    EllipsoidGate
+from flowkit.models.gates import \
+    GMLQuadrantGate, \
+    GMLRectangleGate, \
+    GMLBooleanGate, \
+    GMLPolygonGate, \
+    GMLEllipsoidGate
 
 
-GATE_TYPES = [
+GML_GATE_TYPES = [
     'RectangleGate',
     'PolygonGate',
     'EllipsoidGate',
     'QuadrantGate',
     'BooleanGate'
+]
+
+GML_GATE_CLASSES = [
+    'GMLRectangleGate',
+    'GMLPolygonGate',
+    'GMLEllipsoidGate',
+    'GMLQuadrantGate',
+    'GMLBooleanGate'
 ]
 
 
@@ -73,14 +81,14 @@ class GatingStrategy(object):
                 self._transform_ns = ns
 
         self._gate_types = [
-            ':'.join([self._gating_ns, gt]) for gt in GATE_TYPES
+            ':'.join([self._gating_ns, gt]) for gt in GML_GATE_TYPES
         ]
 
         for gt in self._gate_types:
             gt_gates = root.findall(gt, namespace_map)
 
             for gt_gate in gt_gates:
-                constructor = globals()[gt.split(':')[1]]
+                constructor = globals()['GML' + gt.split(':')[1]]
                 g = constructor(
                     gt_gate,
                     self._gating_ns,
@@ -220,7 +228,7 @@ class GatingStrategy(object):
                 parent=root
             )
 
-            if isinstance(gate, QuadrantGate):
+            if isinstance(gate, GMLQuadrantGate):
                 for q_id, quad in gate.quadrants.items():
                     nodes[q_id] = anytree.Node(
                         q_id,
@@ -242,7 +250,7 @@ class GatingStrategy(object):
                         parent=root if parent_id is None else nodes[parent_id]
                     )
 
-                    if isinstance(gate, QuadrantGate):
+                    if isinstance(gate, GMLQuadrantGate):
                         if gate.id not in nodes:
                             nodes[gate.id] = anytree.Node(
                                 gate.id,
@@ -267,7 +275,7 @@ class GatingStrategy(object):
                 parent=nodes[gate.parent]
             )
 
-            if isinstance(gate, QuadrantGate):
+            if isinstance(gate, GMLQuadrantGate):
                 for q_id, quad in gate.quadrants.items():
                     nodes[q_id] = anytree.Node(
                         q_id,
@@ -290,7 +298,7 @@ class GatingStrategy(object):
             # may be in a Quadrant gate
             gate = None
             for g_id, g in self.gates.items():
-                if isinstance(g, QuadrantGate):
+                if isinstance(g, GMLQuadrantGate):
                     if gate_id in g.quadrants:
                         gate = g
                         continue
@@ -405,7 +413,7 @@ class GatingStrategy(object):
             if g_id == 'root':
                 continue
             gate = self.get_gate_by_reference(g_id)
-            if isinstance(gate, QuadrantGate) and g_id in gate.quadrants:
+            if isinstance(gate, GMLQuadrantGate) and g_id in gate.quadrants:
                 # This is a sub-gate, we'll process the sub-gates all at once
                 # with the main QuadrantGate ID
                 continue
