@@ -1,14 +1,9 @@
 dist: xenial
 language: python
-sudo: required
-script:
-  - sudo unlink /usr/bin/gcc && sudo ln -s /usr/bin/gcc-5 /usr/bin/gcc
-  - gcc --version
-addons:
-  sources:
-    - ubuntu-toolchain-r-test
-  packages:
-    - gcc-7
+before_install:
+  - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
+  - sudo apt-get update -q
+  - sudo apt-get install -y gcc-7
 python:
   - "3.6"
   - "3.7"
