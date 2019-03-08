@@ -1,6 +1,4 @@
-from abc import abstractmethod
-from flowkit.gml_utils import find_attribute_value
-from .base_transform import Transform
+from flowkit import gml_utils
 from .transforms import \
     RatioTransform, \
     LinearTransform, \
@@ -10,28 +8,14 @@ from .transforms import \
     AsinhTransform
 
 
-class GMLTransform(Transform):
-    def __init__(self, xform_element, xform_namespace):
-        t_id = find_attribute_value(xform_element, xform_namespace, 'id')
-        Transform.__init__(self, t_id)
-
-    @abstractmethod
-    def apply(self, events_or_sample):
-        pass
-
-
-class RatioGMLTransform(GMLTransform, RatioTransform):
+class RatioGMLTransform(RatioTransform):
     def __init__(
             self,
             xform_element,
             xform_namespace,
             data_type_namespace
     ):
-        GMLTransform.__init__(
-            self,
-            xform_element,
-            xform_namespace
-        )
+        t_id = gml_utils.find_attribute_value(xform_element, xform_namespace, 'id')
 
         f_ratio_els = xform_element.findall(
             '%s:fratio' % xform_namespace,
@@ -45,9 +29,9 @@ class RatioGMLTransform(GMLTransform, RatioTransform):
 
         # f ratio transform has 3 parameters: A, B, and C
         # these are attributes of the 'fratio' element
-        param_a = find_attribute_value(f_ratio_els[0], xform_namespace, 'A')
-        param_b = find_attribute_value(f_ratio_els[0], xform_namespace, 'B')
-        param_c = find_attribute_value(f_ratio_els[0], xform_namespace, 'C')
+        param_a = gml_utils.find_attribute_value(f_ratio_els[0], xform_namespace, 'A')
+        param_b = gml_utils.find_attribute_value(f_ratio_els[0], xform_namespace, 'B')
+        param_c = gml_utils.find_attribute_value(f_ratio_els[0], xform_namespace, 'C')
 
         if None in [param_a, param_b, param_c]:
             raise ValueError(
@@ -63,7 +47,7 @@ class RatioGMLTransform(GMLTransform, RatioTransform):
         dim_labels = []
 
         for dim_el in fcs_dim_els:
-            label = find_attribute_value(dim_el, data_type_namespace, 'name')
+            label = gml_utils.find_attribute_value(dim_el, data_type_namespace, 'name')
 
             if label is None:
                 raise ValueError(
@@ -73,7 +57,7 @@ class RatioGMLTransform(GMLTransform, RatioTransform):
 
         RatioTransform.__init__(
             self,
-            self.id,
+            t_id,
             dim_labels,
             float(param_a),
             float(param_b),
@@ -85,17 +69,13 @@ class RatioGMLTransform(GMLTransform, RatioTransform):
         return events
 
 
-class LinearGMLTransform(GMLTransform, LinearTransform):
+class LinearGMLTransform(LinearTransform):
     def __init__(
             self,
             xform_element,
             xform_namespace
     ):
-        GMLTransform.__init__(
-            self,
-            xform_element,
-            xform_namespace
-        )
+        t_id = gml_utils.find_attribute_value(xform_element, xform_namespace, 'id')
 
         f_lin_els = xform_element.findall(
             '%s:flin' % xform_namespace,
@@ -109,8 +89,8 @@ class LinearGMLTransform(GMLTransform, LinearTransform):
 
         # f linear transform has 2 parameters: T and A
         # these are attributes of the 'flin' element
-        param_t = find_attribute_value(f_lin_els[0], xform_namespace, 'T')
-        param_a = find_attribute_value(f_lin_els[0], xform_namespace, 'A')
+        param_t = gml_utils.find_attribute_value(f_lin_els[0], xform_namespace, 'T')
+        param_a = gml_utils.find_attribute_value(f_lin_els[0], xform_namespace, 'A')
 
         if None in [param_t, param_a]:
             raise ValueError(
@@ -119,7 +99,7 @@ class LinearGMLTransform(GMLTransform, LinearTransform):
 
         LinearTransform.__init__(
             self,
-            self.id,
+            t_id,
             float(param_t),
             float(param_a)
         )
@@ -129,17 +109,13 @@ class LinearGMLTransform(GMLTransform, LinearTransform):
         return events
 
 
-class LogGMLTransform(GMLTransform, LogTransform):
+class LogGMLTransform(LogTransform):
     def __init__(
             self,
             xform_element,
             xform_namespace
     ):
-        GMLTransform.__init__(
-            self,
-            xform_element,
-            xform_namespace
-        )
+        t_id = gml_utils.find_attribute_value(xform_element, xform_namespace, 'id')
 
         f_log_els = xform_element.findall(
             '%s:flog' % xform_namespace,
@@ -153,8 +129,8 @@ class LogGMLTransform(GMLTransform, LogTransform):
 
         # f log transform has 2 parameters: T and M
         # these are attributes of the 'flog' element
-        param_t = find_attribute_value(f_log_els[0], xform_namespace, 'T')
-        param_m = find_attribute_value(f_log_els[0], xform_namespace, 'M')
+        param_t = gml_utils.find_attribute_value(f_log_els[0], xform_namespace, 'T')
+        param_m = gml_utils.find_attribute_value(f_log_els[0], xform_namespace, 'M')
 
         if None in [param_t, param_m]:
             raise ValueError(
@@ -163,7 +139,7 @@ class LogGMLTransform(GMLTransform, LogTransform):
 
         LogTransform.__init__(
             self,
-            self.id,
+            t_id,
             float(param_t),
             float(param_m)
         )
@@ -173,44 +149,40 @@ class LogGMLTransform(GMLTransform, LogTransform):
         return events
 
 
-class HyperlogGMLTransform(GMLTransform, HyperlogTransform):
+class HyperlogGMLTransform(HyperlogTransform):
     def __init__(
             self,
             xform_element,
             xform_namespace
     ):
-        GMLTransform.__init__(
-            self,
-            xform_element,
-            xform_namespace
-        )
+        t_id = gml_utils.find_attribute_value(xform_element, xform_namespace, 'id')
 
-        hlog_els = xform_element.findall(
+        hyperlog_els = xform_element.findall(
             '%s:hyperlog' % xform_namespace,
             namespaces=xform_element.nsmap
         )
 
-        if len(hlog_els) == 0:
+        if len(hyperlog_els) == 0:
             raise ValueError(
                 "Hyperlog transform must specify an 'hyperlog' element (line %d)" % xform_element.sourceline
             )
 
         # hyperlog transform has 4 parameters: T, W, M, and A
         # these are attributes of the 'hyperlog' element
-        param_t = find_attribute_value(hlog_els[0], xform_namespace, 'T')
-        param_w = find_attribute_value(hlog_els[0], xform_namespace, 'W')
-        param_m = find_attribute_value(hlog_els[0], xform_namespace, 'M')
-        param_a = find_attribute_value(hlog_els[0], xform_namespace, 'A')
+        param_t = gml_utils.find_attribute_value(hyperlog_els[0], xform_namespace, 'T')
+        param_w = gml_utils.find_attribute_value(hyperlog_els[0], xform_namespace, 'W')
+        param_m = gml_utils.find_attribute_value(hyperlog_els[0], xform_namespace, 'M')
+        param_a = gml_utils.find_attribute_value(hyperlog_els[0], xform_namespace, 'A')
 
         if None in [param_t, param_w, param_m, param_a]:
             raise ValueError(
                 "Hyperlog transform must provide 'T', 'W', 'M', and 'A' "
-                "attributes (line %d)" % hlog_els[0].sourceline
+                "attributes (line %d)" % hyperlog_els[0].sourceline
             )
 
         HyperlogTransform.__init__(
             self,
-            self.id,
+            t_id,
             float(param_t),
             float(param_w),
             float(param_m),
@@ -222,17 +194,13 @@ class HyperlogGMLTransform(GMLTransform, HyperlogTransform):
         return events
 
 
-class LogicleGMLTransform(GMLTransform, LogicleTransform):
+class LogicleGMLTransform(LogicleTransform):
     def __init__(
             self,
             xform_element,
             xform_namespace
     ):
-        GMLTransform.__init__(
-            self,
-            xform_element,
-            xform_namespace
-        )
+        t_id = gml_utils.find_attribute_value(xform_element, xform_namespace, 'id')
 
         logicle_els = xform_element.findall(
             '%s:logicle' % xform_namespace,
@@ -246,10 +214,10 @@ class LogicleGMLTransform(GMLTransform, LogicleTransform):
 
         # logicle transform has 4 parameters: T, W, M, and A
         # these are attributes of the 'logicle' element
-        param_t = find_attribute_value(logicle_els[0], xform_namespace, 'T')
-        param_w = find_attribute_value(logicle_els[0], xform_namespace, 'W')
-        param_m = find_attribute_value(logicle_els[0], xform_namespace, 'M')
-        param_a = find_attribute_value(logicle_els[0], xform_namespace, 'A')
+        param_t = gml_utils.find_attribute_value(logicle_els[0], xform_namespace, 'T')
+        param_w = gml_utils.find_attribute_value(logicle_els[0], xform_namespace, 'W')
+        param_m = gml_utils.find_attribute_value(logicle_els[0], xform_namespace, 'M')
+        param_a = gml_utils.find_attribute_value(logicle_els[0], xform_namespace, 'A')
 
         if None in [param_t, param_w, param_m, param_a]:
             raise ValueError(
@@ -259,7 +227,7 @@ class LogicleGMLTransform(GMLTransform, LogicleTransform):
 
         LogicleTransform.__init__(
             self,
-            self.id,
+            t_id,
             float(param_t),
             float(param_w),
             float(param_m),
@@ -271,17 +239,13 @@ class LogicleGMLTransform(GMLTransform, LogicleTransform):
         return events
 
 
-class AsinhGMLTransform(GMLTransform, AsinhTransform):
+class AsinhGMLTransform(AsinhTransform):
     def __init__(
             self,
             xform_element,
             xform_namespace
     ):
-        GMLTransform.__init__(
-            self,
-            xform_element,
-            xform_namespace
-        )
+        t_id = gml_utils.find_attribute_value(xform_element, xform_namespace, 'id')
 
         f_asinh_els = xform_element.findall(
             '%s:fasinh' % xform_namespace,
@@ -295,9 +259,9 @@ class AsinhGMLTransform(GMLTransform, AsinhTransform):
 
         # f asinh transform has 3 parameters: T, M, and A
         # these are attributes of the 'fasinh' element
-        param_t = find_attribute_value(f_asinh_els[0], xform_namespace, 'T')
-        param_m = find_attribute_value(f_asinh_els[0], xform_namespace, 'M')
-        param_a = find_attribute_value(f_asinh_els[0], xform_namespace, 'A')
+        param_t = gml_utils.find_attribute_value(f_asinh_els[0], xform_namespace, 'T')
+        param_m = gml_utils.find_attribute_value(f_asinh_els[0], xform_namespace, 'M')
+        param_a = gml_utils.find_attribute_value(f_asinh_els[0], xform_namespace, 'A')
 
         if None in [param_t, param_m, param_a]:
             raise ValueError(
@@ -306,7 +270,7 @@ class AsinhGMLTransform(GMLTransform, AsinhTransform):
 
         AsinhTransform.__init__(
             self,
-            self.id,
+            t_id,
             float(param_t),
             float(param_m),
             float(param_a)

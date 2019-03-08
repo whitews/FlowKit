@@ -1,5 +1,3 @@
-# noinspection PyUnresolvedReferences
-from lxml import etree, objectify
 from flowkit.models import gates
 from flowkit import gml_utils
 

@@ -1,33 +1,8 @@
-from lxml import etree
 import anytree
 from anytree.exporter import DotExporter
 import pandas as pd
-from flowkit.resources import gml_schema
 from flowkit import gml_utils
-from flowkit.models.transforms import gml_transforms
-from flowkit.models.gates.gml_gates import \
-    GMLQuadrantGate, \
-    GMLRectangleGate, \
-    GMLBooleanGate, \
-    GMLPolygonGate, \
-    GMLEllipsoidGate
-
-
-GML_GATE_TYPES = [
-    'RectangleGate',
-    'PolygonGate',
-    'EllipsoidGate',
-    'QuadrantGate',
-    'BooleanGate'
-]
-
-GML_GATE_CLASSES = [
-    'GMLRectangleGate',
-    'GMLPolygonGate',
-    'GMLEllipsoidGate',
-    'GMLQuadrantGate',
-    'GMLBooleanGate'
-]
+from flowkit.models.gates.gml_gates import GMLQuadrantGate
 
 
 class GatingStrategy(object):
@@ -37,9 +12,9 @@ class GatingStrategy(object):
     document as an input.
     """
     def __init__(self, gating_ml_file_path=None):
-        self._gating_ns = None
-        self._data_type_ns = None
-        self._transform_ns = None
+        self.gating_ns = None
+        self.data_type_ns = None
+        self.transform_ns = None
         self._cached_compensations = {}
 
         # keys are the object's ID (gate, xform, or matrix,
@@ -49,7 +24,14 @@ class GatingStrategy(object):
         self.comp_matrices = {}
 
         if gating_ml_file_path is not None:
-            self._parse_gml(gating_ml_file_path)
+            root_gml, gating_ns, dt_ns, xform_ns = gml_utils.parse_gatingml_file(gating_ml_file_path)
+            self.gating_ns = gating_ns
+            self.data_type_ns = dt_ns
+            self.transform_ns = xform_ns
+
+            self.gates = gml_utils.construct_gates(self, root_gml)
+            self.transformations = gml_utils.construct_transforms(root_gml, self.transform_ns, self.data_type_ns)
+            self.comp_matrices = gml_utils.construct_matrices(root_gml, self.transform_ns, self.data_type_ns)
 
     def __repr__(self):
         return (
@@ -57,153 +39,6 @@ class GatingStrategy(object):
             f'{len(self.gates)} gates, {len(self.transformations)} transforms, '
             f'{len(self.comp_matrices)} compensations)'
         )
-
-    def _parse_gml(self, gating_ml_file_path):
-        xml_document = etree.parse(gating_ml_file_path)
-
-        val = gml_schema.validate(xml_document)
-
-        if not val:
-            raise ValueError("Document is not valid GatingML")
-
-        root = xml_document.getroot()
-
-        namespace_map = root.nsmap
-
-        # find GatingML target namespace in the map
-        for ns, url in namespace_map.items():
-            if url == 'http://www.isac-net.org/std/Gating-ML/v2.0/gating':
-                self._gating_ns = ns
-            elif url == 'http://www.isac-net.org/std/Gating-ML/v2.0/datatypes':
-                self._data_type_ns = ns
-            elif url == 'http://www.isac-net.org/std/Gating-ML/v2.0/transformations':
-                self._transform_ns = ns
-
-        self._gate_types = [
-            ':'.join([self._gating_ns, gt]) for gt in GML_GATE_TYPES
-        ]
-
-        for gt in self._gate_types:
-            gt_gates = root.findall(gt, namespace_map)
-
-            for gt_gate in gt_gates:
-                constructor = globals()['GML' + gt.split(':')[1]]
-                g = constructor(
-                    gt_gate,
-                    self._gating_ns,
-                    self._data_type_ns,
-                    self
-                )
-
-                if g.id in self.gates:
-                    raise ValueError(
-                        "Gate '%s' already exists. "
-                        "Duplicate gate IDs are not allowed." % g.id
-                    )
-                self.gates[g.id] = g
-
-        if self._transform_ns is not None:
-            # types of transforms include:
-            #   - ratio
-            #   - log10
-            #   - asinh
-            #   - hyperlog
-            #   - linear
-            #   - logicle
-            xform_els = root.findall(
-                '%s:transformation' % self._transform_ns,
-                namespaces=namespace_map
-            )
-
-            for xform_el in xform_els:
-                xform = None
-
-                # determine type of transformation
-                fratio_els = xform_el.findall(
-                    '%s:fratio' % self._transform_ns,
-                    namespaces=namespace_map
-                )
-
-                if len(fratio_els) > 0:
-                    xform = gml_transforms.RatioGMLTransform(
-                        xform_el,
-                        self._transform_ns,
-                        self._data_type_ns
-                    )
-
-                flog_els = xform_el.findall(
-                    '%s:flog' % self._transform_ns,
-                    namespaces=namespace_map
-                )
-
-                if len(flog_els) > 0:
-                    xform = gml_transforms.LogGMLTransform(
-                        xform_el,
-                        self._transform_ns
-                    )
-
-                fasinh_els = xform_el.findall(
-                    '%s:fasinh' % self._transform_ns,
-                    namespaces=namespace_map
-                )
-
-                if len(fasinh_els) > 0:
-                    xform = gml_transforms.AsinhGMLTransform(
-                        xform_el,
-                        self._transform_ns
-                    )
-
-                hyperlog_els = xform_el.findall(
-                    '%s:hyperlog' % self._transform_ns,
-                    namespaces=namespace_map
-                )
-
-                if len(hyperlog_els) > 0:
-                    xform = gml_transforms.HyperlogGMLTransform(
-                        xform_el,
-                        self._transform_ns
-                    )
-
-                flin_els = xform_el.findall(
-                    '%s:flin' % self._transform_ns,
-                    namespaces=namespace_map
-                )
-
-                if len(flin_els) > 0:
-                    xform = gml_transforms.LinearGMLTransform(
-                        xform_el,
-                        self._transform_ns
-                    )
-
-                logicle_els = xform_el.findall(
-                    '%s:logicle' % self._transform_ns,
-                    namespaces=namespace_map
-                )
-
-                if len(logicle_els) > 0:
-                    xform = gml_transforms.LogicleGMLTransform(
-                        xform_el,
-                        self._transform_ns
-                    )
-
-                if xform is not None:
-                    self.transformations[xform.id] = xform
-
-        if self._transform_ns is not None:
-            # comp matrices are defined by the 'spectrumMatrix' element
-            matrix_els = root.findall(
-                '%s:spectrumMatrix' % self._transform_ns,
-                namespaces=namespace_map
-            )
-
-            for matrix_el in matrix_els:
-                matrix = gml_utils.parse_matrix_element(
-                    matrix_el,
-                    self._transform_ns,
-                    self._data_type_ns
-                )
-
-                self.comp_matrices[matrix.id] = matrix
 
     def _build_hierarchy_tree(self, gates=None):
         nodes = {}
@@ -401,7 +236,7 @@ class GatingStrategy(object):
 
         results = {}
 
-        # anytree's tree allows us to iterate from the root down to the leaves
+        # anytree tree allows us to iterate from the root down to the leaves
         # in an order that follows the hierarchy, thereby avoiding duplicate
         # processing of parent gates
         root = self._build_hierarchy_tree(gates)
