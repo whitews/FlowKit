@@ -1,111 +1,6 @@
-# noinspection PyUnresolvedReferences
-from lxml import etree, objectify
 import numpy as np
 from .base_gate import Gate
 from flowkit import utils
-
-
-class Dimension(object):
-    def __init__(self, dim_element, gating_namespace, data_type_namespace):
-        # check for presence of optional 'id' (present in quad gate dividers)
-        self.id = utils.find_attribute_value(dim_element, gating_namespace, 'id')
-
-        self.label = None
-        self.compensation_ref = utils.find_attribute_value(dim_element, gating_namespace, 'compensation-ref')
-        self.transformation_ref = utils.find_attribute_value(dim_element, gating_namespace, 'transformation-ref')
-        self.new_dim_transformation_ref = None
-
-        self.min = None
-        self.max = None
-        self.values = []  # quad gate dims can have multiple values
-
-        # should be 0 or only 1 'min' attribute
-        _min = utils.find_attribute_value(dim_element, gating_namespace, 'min')
-
-        if _min is not None:
-            self.min = float(_min)
-
-        # ditto for 'max' attribute, 0 or 1 value
-        _max = utils.find_attribute_value(dim_element, gating_namespace, 'max')
-
-        if _max is not None:
-            self.max = float(_max)
-
-        # values in gating namespace, ok if not present
-        value_els = dim_element.findall(
-            '%s:value' % gating_namespace,
-            namespaces=dim_element.nsmap
-        )
-
-        for value in value_els:
-            self.values.append(float(value.text))
-
-        # label be here
-        fcs_dim_els = dim_element.find(
-            '%s:fcs-dimension' % data_type_namespace,
-            namespaces=dim_element.nsmap
-        )
-
-        # if no 'fcs-dimension' element is present, this might be a
-        # 'new-dimension'  made from a transformation on other dims
-        if fcs_dim_els is None:
-            new_dim_el = dim_element.find(
-                '%s:new-dimension' % data_type_namespace,
-                namespaces=dim_element.nsmap
-            )
-            if new_dim_el is None:
-                raise ValueError(
-                    "Dimension invalid: neither fcs-dimension or new-dimension "
-                    "tags found (line %d)" % dim_element.sourceline
-                )
-
-            # if we get here, there should be a 'transformation-ref' attribute
-            xform_ref = utils.find_attribute_value(new_dim_el, data_type_namespace, 'transformation-ref')
-
-            if xform_ref is not None:
-                self.new_dim_transformation_ref = xform_ref
-        else:
-            self.label = utils.find_attribute_value(fcs_dim_els, data_type_namespace, 'name')
-            if self.label is None:
-                raise ValueError(
-                    'Dimension name not found (line %d)' % fcs_dim_els.sourceline
-                )
-
-    def __repr__(self):
-        return (
-            f'{self.__class__.__name__}('
-            f'{self.id}, label: {self.label})'
-        )
-
-
-class Vertex(object):
-    def __init__(self, vert_element, gating_namespace, data_type_namespace):
-        self.coordinates = []
-
-        coord_els = vert_element.findall(
-            '%s:coordinate' % gating_namespace,
-            namespaces=vert_element.nsmap
-        )
-
-        if len(coord_els) != 2:
-            raise ValueError(
-                'Vertex must contain 2 coordinate values (line %d)' % vert_element.sourceline
-            )
-
-        # should be 0 or only 1 'min' attribute,
-        for coord_el in coord_els:
-            value = utils.find_attribute_value(coord_el, data_type_namespace, 'value')
-            if value is None:
-                raise ValueError(
-                    'Vertex coordinate must have only 1 value (line %d)' % coord_el.sourceline
-                )
-
-            self.coordinates.append(float(value))
-
-    def __repr__(self):
-        return (
-            f'{self.__class__.__name__}({self.coordinates})'
-        )
 
 
 class RectangleGate(Gate):
@@ -161,7 +56,7 @@ class RectangleGate(Gate):
 
             # new dimensions are defined by transformations of other dims
             try:
-                new_dim_xform = self.__parent__.transformations[new_dim.new_dim_transformation_ref]
+                new_dim_xform = self.__parent__.transformations[new_dim.ratio_ref]
             except KeyError:
                 raise KeyError("New dimensions must provide a transformation")
 
@@ -334,7 +229,7 @@ class QuadrantGate(Gate):
                     if dim.id != divider['divider']:
                         continue
                     else:
-                        dim_label = dim.label
+                        dim_label = dim.dimension_ref
 
                 if dim_label is None:
                     raise ValueError(

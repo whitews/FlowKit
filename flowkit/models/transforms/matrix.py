@@ -1,5 +1,5 @@
 import numpy as np
-from flowkit import utils
+from flowkit import gml_utils
 
 
 class Matrix(object):
@@ -9,7 +9,7 @@ class Matrix(object):
         xform_namespace,
         data_type_namespace
     ):
-        self.id = utils.find_attribute_value(matrix_element, xform_namespace, 'id')
+        self.id = gml_utils.find_attribute_value(matrix_element, xform_namespace, 'id')
         self.fluorochomes = []
         self.detectors = []
         self.matrix = []
@@ -25,7 +25,7 @@ class Matrix(object):
         )
 
         for dim_el in fcs_dim_els:
-            label = utils.find_attribute_value(dim_el, data_type_namespace, 'name')
+            label = gml_utils.find_attribute_value(dim_el, data_type_namespace, 'name')
 
             if label is None:
                 raise ValueError(
@@ -44,7 +44,7 @@ class Matrix(object):
         )
 
         for dim_el in fcs_dim_els:
-            label = utils.find_attribute_value(dim_el, data_type_namespace, 'name')
+            label = gml_utils.find_attribute_value(dim_el, data_type_namespace, 'name')
 
             if label is None:
                 raise ValueError(
@@ -66,7 +66,7 @@ class Matrix(object):
             )
 
             for co_el in coefficient_els:
-                value = utils.find_attribute_value(co_el, xform_namespace, 'value')
+                value = gml_utils.find_attribute_value(co_el, xform_namespace, 'value')
                 if value is None:
                     raise ValueError(
                         'Matrix coefficient must have only 1 value (line %d)' % co_el.sourceline

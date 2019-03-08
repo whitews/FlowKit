@@ -5,8 +5,7 @@ import pandas as pd
 from flowkit.resources import gml_schema
 from flowkit.models.transforms import gml_transforms
 from flowkit.models.transforms.matrix import Matrix
-# noinspection PyUnresolvedReferences
-from flowkit.models.gates import \
+from flowkit.models.gates.gml_gates import \
     GMLQuadrantGate, \
     GMLRectangleGate, \
     GMLBooleanGate, \

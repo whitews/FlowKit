@@ -3,6 +3,7 @@ import numpy as np
 import flowutils
 from flowkit import utils
 from flowkit.models import gates
+from flowkit.models import dimension
 
 
 class Gate(ABC):
@@ -148,15 +149,23 @@ class Gate(ABC):
                 dim_comp_refs.add(dim.compensation_ref)
                 dim_comp = True
 
-            if dim.label is None:
+            if isinstance(dim, dimension.RatioDimension):
                 # dimension is a transform of other dimensions
                 new_dims.append(dim)
                 continue
+            elif isinstance(dim, dimension.Divider):
+                dim_label = dim.dimension_ref
+                dim_min.append(None)
+                dim_max.append(None)
+            else:
+                dim_label = dim.label
+                dim_min.append(dim.min)
+                dim_max.append(dim.max)
 
-            if dim.label in pnn_labels:
-                dim_idx.append(pnn_labels.index(dim.label))
+            if dim_label in pnn_labels:
+                dim_idx.append(pnn_labels.index(dim_label))
             elif dim.label in pns_labels:
-                dim_idx.append(pns_labels.index(dim.label))
+                dim_idx.append(pns_labels.index(dim_label))
             else:
                 # for a referenced comp, the label may have been the
                 # fluorochrome instead of the channel's PnN label. If so,
@@ -164,15 +173,13 @@ class Gate(ABC):
                 # names that will match
                 if not dim_comp:
                     raise LookupError(
-                        "%s is not found as a channel label or channel reference in %s" % (dim.label, sample)
+                        "%s is not found as a channel label or channel reference in %s" % (dim_label, sample)
                     )
                 matrix = self.__parent__.comp_matrices[dim.compensation_ref]
-                matrix_dim_idx = matrix.fluorochomes.index(dim.label)
+                matrix_dim_idx = matrix.fluorochomes.index(dim_label)
                 detector = matrix.detectors[matrix_dim_idx]
                 dim_idx.append(pnn_labels.index(detector))
 
-            dim_min.append(dim.min)
-            dim_max.append(dim.max)
             dim_xform.append(dim.transformation_ref)
 
         events = self.compensate_sample(dim_comp_refs, sample)

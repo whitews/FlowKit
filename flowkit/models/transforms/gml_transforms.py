@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from flowkit.utils import find_attribute_value
+from flowkit.gml_utils import find_attribute_value
 from .base_transform import Transform
 from .transforms import \
     RatioTransform, \

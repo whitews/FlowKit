@@ -1,46 +1,10 @@
 # noinspection PyUnresolvedReferences
 from lxml import etree, objectify
-from .gates import \
-    Vertex, \
-    Dimension, \
-    RectangleGate, \
-    PolygonGate, \
-    EllipsoidGate, \
-    QuadrantGate, \
-    BooleanGate
-from flowkit import utils
+from flowkit.models import gates
+from flowkit import gml_utils
 
 
-def parse_gate_element(
-        gate_element,
-        gating_namespace,
-        data_type_namespace
-):
-    gate_id = utils.find_attribute_value(gate_element, gating_namespace, 'id')
-    parent_id = utils.find_attribute_value(gate_element, gating_namespace, 'parent_id')
-
-    # most gates specify dimensions in the 'dimension' tag,
-    # but quad gates specify dimensions in the 'divider' tag
-    dim_els = gate_element.findall(
-        '%s:divider' % gating_namespace,
-        namespaces=gate_element.nsmap
-    )
-    if len(dim_els) == 0:
-        dim_els = gate_element.findall(
-            '%s:dimension' % gating_namespace,
-            namespaces=gate_element.nsmap
-        )
-
-    dimensions = []
-
-    for dim_el in dim_els:
-        dim = Dimension(dim_el, gating_namespace, data_type_namespace)
-        dimensions.append(dim)
-
-    return gate_id, parent_id, dimensions
-
-
-class GMLRectangleGate(RectangleGate):
+class GMLRectangleGate(gates.RectangleGate):
     """
     Represents a GatingML Rectangle Gate
 
@@ -60,14 +24,13 @@ class GMLRectangleGate(RectangleGate):
             data_type_namespace,
             gating_strategy
     ):
-        gate_id, parent_id, dimensions = parse_gate_element(
+        gate_id, parent_id, dimensions = gml_utils.parse_gate_element(
             gate_element,
             gating_namespace,
             data_type_namespace
         )
 
-        RectangleGate.__init__(
-            self,
+        super().__init__(
             gate_id,
             parent_id,
             dimensions,
@@ -75,7 +38,7 @@ class GMLRectangleGate(RectangleGate):
         )
 
 
-class GMLPolygonGate(PolygonGate):
+class GMLPolygonGate(gates.PolygonGate):
     """
     Represents a GatingML Polygon Gate
 
@@ -91,7 +54,7 @@ class GMLPolygonGate(PolygonGate):
             data_type_namespace,
             gating_strategy
     ):
-        gate_id, parent_id, dimensions = parse_gate_element(
+        gate_id, parent_id, dimensions = gml_utils.parse_gate_element(
             gate_element,
             gating_namespace,
             data_type_namespace
@@ -105,11 +68,10 @@ class GMLPolygonGate(PolygonGate):
         vertices = []
 
         for vert_el in vert_els:
-            vert = Vertex(vert_el, gating_namespace, data_type_namespace)
+            vert = gml_utils.parse_vertex_element(vert_el, gating_namespace, data_type_namespace)
             vertices.append(vert)
 
-        PolygonGate.__init__(
-            self,
+        super().__init__(
             gate_id,
             parent_id,
             dimensions,
@@ -118,7 +80,7 @@ class GMLPolygonGate(PolygonGate):
         )
 
 
-class GMLEllipsoidGate(EllipsoidGate):
+class GMLEllipsoidGate(gates.EllipsoidGate):
     """
     Represents a GatingML Ellipsoid Gate
 
@@ -133,7 +95,7 @@ class GMLEllipsoidGate(EllipsoidGate):
             data_type_namespace,
             gating_strategy
     ):
-        gate_id, parent_id, dimensions = parse_gate_element(
+        gate_id, parent_id, dimensions = gml_utils.parse_gate_element(
             gate_element,
             gating_namespace,
             data_type_namespace
@@ -159,7 +121,7 @@ class GMLEllipsoidGate(EllipsoidGate):
             )
 
         for coord_el in coord_els:
-            value = utils.find_attribute_value(coord_el, data_type_namespace, 'value')
+            value = gml_utils.find_attribute_value(coord_el, data_type_namespace, 'value')
             if value is None:
                 raise ValueError(
                     'A coordinate must have only 1 value (line %d)' % coord_el.sourceline
@@ -189,7 +151,7 @@ class GMLEllipsoidGate(EllipsoidGate):
 
             entry_values = []
             for entry_el in row_entry_els:
-                value = utils.find_attribute_value(entry_el, data_type_namespace, 'value')
+                value = gml_utils.find_attribute_value(entry_el, data_type_namespace, 'value')
                 entry_values.append(float(value))
 
             if len(entry_values) != len(coordinates):
@@ -206,11 +168,10 @@ class GMLEllipsoidGate(EllipsoidGate):
             namespaces=gate_element.nsmap
         )
 
-        dist_square_value = utils.find_attribute_value(distance_square_el, data_type_namespace, 'value')
+        dist_square_value = gml_utils.find_attribute_value(distance_square_el, data_type_namespace, 'value')
         distance_square = float(dist_square_value)
 
-        EllipsoidGate.__init__(
-            self,
+        super().__init__(
             gate_id,
             parent_id,
             dimensions,
@@ -221,7 +182,7 @@ class GMLEllipsoidGate(EllipsoidGate):
         )
 
 
-class GMLQuadrantGate(QuadrantGate):
+class GMLQuadrantGate(gates.QuadrantGate):
     """
     Represents a GatingML Quadrant Gate
 
@@ -242,14 +203,14 @@ class GMLQuadrantGate(QuadrantGate):
             data_type_namespace,
             gating_strategy
     ):
-        gate_id, parent_id, dimensions = parse_gate_element(
+        gate_id, parent_id, dividers = gml_utils.parse_gate_element(
             gate_element,
             gating_namespace,
             data_type_namespace
         )
 
         # First, we'll check dimension count
-        if len(dimensions) < 1:
+        if len(dividers) < 1:
             raise ValueError(
                 'Quadrant gates must have at least 1 divider (line %d)' % gate_element.sourceline
             )
@@ -265,7 +226,7 @@ class GMLQuadrantGate(QuadrantGate):
         quadrants = {}
 
         for quadrant_el in quadrant_els:
-            quad_id = utils.find_attribute_value(quadrant_el, gating_namespace, 'id')
+            quad_id = gml_utils.find_attribute_value(quadrant_el, gating_namespace, 'id')
             quadrants[quad_id] = []
 
             position_els = quadrant_el.findall(
@@ -274,8 +235,8 @@ class GMLQuadrantGate(QuadrantGate):
             )
 
             for pos_el in position_els:
-                divider_ref = utils.find_attribute_value(pos_el, gating_namespace, 'divider_ref')
-                location = utils.find_attribute_value(pos_el, gating_namespace, 'location')
+                divider_ref = gml_utils.find_attribute_value(pos_el, gating_namespace, 'divider_ref')
+                location = gml_utils.find_attribute_value(pos_el, gating_namespace, 'location')
 
                 divider = divider_ref
                 location = float(location)
@@ -283,13 +244,13 @@ class GMLQuadrantGate(QuadrantGate):
                 q_max = None
                 dim_label = None
 
-                for dim in dimensions:
-                    if dim.id != divider:
+                for div in dividers:
+                    if div.id != divider:
                         continue
                     else:
-                        dim_label = dim.label
+                        dim_label = div.dimension_ref
 
-                    for v in sorted(dim.values):
+                    for v in sorted(div.values):
                         if v > location:
                             q_max = v
 
@@ -313,17 +274,16 @@ class GMLQuadrantGate(QuadrantGate):
                     }
                 )
 
-        QuadrantGate.__init__(
-            self,
+        super().__init__(
             gate_id,
             parent_id,
-            dimensions,
+            dividers,
             quadrants,
             gating_strategy
         )
 
 
-class GMLBooleanGate(BooleanGate):
+class GMLBooleanGate(gates.BooleanGate):
     """
     Represents a GatingML Boolean Gate
 
@@ -339,7 +299,7 @@ class GMLBooleanGate(BooleanGate):
             data_type_namespace,
             gating_strategy
     ):
-        gate_id, parent_id, dimensions = parse_gate_element(
+        gate_id, parent_id, dimensions = gml_utils.parse_gate_element(
             gate_element,
             gating_namespace,
             data_type_namespace
@@ -382,13 +342,13 @@ class GMLBooleanGate(BooleanGate):
         gate_refs = []
 
         for gate_ref_el in gate_ref_els:
-            gate_ref = utils.find_attribute_value(gate_ref_el, gating_namespace, 'ref')
+            gate_ref = gml_utils.find_attribute_value(gate_ref_el, gating_namespace, 'ref')
             if gate_ref is None:
                 raise ValueError(
                     "Boolean gate reference must specify a 'ref' attribute (line %d)" % gate_ref_el.sourceline
                 )
 
-            use_complement = utils.find_attribute_value(gate_ref_el, gating_namespace, 'use-as-complement')
+            use_complement = gml_utils.find_attribute_value(gate_ref_el, gating_namespace, 'use-as-complement')
             if use_complement is not None:
                 use_complement = use_complement == 'true'
             else:
@@ -401,8 +361,7 @@ class GMLBooleanGate(BooleanGate):
                 }
             )
 
-        BooleanGate.__init__(
-            self,
+        super().__init__(
             gate_id,
             parent_id,
             dimensions,

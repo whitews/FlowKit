@@ -1,3 +1,3 @@
-from .gml_gates import *
+from .gates import *
 
 __all__ = ['gates']
