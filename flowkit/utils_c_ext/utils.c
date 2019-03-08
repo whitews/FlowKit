@@ -79,7 +79,7 @@ int * points_in_polygon(double *poly_vertices, int vert_count, double *points, i
     :param vert_count: Number of vertices in polygon
     :param points: Points to test for polygon inclusion
     :param point_count: Number of points
-    :return: Array of boolean values for each point. True is inside polygon.
+    :return: Array of winding counts for each point. True is inside polygon.
     */
     int *wind_counts = malloc(point_count * sizeof(int));
     int wind_count;

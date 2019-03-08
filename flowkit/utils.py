@@ -489,13 +489,6 @@ def points_in_polygon(poly_vertices, points):
     winding number method and is robust to complex polygons with crossing
     boundaries, including the presence of 'holes' created by boundary crosses.
 
-    This implementation is based on the C implementation here:
-
-        http://geomalgorithms.com/a03-_inclusion.html
-
-    Original copyright notice:
-        Copyright 2000 softSurfer, 2012 Dan Sunday
-
     :param poly_vertices: Polygon vertices (NumPy array of 2-D points)
     :param points: Points to test for polygon inclusion
     :return: List of boolean values for each point. True is inside polygon.
