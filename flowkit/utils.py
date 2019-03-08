@@ -455,31 +455,6 @@ def calculate_ellipse(center_x, center_y, covariance_matrix, n_std_dev=3):
     return ellipse
 
 
-def points_in_ellipse(ellipse, points):
-    """
-    Returns boolean array for whether an array of 2-dimensional points are
-    within the given ellipse.
-    :param ellipse: Matplotlib Ellipse instance
-    :param points: NumPy array of 2-dimensional points
-    :return:
-    """
-    # Note: this was written as matplotlib's 'contains_points' method for an
-    # ellipse gave erroneous results
-
-    cos_angle = np.cos(np.radians(180.0 - ellipse.angle))
-    sin_angle = np.sin(np.radians(180.0 - ellipse.angle))
-
-    x_from_center = points[:, 0] - ellipse.center[0]
-    y_from_center = points[:, 1] - ellipse.center[1]
-
-    xct = x_from_center * cos_angle - y_from_center * sin_angle
-    yct = x_from_center * sin_angle + y_from_center * cos_angle
-
-    rad_cc = (xct ** 2 / (ellipse.width / 2.) ** 2) + (yct ** 2 / (ellipse.height / 2.) ** 2)
-
-    return rad_cc <= 1.0
-
-
 def points_in_ellipsoid(
         ellipsoid_covariance_matrix,
         ellipsoid_means,
