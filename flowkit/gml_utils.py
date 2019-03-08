@@ -1,5 +1,7 @@
+import numpy as np
 from flowkit.models.dimension import Dimension, RatioDimension, Divider
 from flowkit.models.vertex import Vertex
+from flowkit.models.transforms import Matrix
 
 
 def find_attribute_value(xml_el, namespace, attribute_name):
@@ -186,3 +188,80 @@ def parse_vertex_element(vert_element, gating_namespace, data_type_namespace):
         coordinates.append(float(value))
 
     return Vertex(coordinates)
+
+
+def parse_matrix_element(
+    matrix_element,
+    xform_namespace,
+    data_type_namespace
+):
+    matrix_id = find_attribute_value(matrix_element, xform_namespace, 'id')
+    fluorochomes = []
+    detectors = []
+    matrix = []
+
+    fluoro_el = matrix_element.find(
+        '%s:fluorochromes' % xform_namespace,
+        namespaces=matrix_element.nsmap
+    )
+
+    fcs_dim_els = fluoro_el.findall(
+        '%s:fcs-dimension' % data_type_namespace,
+        namespaces=matrix_element.nsmap
+    )
+
+    for dim_el in fcs_dim_els:
+        label = find_attribute_value(dim_el, data_type_namespace, 'name')
+
+        if label is None:
+            raise ValueError(
+                'Dimension name not found (line %d)' % dim_el.sourceline
+            )
+        fluorochomes.append(label)
+
+    detectors_el = matrix_element.find(
+        '%s:detectors' % xform_namespace,
+        namespaces=matrix_element.nsmap
+    )
+
+    fcs_dim_els = detectors_el.findall(
+        '%s:fcs-dimension' % data_type_namespace,
+        namespaces=matrix_element.nsmap
+    )
+
+    for dim_el in fcs_dim_els:
+        label = find_attribute_value(dim_el, data_type_namespace, 'name')
+
+        if label is None:
+            raise ValueError(
+                'Dimension name not found (line %d)' % dim_el.sourceline
+            )
+        detectors.append(label)
+
+    spectrum_els = matrix_element.findall(
+        '%s:spectrum' % xform_namespace,
+        namespaces=matrix_element.nsmap
+    )
+
+    for spectrum_el in spectrum_els:
+        matrix_row = []
+
+        coefficient_els = spectrum_el.findall(
+            '%s:coefficient' % xform_namespace,
+            namespaces=matrix_element.nsmap
+        )
+
+        for co_el in coefficient_els:
+            value = find_attribute_value(co_el, xform_namespace, 'value')
+            if value is None:
+                raise ValueError(
+                    'Matrix coefficient must have only 1 value (line %d)' % co_el.sourceline
+                )
+
+            matrix_row.append(float(value))
+
+        matrix.append(matrix_row)
+
+    matrix = np.array(matrix)
+
+    return Matrix(matrix_id, fluorochomes, detectors, matrix)

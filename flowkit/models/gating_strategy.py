@@ -3,8 +3,8 @@ import anytree
 from anytree.exporter import DotExporter
 import pandas as pd
 from flowkit.resources import gml_schema
+from flowkit import gml_utils
 from flowkit.models.transforms import gml_transforms
-from flowkit.models.transforms.matrix import Matrix
 from flowkit.models.gates.gml_gates import \
     GMLQuadrantGate, \
     GMLRectangleGate, \
@@ -197,7 +197,7 @@ class GatingStrategy(object):
             )
 
             for matrix_el in matrix_els:
-                matrix = Matrix(
+                matrix = gml_utils.parse_matrix_element(
                     matrix_el,
                     self._transform_ns,
                     self._data_type_ns
