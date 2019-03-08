@@ -46,13 +46,17 @@ class Gate(ABC):
 
         event_count = results_and_parent.sum()
 
-        # TODO: check parent_count for div by zero
+        # check parent_count to avoid div by zero
+        if parent_count == 0:
+            relative_percent = 0.0
+        else:
+            relative_percent = (event_count / float(parent_count)) * 100.0
         final_results = {
             'sample': sample.original_filename,
             'events': results_and_parent,
             'count': event_count,
             'absolute_percent': (event_count / float(sample.event_count)) * 100.0,
-            'relative_percent': (event_count / float(parent_count)) * 100.0,
+            'relative_percent': relative_percent,
             'parent': parent_id
         }
 
