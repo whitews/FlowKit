@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  xmlns:transforms="http://www.isac-net.org/std/Gating-ML/v2.0/transformations"
+  xmlns:data-type="http://www.isac-net.org/std/Gating-ML/v2.0/datatypes"
+  xmlns:mml="http://www.w3.org/1998/Math/MathML"
+  targetNamespace="http://www.isac-net.org/std/Gating-ML/v2.0/transformations"
+  elementFormDefault="qualified" attributeFormDefault="qualified" version="2.0.121207">
+
+  <import namespace="http://www.isac-net.org/std/Gating-ML/v2.0/datatypes"
+    schemaLocation="DataTypes.v2.0.xsd" />
+
+  <annotation>
+    <appinfo source="http://flowcyt.sourceforge.net/">Transformation descriptions within Gating-ML.</appinfo>
+
+    <documentation xml:lang="en" source="http://flowcyt.sourceforge.net/">
+      <author>
+        <name>Josef Spidlen</name>
+        <email>jspidlen@bccrc.ca</email>
+      </author>
+      <copyright>
+        Copyright (c) 2008-2014 ISAC (International Society for Advancement of Cytometry)
+        Free of charge distribution and read-only usage permited. Modification and all other rights
+        reserved. For all other uses please contact ISAC. 
+      </copyright>
+    </documentation>
+  </annotation>
+
+  <group name="Transformation_Group">
+    <choice>
+        <element name="transformation" id="transformation" type="transforms:transformation_Type" />
+    </choice>
+  </group>
+
+  <group name="SpectrumMatrix_Group">
+    <choice>
+      <element name="spectrumMatrix" type="transforms:SpectrumMatrix_Type" />
+    </choice>
+  </group>
+
+  <complexType name="transformation_Type">
+    <annotation>
+      <documentation xml:lang="en">Transformations are functions applicable on one or more FCS dimensions; they receive an id attribute to be referencable from gating descriptions. </documentation>
+    </annotation>
+    <sequence>
+      <!--<group ref="data-type:Custom_Group" minOccurs="0" />-->
+      <choice>
+        <element name="flin" type="transforms:FLinTransformation_Type" id="flin" />
+        <element name="fratio" type="transforms:FRatioTransformation_Type" id="fratio" />
+        <element name="flog" type="transforms:FLogTransformation_Type" id="flog" />
+        <element name="fasinh" type="transforms:FASinHTransformation_Type" id="asinh" />
+        <element name="hyperlog" type="transforms:HyperlogTransformation_Type" id="hyperlog" />
+        <element name="logicle" type="transforms:LogicleTransformation_Type" id="logicle" />
+      </choice>
+    </sequence>
+    <attribute name="id" type="ID" use="required" />
+    <attribute name="boundMin" type="data-type:Float64_Type" use="optional" />
+    <attribute name="boundMax" type="data-type:Float64_Type" use="optional" />
+    <anyAttribute processContents="skip"/>
+  </complexType>
+
+  <complexType name="AbstractTransformation_Type" abstract="true">
+    <annotation>
+      <documentation xml:lang="en">Abstract type to be used as a common parent of all transformations.</documentation>
+    </annotation>
+    <group ref="data-type:Custom_Group" minOccurs="0" />
+    <anyAttribute processContents="skip"/>
+  </complexType>
+
+  <complexType name="FLinTransformation_Type">
+    <complexContent>
+      <extension base="transforms:AbstractTransformation_Type">
+        <attribute name="A" type="data-type:Float64_Type" use="required" />
+        <attribute name="T" type="data-type:PFloat64_Type" use="required" />
+        <!--
+          XSD1.1 allows us to place the following assertion stating that T>A 
+          <assert test="@T gte @A" />
+          However, we have found experimentally that this test fails at the XML instance level even even if this condition is met.
+          Curently, the cause of this problem is unclear, which lead us to commenting out the assetion and leaving it up to 
+          the implementing software to verify that attribute values are correct.
+        -->
+      </extension>
+    </complexContent>
+  </complexType>
+
+  <complexType name="FRatioTransformation_Type">
+    <complexContent>
+      <extension base="transforms:AbstractTransformation_Type">
+        <group ref="data-type:FCSDimensions_Group" minOccurs="2" maxOccurs="2" />
+        <attribute name="A" type="data-type:Float64_Type" use="required" />
+        <attribute name="B" type="data-type:Float64_Type" use="required" />
+        <attribute name="C" type="data-type:Float64_Type" use="required" />
+      </extension>
+    </complexContent>
+  </complexType>
+
+  <complexType name="FLogTransformation_Type">
+    <complexContent>
+      <extension base="transforms:AbstractTransformation_Type">
+        <attribute name="T" type="data-type:PFloat64_Type" use="required" />
+        <attribute name="M" type="data-type:PFloat64_Type" use="required" />
+      </extension>
+    </complexContent>
+  </complexType>
+
+  <complexType name="FASinHTransformation_Type">
+    <complexContent>
+      <extension base="transforms:AbstractTransformation_Type">
+        <attribute name="T" type="data-type:PFloat64_Type" use="required" />
+        <attribute name="M" type="data-type:PFloat64_Type" use="required" />
+        <attribute name="A" type="data-type:UFloat64_Type" use="required" />
+      </extension>
+      <!--
+        XSD1.1 allows us to place the following assertion stating that T>A 
+        <assert test="@M gte @A" />
+        However, we have found experimentally that this test fails at the XML instance level even even if this condition is met.
+        Curently, the cause of this problem is unclear, which lead us to commenting out the assetion and leaving it up to 
+        the implementing software to verify that attribute values are correct.
+      -->
+    </complexContent>
+  </complexType>
+
+  <complexType name="HyperlogTransformation_Type">
+    <complexContent>
+      <extension base="transforms:AbstractTransformation_Type">
+        <attribute name="T" type="data-type:PFloat64_Type" use="required" />
+        <attribute name="M" type="data-type:PFloat64_Type" use="required" />
+        <attribute name="W" type="data-type:PFloat64_Type" use="required" />
+        <attribute name="A" type="data-type:Float64_Type" use="required" />
+        <!--
+          XSD1.1 allows us to place the following assertions stating that W >= M/2, -W <= A <= M-2W 
+          <assert test="@W le ((@M) div 2)" />
+          <assert test="@A ge ((-1)*(@W))" />
+          <assert test="@A le (@M)-(2*@W)"/>
+          However, we have found experimentally that these tests fails at the XML instance level even even if these conditions are met.
+          Curently, the cause of this problem is unclear, which lead us to commenting out the assetion and leaving it up to 
+          the implementing software to verify that attribute values are correct.
+        -->
+      </extension>
+    </complexContent>
+  </complexType>
+
+  <complexType name="LogicleTransformation_Type">
+    <complexContent>
+      <extension base="transforms:AbstractTransformation_Type">
+        <attribute name="T" type="data-type:PFloat64_Type" use="required" />
+        <attribute name="M" type="data-type:PFloat64_Type" use="required" />
+        <attribute name="W" type="data-type:UFloat64_Type" use="required" />
+        <attribute name="A" type="data-type:Float64_Type" use="required" />
+        <!--
+          XSD1.1 allows us to place the following assertions stating that W >= M/2, -W <= A <= M-2W 
+          <assert test="@W le ((@M) div 2)" />
+          <assert test="@A ge ((-1)*(@W))" />
+          <assert test="@A le (@M)-(2*@W)"/>
+          However, we have found experimentally that these tests fails at the XML instance level even even if these conditions are met.
+          Curently, the cause of this problem is unclear, which lead us to commenting out the assetion and leaving it up to 
+          the implementing software to verify that attribute values are correct.
+        -->
+      </extension>
+    </complexContent>
+  </complexType>
+
+  <complexType name="SpectrumMatrix_Type">
+    <complexContent>
+      <extension base="transforms:AbstractTransformation_Type">
+        <sequence>
+          <element name="fluorochromes" type="transforms:FCSDimensions_Type" />
+          <element name="detectors" type="transforms:FCSDimensions_Type" />
+          <element name="spectrum" type="transforms:Spectrum_Type" minOccurs="1" maxOccurs="unbounded" />
+        </sequence>
+        <attribute name="id" type="ID" use="required" />
+        <attribute name="matrix-inverted-already" type="boolean" default="false" use="optional" id="matrix-inverted-already" />
+        <anyAttribute processContents="skip"/>
+      </extension>
+    </complexContent>
+  </complexType>
+
+  <complexType name="FCSDimensions_Type">
+    <group ref="data-type:FCSDimensions_Group" minOccurs="2" maxOccurs="unbounded" />
+  </complexType>
+
+  <complexType name="Spectrum_Type">
+    <annotation>
+      <documentation xml:lang="en">Row of the spillover/spectrum matrix.</documentation>
+    </annotation>
+    <sequence>
+      <element name="coefficient" type="transforms:SpectrumCoefficient_Type" minOccurs="1" maxOccurs="unbounded" />
+    </sequence>
+  </complexType>
+
+  <complexType name="SpectrumCoefficient_Type">
+    <attribute name="value" type="data-type:Float64_Type" use="required" />
+  </complexType>
+
+</schema>
