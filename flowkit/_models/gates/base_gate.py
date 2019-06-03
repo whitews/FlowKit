@@ -21,6 +21,7 @@ class Gate(ABC):
         self.id = gate_id
         self.parent = parent_id
         self.dimensions = dimensions
+        self.gate_type = None
 
     def apply_parent_gate(self, sample, results, parent_results):
         if self.parent is not None:
@@ -57,7 +58,8 @@ class Gate(ABC):
             'count': event_count,
             'absolute_percent': (event_count / float(sample.event_count)) * 100.0,
             'relative_percent': relative_percent,
-            'parent': parent_id
+            'parent': parent_id,
+            'gate_type': self.gate_type
         }
 
         return final_results
@@ -180,7 +182,10 @@ class Gate(ABC):
                         "%s is not found as a channel label or channel reference in %s" % (dim_label, sample)
                     )
                 matrix = self.__parent__.comp_matrices[dim.compensation_ref]
-                matrix_dim_idx = matrix.fluorochomes.index(dim_label)
+                try:
+                    matrix_dim_idx = matrix.fluorochomes.index(dim_label)
+                except ValueError:
+                    raise ValueError("%s not found in list of matrix fluorochromes" % dim_label)
                 detector = matrix.detectors[matrix_dim_idx]
                 dim_idx.append(pnn_labels.index(detector))
 

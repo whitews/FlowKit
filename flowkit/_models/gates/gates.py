@@ -29,6 +29,7 @@ class RectangleGate(Gate):
             dimensions,
             gating_strategy
         )
+        self.gate_type = "RectangleGate"
 
     def __repr__(self):
         return (
@@ -100,6 +101,7 @@ class PolygonGate(Gate):
             gating_strategy
         )
         self.vertices = vertices
+        self.gate_type = "PolygonGate"
 
     def __repr__(self):
         return (
@@ -145,6 +147,7 @@ class EllipsoidGate(Gate):
             dimensions,
             gating_strategy
         )
+        self.gate_type = "EllipsoidGate"
         self.coordinates = coordinates
         self.covariance_matrix = covariance_matrix
         self.distance_square = distance_square
@@ -208,6 +211,7 @@ class QuadrantGate(Gate):
             dimensions,
             gating_strategy
         )
+        self.gate_type = "QuadrantGate"
 
         # First, check dimension count
         if len(self.dimensions) < 1:
@@ -344,6 +348,7 @@ class BooleanGate(Gate):
             dimensions,
             gating_strategy
         )
+        self.gate_type = "BooleanGate"
 
         if bool_type not in ['and', 'or', 'not']:
             raise ValueError(
