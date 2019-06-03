@@ -45,20 +45,20 @@ def gate_samples(gating_strategy, samples, verbose):
         pool = mp.Pool(processes=proc_count)
         data = [(gating_strategy, sample, verbose) for sample in samples]
         all_results = pool.map(gate_sample, data)
-        reports = [results.report for results in all_results]
     else:
-        reports = []
+        all_results = []
         for sample in samples:
             results = gating_strategy.gate_sample(sample, verbose=verbose)
-            reports.append(results.report)
+            all_results.append(results)
 
-    return pd.concat(reports)
+    return all_results
 
 
 class Session(object):
     def __init__(self, fcs_samples=None, gating_strategy=None):
         self.samples = []
         self.report = None
+        self._results = None
 
         if isinstance(fcs_samples, list):
             # 'fcs_samples' is a list of either file paths or Sample instances
@@ -98,5 +98,30 @@ class Session(object):
                 "'gating_strategy' must be either a GatingStrategy instance or a path to a GatingML document"
             )
 
+    @property
+    def gates(self):
+        return self.gating_strategy.gates
+
+    def get_sample(self, sample_id):
+        for s in self.samples:
+            if s.original_filename == sample_id:
+                return s
+
     def analyze_samples(self, verbose=False):
-        self.report = gate_samples(self.gating_strategy, self.samples, verbose)
+        # Don't save just the DataFrame report, save the entire
+        # GatingResults objects for each sample, since we'll need the gate
+        # indices for each sample. Add convenience functions inside
+        # GatingResults class for conveniently extracting information from
+        # the DataFrame
+        results = gate_samples(self.gating_strategy, self.samples, verbose)
+
+        all_reports = [res.report for res in results]
+        self.report = pd.concat(all_reports)
+
+        self._results = {}
+        for r in results:
+            self._results[r.sample_id] = r
+
+    def get_gate_indices(self, sample_id, gate_id):
+        gating_result = self._results[sample_id]
+        return gating_result.get_gate_indices(gate_id)
