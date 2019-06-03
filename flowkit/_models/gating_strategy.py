@@ -268,7 +268,7 @@ class GatingResults(object):
         self._raw_results = results_dict
         self.report = None
         self.sample_id = sample_id
-        self._update_report()
+        self._process_results()
 
     @staticmethod
     def _get_pd_result_dict(res_dict, gate_id):
@@ -276,13 +276,14 @@ class GatingResults(object):
             'sample': res_dict['sample'],
             'parent': res_dict['parent'],
             'gate_id': gate_id,
+            'gate_type': res_dict['gate_type'],
             'count': res_dict['count'],
             'absolute_percent': res_dict['absolute_percent'],
             'relative_percent': res_dict['relative_percent'],
             'quadrant_parent': None
         }
 
-    def _update_report(self):
+    def _process_results(self):
         pd_list = []
 
         for g_id, res in self._raw_results.items():
@@ -300,6 +301,7 @@ class GatingResults(object):
             columns=[
                 'sample',
                 'gate_id',
+                'gate_type',
                 'quadrant_parent',
                 'parent',
                 'count',
