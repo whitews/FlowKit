@@ -108,5 +108,6 @@ class LoadSampleTestCase(unittest.TestCase):
 
         self.assertIsInstance(data1_sample._transformed_events, np.ndarray)
 
+
 if __name__ == '__main__':
     unittest.main()

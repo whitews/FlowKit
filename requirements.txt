@@ -1,3 +1,5 @@
+MulticoreTSNE
+scikit-learn
 flowio>=0.9.3
 flowutils>=0.7.0
 matplotlib>=3.0

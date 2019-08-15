@@ -1,12 +1,21 @@
 import os
 from glob import glob
+import numpy as np
 import pandas as pd
+from scipy.stats import gaussian_kde
+from sklearn.preprocessing import StandardScaler
+from MulticoreTSNE import MulticoreTSNE
+from bokeh.plotting import figure, show
+import seaborn
+from matplotlib import cm
+import matplotlib.pyplot as plt
+from flowio.create_fcs import create_fcs
 from flowkit import Sample, GatingStrategy
 
 try:
     import multiprocessing as mp
     multi_proc = True
-except ImportError as e:
+except ImportError:
     mp = None
     multi_proc = False
 
@@ -61,6 +70,9 @@ class Session(object):
         self._results = None
 
         if isinstance(fcs_samples, list):
+            # TODO: should we check that all Samples have the same channels?
+            # and if so, should we determine the common channels and continue?
+
             # 'fcs_samples' is a list of either file paths or Sample instances
             sample_types = set()
 
@@ -122,6 +134,274 @@ class Session(object):
         for r in results:
             self._results[r.sample_id] = r
 
+    def calculate_tsne(
+            self,
+            n_dims=2,
+            ignore_scatter=True,
+            scale_scatter=True,
+            transform=None,
+            subsample=True
+    ):
+        """
+        Performs dimensional reduction using the TSNE algorithm
+        :param n_dims: Number of dimensions to which the source data is reduced
+        :param ignore_scatter: If True, the scatter channels are excluded
+        :param scale_scatter: If True, the scatter channel data is scaled to be
+            in the same range as the fluorescent channel data. If
+            ignore_scatter is True, this option has no effect.
+        :param transform: A Transform instance to apply to events
+        :param subsample: Whether to sub-sample events from FCS files (default: True)
+        :return: Dictionary of TSNE results where the keys are the FCS sample
+            IDs and the values are the TSNE data for events with n_dims
+        """
+        tsne_events = None
+        sample_events_lut = {}
+
+        for s in self.samples:
+            # Determine channels to include for TSNE analysis
+            if ignore_scatter:
+                tsne_indices = s.fluoro_indices
+            else:
+                # need to get all channel indices except time
+                tsne_indices = list(range(len(self.samples[0].channels)))
+                tsne_indices.remove(s.get_channel_index('Time'))
+
+                # TODO: implement scale_scatter option
+                if scale_scatter:
+                    pass
+
+            s_events = s.get_raw_events(subsample=subsample)
+
+            if transform is not None:
+                fluoro_indices = s.fluoro_indices
+                xform_events = transform.apply(s_events[:, fluoro_indices])
+                s_events[:, fluoro_indices] = xform_events
+
+            s_events = s_events[:, tsne_indices]
+
+            # Concatenate events for all samples, keeping track of the indices
+            # belonging to each sample
+            if tsne_events is None:
+                sample_events_lut[s.original_filename] = {
+                    'start': 0,
+                    'end': len(s_events),
+                    'channel_indices': tsne_indices,
+                    'events': s_events
+                }
+                tsne_events = s_events
+            else:
+                sample_events_lut[s.original_filename] = {
+                    'start': len(tsne_events),
+                    'end': len(tsne_events) + len(s_events),
+                    'channel_indices': tsne_indices,
+                    'events': s_events
+                }
+                tsne_events = np.vstack([tsne_events, s_events])
+
+        # Scale data & run TSNE
+        tsne_events = StandardScaler().fit(tsne_events).transform(tsne_events)
+        tsne_results = MulticoreTSNE(n_components=n_dims, n_jobs=8).fit_transform(tsne_events)
+
+        # Split TSNE results back into individual samples as a dictionary
+        for k, v in sample_events_lut.items():
+            v['tsne_results'] = tsne_results[v['start']:v['end'], :]
+
+        # Return split results
+        return sample_events_lut
+
+    def plot_tsne(
+            self,
+            tsne_results,
+            x_min=None,
+            x_max=None,
+            y_min=None,
+            y_max=None,
+            fig_size=(8, 8)
+    ):
+        for s_id, s_results in tsne_results.items():
+            sample = self.get_sample(s_id)
+            tsne_events = s_results['tsne_results']
+
+            for i, chan_idx in enumerate(s_results['channel_indices']):
+                labels = sample.channels[str(chan_idx + 1)]
+
+                x = tsne_events[:, 0]
+                y = tsne_events[:, 1]
+
+                # determine padding to keep min/max events off the edge,
+                # but only if user didn't specify the limits
+                pad_x = max(abs(x.min()), abs(x.max())) * 0.02
+                pad_y = max(abs(y.min()), abs(y.max())) * 0.02
+
+                if x_min is None:
+                    x_min = x.min() - pad_x
+                if x_max is None:
+                    x_max = x.max() + pad_x
+                if y_min is None:
+                    y_min = y.min() - pad_y
+                if y_max is None:
+                    y_max = y.max() + pad_y
+
+                z = s_results['events'][:, i]
+                z_sort = np.argsort(z)
+                z = z[z_sort]
+                x = x[z_sort]
+                y = y[z_sort]
+
+                fig, ax = plt.subplots(figsize=fig_size)
+                ax.set_title(" - ".join([s_id, labels['PnN'], labels['PnS']]))
+
+                ax.set_xlim([x_min, x_max])
+                ax.set_ylim([y_min, y_max])
+
+                seaborn.scatterplot(
+                    x,
+                    y,
+                    hue=z,
+                    palette=cm.get_cmap('rainbow'),
+                    legend=False,
+                    s=11,
+                    linewidth=0,
+                    alpha=0.7
+                )
+
+                file_name = s_id
+                file_name = file_name.replace(".fcs", "")
+                file_name = "_".join([file_name, labels['PnN'], labels['PnS']])
+                file_name = file_name.replace("/", "_")
+                file_name += ".png"
+                plt.savefig(file_name)
+
+    @staticmethod
+    def plot_tsne_difference(
+            tsne_results1,
+            tsne_results2,
+            x_min=None,
+            x_max=None,
+            y_min=None,
+            y_max=None,
+            fig_size=(16, 16),
+            export_fcs=False,
+            export_cnt=20000,
+            fcs_export_dir=None
+    ):
+        # fit an array of size [Ndim, Nsamples]
+        kde1 = gaussian_kde(
+            np.vstack(
+                [
+                    tsne_results1[:, 0],
+                    tsne_results1[:, 1]
+                ]
+            )
+        )
+        kde2 = gaussian_kde(
+            np.vstack(
+                [
+                    tsne_results2[:, 0],
+                    tsne_results2[:, 1]
+                ]
+            )
+        )
+
+        # evaluate on a regular grid
+        x_grid = np.linspace(x_min, x_max, 250)
+        y_grid = np.linspace(y_min, y_max, 250)
+        x_grid, y_grid = np.meshgrid(x_grid, y_grid)
+        xy_grid = np.vstack([x_grid.ravel(), y_grid.ravel()])
+
+        z1 = kde1.evaluate(xy_grid)
+        z2 = kde2.evaluate(xy_grid)
+
+        z = z2 - z1
+
+        if export_fcs:
+            z_g2 = z.copy()
+            z_g2[z_g2 < 0] = 0
+            z_g1 = z.copy()
+            z_g1[z_g1 > 0] = 0
+            z_g1 = np.abs(z_g1)
+
+            z_g2_norm = [float(i) / sum(z_g2) for i in z_g2]
+            z_g1_norm = [float(i) / sum(z_g1) for i in z_g1]
+
+            cdf = np.cumsum(z_g2_norm)
+            cdf = cdf / cdf[-1]
+            values = np.random.rand(export_cnt)
+            value_bins = np.searchsorted(cdf, values)
+            new_g2_events = np.array([xy_grid[:, i] for i in value_bins])
+
+            cdf = np.cumsum(z_g1_norm)
+            cdf = cdf / cdf[-1]
+            values = np.random.rand(export_cnt)
+            value_bins = np.searchsorted(cdf, values)
+            new_g1_events = np.array([xy_grid[:, i] for i in value_bins])
+
+            pnn_labels = ['tsne_0', 'tsne_1']
+
+            fh = open(os.path.join(fcs_export_dir, "tsne_group_1.fcs"), 'wb')
+            create_fcs(new_g1_events.flatten(), pnn_labels, fh)
+            fh.close()
+
+            fh = open(os.path.join(fcs_export_dir, "tsne_group_2.fcs"), 'wb')
+            create_fcs(new_g2_events.flatten(), pnn_labels, fh)
+            fh.close()
+
+        # Plot the result as an image
+        _, _ = plt.subplots(figsize=fig_size)
+        plt.imshow(z.reshape(x_grid.shape),
+                   origin='lower', aspect='auto',
+                   extent=[x_min, x_max, y_min, y_max],
+                   cmap='bwr')
+        plt.show()
+
     def get_gate_indices(self, sample_id, gate_id):
         gating_result = self._results[sample_id]
         return gating_result.get_gate_indices(gate_id)
+
+    def plot_gate(self, sample_id, gate_id):
+        in_gate = self.get_gate_indices(sample_id, gate_id)
+        gate = self.gates[gate_id]
+        sample = self.get_sample(sample_id)
+        events, dim_idx, dim_min, dim_max, new_dims = gate.preprocess_sample_events(sample)
+
+        dim_labels = [dim.label for dim in gate.dimensions]
+
+        z_colors = []
+        for e in in_gate:
+            if e:
+                z_colors.append("#0000ffff")
+            else:
+                z_colors.append("#99999999")
+
+        tools = "crosshair,pan,zoom_in,zoom_out,box_zoom,undo,redo,reset,save,"
+        p = figure(
+            tools=tools,
+            x_range=(dim_min[0], dim_max[0]),
+            y_range=(dim_min[1], dim_max[1]),
+            title=sample_id
+        )
+        p.title.align = 'center'
+
+        p.xaxis.axis_label = dim_labels[0]
+        p.yaxis.axis_label = dim_labels[1]
+
+        if dim_max[1] > dim_max[0]:
+            radius_dimension = 'y'
+            radius = 0.003 * dim_max[1]
+        else:
+            radius_dimension = 'x'
+            radius = 0.003 * dim_max[0]
+
+        p.scatter(
+            events[:, dim_idx[0]],
+            events[:, dim_idx[1]],
+            radius=radius,
+            radius_dimension=radius_dimension,
+            fill_color=z_colors,
+            fill_alpha=0.4,
+            line_color=None
+        )
+
+        show(p)
+
+        return p
