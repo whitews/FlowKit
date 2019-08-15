@@ -288,7 +288,8 @@ class QuadrantGate(Gate):
                 'count': q_event_count,
                 'absolute_percent': (q_event_count / float(sample.event_count)) * 100.0,
                 'relative_percent': (q_event_count / float(parent_count)) * 100.0,
-                'parent': parent_id
+                'parent': parent_id,
+                'gate_type': self.gate_type
             }
 
         return final_results
