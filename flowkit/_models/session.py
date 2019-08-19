@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 from scipy.stats import gaussian_kde
 from sklearn.preprocessing import StandardScaler
+import statsmodels.api as sm
 from MulticoreTSNE import MulticoreTSNE
 from bokeh.plotting import figure, show
 import seaborn
@@ -11,6 +12,7 @@ from matplotlib import cm
 import matplotlib.pyplot as plt
 from flowio.create_fcs import create_fcs
 from flowkit import Sample, GatingStrategy
+import warnings
 
 try:
     import multiprocessing as mp
@@ -35,6 +37,41 @@ def get_samples_from_paths(sample_paths):
             samples.append(Sample(path))
 
     return samples
+
+
+def load_samples(fcs_samples):
+    sample_list = []
+
+    if isinstance(fcs_samples, list):
+        # TODO: should we check that all Samples have the same channels?
+        # and if so, should we determine the common channels and continue?
+
+        # 'fcs_samples' is a list of either file paths or Sample instances
+        sample_types = set()
+
+        for sample in fcs_samples:
+            sample_types.add(type(sample))
+
+        if len(sample_types) > 1:
+            raise ValueError(
+                "Each item in 'fcs_sample' list must be a FCS file path or Sample instance"
+            )
+
+        if Sample in sample_types:
+            sample_list = fcs_samples
+        elif str in sample_types:
+            sample_list = get_samples_from_paths(fcs_samples)
+    elif isinstance(fcs_samples, Sample):
+        # 'fcs_samples' is a single Sample instance
+        sample_list = [fcs_samples]
+    elif isinstance(fcs_samples, str):
+        # 'fcs_samples' is a str to either a single FCS file or a directory
+        # If directory, search non-recursively for files w/ .fcs extension
+        if os.path.isdir(fcs_samples):
+            fcs_paths = glob(os.path.join(fcs_samples, '*.fcs'))
+            sample_list = get_samples_from_paths(fcs_paths)
+
+    return sample_list
 
 
 def gate_sample(data):
@@ -64,39 +101,21 @@ def gate_samples(gating_strategy, samples, verbose):
 
 
 class Session(object):
-    def __init__(self, fcs_samples=None, gating_strategy=None):
+    def __init__(self, fcs_samples=None, comp_bead_samples=None, gating_strategy=None):
         self.samples = []
+        self.bead_samples = []
+        self.bead_lut = {}
         self.report = None
         self._results = None
 
-        if isinstance(fcs_samples, list):
-            # TODO: should we check that all Samples have the same channels?
-            # and if so, should we determine the common channels and continue?
+        if comp_bead_samples == fcs_samples and isinstance(fcs_samples, str):
+            # there's a mix of regular FCS files with bead files in the same directory,
+            # which isn't supported at this time. Raise error
+            raise ValueError("Specify bead samples as a list of paths if in the same directory as other samples")
 
-            # 'fcs_samples' is a list of either file paths or Sample instances
-            sample_types = set()
-
-            for sample in fcs_samples:
-                sample_types.add(type(sample))
-
-            if len(sample_types) > 1:
-                raise ValueError(
-                    "Each item in 'fcs_sample' list must be a FCS file path or Sample instance"
-                )
-
-            if Sample in sample_types:
-                self.samples = fcs_samples
-            elif str in sample_types:
-                self.samples = get_samples_from_paths(fcs_samples)
-        elif isinstance(fcs_samples, Sample):
-            # 'fcs_samples' is a Sample instance
-            self.samples = [fcs_samples]
-        elif isinstance(fcs_samples, str):
-            # 'fcs_samples' is a str to either a single FCS file or a directory
-            # If directory, search non-recursively for files w/ .fcs extension
-            if os.path.isdir(fcs_samples):
-                fcs_paths = glob(os.path.join(fcs_samples, '*.fcs'))
-                self.samples = get_samples_from_paths(fcs_paths)
+        self.samples = load_samples(fcs_samples)
+        self.bead_samples = load_samples(comp_bead_samples)
+        self.process_bead_samples()
 
         if isinstance(gating_strategy, GatingStrategy):
             self.gating_strategy = gating_strategy
@@ -118,6 +137,79 @@ class Session(object):
         for s in self.samples:
             if s.original_filename == sample_id:
                 return s
+
+    def process_bead_samples(self):
+        # do nothing if there are no bead samples
+        bead_sample_count = len(self.bead_samples)
+        if bead_sample_count == 0:
+            warnings.warn("No bead samples were loaded")
+            return
+
+        # all the bead samples must have the same panel, use the 1st one to
+        # determine the fluorescence channels
+        fluoro_indices = self.bead_samples[0].fluoro_indices
+
+        # 1st check is to make sure the # of bead samples matches the #
+        # of fluorescence channels
+        if bead_sample_count != len(fluoro_indices):
+            raise ValueError("Number of bead samples must match the number of fluorescence channels")
+
+        # get PnN channel names from 1st bead sample
+        for f_idx in fluoro_indices:
+            pnn_label = self.bead_samples[0].pnn_labels[f_idx]
+            if pnn_label not in self.bead_lut:
+                self.bead_lut[f_idx] = {'channel_label': pnn_label}
+            else:
+                raise ValueError("Duplicate channel labels are not supported")
+
+        # now, determine which bead file goes with which channel, and make sure
+        # they all have the same channels
+        for i, bs in enumerate(self.bead_samples):
+            # check file name for a match with a channel
+            if bs.fluoro_indices != fluoro_indices:
+                raise ValueError("All bead samples must have the same channel labels")
+
+            for chan_idx, lut in self.bead_lut.items():
+                # file names typically don't have the "-A", "-H', or "-W" sub-strings
+                pnn_label = lut['channel_label'].replace("-A", "")
+
+                if pnn_label in bs.original_filename:
+                    lut['bead_index'] = i
+
+    def calculate_compensation_from_beads(self):
+        if len(self.bead_lut) == 0:
+            warnings.warn("No bead samples were loaded")
+            return
+
+        header = []
+        comp_values = []
+        for chan_idx in sorted(self.bead_lut.keys()):
+            header.append(self.bead_lut[chan_idx]['channel_label'])
+            bead_idx = self.bead_lut[chan_idx]['bead_index']
+
+            x = self.bead_samples[bead_idx].get_raw_events()[:, chan_idx]
+            good_events = x < (2 ** 18) - 1
+            x = x[good_events]
+
+            comp_row_values = []
+            for chan_idx2 in sorted(self.bead_lut.keys()):
+                if chan_idx == chan_idx2:
+                    comp_row_values.append('1.0')
+                else:
+                    y = self.bead_samples[bead_idx].get_raw_events()[:, chan_idx2]
+                    y = y[good_events]
+                    rlm_res = sm.RLM(y, x).fit()
+
+                    comp_row_values.append("%.8f" % rlm_res.params[0])
+
+            comp_values.append(",".join(comp_row_values))
+
+        header = ",".join(header)
+        comp_values = "\n".join(comp_values)
+
+        comp = "\n".join([header, comp_values])
+
+        return comp
 
     def analyze_samples(self, verbose=False):
         # Don't save just the DataFrame report, save the entire

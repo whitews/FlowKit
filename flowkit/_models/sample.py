@@ -711,8 +711,9 @@ class Sample(object):
                     subsample=subsample,
                     color_density=color_density
                 )
-                plot.height = 196
-                plot.width = 196
+                # TODO: these should be configurable
+                plot.height = 256
+                plot.width = 256
                 row.append(plot)
             plots.append(row)
 
