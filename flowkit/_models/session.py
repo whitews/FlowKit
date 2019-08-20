@@ -114,8 +114,9 @@ class Session(object):
             raise ValueError("Specify bead samples as a list of paths if in the same directory as other samples")
 
         self.samples = load_samples(fcs_samples)
-        self.bead_samples = load_samples(comp_bead_samples)
-        self.process_bead_samples()
+        if comp_bead_samples is not None:
+            self.bead_samples = load_samples(comp_bead_samples)
+            self.process_bead_samples()
 
         if isinstance(gating_strategy, GatingStrategy):
             self.gating_strategy = gating_strategy
