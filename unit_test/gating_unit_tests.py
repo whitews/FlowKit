@@ -11,11 +11,7 @@ sys.path.append(os.path.abspath('..'))
 from flowkit import Sample, GatingStrategy
 
 data1_fcs_path = 'examples/gate_ref/data1.fcs'
-data1_sample = Sample(
-    data1_fcs_path,
-    filter_anomalous_events=False,
-    filter_negative_scatter=False
-)
+data1_sample = Sample(data1_fcs_path)
 
 
 class GatingMLTestCase(unittest.TestCase):

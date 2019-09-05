@@ -9,11 +9,7 @@ sys.path.append(os.path.abspath('..'))
 from flowkit import Sample, transforms
 
 data1_fcs_path = 'examples/gate_ref/data1.fcs'
-data1_sample = Sample(
-    data1_fcs_path,
-    filter_anomalous_events=False,
-    filter_negative_scatter=False
-)
+data1_sample = Sample(data1_fcs_path)
 
 
 class LoadSampleTestCase(unittest.TestCase):
@@ -22,11 +18,7 @@ class LoadSampleTestCase(unittest.TestCase):
         """Test creating Sample object from an FCS file path"""
         fcs_file_path = "examples/test_data_2d_01.fcs"
 
-        sample = Sample(
-            fcs_path_or_data=fcs_file_path,
-            filter_negative_scatter=False,
-            filter_anomalous_events=False
-        )
+        sample = Sample(fcs_path_or_data=fcs_file_path)
 
         self.assertIsInstance(sample, Sample)
 
@@ -34,11 +26,7 @@ class LoadSampleTestCase(unittest.TestCase):
         """Test creating Sample object from a pathlib Path object"""
         fcs_file_path = "examples/test_data_2d_01.fcs"
         path = Path(fcs_file_path)
-        sample = Sample(
-            fcs_path_or_data=path,
-            filter_negative_scatter=False,
-            filter_anomalous_events=False
-        )
+        sample = Sample(fcs_path_or_data=path)
 
         self.assertIsInstance(sample, Sample)
 
@@ -57,9 +45,7 @@ class LoadSampleTestCase(unittest.TestCase):
 
         sample = Sample(
             npy_data,
-            channel_labels=channels,
-            filter_negative_scatter=False,
-            filter_anomalous_events=False
+            channel_labels=channels
         )
 
         self.assertIsInstance(sample, Sample)
@@ -70,9 +56,7 @@ class LoadSampleTestCase(unittest.TestCase):
 
         sample = Sample(
             fcs_path_or_data=fcs_file_path,
-            compensation=comp_file_path,
-            filter_negative_scatter=False,
-            filter_anomalous_events=False
+            compensation=comp_file_path
         )
 
         self.assertIsNotNone(sample._comp_events)
@@ -83,9 +67,7 @@ class LoadSampleTestCase(unittest.TestCase):
 
         sample = Sample(
             fcs_path_or_data=fcs_file_path,
-            compensation=comp_file_path,
-            filter_negative_scatter=False,
-            filter_anomalous_events=False
+            compensation=comp_file_path
         )
 
         self.assertIsNotNone(sample._comp_events)
