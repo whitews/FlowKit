@@ -652,7 +652,9 @@ class Sample(object):
             source='xform',
             subsample=False,
             channel_labels_or_numbers=None,
-            color_density=False
+            color_density=False,
+            plot_height=256,
+            plot_width=256
     ):
         """
         Returns an interactive scatter plot matrix for all channel combinations
@@ -668,6 +670,8 @@ class Sample(object):
             channels will be plotted (except Time).
         :param color_density: Whether to color the events by density, similar
             to a heat map. Default is False.
+        :param plot_height: Height of plot in pixels (screen units)
+        :param plot_width: Width of plot in pixels (screen units)
         :return: A Bokeh Figure object containing the interactive scatter plot
             matrix.
         """
@@ -699,9 +703,8 @@ class Sample(object):
                     subsample=subsample,
                     color_density=color_density
                 )
-                # TODO: these should be configurable
-                plot.height = 256
-                plot.width = 256
+                plot.height = plot_height
+                plot.width = plot_width
                 row.append(plot)
             plots.append(row)
 
