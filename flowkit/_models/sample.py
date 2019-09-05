@@ -276,6 +276,7 @@ class Sample(object):
             indices = self.compensation[0, :]  # headers are channel #'s
             indices = [int(i - 1) for i in indices]
             comp_matrix = self.compensation[1:, :]  # just the matrix
+            # TODO: move to dedicated "apply" method of Matrix class
             self._comp_events = flowutils.compensate.compensate(
                 self._raw_events,
                 comp_matrix,

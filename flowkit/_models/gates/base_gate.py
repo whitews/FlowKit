@@ -124,6 +124,7 @@ class Gate(ABC):
             return events
 
         if comp_matrix is not None:
+            # TODO: move to dedicated "apply" method of Matrix class
             events = flowutils.compensate.compensate(
                 events,
                 comp_matrix,
