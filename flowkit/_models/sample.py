@@ -5,7 +5,8 @@ from pathlib import Path
 import io
 from tempfile import TemporaryFile
 import numpy as np
-from flowkit import _utils
+from flowkit._models.transforms import transforms
+from .. import _utils
 from scipy.interpolate import interpn
 import matplotlib.pyplot as plt
 from matplotlib import colors
@@ -506,18 +507,8 @@ class Sample(object):
         x = self.get_channel_data(x_index, source=source, subsample=subsample)
         y = self.get_channel_data(y_index, source=source, subsample=subsample)
 
-        # determine padding to keep min/max events off the edge
-        pad_x = max(abs(x.min()), abs(x.max())) * 0.02
-        pad_y = max(abs(y.min()), abs(y.max())) * 0.02
-
-        if x_min is None:
-            x_min = x.min() - pad_x
-        if x_max is None:
-            x_max = x.max() + pad_x
-        if y_min is None:
-            y_min = y.min() - pad_y
-        if y_max is None:
-            y_max = y.max() + pad_y
+        x_min, x_max = _utils.calculate_extent(x, d_min=x_min, d_max=x_max, pad=0.02)
+        y_min, y_max = _utils.calculate_extent(y, d_min=y_min, d_max=y_max, pad=0.02)
 
         fig, ax = plt.subplots(figsize=fig_size)
         ax.set_title(self.original_filename)
@@ -599,19 +590,8 @@ class Sample(object):
         x = self.get_channel_data(x_index, source=source, subsample=subsample)
         y = self.get_channel_data(y_index, source=source, subsample=subsample)
 
-        # determine padding to keep min/max events off the edge,
-        # but only if user didn't specify the limits
-        pad_x = max(abs(x.min()), abs(x.max())) * 0.02
-        pad_y = max(abs(y.min()), abs(y.max())) * 0.02
-
-        if x_min is None:
-            x_min = x.min() - pad_x
-        if x_max is None:
-            x_max = x.max() + pad_x
-        if y_min is None:
-            y_min = y.min() - pad_y
-        if y_max is None:
-            y_max = y.max() + pad_y
+        x_min, x_max = _utils.calculate_extent(x, d_min=x_min, d_max=x_max, pad=0.02)
+        y_min, y_max = _utils.calculate_extent(y, d_min=y_min, d_max=y_max, pad=0.02)
 
         if color_density:
             data, x_e, y_e = np.histogram2d(x, y, bins=[38, 38])
