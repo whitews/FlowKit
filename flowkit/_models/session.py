@@ -69,7 +69,8 @@ def load_samples(fcs_samples):
         # If directory, search non-recursively for files w/ .fcs extension
         if os.path.isdir(fcs_samples):
             fcs_paths = glob(os.path.join(fcs_samples, '*.fcs'))
-            sample_list = get_samples_from_paths(fcs_paths)
+            if len(fcs_paths) > 0:
+                sample_list = get_samples_from_paths(fcs_paths)
 
     return sample_list
 
