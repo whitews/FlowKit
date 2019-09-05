@@ -25,10 +25,6 @@ class Sample(object):
             fcs_path_or_data,
             channel_labels=None,
             compensation=None,
-            subsample_count=10000,
-            random_seed=1,
-            filter_negative_scatter=False,
-            filter_anomalous_events=False,
             null_channel_list=None
     ):
         """
@@ -46,17 +42,6 @@ class Sample(object):
                 - a text string in CSV or TSV format
                 - a string path to a CSV or TSV file
                 - a pathlib Path object to a CSV or TSV file
-        :param subsample_count: Number of events to use as a sub-sample. If None, then no
-            sub-sampling is performed. If the number of events in the Sample is less than the
-            requested sub-sample count, then the maximum number of available events is used
-            for the sub-sample.
-        :param random_seed: Random seed used for sub-sampling events
-        :param filter_negative_scatter: If True, negative scatter events are omitted from
-            the sub-sample. Only used for sub-sampling.
-        :param filter_anomalous_events: If True, anomalous events are omitted from the
-            sub-sample. Anomalous events are determined via Kolmogorov-Smirnov statistical
-            test performed on each channel. The reference distribution is chosen based on
-            the difference from the median.
         :param null_channel_list: List of PnN labels for channels that were collected
             but do not contain useful data. Note, this should only be used if there were
             truly no fluorochromes used targeting those detectors and the channels
@@ -153,22 +138,15 @@ class Sample(object):
         self._comp_events = None
         self._transformed_events = None
         self.compensation = None
+        self._subsample_count = None
+        self._subsample_seed = None
 
         self.apply_compensation(compensation)
 
-        # if filtering anomalous events, save those in case they want to be retrieved
+        # if filtering any events, save those in case they want to be retrieved
+        self.negative_scatter_indices = None
         self.anomalous_indices = None
-
-        # Save sub-sampled indices if requested
-        if subsample_count is not None:
-            self.subsample_indices = self._generate_subsample(
-                subsample_count,
-                random_seed,
-                filter_negative_scatter=filter_negative_scatter,
-                filter_anomalous_events=filter_anomalous_events  # will store anomalous events
-            )
-        else:
-            self.subsample_indices = None
+        self.subsample_indices = None
 
         try:
             self.acquisition_date = self.metadata['date']
@@ -190,8 +168,10 @@ class Sample(object):
             f'{len(self.pnn_labels)} channels, {self.event_count} events)'
         )
 
-    def _negative_scatter_indices(self):
-        """Returns indices of negative scatter events"""
+    def filter_negative_scatter(self, reapply_subsample=True):
+        """
+        Determines indices of negative scatter events, optionally re-subsample the Sample events afterward
+        """
         scatter_indices = []
         for i, p in enumerate(self.pnn_labels):
             if p.lower()[:4] in ['fsc-', 'ssc-']:
@@ -199,47 +179,72 @@ class Sample(object):
 
         is_neg = np.where(self._raw_events[:, scatter_indices] < 0)[0]
 
-        return is_neg
+        self.negative_scatter_indices = is_neg
 
-    def _generate_subsample(
+        if reapply_subsample and self._subsample_count is not None:
+            self.subsample_indices(self._subsample_count, self._subsample_seed)
+
+    def filter_anomalous_events(self, random_seed, reapply_subsample=True):
+        """
+        Anomalous events are determined via Kolmogorov-Smirnov statistical
+            test performed on each channel. The reference distribution is chosen based on
+            the difference from the median.
+        :param random_seed: Random seed used for initializing the anomaly detection routine
+        :param reapply_subsample: Whether to re-subsample the Sample events after filtering
+        :return:
+        """
+        rng = np.random.RandomState(seed=random_seed)
+
+        # TODO: allow specifying which channels should be included in the anomaly detection
+        anomalous_idx = _utils.filter_anomalous_events(
+            # TODO: this shouldn't call flowutils directly, should use a Transform sub-class
+            flowutils.transforms.asinh(
+                self._raw_events,
+                self.fluoro_indices,
+                pre_scale=0.01
+            ),
+            self.pnn_labels,
+            rng=rng,
+            ref_set_count=3,
+            plot=False
+        )
+        self.anomalous_indices = anomalous_idx
+
+        if reapply_subsample and self._subsample_count is not None:
+            self.subsample_indices(self._subsample_count, self._subsample_seed)
+
+    def subsample_events(
             self,
-            subsample_count,
-            random_seed,
-            filter_negative_scatter=True,
-            filter_anomalous_events=True
+            subsample_count=10000,
+            random_seed=1
     ):
         """
         Returns a sub-sample of FCS raw events
 
         Returns NumPy array if sub-sampling succeeds
         Also updates self.subsample_indices
+
+        :param subsample_count: Number of events to use as a sub-sample. If the number of
+            events in the Sample is less than the requested sub-sample count, then the
+            maximum number of available events is used for the sub-sample.
+        :param random_seed: Random seed used for sub-sampling events
         """
         # get raw event count as it might be less than original event count
         # due to filtered negative scatter events
         raw_event_count = self._raw_events.shape[0]
         shuffled_indices = np.arange(raw_event_count)
-        neg_scatter_idx = np.empty(0)
-        anomalous_idx = np.empty(0)
-        rng = np.random.RandomState(seed=random_seed)
 
-        if filter_negative_scatter:
-            neg_scatter_idx = self._negative_scatter_indices()
+        self._subsample_seed = random_seed
+        rng = np.random.RandomState(seed=self._subsample_seed)
 
-        if filter_anomalous_events:
-            anomalous_idx = _utils.filter_anomalous_events(
-                flowutils.transforms.asinh(
-                    self._raw_events,
-                    self.fluoro_indices,
-                    pre_scale=0.01
-                ),
-                self.pnn_labels,
-                rng=rng,
-                ref_set_count=3,
-                plot=False
-            )
-            self.anomalous_indices = anomalous_idx
+        bad_idx = np.empty(0)
 
-        bad_idx = np.unique(np.concatenate([neg_scatter_idx, anomalous_idx]))
+        if self.negative_scatter_indices is not None:
+            bad_idx = self.negative_scatter_indices
+
+        if self.anomalous_indices is not None:
+            bad_idx = np.unique(np.concatenate([bad_idx, self.anomalous_indices]))
+
         bad_count = bad_idx.shape[0]
         if bad_count > 0:
             shuffled_indices = np.delete(shuffled_indices, bad_idx)
@@ -247,13 +252,13 @@ class Sample(object):
         if (raw_event_count - bad_count) < subsample_count:
             # if total event count is less than requested subsample count,
             # sub-sample will be all events (minus negative scatter if filter is True)
-            subsample_count = self.event_count - bad_count
+            self._subsample_count = self.event_count - bad_count
 
         # generate random indices for subsample
         # using a new RandomState with given seed
         rng.shuffle(shuffled_indices)
 
-        return shuffled_indices[:subsample_count]
+        self.subsample_indices = shuffled_indices[:self._subsample_count]
 
     def _compensate(self):
         """
@@ -459,6 +464,7 @@ class Sample(object):
             y_label_or_number,
             source='xform',
             subsample=False,
+            plot_contour=True,
             plot_events=False,
             x_min=None,
             x_max=None,
@@ -479,6 +485,7 @@ class Sample(object):
         :param subsample: Whether to use all events for plotting or just the
             sub-sampled events. Default is False (all events). Plotting
             sub-sampled events can be much faster.
+        :param plot_contour: Whether to display the contour lines. Default is True.
         :param plot_events: Whether to display the event data points in
             addition to the contours. Default is False.
         :param x_min: Lower bound of x-axis. If None, channel's min value will
@@ -531,14 +538,15 @@ class Sample(object):
                 alpha=0.4
             )
 
-        seaborn.kdeplot(
-            x,
-            y,
-            bw='scott',
-            cmap=_utils.new_jet,
-            linewidths=2,
-            alpha=1
-        )
+        if plot_contour:
+            seaborn.kdeplot(
+                x,
+                y,
+                bw='scott',
+                cmap=_utils.new_jet,
+                linewidths=2,
+                alpha=1
+            )
 
         return fig
 
