@@ -233,6 +233,21 @@ def parse_compensation_matrix(compensation, channel_labels, null_channels=None):
     return matrix
 
 
+def calculate_extent(data_1d, d_min=None, d_max=None, pad=0.0):
+    data_min = data_1d.min()
+    data_max = data_1d.max()
+
+    # determine padding to keep min/max events off the edge
+    pad_d = max(abs(data_1d.min()), abs(data_1d.max())) * pad
+
+    if d_min is None:
+        d_min = data_min - pad_d
+    if d_max is None:
+        d_max = data_max + pad_d
+
+    return d_min, d_max
+
+
 def get_false_bounds(bool_array):
     diff = np.diff(np.hstack((0, bool_array, 0)))
 
