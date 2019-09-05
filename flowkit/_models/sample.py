@@ -448,15 +448,20 @@ class Sample(object):
 
         return channel_data
 
-    def apply_transform(self, transform):
+    def _transform(self, transform):
         if self._comp_events is not None:
-            self._transformed_events = self._comp_events.copy()
+            transformed_events = self._comp_events.copy()
         else:
-            self._transformed_events = self._raw_events.copy()
+            transformed_events = self._raw_events.copy()
 
-        self._transformed_events[:, self.fluoro_indices] = transform.apply(
-            self._transformed_events[:, self.fluoro_indices]
+        transformed_events[:, self.fluoro_indices] = transform.apply(
+            transformed_events[:, self.fluoro_indices]
         )
+
+        return transformed_events
+
+    def apply_transform(self, transform):
+        self._transformed_events = self._transform(transform)
         self.transform = transform
 
     def plot_contour(
