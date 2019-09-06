@@ -134,11 +134,11 @@ class Sample(object):
             if decades > 0:
                 raw_events[:, i] = (10 ** (decades * raw_events[:, i] / channel_range[i])) * log0
 
-        self.transform = None
         self._raw_events = raw_events / channel_gain
         self._comp_events = None
         self._transformed_events = None
         self.compensation = None
+        self.transform = None
         self._subsample_count = None
         self._subsample_seed = None
 
@@ -918,6 +918,53 @@ class Sample(object):
             events = self._raw_events[idx, :]
         else:
             raise ValueError("source must be one of 'raw', 'comp', or 'xform'")
+
+        fh = open(output_path, 'wb')
+
+        flowio.create_fcs(
+            events.flatten().tolist(),
+            channel_names=self.pnn_labels,
+            opt_channel_names=self.pns_labels,
+            file_handle=fh
+        )
+
+        fh.close()
+
+    def export_filtered_fcs(self, source='xform', filename=None, directory=None):
+        """
+        Export filtered event data to a new FCS file.
+
+        :param source: 'raw', 'comp', 'xform' for whether the raw, compensated
+            or transformed events are used for exporting
+        :param filename: Text string to use for the exported file name. If
+            None, the FCS file's original file name will be used (if present).
+        :param directory: Directory path where the FCS file will be saved
+        :return: None
+        """
+        if self.original_filename is None and filename is None:
+            raise(
+                ValueError(
+                    "Sample has no original filename, please provide a 'filename' argument"
+                )
+            )
+        elif filename is None:
+            filename = self.original_filename
+
+        if directory is not None:
+            output_path = os.path.join(directory, filename)
+        else:
+            output_path = filename
+
+        if source == 'xform':
+            events = self._transformed_events.copy()
+        elif source == 'comp':
+            events = self._comp_events.copy()
+        elif source == 'raw':
+            events = self._raw_events.copy()
+        else:
+            raise ValueError("source must be one of 'raw', 'comp', or 'xform'")
+
+        events = np.delete(events, self.anomalous_indices, axis=0)
 
         fh = open(output_path, 'wb')
 
