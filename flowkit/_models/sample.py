@@ -872,6 +872,7 @@ class Sample(object):
         else:
             raise ValueError("source must be one of 'raw', 'comp', or 'xform'")
 
+    # TODO: should all the export methods be merged into one w/options for the different variants
     def export_fcs(
             self,
             source='xform',
