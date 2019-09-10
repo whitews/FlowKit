@@ -805,111 +805,46 @@ class Sample(object):
 
         return fig
 
-    def export_csv(
+    def export(
             self,
+            filename,
             source='xform',
+            exclude=None,
             subsample=False,
-            filename=None,
             directory=None
     ):
         """
-        Export event data to a CSV file.
+        Export Sample event data to either a new FCS file or a CSV file. Format determined by filename extension.
 
+        :param filename: Text string to use for the exported file name.
         :param source: 'raw', 'comp', 'xform' for whether the raw, compensated
             or transformed events are used for exporting
+        :param exclude: Specifies whether to exclude events. Options are 'good', 'bad', or None.
+            'bad' excludes neg. scatter or anomalous, 'good' will export the bad events.
+            Default is None (exports all events)
         :param subsample: Whether to export all events or just the
             sub-sampled events. Default is False (all events).
-        :param filename: Text string to use for the exported file name. If
-            None, the FCS file's original file name will be used (if present).
         :param directory: Directory path where the CSV will be saved
         :return: None
         """
-        if self.original_filename is None and filename is None:
-            raise(
-                ValueError(
-                    "Sample has no original filename, please provide a 'filename' argument"
-                )
-            )
-        elif filename is None:
-            filename = self.original_filename
-
-        if directory is not None:
-            output_path = os.path.join(directory, filename)
-        else:
-            output_path = filename
-
-        header = ",".join(self.pnn_labels)
-
-        if subsample:
-            idx = self.subsample_indices
-        else:
-            idx = np.arange(self.event_count)
-
-        if source == 'xform':
-            np.savetxt(
-                output_path,
-                self._transformed_events[idx, :],
-                delimiter=',',
-                header=header,
-                comments=''
-            )
-        elif source == 'comp':
-            np.savetxt(
-                output_path,
-                self._comp_events[idx, :],
-                delimiter=',',
-                header=header,
-                comments=''
-            )
-        elif source == 'raw':
-            np.savetxt(
-                output_path,
-                self._raw_events[idx, :],
-                delimiter=',',
-                header=header,
-                comments=''
-            )
-        else:
-            raise ValueError("source must be one of 'raw', 'comp', or 'xform'")
-
-    # TODO: should all the export methods be merged into one w/options for the different variants
-    def export_fcs(
-            self,
-            source='xform',
-            subsample=False,
-            filename=None,
-            directory=None
-    ):
-        """
-        Export event data to a new FCS file.
-
-        :param source: 'raw', 'comp', 'xform' for whether the raw, compensated
-            or transformed events are used for exporting
-        :param subsample: Whether to export all events or just the
-            sub-sampled events. Default is False (all events).
-        :param filename: Text string to use for the exported file name. If
-            None, the FCS file's original file name will be used (if present).
-        :param directory: Directory path where the FCS file will be saved
-        :return: None
-        """
-        if self.original_filename is None and filename is None:
-            raise(
-                ValueError(
-                    "Sample has no original filename, please provide a 'filename' argument"
-                )
-            )
-        elif filename is None:
-            filename = self.original_filename
-
         if directory is not None:
             output_path = os.path.join(directory, filename)
         else:
             output_path = filename
 
         if subsample:
-            idx = self.subsample_indices
+            idx = np.zeros(self.event_count, np.bool)
+            idx[self.subsample_indices] = True
         else:
-            idx = np.arange(self.event_count)
+            # include all events to start with
+            idx = np.ones(self.event_count, np.bool)
+
+        if exclude == 'bad':
+            idx[self.anomalous_indices] = False
+        elif exclude == 'good':
+            good_idx = np.zeros(self.event_count, np.bool)
+            good_idx[self.anomalous_indices] = True
+            idx = np.logical_and(idx, good_idx)
 
         if source == 'xform':
             events = self._transformed_events[idx, :]
@@ -917,108 +852,28 @@ class Sample(object):
             events = self._comp_events[idx, :]
         elif source == 'raw':
             events = self._raw_events[idx, :]
+        elif source == 'orig':
+            events = self._orig_events[idx, :]
         else:
             raise ValueError("source must be one of 'raw', 'comp', or 'xform'")
 
-        fh = open(output_path, 'wb')
+        ext = os.path.splitext(filename)[-1]
 
-        flowio.create_fcs(
-            events.flatten().tolist(),
-            channel_names=self.pnn_labels,
-            opt_channel_names=self.pns_labels,
-            file_handle=fh
-        )
-
-        fh.close()
-
-    def export_filtered_fcs(self, source='xform', filename=None, directory=None):
-        """
-        Export filtered event data to a new FCS file.
-
-        :param source: 'raw', 'comp', 'xform' for whether the raw, compensated
-            or transformed events are used for exporting
-        :param filename: Text string to use for the exported file name. If
-            None, the FCS file's original file name will be used (if present).
-        :param directory: Directory path where the FCS file will be saved
-        :return: None
-        """
-        if self.original_filename is None and filename is None:
-            raise(
-                ValueError(
-                    "Sample has no original filename, please provide a 'filename' argument"
-                )
+        if ext == 'csv':
+            np.savetxt(
+                output_path,
+                events,
+                delimiter=',',
+                header=",".join(self.pnn_labels),
+                comments=''
             )
-        elif filename is None:
-            filename = self.original_filename
+        elif ext == 'fcs':
+            fh = open(output_path, 'wb')
 
-        if directory is not None:
-            output_path = os.path.join(directory, filename)
-        else:
-            output_path = filename
-
-        if source == 'xform':
-            events = self._transformed_events.copy()
-        elif source == 'comp':
-            events = self._comp_events.copy()
-        elif source == 'raw':
-            events = self._raw_events.copy()
-        else:
-            raise ValueError("source must be one of 'raw', 'comp', or 'xform'")
-
-        events = np.delete(events, self.anomalous_indices, axis=0)
-
-        fh = open(output_path, 'wb')
-
-        flowio.create_fcs(
-            events.flatten().tolist(),
-            channel_names=self.pnn_labels,
-            opt_channel_names=self.pns_labels,
-            file_handle=fh
-        )
-
-        fh.close()
-
-    def export_anomalous_fcs(self, source='xform', filename=None, directory=None):
-        """
-        Export anomalous event data to a new FCS file.
-
-        :param source: 'raw', 'comp', 'xform' for whether the raw, compensated
-            or transformed events are used for exporting
-        :param filename: Text string to use for the exported file name. If
-            None, the FCS file's original file name will be used (if present).
-        :param directory: Directory path where the FCS file will be saved
-        :return: None
-        """
-        if self.original_filename is None and filename is None:
-            raise(
-                ValueError(
-                    "Sample has no original filename, please provide a 'filename' argument"
-                )
+            flowio.create_fcs(
+                events.flatten().tolist(),
+                channel_names=self.pnn_labels,
+                opt_channel_names=self.pns_labels,
+                file_handle=fh
             )
-        elif filename is None:
-            filename = self.original_filename
-
-        if directory is not None:
-            output_path = os.path.join(directory, filename)
-        else:
-            output_path = filename
-
-        if source == 'xform':
-            events = self._transformed_events[self.anomalous_indices, :]
-        elif source == 'comp':
-            events = self._comp_events[self.anomalous_indices, :]
-        elif source == 'raw':
-            events = self._raw_events[self.anomalous_indices, :]
-        else:
-            raise ValueError("source must be one of 'raw', 'comp', or 'xform'")
-
-        fh = open(output_path, 'wb')
-
-        flowio.create_fcs(
-            events.flatten().tolist(),
-            channel_names=self.pnn_labels,
-            opt_channel_names=self.pns_labels,
-            file_handle=fh
-        )
-
-        fh.close()
+            fh.close()
