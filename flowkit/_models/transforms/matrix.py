@@ -1,3 +1,6 @@
+import flowutils
+
+
 class Matrix(object):
     def __init__(
         self,
@@ -15,4 +18,17 @@ class Matrix(object):
         return (
             f'{self.__class__.__name__}('
             f'{self.id}, dims: {len(self.fluorochomes)})'
+        )
+
+    def apply(self, sample):
+        indices = [
+            sample.get_channel_index(d) for d in self.detectors
+        ]
+        events = sample.get_raw_events()
+        events = events.copy()
+
+        return flowutils.compensate.compensate(
+            events,
+            self.matrix,
+            indices
         )

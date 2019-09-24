@@ -1,9 +1,7 @@
 from abc import ABC, abstractmethod
 import numpy as np
-import flowutils
-from flowkit import _utils
-from flowkit._models import gates
-from flowkit._models import dimension
+from flowkit import _utils, Matrix
+from flowkit._models import gates, dimension
 
 
 class Gate(ABC):
@@ -69,8 +67,6 @@ class Gate(ABC):
         pass
 
     def compensate_sample(self, dim_comp_refs, sample):
-        comp_matrix = None
-        indices = None
         dim_comp_ref_count = len(dim_comp_refs)
 
         if dim_comp_ref_count == 0:
@@ -85,51 +81,43 @@ class Gate(ABC):
         else:
             comp_ref = list(dim_comp_refs)[0]
 
-        if comp_ref == 'FCS':
-            meta = sample.get_metadata()
-            spill = None
-            if 'spill' not in meta or 'spillover' not in meta:
-                pass
-            elif 'spillover' in meta:  # preferred, per FCS standard
-                spill = meta['spillover']
-            elif 'spill' in meta:
-                spill = meta['spill']
-
-            if spill is not None:
-                spill = _utils.parse_compensation_matrix(
-                    spill,
-                    sample.pnn_labels,
-                    null_channels=sample.null_channels
-                )
-                indices = spill[0, :]  # headers are channel #'s
-                indices = [int(i - 1) for i in indices]
-                comp_matrix = spill[1:, :]
-        else:
-            # lookup specified comp-ref in parent strategy
-            matrix = self.__parent__.comp_matrices[comp_ref]
-            indices = [
-                sample.get_channel_index(d) for d in matrix.detectors
-            ]
-            comp_matrix = matrix.matrix
-
         events = self.__parent__.get_cached_compensation(
             sample,
             comp_ref
         )
 
-        if events is None:
-            events = sample.get_raw_events()
-            events = events.copy()
-        else:
+        if events is not None:
             return events
 
-        if comp_matrix is not None:
-            # TODO: move to dedicated "apply" method of Matrix class
-            events = flowutils.compensate.compensate(
-                events,
-                comp_matrix,
-                indices
+        if comp_ref == 'FCS':
+            meta = sample.get_metadata()
+
+            if 'spill' not in meta or 'spillover' not in meta:
+                # GML 2.0 spec states if 'FCS' is specified but no spill is present, treat as uncompensated
+                events = sample.get_raw_events()
+                return events.copy()
+
+            try:
+                spill = meta['spillover']  # preferred, per FCS standard
+            except KeyError:
+                spill = meta['spill']
+
+            spill = _utils.parse_compensation_matrix(
+                spill,
+                sample.pnn_labels,
+                null_channels=sample.null_channels
             )
+            indices = spill[0, :]  # headers are channel #'s
+            indices = [int(i - 1) for i in indices]
+            detectors = [sample.pnn_labels[i] for i in indices]
+            fluorochromes = [sample.pns_labels[i] for i in indices]
+            matrix = Matrix('fcs', fluorochromes, detectors, spill[1:, :])
+        else:
+            # lookup specified comp-ref in parent strategy
+            matrix = self.__parent__.comp_matrices[comp_ref]
+
+        if matrix is not None:
+            events = matrix.apply(sample)
             # cache the comp events
             self.__parent__.cache_compensated_events(
                 sample,
