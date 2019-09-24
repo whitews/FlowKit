@@ -1,11 +1,11 @@
 import flowio
-import flowutils
 import os
 from pathlib import Path
 import io
 from tempfile import TemporaryFile
 import numpy as np
 from flowkit._models.transforms import transforms
+from flowkit._models.transforms.matrix import Matrix
 from .. import _utils
 from scipy.interpolate import interpn
 import matplotlib.pyplot as plt
@@ -294,29 +294,7 @@ class Sample(object):
 
         self.subsample_indices = shuffled_indices[:self._subsample_count]
 
-    def _compensate(self):
-        """
-        Applies compensation to sample events. If self.compensation is None, the identity
-        matrix is assumed.
-
-        Saves NumPy array of compensated events to self._comp_events
-        """
-        # self.compensate has headers for the channel numbers, but
-        # flowutils compensate() takes the plain matrix and indices as
-        # separate arguments
-        # (also note channel #'s vs indices)
-        if self.compensation is not None:
-            indices = self.compensation[0, :]  # headers are channel #'s
-            indices = [int(i - 1) for i in indices]
-            comp_matrix = self.compensation[1:, :]  # just the matrix
-            # TODO: move to dedicated "apply" method of Matrix class
-            self._comp_events = flowutils.compensate.compensate(
-                self._raw_events,
-                comp_matrix,
-                indices
-            )
-
-    def apply_compensation(self, compensation):
+    def apply_compensation(self, compensation, comp_id='fcs'):
         """
         Applies given compensation matrix to Sample events. If any
         transformation has been applied, those events will be deleted.
@@ -332,21 +310,24 @@ class Sample(object):
             If a string, both multi-line traditional CSV, and the single
             line FCS spill formats are supported. If a NumPy array, we
             assume the columns are in the same order as the channel labels.
+        :param comp_id: text ID for identifying compensation matrix
         :return: None
         """
         comp_labels = self.pnn_labels
 
         if compensation is not None:
-            self.compensation = _utils.parse_compensation_matrix(
+            spill = _utils.parse_compensation_matrix(
                 compensation,
                 comp_labels,
                 null_channels=self.null_channels
             )
+            fluorochromes = [self.pns_labels[i] for i in self.fluoro_indices]
+            detectors = [self.pnn_labels[i] for i in self.fluoro_indices]
+            self.compensation = Matrix(comp_id, fluorochromes, detectors, spill[1:, :])
+            self._transformed_events = None
+            self._comp_events = self.compensation.apply(self)
         else:
             self.compensation = None
-
-        self._transformed_events = None
-        self._compensate()
 
     def get_metadata(self):
         """
