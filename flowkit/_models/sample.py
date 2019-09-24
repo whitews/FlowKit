@@ -285,6 +285,8 @@ class Sample(object):
             # if total event count is less than requested subsample count,
             # sub-sample will be all events (minus negative scatter if filter is True)
             self._subsample_count = self.event_count - bad_count
+        else:
+            self._subsample_count = subsample_count
 
         # generate random indices for subsample
         # using a new RandomState with given seed

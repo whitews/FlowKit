@@ -75,6 +75,7 @@ def load_samples(fcs_samples):
     return sample_list
 
 
+# TODO: gate_sample & gate_samples should be in the GatingStrategy class
 def gate_sample(data):
     gating_strategy = data[0]
     sample = data[1]
@@ -102,7 +103,7 @@ def gate_samples(gating_strategy, samples, verbose):
 
 
 class Session(object):
-    def __init__(self, fcs_samples=None, comp_bead_samples=None, gating_strategy=None):
+    def __init__(self, fcs_samples=None, comp_bead_samples=None, gating_strategy=None, subsample_count=10000):
         self.samples = []
         self.bead_samples = []
         self.bead_lut = {}
@@ -115,6 +116,10 @@ class Session(object):
             raise ValueError("Specify bead samples as a list of paths if in the same directory as other samples")
 
         self.samples = load_samples(fcs_samples)
+
+        for s in self.samples:
+            s.subsample_events(subsample_count)
+
         if comp_bead_samples is not None:
             self.bead_samples = load_samples(comp_bead_samples)
             self.process_bead_samples()
@@ -211,6 +216,7 @@ class Session(object):
 
         comp = "\n".join([header, comp_values])
 
+        # TODO: this should return a Matrix instance
         return comp
 
     def analyze_samples(self, verbose=False):
