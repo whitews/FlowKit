@@ -43,8 +43,7 @@ def load_samples(fcs_samples):
     sample_list = []
 
     if isinstance(fcs_samples, list):
-        # TODO: should we check that all Samples have the same channels?
-        # and if so, should we determine the common channels and continue?
+        # TODO: check that all Samples have the same channels, issue warning if not
 
         # 'fcs_samples' is a list of either file paths or Sample instances
         sample_types = set()

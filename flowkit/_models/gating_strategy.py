@@ -2,6 +2,7 @@ import anytree
 from anytree.exporter import DotExporter
 import pandas as pd
 from flowkit import _gml_utils
+from flowkit import gates as fk_gates
 from flowkit._models.gates.gml_gates import GMLQuadrantGate
 
 
@@ -117,6 +118,12 @@ class GatingStrategy(object):
                     )
 
         return root
+
+    def add_gate(self, gate):
+        if not isinstance(gate, fk_gates.Gate):
+            raise ValueError("gate must be a sub-class of the Gate class")
+
+        self.gates[gate.id] = gate
 
     def get_gate_by_reference(self, gate_id):
         """
