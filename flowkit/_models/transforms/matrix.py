@@ -17,7 +17,7 @@ class Matrix(object):
     def __repr__(self):
         return (
             f'{self.__class__.__name__}('
-            f'{self.id}, dims: {len(self.fluorochomes)})'
+            f'{self.id}, dims: {len(self.detectors)})'
         )
 
     def apply(self, sample):

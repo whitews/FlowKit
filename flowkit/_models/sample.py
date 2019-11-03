@@ -315,6 +315,7 @@ class Sample(object):
         """
         comp_labels = self.pnn_labels
 
+        # TODO: should also accept a Matrix instance
         if compensation is not None:
             spill = _utils.parse_compensation_matrix(
                 compensation,
