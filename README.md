@@ -49,8 +49,8 @@ above is required for correct Logicle and Hyperlog transformations.***
 
 Required Python dependencies:
 
-* [flowio](https://github.com/whitews/flowio) >= 0.9.3
-* [flowutils](https://github.com/whitews/flowutils) >= 0.6.8
+* [flowio](https://github.com/whitews/flowio) >= 0.9.5
+* [flowutils](https://github.com/whitews/flowutils) >= 0.7.1
 * numpy >= 0.15
 * scipy >= 1.0
 * pandas >= 0.19

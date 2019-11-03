@@ -16,7 +16,7 @@ utils_extension = Extension(
 
 setup(
     name='FlowKit',
-    version='0.1.5b2',
+    version='0.2.0',
     packages=find_packages(),
     package_data={'': ['*.xsd']},
     include_package_data=True,
@@ -33,6 +33,7 @@ setup(
         'matplotlib',
         'multicoretsne',
         'scipy',
+        'sklearn',
         'statsmodels',
         'seaborn',
         'pandas',
