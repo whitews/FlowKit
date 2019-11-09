@@ -11,6 +11,176 @@ from flowkit import Sample, GatingStrategy, Dimension, QuadrantDivider, Vertex, 
 data1_fcs_path = 'examples/gate_ref/data1.fcs'
 data1_sample = Sample(data1_fcs_path)
 
+quadrants_q1 = {
+            'FL2P-FL4P': [
+                {
+                    'divider': 'FL2',
+                    'dimension': 'FL2-H',
+                    'location': 15.0,
+                    'min': 12.14748,
+                    'max': None
+                },
+                {
+                    'divider': 'FL4',
+                    'dimension': 'FL4-H',
+                    'location': 15.0,
+                    'min': 14.22417,
+                    'max': None
+                }
+            ],
+            'FL2N-FL4P': [
+                {
+                    'divider': 'FL2',
+                    'dimension': 'FL2-H',
+                    'location': 5.0,
+                    'min': None,
+                    'max': 12.14748
+                },
+                {
+                    'divider': 'FL4',
+                    'dimension': 'FL4-H',
+                    'location': 15.0,
+                    'min': 14.22417,
+                    'max': None
+                }
+            ],
+            'FL2N-FL4N': [
+                {
+                    'divider': 'FL2',
+                    'dimension': 'FL2-H',
+                    'location': 5.0,
+                    'min': None,
+                    'max': 12.14748
+                },
+                {
+                    'divider': 'FL4',
+                    'dimension': 'FL4-H',
+                    'location': 5.0,
+                    'min': None,
+                    'max': 14.22417
+                }
+            ],
+            'FL2P-FL4N': [
+                {
+                    'divider': 'FL2',
+                    'dimension': 'FL2-H',
+                    'location': 15.0,
+                    'min': 12.14748,
+                    'max': None
+                },
+                {
+                    'divider': 'FL4',
+                    'dimension': 'FL4-H',
+                    'location': 5.0,
+                    'min': None,
+                    'max': 14.22417
+                }
+            ]
+        }
+
+quadrants_q2 = {
+    'FSCD-FL1P': [
+        {
+            'dimension': 'FSC-H',
+            'divider': 'FSC',
+            'location': 30.0,
+            'max': 70.02725,
+            'min': 28.0654},
+        {
+            'dimension': 'FL1-H',
+            'divider': 'FL1',
+            'location': 10.0,
+            'max': None,
+            'min': 6.43567
+        }
+    ],
+    'FSCD-SSCN-FL1N': [
+        {
+            'dimension': 'FSC-H',
+            'divider': 'FSC',
+            'location': 30.0,
+            'max': 70.02725,
+            'min': 28.0654
+        },
+        {
+            'dimension': 'SSC-H',
+            'divider': 'SSC',
+            'location': 10.0,
+            'max': 17.75,
+            'min': None
+        },
+        {
+            'dimension': 'FL1-H',
+            'divider': 'FL1',
+            'location': 5.0,
+            'max': 6.43567,
+            'min': None
+        }
+    ],
+    'FSCN-SSCN': [
+        {
+            'dimension': 'FSC-H',
+            'divider': 'FSC',
+            'location': 10.0,
+            'max': 28.0654,
+            'min': None
+        },
+        {
+            'dimension': 'SSC-H',
+            'divider': 'SSC',
+            'location': 10.0,
+            'max': 17.75,
+            'min': None
+        }
+    ],
+    'FSCN-SSCP-FL1P': [
+        {
+            'dimension': 'FSC-H',
+            'divider': 'FSC',
+            'location': 10.0,
+            'max': 28.0654,
+            'min': None
+        },
+        {
+            'dimension': 'SSC-H',
+            'divider': 'SSC',
+            'location': 20.0,
+            'max': None,
+            'min': 17.75
+        },
+        {
+            'dimension': 'FL1-H',
+            'divider': 'FL1',
+            'location': 15.0,
+            'max': None,
+            'min': 6.43567
+        }
+    ],
+    'FSCP-SSCN-FL1N': [
+        {
+            'dimension': 'FSC-H',
+            'divider': 'FSC',
+            'location': 80.0,
+            'max': None,
+            'min': 70.02725
+        },
+        {
+            'dimension': 'SSC-H',
+            'divider': 'SSC',
+            'location': 10.0,
+            'max': 17.75,
+            'min': None
+        },
+        {
+            'dimension': 'FL1-H',
+            'divider': 'FL1',
+            'location': 5.0,
+            'max': 6.43567,
+            'min': None
+        }
+    ]
+}
+
 
 class GatingTestCase(unittest.TestCase):
     @staticmethod
@@ -222,74 +392,7 @@ class GatingTestCase(unittest.TestCase):
 
         divs = [div1, div2]
 
-        quadrants = {
-            'FL2P-FL4P': [
-                {
-                    'divider': 'FL2',
-                    'dimension': 'FL2-H',
-                    'location': 15.0,
-                    'min': 12.14748,
-                    'max': None
-                },
-                {
-                    'divider': 'FL4',
-                    'dimension': 'FL4-H',
-                    'location': 15.0,
-                    'min': 14.22417,
-                    'max': None
-                }
-            ],
-            'FL2N-FL4P': [
-                {
-                    'divider': 'FL2',
-                    'dimension': 'FL2-H',
-                    'location': 5.0,
-                    'min': None,
-                    'max': 12.14748
-                },
-                {
-                    'divider': 'FL4',
-                    'dimension': 'FL4-H',
-                    'location': 15.0,
-                    'min': 14.22417,
-                    'max': None
-                }
-            ],
-            'FL2N-FL4N': [
-                {
-                    'divider': 'FL2',
-                    'dimension': 'FL2-H',
-                    'location': 5.0,
-                    'min': None,
-                    'max': 12.14748
-                },
-                {
-                    'divider': 'FL4',
-                    'dimension': 'FL4-H',
-                    'location': 5.0,
-                    'min': None,
-                    'max': 14.22417
-                }
-            ],
-            'FL2P-FL4N': [
-                {
-                    'divider': 'FL2',
-                    'dimension': 'FL2-H',
-                    'location': 15.0,
-                    'min': 12.14748,
-                    'max': None
-                },
-                {
-                    'divider': 'FL4',
-                    'dimension': 'FL4-H',
-                    'location': 5.0,
-                    'min': None,
-                    'max': 14.22417
-                }
-            ]
-        }
-
-        quad_gate = gates.QuadrantGate("Quadrant1", None, divs, quadrants, gs)
+        quad_gate = gates.QuadrantGate("Quadrant1", None, divs, quadrants_q1, gs)
         gs.add_gate(quad_gate)
 
         truth1 = pd.read_csv(res1_path, header=None, squeeze=True, dtype='bool').values
@@ -303,3 +406,56 @@ class GatingTestCase(unittest.TestCase):
         np.testing.assert_array_equal(truth2, result.get_gate_indices('FL2N-FL4P'))
         np.testing.assert_array_equal(truth3, result.get_gate_indices('FL2P-FL4N'))
         np.testing.assert_array_equal(truth4, result.get_gate_indices('FL2P-FL4P'))
+
+    def test_add_quadrant_gate_relative_percent(self):
+        gs = GatingStrategy()
+
+        div1 = QuadrantDivider("FL2", "FL2-H", "FCS", [12.14748])
+        div2 = QuadrantDivider("FL4", "FL4-H", "FCS", [14.22417])
+
+        divs = [div1, div2]
+
+        quad_gate = gates.QuadrantGate("Quadrant1", None, divs, quadrants_q1, gs)
+        gs.add_gate(quad_gate)
+
+        result = gs.gate_sample(data1_sample)
+
+        total_percent = result.get_gate_relative_percent('FL2N-FL4N') + \
+            result.get_gate_relative_percent('FL2N-FL4P') + \
+            result.get_gate_relative_percent('FL2P-FL4N') + \
+            result.get_gate_relative_percent('FL2P-FL4P')
+
+        self.assertEqual(100.0, total_percent)
+
+    @staticmethod
+    def test_add_quadrant2_gate():
+        res1_path = 'examples/gate_ref/truth/Results_FSCN-SSCN.txt'
+        res2_path = 'examples/gate_ref/truth/Results_FSCD-SSCN-FL1N.txt'
+        res3_path = 'examples/gate_ref/truth/Results_FSCP-SSCN-FL1N.txt'
+        res4_path = 'examples/gate_ref/truth/Results_FSCD-FL1P.txt'
+        res5_path = 'examples/gate_ref/truth/Results_FSCN-SSCP-FL1P.txt'
+
+        truth1 = pd.read_csv(res1_path, header=None, squeeze=True, dtype='bool').values
+        truth2 = pd.read_csv(res2_path, header=None, squeeze=True, dtype='bool').values
+        truth3 = pd.read_csv(res3_path, header=None, squeeze=True, dtype='bool').values
+        truth4 = pd.read_csv(res4_path, header=None, squeeze=True, dtype='bool').values
+        truth5 = pd.read_csv(res5_path, header=None, squeeze=True, dtype='bool').values
+
+        gs = GatingStrategy()
+
+        div1 = QuadrantDivider("FSC", "FSC-H", "uncompensated", [28.0654, 70.02725])
+        div2 = QuadrantDivider("SSC", "SSC-H", "uncompensated", [17.75])
+        div3 = QuadrantDivider("FL1", "FL1-H", "uncompensated", [6.43567])
+
+        divs = [div1, div2, div3]
+
+        quad_gate = gates.QuadrantGate("Quadrant2", None, divs, quadrants_q2, gs)
+        gs.add_gate(quad_gate)
+
+        result = gs.gate_sample(data1_sample)
+
+        np.testing.assert_array_equal(truth1, result.get_gate_indices('FSCN-SSCN'))
+        np.testing.assert_array_equal(truth2, result.get_gate_indices('FSCD-SSCN-FL1N'))
+        np.testing.assert_array_equal(truth3, result.get_gate_indices('FSCP-SSCN-FL1N'))
+        np.testing.assert_array_equal(truth4, result.get_gate_indices('FSCD-FL1P'))
+        np.testing.assert_array_equal(truth5, result.get_gate_indices('FSCN-SSCP-FL1P'))
