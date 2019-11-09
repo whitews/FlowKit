@@ -490,3 +490,69 @@ class GatingTestCase(unittest.TestCase):
         result = gs.gate_sample(data1_sample, 'RatRange1')
 
         np.testing.assert_array_equal(truth, result.get_gate_indices('RatRange1'))
+
+    @staticmethod
+    def test_add_ratio_range2_gate():
+        gs = fk.GatingStrategy()
+
+        rat_xform = fk.transforms.RatioTransform(
+            "FL2Rat2",
+            ["FL2-H", "FL2-A"],
+            param_a=2.7,
+            param_b=-100,
+            param_c=-300
+        )
+        gs.add_transform(rat_xform)
+
+        dim_rat2 = fk.RatioDimension(
+            "FL2Rat2",
+            compensation_ref="uncompensated",
+            range_min=0.95,
+            range_max=1.05
+        )
+        dims = [dim_rat2]
+
+        rect_gate = fk.gates.RectangleGate("RatRange2", None, dims, gs)
+        gs.add_gate(rect_gate)
+
+        res_path = 'examples/gate_ref/truth/Results_RatRange2.txt'
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs.gate_sample(data1_sample, 'RatRange2')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('RatRange2'))
+
+    @staticmethod
+    def test_add_log_ratio_range1_gate():
+        gs = fk.GatingStrategy()
+
+        rat_xform = fk.transforms.RatioTransform(
+            "FL2Rat1",
+            ["FL2-H", "FL2-A"],
+            param_a=1,
+            param_b=0,
+            param_c=-1
+        )
+        gs.add_transform(rat_xform)
+
+        log_rat_xform = fk.transforms.LogTransform("MyRatLog", param_t=100, param_m=2)
+        gs.add_transform(log_rat_xform)
+
+        dim_rat1 = fk.RatioDimension(
+            "FL2Rat1",
+            compensation_ref="uncompensated",
+            transformation_ref="MyRatLog",
+            range_min=0.40625,
+            range_max=0.6601562
+        )
+        dims = [dim_rat1]
+
+        rect_gate = fk.gates.RectangleGate("RatRange1a", None, dims, gs)
+        gs.add_gate(rect_gate)
+
+        res_path = 'examples/gate_ref/truth/Results_RatRange1a.txt'
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs.gate_sample(data1_sample, 'RatRange1a')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('RatRange1a'))
