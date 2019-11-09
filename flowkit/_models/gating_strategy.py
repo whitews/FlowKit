@@ -3,6 +3,7 @@ from anytree.exporter import DotExporter
 import pandas as pd
 from flowkit import _gml_utils
 from flowkit import gates as fk_gates
+from flowkit import transforms as fk_transforms
 from flowkit._models.gates.gml_gates import GMLQuadrantGate
 
 
@@ -127,6 +128,15 @@ class GatingStrategy(object):
             raise KeyError("Gate ID '%s' is already defined" % gate.id)
 
         self.gates[gate.id] = gate
+
+    def add_transform(self, transform):
+        if not isinstance(transform, fk_transforms.Transform):
+            raise ValueError("transform must be a sub-class of the Transform class")
+
+        if transform.id in self.transformations:
+            raise KeyError("Transform ID '%s' is already defined" % transform.id)
+
+        self.transformations[transform.id] = transform
 
     def get_gate_by_reference(self, gate_id):
         """
