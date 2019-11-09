@@ -556,3 +556,29 @@ class GatingTestCase(unittest.TestCase):
         result = gs.gate_sample(data1_sample, 'RatRange1a')
 
         np.testing.assert_array_equal(truth, result.get_gate_indices('RatRange1a'))
+
+    @staticmethod
+    def test_add_boolean_and1_gate():
+        gs = fk.GatingStrategy()
+
+        dim1 = fk.Dimension("FL2-H", compensation_ref="FCS")
+        dim2 = fk.Dimension("FL3-H", compensation_ref="FCS")
+        dims = [dim1, dim2]
+
+        vertices = [
+            fk.Vertex([5, 5]),
+            fk.Vertex([500, 5]),
+            fk.Vertex([500, 500])
+        ]
+
+        poly_gate = fk.gates.PolygonGate("Polygon1", None, dims, vertices, gs)
+        gs.add_gate(poly_gate)
+
+        dim3 = fk.Dimension("Time", compensation_ref="uncompensated", range_min=20, range_max=80)
+        dims2 = [dim3]
+
+        rect_gate = fk.gates.RectangleGate("Range2", None, dims2, gs)
+        gs.add_gate(rect_gate)
+
+        bool_gate = fk.gates.BooleanGate("And1", None, "and", ["Polygon1", "Range2"], gs)
+        gs.add_gate(bool_gate)
