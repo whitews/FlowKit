@@ -6,10 +6,10 @@ import pandas as pd
 
 sys.path.append(os.path.abspath('..'))
 
-from flowkit import Sample, GatingStrategy, Dimension, QuadrantDivider, Vertex, gates
+import flowkit as fk
 
 data1_fcs_path = 'examples/gate_ref/data1.fcs'
-data1_sample = Sample(data1_fcs_path)
+data1_sample = fk.Sample(data1_fcs_path)
 
 quadrants_q1 = {
             'FL2P-FL4P': [
@@ -187,12 +187,12 @@ class GatingTestCase(unittest.TestCase):
     def test_add_min_range_gate():
         res_path = 'examples/gate_ref/truth/Results_Range1.txt'
 
-        gs = GatingStrategy()
+        gs = fk.GatingStrategy()
 
-        dim1 = Dimension("FSC-H", compensation_ref="uncompensated", range_min=100)
+        dim1 = fk.Dimension("FSC-H", compensation_ref="uncompensated", range_min=100)
         dims = [dim1]
 
-        rect_gate = gates.RectangleGate("Range1", None, dims, gs)
+        rect_gate = fk.gates.RectangleGate("Range1", None, dims, gs)
         gs.add_gate(rect_gate)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -203,13 +203,13 @@ class GatingTestCase(unittest.TestCase):
 
     @staticmethod
     def test_add_rect1_gate():
-        gs = GatingStrategy()
+        gs = fk.GatingStrategy()
 
-        dim1 = Dimension("SSC-H", compensation_ref="uncompensated", range_min=20, range_max=80)
-        dim2 = Dimension("FL1-H", compensation_ref="uncompensated", range_min=70, range_max=200)
+        dim1 = fk.Dimension("SSC-H", compensation_ref="uncompensated", range_min=20, range_max=80)
+        dim2 = fk.Dimension("FL1-H", compensation_ref="uncompensated", range_min=70, range_max=200)
         dims = [dim1, dim2]
 
-        rect_gate = gates.RectangleGate("Rectangle1", None, dims, gs)
+        rect_gate = fk.gates.RectangleGate("Rectangle1", None, dims, gs)
         gs.add_gate(rect_gate)
 
         res_path = 'examples/gate_ref/truth/Results_Rectangle1.txt'
@@ -221,13 +221,13 @@ class GatingTestCase(unittest.TestCase):
 
     @staticmethod
     def test_add_rect2_gate():
-        gs = GatingStrategy()
+        gs = fk.GatingStrategy()
 
-        dim1 = Dimension("SSC-H", compensation_ref="FCS", range_min=20, range_max=80)
-        dim2 = Dimension("FL1-H", compensation_ref="FCS", range_min=70, range_max=200)
+        dim1 = fk.Dimension("SSC-H", compensation_ref="FCS", range_min=20, range_max=80)
+        dim2 = fk.Dimension("FL1-H", compensation_ref="FCS", range_min=70, range_max=200)
         dims = [dim1, dim2]
 
-        rect_gate = gates.RectangleGate("Rectangle2", None, dims, gs)
+        rect_gate = fk.gates.RectangleGate("Rectangle2", None, dims, gs)
         gs.add_gate(rect_gate)
 
         res_path = 'examples/gate_ref/truth/Results_Rectangle2.txt'
@@ -239,19 +239,19 @@ class GatingTestCase(unittest.TestCase):
 
     @staticmethod
     def test_add_poly1_gate():
-        gs = GatingStrategy()
+        gs = fk.GatingStrategy()
 
-        dim1 = Dimension("FL2-H", compensation_ref="FCS")
-        dim2 = Dimension("FL3-H", compensation_ref="FCS")
+        dim1 = fk.Dimension("FL2-H", compensation_ref="FCS")
+        dim2 = fk.Dimension("FL3-H", compensation_ref="FCS")
         dims = [dim1, dim2]
 
         vertices = [
-            Vertex([5, 5]),
-            Vertex([500, 5]),
-            Vertex([500, 500])
+            fk.Vertex([5, 5]),
+            fk.Vertex([500, 5]),
+            fk.Vertex([500, 500])
         ]
 
-        poly_gate = gates.PolygonGate("Polygon1", None, dims, vertices, gs)
+        poly_gate = fk.gates.PolygonGate("Polygon1", None, dims, vertices, gs)
         gs.add_gate(poly_gate)
 
         res_path = 'examples/gate_ref/truth/Results_Polygon1.txt'
@@ -263,20 +263,20 @@ class GatingTestCase(unittest.TestCase):
 
     @staticmethod
     def test_add_poly2_gate():
-        gs = GatingStrategy()
+        gs = fk.GatingStrategy()
 
-        dim1 = Dimension("FL1-H", compensation_ref="FCS")
-        dim2 = Dimension("FL4-H", compensation_ref="FCS")
+        dim1 = fk.Dimension("FL1-H", compensation_ref="FCS")
+        dim2 = fk.Dimension("FL4-H", compensation_ref="FCS")
         dims = [dim1, dim2]
 
         vertices = [
-            Vertex([20, 10]),
-            Vertex([120, 10]),
-            Vertex([120, 160]),
-            Vertex([20, 160])
+            fk.Vertex([20, 10]),
+            fk.Vertex([120, 10]),
+            fk.Vertex([120, 160]),
+            fk.Vertex([20, 160])
         ]
 
-        poly_gate = gates.PolygonGate("Polygon2", None, dims, vertices, gs)
+        poly_gate = fk.gates.PolygonGate("Polygon2", None, dims, vertices, gs)
         gs.add_gate(poly_gate)
 
         res_path = 'examples/gate_ref/truth/Results_Polygon2.txt'
@@ -288,24 +288,24 @@ class GatingTestCase(unittest.TestCase):
 
     @staticmethod
     def test_add_poly3_non_solid_gate():
-        gs = GatingStrategy()
+        gs = fk.GatingStrategy()
 
-        dim1 = Dimension("SSC-H", compensation_ref="uncompensated")
-        dim2 = Dimension("FL3-H", compensation_ref="FCS")
+        dim1 = fk.Dimension("SSC-H", compensation_ref="uncompensated")
+        dim2 = fk.Dimension("FL3-H", compensation_ref="FCS")
         dims = [dim1, dim2]
 
         vertices = [
-            Vertex([10, 10]),
-            Vertex([500, 10]),
-            Vertex([500, 390]),
-            Vertex([100, 390]),
-            Vertex([100, 180]),
-            Vertex([200, 180]),
-            Vertex([200, 300]),
-            Vertex([10, 300])
+            fk.Vertex([10, 10]),
+            fk.Vertex([500, 10]),
+            fk.Vertex([500, 390]),
+            fk.Vertex([100, 390]),
+            fk.Vertex([100, 180]),
+            fk.Vertex([200, 180]),
+            fk.Vertex([200, 300]),
+            fk.Vertex([10, 300])
         ]
 
-        poly_gate = gates.PolygonGate("Polygon3NS", None, dims, vertices, gs)
+        poly_gate = fk.gates.PolygonGate("Polygon3NS", None, dims, vertices, gs)
         gs.add_gate(poly_gate)
 
         res_path = 'examples/gate_ref/truth/Results_Polygon3NS.txt'
@@ -317,17 +317,17 @@ class GatingTestCase(unittest.TestCase):
 
     @staticmethod
     def test_add_ellipse1_gate():
-        gs = GatingStrategy()
+        gs = fk.GatingStrategy()
 
-        dim1 = Dimension("FL3-H", compensation_ref="uncompensated")
-        dim2 = Dimension("FL4-H", compensation_ref="uncompensated")
+        dim1 = fk.Dimension("FL3-H", compensation_ref="uncompensated")
+        dim2 = fk.Dimension("FL4-H", compensation_ref="uncompensated")
         dims = [dim1, dim2]
 
         coords = [12.99701, 16.22941]
         cov_mat = [[62.5, 37.5], [37.5, 62.5]]
         dist_square = 1
 
-        poly_gate = gates.EllipsoidGate("Ellipse1", None, dims, coords, cov_mat, dist_square, gs)
+        poly_gate = fk.gates.EllipsoidGate("Ellipse1", None, dims, coords, cov_mat, dist_square, gs)
         gs.add_gate(poly_gate)
 
         res_path = 'examples/gate_ref/truth/Results_Ellipse1.txt'
@@ -339,18 +339,18 @@ class GatingTestCase(unittest.TestCase):
 
     @staticmethod
     def test_add_ellipsoid_3d_gate():
-        gs = GatingStrategy()
+        gs = fk.GatingStrategy()
 
-        dim1 = Dimension("FL3-H", compensation_ref="FCS")
-        dim2 = Dimension("FL4-H", compensation_ref="FCS")
-        dim3 = Dimension("FL1-H", compensation_ref="FCS")
+        dim1 = fk.Dimension("FL3-H", compensation_ref="FCS")
+        dim2 = fk.Dimension("FL4-H", compensation_ref="FCS")
+        dim3 = fk.Dimension("FL1-H", compensation_ref="FCS")
         dims = [dim1, dim2, dim3]
 
         coords = [40.3, 30.6, 20.8]
         cov_mat = [[2.5, 7.5, 17.5], [7.5, 7.0, 13.5], [15.5, 13.5, 4.3]]
         dist_square = 1
 
-        poly_gate = gates.EllipsoidGate("Ellipsoid3D", None, dims, coords, cov_mat, dist_square, gs)
+        poly_gate = fk.gates.EllipsoidGate("Ellipsoid3D", None, dims, coords, cov_mat, dist_square, gs)
         gs.add_gate(poly_gate)
 
         res_path = 'examples/gate_ref/truth/Results_Ellipsoid3D.txt'
@@ -364,12 +364,12 @@ class GatingTestCase(unittest.TestCase):
     def test_add_time_range_gate():
         res_path = 'examples/gate_ref/truth/Results_Range2.txt'
 
-        gs = GatingStrategy()
+        gs = fk.GatingStrategy()
 
-        dim1 = Dimension("Time", compensation_ref="uncompensated", range_min=20, range_max=80)
+        dim1 = fk.Dimension("Time", compensation_ref="uncompensated", range_min=20, range_max=80)
         dims = [dim1]
 
-        rect_gate = gates.RectangleGate("Range2", None, dims, gs)
+        rect_gate = fk.gates.RectangleGate("Range2", None, dims, gs)
         gs.add_gate(rect_gate)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -385,14 +385,14 @@ class GatingTestCase(unittest.TestCase):
         res3_path = 'examples/gate_ref/truth/Results_FL2P-FL4N.txt'
         res4_path = 'examples/gate_ref/truth/Results_FL2P-FL4P.txt'
 
-        gs = GatingStrategy()
+        gs = fk.GatingStrategy()
 
-        div1 = QuadrantDivider("FL2", "FL2-H", "FCS", [12.14748])
-        div2 = QuadrantDivider("FL4", "FL4-H", "FCS", [14.22417])
+        div1 = fk.QuadrantDivider("FL2", "FL2-H", "FCS", [12.14748])
+        div2 = fk.QuadrantDivider("FL4", "FL4-H", "FCS", [14.22417])
 
         divs = [div1, div2]
 
-        quad_gate = gates.QuadrantGate("Quadrant1", None, divs, quadrants_q1, gs)
+        quad_gate = fk.gates.QuadrantGate("Quadrant1", None, divs, quadrants_q1, gs)
         gs.add_gate(quad_gate)
 
         truth1 = pd.read_csv(res1_path, header=None, squeeze=True, dtype='bool').values
@@ -408,14 +408,14 @@ class GatingTestCase(unittest.TestCase):
         np.testing.assert_array_equal(truth4, result.get_gate_indices('FL2P-FL4P'))
 
     def test_add_quadrant_gate_relative_percent(self):
-        gs = GatingStrategy()
+        gs = fk.GatingStrategy()
 
-        div1 = QuadrantDivider("FL2", "FL2-H", "FCS", [12.14748])
-        div2 = QuadrantDivider("FL4", "FL4-H", "FCS", [14.22417])
+        div1 = fk.QuadrantDivider("FL2", "FL2-H", "FCS", [12.14748])
+        div2 = fk.QuadrantDivider("FL4", "FL4-H", "FCS", [14.22417])
 
         divs = [div1, div2]
 
-        quad_gate = gates.QuadrantGate("Quadrant1", None, divs, quadrants_q1, gs)
+        quad_gate = fk.gates.QuadrantGate("Quadrant1", None, divs, quadrants_q1, gs)
         gs.add_gate(quad_gate)
 
         result = gs.gate_sample(data1_sample)
@@ -441,15 +441,15 @@ class GatingTestCase(unittest.TestCase):
         truth4 = pd.read_csv(res4_path, header=None, squeeze=True, dtype='bool').values
         truth5 = pd.read_csv(res5_path, header=None, squeeze=True, dtype='bool').values
 
-        gs = GatingStrategy()
+        gs = fk.GatingStrategy()
 
-        div1 = QuadrantDivider("FSC", "FSC-H", "uncompensated", [28.0654, 70.02725])
-        div2 = QuadrantDivider("SSC", "SSC-H", "uncompensated", [17.75])
-        div3 = QuadrantDivider("FL1", "FL1-H", "uncompensated", [6.43567])
+        div1 = fk.QuadrantDivider("FSC", "FSC-H", "uncompensated", [28.0654, 70.02725])
+        div2 = fk.QuadrantDivider("SSC", "SSC-H", "uncompensated", [17.75])
+        div3 = fk.QuadrantDivider("FL1", "FL1-H", "uncompensated", [6.43567])
 
         divs = [div1, div2, div3]
 
-        quad_gate = gates.QuadrantGate("Quadrant2", None, divs, quadrants_q2, gs)
+        quad_gate = fk.gates.QuadrantGate("Quadrant2", None, divs, quadrants_q2, gs)
         gs.add_gate(quad_gate)
 
         result = gs.gate_sample(data1_sample)
@@ -459,3 +459,34 @@ class GatingTestCase(unittest.TestCase):
         np.testing.assert_array_equal(truth3, result.get_gate_indices('FSCP-SSCN-FL1N'))
         np.testing.assert_array_equal(truth4, result.get_gate_indices('FSCD-FL1P'))
         np.testing.assert_array_equal(truth5, result.get_gate_indices('FSCN-SSCP-FL1P'))
+
+    @staticmethod
+    def test_add_ratio_range1_gate():
+        gs = fk.GatingStrategy()
+
+        rat_xform = fk.transforms.RatioTransform(
+            "FL2Rat1",
+            ["FL2-H", "FL2-A"],
+            param_a=1,
+            param_b=0,
+            param_c=-1
+        )
+        gs.add_transform(rat_xform)
+
+        dim_rat1 = fk.RatioDimension(
+            "FL2Rat1",
+            compensation_ref="uncompensated",
+            range_min=3,
+            range_max=16.4
+        )
+        dims = [dim_rat1]
+
+        rect_gate = fk.gates.RectangleGate("RatRange1", None, dims, gs)
+        gs.add_gate(rect_gate)
+
+        res_path = 'examples/gate_ref/truth/Results_RatRange1.txt'
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs.gate_sample(data1_sample, 'RatRange1')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('RatRange1'))
