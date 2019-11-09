@@ -362,7 +362,6 @@ class GMLBooleanGate(gates.BooleanGate):
         super().__init__(
             gate_id,
             parent_id,
-            dimensions,
             bool_type,
             gate_refs,
             gating_strategy

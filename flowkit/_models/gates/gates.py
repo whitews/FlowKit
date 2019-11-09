@@ -340,7 +340,6 @@ class BooleanGate(Gate):
             self,
             gate_id,
             parent_id,
-            dimensions,
             bool_type,
             gate_refs,
             gating_strategy
@@ -348,11 +347,12 @@ class BooleanGate(Gate):
         super().__init__(
             gate_id,
             parent_id,
-            dimensions,
+            None,
             gating_strategy
         )
         self.gate_type = "BooleanGate"
 
+        bool_type = bool_type.lower()
         if bool_type not in ['and', 'or', 'not']:
             raise ValueError(
                 "Boolean gate must specify one of 'and', 'or', or 'not'"
