@@ -14,6 +14,7 @@ __all__ = [
     'GatingStrategy',
     'Matrix',
     'Dimension',
+    'QuadrantDivider',
     'Vertex',
     'gates',
     'transforms'

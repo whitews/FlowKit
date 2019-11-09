@@ -219,6 +219,8 @@ class QuadrantGate(Gate):
 
         # Parse quadrants
         for q_id, dividers in quadrants.items():
+            # TODO: change quadrant from a dict to a Class, or even better maybe we can calc the quadrants fro the divs
+            #       and get rid of the quandrants argument completely...nope, we need the user given quad labels
             # quadrants is a dictionary where keys are quad IDs, value is a list
             # of dicts, each containing keys:
             #  - divider

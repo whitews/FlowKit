@@ -6,7 +6,7 @@ import pandas as pd
 
 sys.path.append(os.path.abspath('..'))
 
-from flowkit import Sample, GatingStrategy, Dimension, Vertex, gates
+from flowkit import Sample, GatingStrategy, Dimension, QuadrantDivider, Vertex, gates
 
 data1_fcs_path = 'examples/gate_ref/data1.fcs'
 data1_sample = Sample(data1_fcs_path)
@@ -207,3 +207,99 @@ class GatingTestCase(unittest.TestCase):
         result = gs.gate_sample(data1_sample, 'Range2')
 
         np.testing.assert_array_equal(truth, result.get_gate_indices('Range2'))
+
+    @staticmethod
+    def test_add_quadrant1_gate():
+        res1_path = 'examples/gate_ref/truth/Results_FL2N-FL4N.txt'
+        res2_path = 'examples/gate_ref/truth/Results_FL2N-FL4P.txt'
+        res3_path = 'examples/gate_ref/truth/Results_FL2P-FL4N.txt'
+        res4_path = 'examples/gate_ref/truth/Results_FL2P-FL4P.txt'
+
+        gs = GatingStrategy()
+
+        div1 = QuadrantDivider("FL2", "FL2-H", "FCS", [12.14748])
+        div2 = QuadrantDivider("FL4", "FL4-H", "FCS", [14.22417])
+
+        divs = [div1, div2]
+
+        quadrants = {
+            'FL2P-FL4P': [
+                {
+                    'divider': 'FL2',
+                    'dimension': 'FL2-H',
+                    'location': 15.0,
+                    'min': 12.14748,
+                    'max': None
+                },
+                {
+                    'divider': 'FL4',
+                    'dimension': 'FL4-H',
+                    'location': 15.0,
+                    'min': 14.22417,
+                    'max': None
+                }
+            ],
+            'FL2N-FL4P': [
+                {
+                    'divider': 'FL2',
+                    'dimension': 'FL2-H',
+                    'location': 5.0,
+                    'min': None,
+                    'max': 12.14748
+                },
+                {
+                    'divider': 'FL4',
+                    'dimension': 'FL4-H',
+                    'location': 15.0,
+                    'min': 14.22417,
+                    'max': None
+                }
+            ],
+            'FL2N-FL4N': [
+                {
+                    'divider': 'FL2',
+                    'dimension': 'FL2-H',
+                    'location': 5.0,
+                    'min': None,
+                    'max': 12.14748
+                },
+                {
+                    'divider': 'FL4',
+                    'dimension': 'FL4-H',
+                    'location': 5.0,
+                    'min': None,
+                    'max': 14.22417
+                }
+            ],
+            'FL2P-FL4N': [
+                {
+                    'divider': 'FL2',
+                    'dimension': 'FL2-H',
+                    'location': 15.0,
+                    'min': 12.14748,
+                    'max': None
+                },
+                {
+                    'divider': 'FL4',
+                    'dimension': 'FL4-H',
+                    'location': 5.0,
+                    'min': None,
+                    'max': 14.22417
+                }
+            ]
+        }
+
+        quad_gate = gates.QuadrantGate("Quadrant1", None, divs, quadrants, gs)
+        gs.add_gate(quad_gate)
+
+        truth1 = pd.read_csv(res1_path, header=None, squeeze=True, dtype='bool').values
+        truth2 = pd.read_csv(res2_path, header=None, squeeze=True, dtype='bool').values
+        truth3 = pd.read_csv(res3_path, header=None, squeeze=True, dtype='bool').values
+        truth4 = pd.read_csv(res4_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs.gate_sample(data1_sample)
+
+        np.testing.assert_array_equal(truth1, result.get_gate_indices('FL2N-FL4N'))
+        np.testing.assert_array_equal(truth2, result.get_gate_indices('FL2N-FL4P'))
+        np.testing.assert_array_equal(truth3, result.get_gate_indices('FL2P-FL4N'))
+        np.testing.assert_array_equal(truth4, result.get_gate_indices('FL2P-FL4P'))
