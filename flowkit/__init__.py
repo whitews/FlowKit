@@ -5,6 +5,7 @@ from ._models.gates import gates
 from ._models.gating_strategy import GatingStrategy
 from ._models.session import Session
 from ._models.dimension import Dimension, RatioDimension, QuadrantDivider
+from ._models.vertex import Vertex
 
 
 __all__ = [
@@ -13,6 +14,7 @@ __all__ = [
     'GatingStrategy',
     'Matrix',
     'Dimension',
+    'Vertex',
     'gates',
     'transforms'
 ]

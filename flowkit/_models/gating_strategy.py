@@ -123,6 +123,9 @@ class GatingStrategy(object):
         if not isinstance(gate, fk_gates.Gate):
             raise ValueError("gate must be a sub-class of the Gate class")
 
+        if gate.id in self.gates:
+            raise KeyError("Gate ID '%s' is already defined" % gate.id)
+
         self.gates[gate.id] = gate
 
     def get_gate_by_reference(self, gate_id):
