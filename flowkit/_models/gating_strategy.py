@@ -1,7 +1,7 @@
 import anytree
 from anytree.exporter import DotExporter
 import pandas as pd
-from flowkit import _gml_utils
+from flowkit import _gml_utils, Matrix
 from flowkit import gates as fk_gates
 from flowkit import transforms as fk_transforms
 
@@ -136,6 +136,15 @@ class GatingStrategy(object):
             raise KeyError("Transform ID '%s' is already defined" % transform.id)
 
         self.transformations[transform.id] = transform
+
+    def add_comp_matrix(self, matrix):
+        if not isinstance(matrix, Matrix):
+            raise ValueError("matrix must be an instance of the Matrix class")
+
+        if matrix.id in self.comp_matrices:
+            raise KeyError("Matrix ID '%s' is already defined" % matrix.id)
+
+        self.comp_matrices[matrix.id] = matrix
 
     def get_gate_by_reference(self, gate_id):
         """
