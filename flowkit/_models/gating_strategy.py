@@ -4,7 +4,6 @@ import pandas as pd
 from flowkit import _gml_utils
 from flowkit import gates as fk_gates
 from flowkit import transforms as fk_transforms
-from flowkit._models.gates.gml_gates import GMLQuadrantGate
 
 
 class GatingStrategy(object):
@@ -64,7 +63,7 @@ class GatingStrategy(object):
                 parent=root
             )
 
-            if isinstance(gate, GMLQuadrantGate):
+            if isinstance(gate, fk_gates.QuadrantGate):
                 for q_id, quad in gate.quadrants.items():
                     nodes[q_id] = anytree.Node(
                         q_id,
@@ -86,7 +85,7 @@ class GatingStrategy(object):
                         parent=root if parent_id is None else nodes[parent_id]
                     )
 
-                    if isinstance(gate, GMLQuadrantGate):
+                    if isinstance(gate, fk_gates.QuadrantGate):
                         if gate.id not in nodes:
                             nodes[gate.id] = anytree.Node(
                                 gate.id,
@@ -111,7 +110,7 @@ class GatingStrategy(object):
                 parent=nodes[gate.parent]
             )
 
-            if isinstance(gate, GMLQuadrantGate):
+            if isinstance(gate, fk_gates.QuadrantGate):
                 for q_id, quad in gate.quadrants.items():
                     nodes[q_id] = anytree.Node(
                         q_id,
@@ -152,7 +151,7 @@ class GatingStrategy(object):
             # may be in a Quadrant gate
             gate = None
             for g_id, g in self.gates.items():
-                if isinstance(g, GMLQuadrantGate):
+                if isinstance(g, fk_gates.QuadrantGate):
                     if gate_id in g.quadrants:
                         gate = g
                         continue
@@ -267,7 +266,7 @@ class GatingStrategy(object):
             if g_id == 'root':
                 continue
             gate = self.get_gate_by_reference(g_id)
-            if isinstance(gate, GMLQuadrantGate) and g_id in gate.quadrants:
+            if isinstance(gate, fk_gates.QuadrantGate) and g_id in gate.quadrants:
                 # This is a sub-gate, we'll process the sub-gates all at once
                 # with the main QuadrantGate ID
                 continue

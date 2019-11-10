@@ -352,6 +352,7 @@ class GMLBooleanGate(gates.BooleanGate):
             else:
                 use_complement = False
 
+            # TODO: see if 'gate_refs' list of dictionaries can be to something more easily documented
             gate_refs.append(
                 {
                     'ref': gate_ref,
