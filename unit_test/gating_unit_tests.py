@@ -291,7 +291,7 @@ class GatingMLTestCase(unittest.TestCase):
         np.testing.assert_array_equal(truth, result.get_gate_indices('And4'))
 
     @staticmethod
-    def test_boolean_or2_not_gate():
+    def test_boolean_or2_complement_gate():
         gml_path = 'examples/gate_ref/gml/gml_boolean_or2_gate.xml'
         res_path = 'examples/gate_ref/truth/Results_Or2.txt'
 
