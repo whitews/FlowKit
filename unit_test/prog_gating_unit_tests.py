@@ -918,3 +918,41 @@ class GatingTestCase(unittest.TestCase):
         result = gs.gate_sample(data1_sample, 'Or2')
 
         np.testing.assert_array_equal(truth, result.get_gate_indices('Or2'))
+
+    @staticmethod
+    def test_add_matrix_poly4_gate():
+        gs = fk.GatingStrategy()
+
+        fluoros = ['FITC', 'PE', 'PerCP']
+        detectors = ['FL1-H', 'FL2-H', 'FL3-H']
+
+        spill_data = np.array(
+            [
+                [1, 0.02, 0.06],
+                [0.11, 1, 0.07],
+                [0.09, 0.01, 1]
+            ]
+        )
+
+        comp_matrix = fk.Matrix('MySpill', fluoros, detectors, spill_data)
+        gs.add_comp_matrix(comp_matrix)
+
+        dim1 = fk.Dimension("PE", compensation_ref="MySpill")
+        dim2 = fk.Dimension("PerCP", compensation_ref="MySpill")
+        dims = [dim1, dim2]
+
+        vertices = [
+            fk.Vertex([5, 5]),
+            fk.Vertex([500, 5]),
+            fk.Vertex([500, 500])
+        ]
+
+        poly_gate = fk.gates.PolygonGate("Polygon4", None, dims, vertices, gs)
+        gs.add_gate(poly_gate)
+
+        res_path = 'examples/gate_ref/truth/Results_Polygon4.txt'
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs.gate_sample(data1_sample, 'Polygon4')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('Polygon4'))
