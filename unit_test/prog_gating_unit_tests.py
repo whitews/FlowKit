@@ -956,3 +956,250 @@ class GatingTestCase(unittest.TestCase):
         result = gs.gate_sample(data1_sample, 'Polygon4')
 
         np.testing.assert_array_equal(truth, result.get_gate_indices('Polygon4'))
+
+    @staticmethod
+    def test_add_matrix_rect3_gate():
+        gs = fk.GatingStrategy()
+
+        fluoros = ['FITC', 'PE', 'PerCP']
+        detectors = ['FL1-H', 'FL2-H', 'FL3-H']
+
+        spill_data = np.array(
+            [
+                [1, 0.02, 0.06],
+                [0.11, 1, 0.07],
+                [0.09, 0.01, 1]
+            ]
+        )
+
+        comp_matrix = fk.Matrix('MySpill', fluoros, detectors, spill_data)
+        gs.add_comp_matrix(comp_matrix)
+
+        dim1 = fk.Dimension("FITC", compensation_ref="MySpill", range_min=5, range_max=70)
+        dim2 = fk.Dimension("PE", compensation_ref="MySpill", range_min=9, range_max=208)
+        dims = [dim1, dim2]
+
+        rect_gate = fk.gates.RectangleGate("Rectangle3", None, dims, gs)
+        gs.add_gate(rect_gate)
+
+        res_path = 'examples/gate_ref/truth/Results_Rectangle3.txt'
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs.gate_sample(data1_sample, 'Rectangle3')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('Rectangle3'))
+
+    @staticmethod
+    def test_add_matrix_rect4_gate():
+        gs = fk.GatingStrategy()
+
+        fluoros = ['FITC', 'PE', 'PerCP']
+        detectors = ['FL1-H', 'FL2-H', 'FL3-H']
+
+        spill_data = np.array(
+            [
+                [1, 0.02, 0.06],
+                [0.11, 1, 0.07],
+                [0.09, 0.01, 1]
+            ]
+        )
+
+        comp_matrix = fk.Matrix('MySpill', fluoros, detectors, spill_data)
+        gs.add_comp_matrix(comp_matrix)
+
+        dim1 = fk.Dimension("PerCP", compensation_ref="MySpill", range_min=7, range_max=90)
+        dim2 = fk.Dimension("FSC-H", compensation_ref="uncompensated", range_min=10, range_max=133)
+        dims = [dim1, dim2]
+
+        rect_gate = fk.gates.RectangleGate("Rectangle4", None, dims, gs)
+        gs.add_gate(rect_gate)
+
+        res_path = 'examples/gate_ref/truth/Results_Rectangle4.txt'
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs.gate_sample(data1_sample, 'Rectangle4')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('Rectangle4'))
+
+    @staticmethod
+    def test_add_matrix_rect5_gate():
+        gs = fk.GatingStrategy()
+
+        fluoros = ['FITC', 'PE', 'PerCP']
+        detectors = ['FL1-H', 'FL2-H', 'FL3-H']
+
+        spill_data = np.array(
+            [
+                [1, 0.02, 0.06],
+                [0.11, 1, 0.07],
+                [0.09, 0.01, 1]
+            ]
+        )
+
+        comp_matrix = fk.Matrix('MySpill', fluoros, detectors, spill_data)
+        gs.add_comp_matrix(comp_matrix)
+
+        dim1 = fk.Dimension("PerCP", compensation_ref="MySpill", range_min=7, range_max=90)
+        dim2 = fk.Dimension("FSC-H", compensation_ref="uncompensated", range_min=10)
+        dims = [dim1, dim2]
+
+        rect_gate = fk.gates.RectangleGate("Rectangle5", None, dims, gs)
+        gs.add_gate(rect_gate)
+
+        res_path = 'examples/gate_ref/truth/Results_Rectangle5.txt'
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs.gate_sample(data1_sample, 'Rectangle5')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('Rectangle5'))
+
+    @staticmethod
+    def test_add_transform_asinh_range1_gate():
+        gs = fk.GatingStrategy()
+
+        asinh_xform = fk.transforms.AsinhTransform(
+            "AsinH_10000_4_1",
+            param_t=10000,
+            param_m=4,
+            param_a=1
+        )
+        gs.add_transform(asinh_xform)
+
+        dim1 = fk.Dimension('FL1-H', 'uncompensated', 'AsinH_10000_4_1', range_min=0.37, range_max=0.63)
+        dims = [dim1]
+
+        rect_gate = fk.gates.RectangleGate("ScaleRange1", None, dims, gs)
+        gs.add_gate(rect_gate)
+
+        res_path = 'examples/gate_ref/truth/Results_ScaleRange1.txt'
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs.gate_sample(data1_sample, 'ScaleRange1')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange1'))
+
+    @staticmethod
+    def test_add_transform_hyperlog_range2_gate():
+        gs = fk.GatingStrategy()
+
+        xform = fk.transforms.HyperlogTransform(
+            "Hyperlog_10000_1_4.5_0",
+            param_t=10000,
+            param_w=1,
+            param_m=4.5,
+            param_a=0
+        )
+        gs.add_transform(xform)
+
+        dim1 = fk.Dimension('FL1-H', 'uncompensated', 'Hyperlog_10000_1_4.5_0', range_min=0.37, range_max=0.63)
+        dims = [dim1]
+
+        rect_gate = fk.gates.RectangleGate("ScaleRange2", None, dims, gs)
+        gs.add_gate(rect_gate)
+
+        res_path = 'examples/gate_ref/truth/Results_ScaleRange2.txt'
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs.gate_sample(data1_sample, 'ScaleRange2')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange2'))
+
+    @staticmethod
+    def test_add_transform_linear_range3_gate():
+        gs = fk.GatingStrategy()
+
+        xform = fk.transforms.LinearTransform(
+            "Linear_10000_500",
+            param_t=10000,
+            param_a=500
+        )
+        gs.add_transform(xform)
+
+        dim1 = fk.Dimension('FL1-H', 'uncompensated', 'Linear_10000_500', range_min=0.049, range_max=0.055)
+        dims = [dim1]
+
+        rect_gate = fk.gates.RectangleGate("ScaleRange3", None, dims, gs)
+        gs.add_gate(rect_gate)
+
+        res_path = 'examples/gate_ref/truth/Results_ScaleRange3.txt'
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs.gate_sample(data1_sample, 'ScaleRange3')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange3'))
+
+    @staticmethod
+    def test_add_transform_logicle_range4_gate():
+        gs = fk.GatingStrategy()
+
+        xform = fk.transforms.LogicleTransform(
+            "Logicle_10000_1_4.5_0",
+            param_t=10000,
+            param_w=0.5,
+            param_m=4.5,
+            param_a=0
+        )
+        gs.add_transform(xform)
+
+        dim1 = fk.Dimension('FL1-H', 'uncompensated', 'Logicle_10000_1_4.5_0', range_min=0.37, range_max=0.63)
+        dims = [dim1]
+
+        rect_gate = fk.gates.RectangleGate("ScaleRange4", None, dims, gs)
+        gs.add_gate(rect_gate)
+
+        res_path = 'examples/gate_ref/truth/Results_ScaleRange4.txt'
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs.gate_sample(data1_sample, 'ScaleRange4')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange4'))
+
+    @staticmethod
+    def test_add_transform_logicle_range5_gate():
+        gs = fk.GatingStrategy()
+
+        xform = fk.transforms.LogicleTransform(
+            "Logicle_10000_1_4_0.5",
+            param_t=10000,
+            param_w=1,
+            param_m=4,
+            param_a=0.5
+        )
+        gs.add_transform(xform)
+
+        dim1 = fk.Dimension('FL1-H', 'uncompensated', 'Logicle_10000_1_4_0.5', range_min=0.37, range_max=0.63)
+        dims = [dim1]
+
+        rect_gate = fk.gates.RectangleGate("ScaleRange5", None, dims, gs)
+        gs.add_gate(rect_gate)
+
+        res_path = 'examples/gate_ref/truth/Results_ScaleRange5.txt'
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs.gate_sample(data1_sample, 'ScaleRange5')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange5'))
+
+    @staticmethod
+    def test_add_transform_log_range6_gate():
+        gs = fk.GatingStrategy()
+
+        xform = fk.transforms.LogTransform(
+            "Logarithmic_10000_5",
+            param_t=10000,
+            param_m=5
+        )
+        gs.add_transform(xform)
+
+        dim1 = fk.Dimension('FL1-H', 'uncompensated', 'Logarithmic_10000_5', range_min=0.37, range_max=0.63)
+        dims = [dim1]
+
+        rect_gate = fk.gates.RectangleGate("ScaleRange6", None, dims, gs)
+        gs.add_gate(rect_gate)
+
+        res_path = 'examples/gate_ref/truth/Results_ScaleRange6.txt'
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs.gate_sample(data1_sample, 'ScaleRange6')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange6'))
