@@ -327,8 +327,8 @@ class GatingTestCase(unittest.TestCase):
         cov_mat = [[62.5, 37.5], [37.5, 62.5]]
         dist_square = 1
 
-        poly_gate = fk.gates.EllipsoidGate("Ellipse1", None, dims, coords, cov_mat, dist_square, gs)
-        gs.add_gate(poly_gate)
+        ellipse_gate = fk.gates.EllipsoidGate("Ellipse1", None, dims, coords, cov_mat, dist_square, gs)
+        gs.add_gate(ellipse_gate)
 
         res_path = 'examples/gate_ref/truth/Results_Ellipse1.txt'
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -580,5 +580,341 @@ class GatingTestCase(unittest.TestCase):
         rect_gate = fk.gates.RectangleGate("Range2", None, dims2, gs)
         gs.add_gate(rect_gate)
 
-        bool_gate = fk.gates.BooleanGate("And1", None, "and", ["Polygon1", "Range2"], gs)
+        gate_refs = [
+            {
+                'ref': 'Polygon1',
+                'complement': False
+            },
+            {
+                'ref': 'Range2',
+                'complement': False
+            }
+        ]
+
+        bool_gate = fk.gates.BooleanGate("And1", None, "and", gate_refs, gs)
         gs.add_gate(bool_gate)
+
+        res_path = 'examples/gate_ref/truth/Results_And1.txt'
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs.gate_sample(data1_sample, 'And1')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('And1'))
+
+    @staticmethod
+    def test_add_boolean_and2_gate():
+        gs = fk.GatingStrategy()
+
+        dim1 = fk.Dimension("FSC-H", compensation_ref="uncompensated", range_min=100)
+        rect_dims = [dim1]
+
+        rect_gate = fk.gates.RectangleGate("Range1", None, rect_dims, gs)
+        gs.add_gate(rect_gate)
+
+        dim2 = fk.Dimension("FL2-H", compensation_ref="FCS")
+        dim3 = fk.Dimension("FL3-H", compensation_ref="FCS")
+        poly_dims = [dim2, dim3]
+
+        vertices = [
+            fk.Vertex([5, 5]),
+            fk.Vertex([500, 5]),
+            fk.Vertex([500, 500])
+        ]
+
+        poly_gate = fk.gates.PolygonGate("Polygon1", None, poly_dims, vertices, gs)
+        gs.add_gate(poly_gate)
+
+        dim4 = fk.Dimension("FL3-H", compensation_ref="uncompensated")
+        dim5 = fk.Dimension("FL4-H", compensation_ref="uncompensated")
+        ellipse_dims = [dim4, dim5]
+
+        coords = [12.99701, 16.22941]
+        cov_mat = [[62.5, 37.5], [37.5, 62.5]]
+        dist_square = 1
+
+        ellipse_gate = fk.gates.EllipsoidGate("Ellipse1", None, ellipse_dims, coords, cov_mat, dist_square, gs)
+        gs.add_gate(ellipse_gate)
+
+        gate_refs = [
+            {
+                'ref': 'Range1',
+                'complement': False
+            },
+            {
+                'ref': 'Ellipse1',
+                'complement': False
+            },
+            {
+                'ref': 'Polygon1',
+                'complement': False
+            }
+        ]
+
+        bool_gate = fk.gates.BooleanGate("And2", None, "and", gate_refs, gs)
+        gs.add_gate(bool_gate)
+
+        res_path = 'examples/gate_ref/truth/Results_And2.txt'
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs.gate_sample(data1_sample, 'And2')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('And2'))
+
+    @staticmethod
+    def test_add_boolean_or1_gate():
+        gs = fk.GatingStrategy()
+
+        dim1 = fk.Dimension("FSC-H", compensation_ref="uncompensated", range_min=100)
+        rect_dims = [dim1]
+
+        rect_gate = fk.gates.RectangleGate("Range1", None, rect_dims, gs)
+        gs.add_gate(rect_gate)
+
+        dim2 = fk.Dimension("FL2-H", compensation_ref="FCS")
+        dim3 = fk.Dimension("FL3-H", compensation_ref="FCS")
+        poly_dims = [dim2, dim3]
+
+        vertices = [
+            fk.Vertex([5, 5]),
+            fk.Vertex([500, 5]),
+            fk.Vertex([500, 500])
+        ]
+
+        poly_gate = fk.gates.PolygonGate("Polygon1", None, poly_dims, vertices, gs)
+        gs.add_gate(poly_gate)
+
+        dim4 = fk.Dimension("FL3-H", compensation_ref="uncompensated")
+        dim5 = fk.Dimension("FL4-H", compensation_ref="uncompensated")
+        ellipse_dims = [dim4, dim5]
+
+        coords = [12.99701, 16.22941]
+        cov_mat = [[62.5, 37.5], [37.5, 62.5]]
+        dist_square = 1
+
+        ellipse_gate = fk.gates.EllipsoidGate("Ellipse1", None, ellipse_dims, coords, cov_mat, dist_square, gs)
+        gs.add_gate(ellipse_gate)
+
+        gate_refs = [
+            {
+                'ref': 'Range1',
+                'complement': False
+            },
+            {
+                'ref': 'Ellipse1',
+                'complement': False
+            },
+            {
+                'ref': 'Polygon1',
+                'complement': False
+            }
+        ]
+
+        bool_gate = fk.gates.BooleanGate("Or1", None, "or", gate_refs, gs)
+        gs.add_gate(bool_gate)
+
+        res_path = 'examples/gate_ref/truth/Results_Or1.txt'
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs.gate_sample(data1_sample, 'Or1')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('Or1'))
+
+    @staticmethod
+    def test_add_boolean_and3_complement_gate():
+        gs = fk.GatingStrategy()
+
+        dim1 = fk.Dimension("FSC-H", compensation_ref="uncompensated", range_min=100)
+        rect_dims = [dim1]
+
+        rect_gate = fk.gates.RectangleGate("Range1", None, rect_dims, gs)
+        gs.add_gate(rect_gate)
+
+        dim2 = fk.Dimension("FL2-H", compensation_ref="FCS")
+        dim3 = fk.Dimension("FL3-H", compensation_ref="FCS")
+        poly_dims = [dim2, dim3]
+
+        vertices = [
+            fk.Vertex([5, 5]),
+            fk.Vertex([500, 5]),
+            fk.Vertex([500, 500])
+        ]
+
+        poly_gate = fk.gates.PolygonGate("Polygon1", None, poly_dims, vertices, gs)
+        gs.add_gate(poly_gate)
+
+        dim4 = fk.Dimension("FL3-H", compensation_ref="uncompensated")
+        dim5 = fk.Dimension("FL4-H", compensation_ref="uncompensated")
+        ellipse_dims = [dim4, dim5]
+
+        coords = [12.99701, 16.22941]
+        cov_mat = [[62.5, 37.5], [37.5, 62.5]]
+        dist_square = 1
+
+        ellipse_gate = fk.gates.EllipsoidGate("Ellipse1", None, ellipse_dims, coords, cov_mat, dist_square, gs)
+        gs.add_gate(ellipse_gate)
+
+        gate_refs = [
+            {
+                'ref': 'Range1',
+                'complement': False
+            },
+            {
+                'ref': 'Ellipse1',
+                'complement': True
+            },
+            {
+                'ref': 'Polygon1',
+                'complement': False
+            }
+        ]
+
+        bool_gate = fk.gates.BooleanGate("And3", None, "and", gate_refs, gs)
+        gs.add_gate(bool_gate)
+
+        res_path = 'examples/gate_ref/truth/Results_And3.txt'
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs.gate_sample(data1_sample, 'And3')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('And3'))
+
+    @staticmethod
+    def test_add_boolean_not1_gate():
+        gs = fk.GatingStrategy()
+
+        dim1 = fk.Dimension("FL3-H", compensation_ref="uncompensated")
+        dim2 = fk.Dimension("FL4-H", compensation_ref="uncompensated")
+        ellipse_dims = [dim1, dim2]
+
+        coords = [12.99701, 16.22941]
+        cov_mat = [[62.5, 37.5], [37.5, 62.5]]
+        dist_square = 1
+
+        ellipse_gate = fk.gates.EllipsoidGate("Ellipse1", None, ellipse_dims, coords, cov_mat, dist_square, gs)
+        gs.add_gate(ellipse_gate)
+
+        gate_refs = [
+            {
+                'ref': 'Ellipse1',
+                'complement': False
+            }
+        ]
+
+        bool_gate = fk.gates.BooleanGate("Not1", None, "not", gate_refs, gs)
+        gs.add_gate(bool_gate)
+
+        res_path = 'examples/gate_ref/truth/Results_Not1.txt'
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs.gate_sample(data1_sample, 'Not1')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('Not1'))
+
+    @staticmethod
+    def test_add_boolean_and4_not_gate():
+        gs = fk.GatingStrategy()
+
+        dim1 = fk.Dimension("FSC-H", compensation_ref="uncompensated", range_min=100)
+        rect_dims = [dim1]
+
+        rect_gate = fk.gates.RectangleGate("Range1", None, rect_dims, gs)
+        gs.add_gate(rect_gate)
+
+        dim2 = fk.Dimension("FL2-H", compensation_ref="FCS")
+        dim3 = fk.Dimension("FL3-H", compensation_ref="FCS")
+        poly_dims = [dim2, dim3]
+
+        vertices = [
+            fk.Vertex([5, 5]),
+            fk.Vertex([500, 5]),
+            fk.Vertex([500, 500])
+        ]
+
+        poly_gate = fk.gates.PolygonGate("Polygon1", None, poly_dims, vertices, gs)
+        gs.add_gate(poly_gate)
+
+        dim4 = fk.Dimension("FL3-H", compensation_ref="uncompensated")
+        dim5 = fk.Dimension("FL4-H", compensation_ref="uncompensated")
+        ellipse_dims = [dim4, dim5]
+
+        coords = [12.99701, 16.22941]
+        cov_mat = [[62.5, 37.5], [37.5, 62.5]]
+        dist_square = 1
+
+        ellipse_gate = fk.gates.EllipsoidGate("Ellipse1", None, ellipse_dims, coords, cov_mat, dist_square, gs)
+        gs.add_gate(ellipse_gate)
+
+        gate1_refs = [
+            {
+                'ref': 'Ellipse1',
+                'complement': False
+            }
+        ]
+
+        bool1_gate = fk.gates.BooleanGate("Not1", None, "not", gate1_refs, gs)
+        gs.add_gate(bool1_gate)
+
+        gate2_refs = [
+            {
+                'ref': 'Range1',
+                'complement': False
+            },
+            {
+                'ref': 'Not1',
+                'complement': False
+            },
+            {
+                'ref': 'Polygon1',
+                'complement': False
+            }
+        ]
+
+        bool2_gate = fk.gates.BooleanGate("And4", None, "and", gate2_refs, gs)
+        gs.add_gate(bool2_gate)
+
+        res_path = 'examples/gate_ref/truth/Results_And4.txt'
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs.gate_sample(data1_sample, 'And4')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('And4'))
+
+    @staticmethod
+    def test_add_boolean_or2_complement_gate():
+        gs = fk.GatingStrategy()
+
+        dim1 = fk.Dimension("SSC-H", compensation_ref="FCS", range_min=20, range_max=80)
+        dim2 = fk.Dimension("FL1-H", compensation_ref="FCS", range_min=70, range_max=200)
+        rect_dims = [dim1, dim2]
+
+        rect_gate = fk.gates.RectangleGate("Rectangle2", None, rect_dims, gs)
+        gs.add_gate(rect_gate)
+
+        div1 = fk.QuadrantDivider("FL2", "FL2-H", "FCS", [12.14748])
+        div2 = fk.QuadrantDivider("FL4", "FL4-H", "FCS", [14.22417])
+
+        divs = [div1, div2]
+
+        quad_gate = fk.gates.QuadrantGate("Quadrant1", None, divs, quadrants_q1, gs)
+        gs.add_gate(quad_gate)
+
+        gate1_refs = [
+            {
+                'ref': 'Rectangle2',
+                'complement': False
+            },
+            {
+                'ref': 'FL2N-FL4N',
+                'complement': True
+            }
+        ]
+
+        bool1_gate = fk.gates.BooleanGate("Or2", None, "or", gate1_refs, gs)
+        gs.add_gate(bool1_gate)
+
+        res_path = 'examples/gate_ref/truth/Results_Or2.txt'
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs.gate_sample(data1_sample, 'Or2')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('Or2'))
