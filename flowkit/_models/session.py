@@ -139,6 +139,17 @@ class Session(object):
     def gates(self):
         return self.gating_strategy.gates
 
+    # start pass through methods for GatingStrategy
+    def add_gate(self, gate):
+        self.gating_strategy.add_gate(gate)
+
+    def add_transform(self, transform):
+        self.gating_strategy.add_transform(transform)
+
+    def add_comp_matrix(self, matrix):
+        self.gating_strategy.add_comp_matrix(matrix)
+    # end pass through methods for GatingStrategy
+
     def get_sample(self, sample_id):
         for s in self.samples:
             if s.original_filename == sample_id:
