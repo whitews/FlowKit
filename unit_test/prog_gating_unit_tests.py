@@ -205,12 +205,12 @@ asinh_xform1 = fk.transforms.AsinhTransform(
 )
 
 hyperlog_xform1 = fk.transforms.HyperlogTransform(
-            "Hyperlog_10000_1_4.5_0",
-            param_t=10000,
-            param_w=1,
-            param_m=4.5,
-            param_a=0
-        )
+    "Hyperlog_10000_1_4.5_0",
+    param_t=10000,
+    param_w=1,
+    param_m=4.5,
+    param_a=0
+)
 
 linear_xform1 = fk.transforms.LinearTransform(
     "Linear_10000_500",
@@ -1212,7 +1212,7 @@ class GatingTestCase(unittest.TestCase):
         np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange3c'))
 
     @staticmethod
-    def test_add_matrix_transform_linear_range4c_gate():
+    def test_add_matrix_transform_logicle_range4c_gate():
         gs = fk.GatingStrategy()
 
         comp_matrix = fk.Matrix('MySpill', spill01_fluoros, spill01_detectors, spill01_data)
@@ -1232,3 +1232,114 @@ class GatingTestCase(unittest.TestCase):
         result = gs.gate_sample(data1_sample, 'ScaleRange4c')
 
         np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange4c'))
+
+    @staticmethod
+    def test_add_matrix_transform_logicle_range5c_gate():
+        gs = fk.GatingStrategy()
+
+        comp_matrix = fk.Matrix('MySpill', spill01_fluoros, spill01_detectors, spill01_data)
+        gs.add_comp_matrix(comp_matrix)
+
+        gs.add_transform(logicle_xform3)
+
+        dim1 = fk.Dimension('FITC', 'MySpill', 'Logicle_10000_1_4_0.5', range_min=0.37, range_max=0.63)
+        dims = [dim1]
+
+        rect_gate = fk.gates.RectangleGate("ScaleRange5c", None, dims, gs)
+        gs.add_gate(rect_gate)
+
+        res_path = 'examples/gate_ref/truth/Results_ScaleRange5c.txt'
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs.gate_sample(data1_sample, 'ScaleRange5c')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange5c'))
+
+    @staticmethod
+    def test_add_matrix_transform_asinh_range6c_gate():
+        gs = fk.GatingStrategy()
+
+        comp_matrix = fk.Matrix('MySpill', spill01_fluoros, spill01_detectors, spill01_data)
+        gs.add_comp_matrix(comp_matrix)
+
+        gs.add_transform(asinh_xform1)
+
+        dim1 = fk.Dimension('PE', 'MySpill', 'AsinH_10000_4_1', range_min=0.09, range_max=0.36)
+        dims = [dim1]
+
+        rect_gate = fk.gates.RectangleGate("ScaleRange6c", None, dims, gs)
+        gs.add_gate(rect_gate)
+
+        res_path = 'examples/gate_ref/truth/Results_ScaleRange6c.txt'
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs.gate_sample(data1_sample, 'ScaleRange6c')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange6c'))
+
+    @staticmethod
+    def test_add_matrix_transform_hyperlog_range7c_gate():
+        gs = fk.GatingStrategy()
+
+        comp_matrix = fk.Matrix('MySpill', spill01_fluoros, spill01_detectors, spill01_data)
+        gs.add_comp_matrix(comp_matrix)
+
+        gs.add_transform(hyperlog_xform1)
+
+        dim1 = fk.Dimension('PE', 'MySpill', 'Hyperlog_10000_1_4.5_0', range_min=0.09, range_max=0.36)
+        dims = [dim1]
+
+        rect_gate = fk.gates.RectangleGate("ScaleRange7c", None, dims, gs)
+        gs.add_gate(rect_gate)
+
+        res_path = 'examples/gate_ref/truth/Results_ScaleRange7c.txt'
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs.gate_sample(data1_sample, 'ScaleRange7c')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange7c'))
+
+    @staticmethod
+    def test_add_matrix_transform_logicle_range8c_gate():
+        gs = fk.GatingStrategy()
+
+        comp_matrix = fk.Matrix('MySpill', spill01_fluoros, spill01_detectors, spill01_data)
+        gs.add_comp_matrix(comp_matrix)
+
+        gs.add_transform(logicle_xform3)
+
+        dim1 = fk.Dimension('PE', 'MySpill', 'Logicle_10000_1_4_0.5', range_min=0.09, range_max=0.36)
+        dims = [dim1]
+
+        rect_gate = fk.gates.RectangleGate("ScaleRange8c", None, dims, gs)
+        gs.add_gate(rect_gate)
+
+        res_path = 'examples/gate_ref/truth/Results_ScaleRange8c.txt'
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs.gate_sample(data1_sample, 'ScaleRange8c')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange8c'))
+
+    @staticmethod
+    def test_add_matrix_transform_logicle_rect1_gate():
+        gs = fk.GatingStrategy()
+
+        comp_matrix = fk.Matrix('MySpill', spill01_fluoros, spill01_detectors, spill01_data)
+        gs.add_comp_matrix(comp_matrix)
+
+        gs.add_transform(logicle_xform1)
+
+        dim1 = fk.Dimension('PE', 'MySpill', 'Logicle_10000_0.5_4.5_0', range_min=0.31, range_max=0.69)
+        dim2 = fk.Dimension('PerCP', 'MySpill', 'Logicle_10000_0.5_4.5_0', range_min=0.27, range_max=0.73)
+        dims = [dim1, dim2]
+
+        rect_gate = fk.gates.RectangleGate("ScaleRect1", None, dims, gs)
+        gs.add_gate(rect_gate)
+
+        res_path = 'examples/gate_ref/truth/Results_ScaleRect1.txt'
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs.gate_sample(data1_sample, 'ScaleRect1')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRect1'))
