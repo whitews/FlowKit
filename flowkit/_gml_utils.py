@@ -64,8 +64,7 @@ def construct_gates(gating_strategy, root_gml):
             g = gate_class(
                 gt_gate,
                 gating_strategy.gating_ns,
-                gating_strategy.data_type_ns,
-                gating_strategy
+                gating_strategy.data_type_ns
             )
 
             if g.id in gates_dict:

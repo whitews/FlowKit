@@ -286,7 +286,7 @@ class GatingStrategy(object):
                 parent_results = results[gate.parent]
             else:
                 parent_results = None
-            results[g_id] = gate.apply(sample, parent_results)
+            results[g_id] = gate.apply(sample, parent_results, self)
 
         return GatingResults(results, sample_id=sample.original_filename)
 

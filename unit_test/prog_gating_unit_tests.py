@@ -251,7 +251,7 @@ class GatingTestCase(unittest.TestCase):
         dim1 = fk.Dimension("FSC-H", compensation_ref="uncompensated", range_min=100)
         dims = [dim1]
 
-        rect_gate = fk.gates.RectangleGate("Range1", None, dims, gs)
+        rect_gate = fk.gates.RectangleGate("Range1", None, dims)
         gs.add_gate(rect_gate)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -268,7 +268,7 @@ class GatingTestCase(unittest.TestCase):
         dim2 = fk.Dimension("FL1-H", compensation_ref="uncompensated", range_min=70, range_max=200)
         dims = [dim1, dim2]
 
-        rect_gate = fk.gates.RectangleGate("Rectangle1", None, dims, gs)
+        rect_gate = fk.gates.RectangleGate("Rectangle1", None, dims)
         gs.add_gate(rect_gate)
 
         res_path = 'examples/gate_ref/truth/Results_Rectangle1.txt'
@@ -286,7 +286,7 @@ class GatingTestCase(unittest.TestCase):
         dim2 = fk.Dimension("FL1-H", compensation_ref="FCS", range_min=70, range_max=200)
         dims = [dim1, dim2]
 
-        rect_gate = fk.gates.RectangleGate("Rectangle2", None, dims, gs)
+        rect_gate = fk.gates.RectangleGate("Rectangle2", None, dims)
         gs.add_gate(rect_gate)
 
         res_path = 'examples/gate_ref/truth/Results_Rectangle2.txt'
@@ -304,7 +304,7 @@ class GatingTestCase(unittest.TestCase):
         dim2 = fk.Dimension("FL3-H", compensation_ref="FCS")
         dims = [dim1, dim2]
 
-        poly_gate = fk.gates.PolygonGate("Polygon1", None, dims, poly1_vertices, gs)
+        poly_gate = fk.gates.PolygonGate("Polygon1", None, dims, poly1_vertices)
         gs.add_gate(poly_gate)
 
         res_path = 'examples/gate_ref/truth/Results_Polygon1.txt'
@@ -329,7 +329,7 @@ class GatingTestCase(unittest.TestCase):
             fk.Vertex([20, 160])
         ]
 
-        poly_gate = fk.gates.PolygonGate("Polygon2", None, dims, vertices, gs)
+        poly_gate = fk.gates.PolygonGate("Polygon2", None, dims, vertices)
         gs.add_gate(poly_gate)
 
         res_path = 'examples/gate_ref/truth/Results_Polygon2.txt'
@@ -358,7 +358,7 @@ class GatingTestCase(unittest.TestCase):
             fk.Vertex([10, 300])
         ]
 
-        poly_gate = fk.gates.PolygonGate("Polygon3NS", None, dims, vertices, gs)
+        poly_gate = fk.gates.PolygonGate("Polygon3NS", None, dims, vertices)
         gs.add_gate(poly_gate)
 
         res_path = 'examples/gate_ref/truth/Results_Polygon3NS.txt'
@@ -380,7 +380,7 @@ class GatingTestCase(unittest.TestCase):
         cov_mat = [[62.5, 37.5], [37.5, 62.5]]
         dist_square = 1
 
-        ellipse_gate = fk.gates.EllipsoidGate("Ellipse1", None, dims, coords, cov_mat, dist_square, gs)
+        ellipse_gate = fk.gates.EllipsoidGate("Ellipse1", None, dims, coords, cov_mat, dist_square)
         gs.add_gate(ellipse_gate)
 
         res_path = 'examples/gate_ref/truth/Results_Ellipse1.txt'
@@ -403,7 +403,7 @@ class GatingTestCase(unittest.TestCase):
         cov_mat = [[2.5, 7.5, 17.5], [7.5, 7.0, 13.5], [15.5, 13.5, 4.3]]
         dist_square = 1
 
-        poly_gate = fk.gates.EllipsoidGate("Ellipsoid3D", None, dims, coords, cov_mat, dist_square, gs)
+        poly_gate = fk.gates.EllipsoidGate("Ellipsoid3D", None, dims, coords, cov_mat, dist_square)
         gs.add_gate(poly_gate)
 
         res_path = 'examples/gate_ref/truth/Results_Ellipsoid3D.txt'
@@ -422,7 +422,7 @@ class GatingTestCase(unittest.TestCase):
         dim1 = fk.Dimension("Time", compensation_ref="uncompensated", range_min=20, range_max=80)
         dims = [dim1]
 
-        rect_gate = fk.gates.RectangleGate("Range2", None, dims, gs)
+        rect_gate = fk.gates.RectangleGate("Range2", None, dims)
         gs.add_gate(rect_gate)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -445,7 +445,7 @@ class GatingTestCase(unittest.TestCase):
 
         divs = [div1, div2]
 
-        quad_gate = fk.gates.QuadrantGate("Quadrant1", None, divs, quadrants_q1, gs)
+        quad_gate = fk.gates.QuadrantGate("Quadrant1", None, divs, quadrants_q1)
         gs.add_gate(quad_gate)
 
         truth1 = pd.read_csv(res1_path, header=None, squeeze=True, dtype='bool').values
@@ -468,7 +468,7 @@ class GatingTestCase(unittest.TestCase):
 
         divs = [div1, div2]
 
-        quad_gate = fk.gates.QuadrantGate("Quadrant1", None, divs, quadrants_q1, gs)
+        quad_gate = fk.gates.QuadrantGate("Quadrant1", None, divs, quadrants_q1)
         gs.add_gate(quad_gate)
 
         result = gs.gate_sample(data1_sample)
@@ -502,7 +502,7 @@ class GatingTestCase(unittest.TestCase):
 
         divs = [div1, div2, div3]
 
-        quad_gate = fk.gates.QuadrantGate("Quadrant2", None, divs, quadrants_q2, gs)
+        quad_gate = fk.gates.QuadrantGate("Quadrant2", None, divs, quadrants_q2)
         gs.add_gate(quad_gate)
 
         result = gs.gate_sample(data1_sample)
@@ -534,7 +534,7 @@ class GatingTestCase(unittest.TestCase):
         )
         dims = [dim_rat1]
 
-        rect_gate = fk.gates.RectangleGate("RatRange1", None, dims, gs)
+        rect_gate = fk.gates.RectangleGate("RatRange1", None, dims)
         gs.add_gate(rect_gate)
 
         res_path = 'examples/gate_ref/truth/Results_RatRange1.txt'
@@ -565,7 +565,7 @@ class GatingTestCase(unittest.TestCase):
         )
         dims = [dim_rat2]
 
-        rect_gate = fk.gates.RectangleGate("RatRange2", None, dims, gs)
+        rect_gate = fk.gates.RectangleGate("RatRange2", None, dims)
         gs.add_gate(rect_gate)
 
         res_path = 'examples/gate_ref/truth/Results_RatRange2.txt'
@@ -600,7 +600,7 @@ class GatingTestCase(unittest.TestCase):
         )
         dims = [dim_rat1]
 
-        rect_gate = fk.gates.RectangleGate("RatRange1a", None, dims, gs)
+        rect_gate = fk.gates.RectangleGate("RatRange1a", None, dims)
         gs.add_gate(rect_gate)
 
         res_path = 'examples/gate_ref/truth/Results_RatRange1a.txt'
@@ -618,13 +618,13 @@ class GatingTestCase(unittest.TestCase):
         dim2 = fk.Dimension("FL3-H", compensation_ref="FCS")
         dims = [dim1, dim2]
 
-        poly_gate = fk.gates.PolygonGate("Polygon1", None, dims, poly1_vertices, gs)
+        poly_gate = fk.gates.PolygonGate("Polygon1", None, dims, poly1_vertices)
         gs.add_gate(poly_gate)
 
         dim3 = fk.Dimension("Time", compensation_ref="uncompensated", range_min=20, range_max=80)
         dims2 = [dim3]
 
-        rect_gate = fk.gates.RectangleGate("Range2", None, dims2, gs)
+        rect_gate = fk.gates.RectangleGate("Range2", None, dims2)
         gs.add_gate(rect_gate)
 
         gate_refs = [
@@ -638,7 +638,7 @@ class GatingTestCase(unittest.TestCase):
             }
         ]
 
-        bool_gate = fk.gates.BooleanGate("And1", None, "and", gate_refs, gs)
+        bool_gate = fk.gates.BooleanGate("And1", None, "and", gate_refs)
         gs.add_gate(bool_gate)
 
         res_path = 'examples/gate_ref/truth/Results_And1.txt'
@@ -655,14 +655,14 @@ class GatingTestCase(unittest.TestCase):
         dim1 = fk.Dimension("FSC-H", compensation_ref="uncompensated", range_min=100)
         rect_dims = [dim1]
 
-        rect_gate = fk.gates.RectangleGate("Range1", None, rect_dims, gs)
+        rect_gate = fk.gates.RectangleGate("Range1", None, rect_dims)
         gs.add_gate(rect_gate)
 
         dim2 = fk.Dimension("FL2-H", compensation_ref="FCS")
         dim3 = fk.Dimension("FL3-H", compensation_ref="FCS")
         poly_dims = [dim2, dim3]
 
-        poly_gate = fk.gates.PolygonGate("Polygon1", None, poly_dims, poly1_vertices, gs)
+        poly_gate = fk.gates.PolygonGate("Polygon1", None, poly_dims, poly1_vertices)
         gs.add_gate(poly_gate)
 
         dim4 = fk.Dimension("FL3-H", compensation_ref="uncompensated")
@@ -673,7 +673,7 @@ class GatingTestCase(unittest.TestCase):
         cov_mat = [[62.5, 37.5], [37.5, 62.5]]
         dist_square = 1
 
-        ellipse_gate = fk.gates.EllipsoidGate("Ellipse1", None, ellipse_dims, coords, cov_mat, dist_square, gs)
+        ellipse_gate = fk.gates.EllipsoidGate("Ellipse1", None, ellipse_dims, coords, cov_mat, dist_square)
         gs.add_gate(ellipse_gate)
 
         gate_refs = [
@@ -691,7 +691,7 @@ class GatingTestCase(unittest.TestCase):
             }
         ]
 
-        bool_gate = fk.gates.BooleanGate("And2", None, "and", gate_refs, gs)
+        bool_gate = fk.gates.BooleanGate("And2", None, "and", gate_refs)
         gs.add_gate(bool_gate)
 
         res_path = 'examples/gate_ref/truth/Results_And2.txt'
@@ -708,14 +708,14 @@ class GatingTestCase(unittest.TestCase):
         dim1 = fk.Dimension("FSC-H", compensation_ref="uncompensated", range_min=100)
         rect_dims = [dim1]
 
-        rect_gate = fk.gates.RectangleGate("Range1", None, rect_dims, gs)
+        rect_gate = fk.gates.RectangleGate("Range1", None, rect_dims)
         gs.add_gate(rect_gate)
 
         dim2 = fk.Dimension("FL2-H", compensation_ref="FCS")
         dim3 = fk.Dimension("FL3-H", compensation_ref="FCS")
         poly_dims = [dim2, dim3]
 
-        poly_gate = fk.gates.PolygonGate("Polygon1", None, poly_dims, poly1_vertices, gs)
+        poly_gate = fk.gates.PolygonGate("Polygon1", None, poly_dims, poly1_vertices)
         gs.add_gate(poly_gate)
 
         dim4 = fk.Dimension("FL3-H", compensation_ref="uncompensated")
@@ -726,7 +726,7 @@ class GatingTestCase(unittest.TestCase):
         cov_mat = [[62.5, 37.5], [37.5, 62.5]]
         dist_square = 1
 
-        ellipse_gate = fk.gates.EllipsoidGate("Ellipse1", None, ellipse_dims, coords, cov_mat, dist_square, gs)
+        ellipse_gate = fk.gates.EllipsoidGate("Ellipse1", None, ellipse_dims, coords, cov_mat, dist_square)
         gs.add_gate(ellipse_gate)
 
         gate_refs = [
@@ -744,7 +744,7 @@ class GatingTestCase(unittest.TestCase):
             }
         ]
 
-        bool_gate = fk.gates.BooleanGate("Or1", None, "or", gate_refs, gs)
+        bool_gate = fk.gates.BooleanGate("Or1", None, "or", gate_refs)
         gs.add_gate(bool_gate)
 
         res_path = 'examples/gate_ref/truth/Results_Or1.txt'
@@ -761,14 +761,14 @@ class GatingTestCase(unittest.TestCase):
         dim1 = fk.Dimension("FSC-H", compensation_ref="uncompensated", range_min=100)
         rect_dims = [dim1]
 
-        rect_gate = fk.gates.RectangleGate("Range1", None, rect_dims, gs)
+        rect_gate = fk.gates.RectangleGate("Range1", None, rect_dims)
         gs.add_gate(rect_gate)
 
         dim2 = fk.Dimension("FL2-H", compensation_ref="FCS")
         dim3 = fk.Dimension("FL3-H", compensation_ref="FCS")
         poly_dims = [dim2, dim3]
 
-        poly_gate = fk.gates.PolygonGate("Polygon1", None, poly_dims, poly1_vertices, gs)
+        poly_gate = fk.gates.PolygonGate("Polygon1", None, poly_dims, poly1_vertices)
         gs.add_gate(poly_gate)
 
         dim4 = fk.Dimension("FL3-H", compensation_ref="uncompensated")
@@ -779,7 +779,7 @@ class GatingTestCase(unittest.TestCase):
         cov_mat = [[62.5, 37.5], [37.5, 62.5]]
         dist_square = 1
 
-        ellipse_gate = fk.gates.EllipsoidGate("Ellipse1", None, ellipse_dims, coords, cov_mat, dist_square, gs)
+        ellipse_gate = fk.gates.EllipsoidGate("Ellipse1", None, ellipse_dims, coords, cov_mat, dist_square)
         gs.add_gate(ellipse_gate)
 
         gate_refs = [
@@ -797,7 +797,7 @@ class GatingTestCase(unittest.TestCase):
             }
         ]
 
-        bool_gate = fk.gates.BooleanGate("And3", None, "and", gate_refs, gs)
+        bool_gate = fk.gates.BooleanGate("And3", None, "and", gate_refs)
         gs.add_gate(bool_gate)
 
         res_path = 'examples/gate_ref/truth/Results_And3.txt'
@@ -819,7 +819,7 @@ class GatingTestCase(unittest.TestCase):
         cov_mat = [[62.5, 37.5], [37.5, 62.5]]
         dist_square = 1
 
-        ellipse_gate = fk.gates.EllipsoidGate("Ellipse1", None, ellipse_dims, coords, cov_mat, dist_square, gs)
+        ellipse_gate = fk.gates.EllipsoidGate("Ellipse1", None, ellipse_dims, coords, cov_mat, dist_square)
         gs.add_gate(ellipse_gate)
 
         gate_refs = [
@@ -829,7 +829,7 @@ class GatingTestCase(unittest.TestCase):
             }
         ]
 
-        bool_gate = fk.gates.BooleanGate("Not1", None, "not", gate_refs, gs)
+        bool_gate = fk.gates.BooleanGate("Not1", None, "not", gate_refs)
         gs.add_gate(bool_gate)
 
         res_path = 'examples/gate_ref/truth/Results_Not1.txt'
@@ -846,14 +846,14 @@ class GatingTestCase(unittest.TestCase):
         dim1 = fk.Dimension("FSC-H", compensation_ref="uncompensated", range_min=100)
         rect_dims = [dim1]
 
-        rect_gate = fk.gates.RectangleGate("Range1", None, rect_dims, gs)
+        rect_gate = fk.gates.RectangleGate("Range1", None, rect_dims)
         gs.add_gate(rect_gate)
 
         dim2 = fk.Dimension("FL2-H", compensation_ref="FCS")
         dim3 = fk.Dimension("FL3-H", compensation_ref="FCS")
         poly_dims = [dim2, dim3]
 
-        poly_gate = fk.gates.PolygonGate("Polygon1", None, poly_dims, poly1_vertices, gs)
+        poly_gate = fk.gates.PolygonGate("Polygon1", None, poly_dims, poly1_vertices)
         gs.add_gate(poly_gate)
 
         dim4 = fk.Dimension("FL3-H", compensation_ref="uncompensated")
@@ -864,7 +864,7 @@ class GatingTestCase(unittest.TestCase):
         cov_mat = [[62.5, 37.5], [37.5, 62.5]]
         dist_square = 1
 
-        ellipse_gate = fk.gates.EllipsoidGate("Ellipse1", None, ellipse_dims, coords, cov_mat, dist_square, gs)
+        ellipse_gate = fk.gates.EllipsoidGate("Ellipse1", None, ellipse_dims, coords, cov_mat, dist_square)
         gs.add_gate(ellipse_gate)
 
         gate1_refs = [
@@ -874,7 +874,7 @@ class GatingTestCase(unittest.TestCase):
             }
         ]
 
-        bool1_gate = fk.gates.BooleanGate("Not1", None, "not", gate1_refs, gs)
+        bool1_gate = fk.gates.BooleanGate("Not1", None, "not", gate1_refs)
         gs.add_gate(bool1_gate)
 
         gate2_refs = [
@@ -892,7 +892,7 @@ class GatingTestCase(unittest.TestCase):
             }
         ]
 
-        bool2_gate = fk.gates.BooleanGate("And4", None, "and", gate2_refs, gs)
+        bool2_gate = fk.gates.BooleanGate("And4", None, "and", gate2_refs)
         gs.add_gate(bool2_gate)
 
         res_path = 'examples/gate_ref/truth/Results_And4.txt'
@@ -910,7 +910,7 @@ class GatingTestCase(unittest.TestCase):
         dim2 = fk.Dimension("FL1-H", compensation_ref="FCS", range_min=70, range_max=200)
         rect_dims = [dim1, dim2]
 
-        rect_gate = fk.gates.RectangleGate("Rectangle2", None, rect_dims, gs)
+        rect_gate = fk.gates.RectangleGate("Rectangle2", None, rect_dims)
         gs.add_gate(rect_gate)
 
         div1 = fk.QuadrantDivider("FL2", "FL2-H", "FCS", [12.14748])
@@ -918,7 +918,7 @@ class GatingTestCase(unittest.TestCase):
 
         divs = [div1, div2]
 
-        quad_gate = fk.gates.QuadrantGate("Quadrant1", None, divs, quadrants_q1, gs)
+        quad_gate = fk.gates.QuadrantGate("Quadrant1", None, divs, quadrants_q1)
         gs.add_gate(quad_gate)
 
         gate1_refs = [
@@ -932,7 +932,7 @@ class GatingTestCase(unittest.TestCase):
             }
         ]
 
-        bool1_gate = fk.gates.BooleanGate("Or2", None, "or", gate1_refs, gs)
+        bool1_gate = fk.gates.BooleanGate("Or2", None, "or", gate1_refs)
         gs.add_gate(bool1_gate)
 
         res_path = 'examples/gate_ref/truth/Results_Or2.txt'
@@ -953,7 +953,7 @@ class GatingTestCase(unittest.TestCase):
         dim2 = fk.Dimension("PerCP", compensation_ref="MySpill")
         dims = [dim1, dim2]
 
-        poly_gate = fk.gates.PolygonGate("Polygon4", None, dims, poly1_vertices, gs)
+        poly_gate = fk.gates.PolygonGate("Polygon4", None, dims, poly1_vertices)
         gs.add_gate(poly_gate)
 
         res_path = 'examples/gate_ref/truth/Results_Polygon4.txt'
@@ -974,7 +974,7 @@ class GatingTestCase(unittest.TestCase):
         dim2 = fk.Dimension("PE", compensation_ref="MySpill", range_min=9, range_max=208)
         dims = [dim1, dim2]
 
-        rect_gate = fk.gates.RectangleGate("Rectangle3", None, dims, gs)
+        rect_gate = fk.gates.RectangleGate("Rectangle3", None, dims)
         gs.add_gate(rect_gate)
 
         res_path = 'examples/gate_ref/truth/Results_Rectangle3.txt'
@@ -995,7 +995,7 @@ class GatingTestCase(unittest.TestCase):
         dim2 = fk.Dimension("FSC-H", compensation_ref="uncompensated", range_min=10, range_max=133)
         dims = [dim1, dim2]
 
-        rect_gate = fk.gates.RectangleGate("Rectangle4", None, dims, gs)
+        rect_gate = fk.gates.RectangleGate("Rectangle4", None, dims)
         gs.add_gate(rect_gate)
 
         res_path = 'examples/gate_ref/truth/Results_Rectangle4.txt'
@@ -1016,7 +1016,7 @@ class GatingTestCase(unittest.TestCase):
         dim2 = fk.Dimension("FSC-H", compensation_ref="uncompensated", range_min=10)
         dims = [dim1, dim2]
 
-        rect_gate = fk.gates.RectangleGate("Rectangle5", None, dims, gs)
+        rect_gate = fk.gates.RectangleGate("Rectangle5", None, dims)
         gs.add_gate(rect_gate)
 
         res_path = 'examples/gate_ref/truth/Results_Rectangle5.txt'
@@ -1035,7 +1035,7 @@ class GatingTestCase(unittest.TestCase):
         dim1 = fk.Dimension('FL1-H', 'uncompensated', 'AsinH_10000_4_1', range_min=0.37, range_max=0.63)
         dims = [dim1]
 
-        rect_gate = fk.gates.RectangleGate("ScaleRange1", None, dims, gs)
+        rect_gate = fk.gates.RectangleGate("ScaleRange1", None, dims)
         gs.add_gate(rect_gate)
 
         res_path = 'examples/gate_ref/truth/Results_ScaleRange1.txt'
@@ -1054,7 +1054,7 @@ class GatingTestCase(unittest.TestCase):
         dim1 = fk.Dimension('FL1-H', 'uncompensated', 'Hyperlog_10000_1_4.5_0', range_min=0.37, range_max=0.63)
         dims = [dim1]
 
-        rect_gate = fk.gates.RectangleGate("ScaleRange2", None, dims, gs)
+        rect_gate = fk.gates.RectangleGate("ScaleRange2", None, dims)
         gs.add_gate(rect_gate)
 
         res_path = 'examples/gate_ref/truth/Results_ScaleRange2.txt'
@@ -1073,7 +1073,7 @@ class GatingTestCase(unittest.TestCase):
         dim1 = fk.Dimension('FL1-H', 'uncompensated', 'Linear_10000_500', range_min=0.049, range_max=0.055)
         dims = [dim1]
 
-        rect_gate = fk.gates.RectangleGate("ScaleRange3", None, dims, gs)
+        rect_gate = fk.gates.RectangleGate("ScaleRange3", None, dims)
         gs.add_gate(rect_gate)
 
         res_path = 'examples/gate_ref/truth/Results_ScaleRange3.txt'
@@ -1092,7 +1092,7 @@ class GatingTestCase(unittest.TestCase):
         dim1 = fk.Dimension('FL1-H', 'uncompensated', 'Logicle_10000_0.5_4.5_0', range_min=0.37, range_max=0.63)
         dims = [dim1]
 
-        rect_gate = fk.gates.RectangleGate("ScaleRange4", None, dims, gs)
+        rect_gate = fk.gates.RectangleGate("ScaleRange4", None, dims)
         gs.add_gate(rect_gate)
 
         res_path = 'examples/gate_ref/truth/Results_ScaleRange4.txt'
@@ -1111,7 +1111,7 @@ class GatingTestCase(unittest.TestCase):
         dim1 = fk.Dimension('FL1-H', 'uncompensated', 'Logicle_10000_1_4_0.5', range_min=0.37, range_max=0.63)
         dims = [dim1]
 
-        rect_gate = fk.gates.RectangleGate("ScaleRange5", None, dims, gs)
+        rect_gate = fk.gates.RectangleGate("ScaleRange5", None, dims)
         gs.add_gate(rect_gate)
 
         res_path = 'examples/gate_ref/truth/Results_ScaleRange5.txt'
@@ -1135,7 +1135,7 @@ class GatingTestCase(unittest.TestCase):
         dim1 = fk.Dimension('FL1-H', 'uncompensated', 'Logarithmic_10000_5', range_min=0.37, range_max=0.63)
         dims = [dim1]
 
-        rect_gate = fk.gates.RectangleGate("ScaleRange6", None, dims, gs)
+        rect_gate = fk.gates.RectangleGate("ScaleRange6", None, dims)
         gs.add_gate(rect_gate)
 
         res_path = 'examples/gate_ref/truth/Results_ScaleRange6.txt'
@@ -1157,7 +1157,7 @@ class GatingTestCase(unittest.TestCase):
         dim1 = fk.Dimension('FITC', 'MySpill', 'AsinH_10000_4_1', range_min=0.37, range_max=0.63)
         dims = [dim1]
 
-        rect_gate = fk.gates.RectangleGate("ScaleRange1c", None, dims, gs)
+        rect_gate = fk.gates.RectangleGate("ScaleRange1c", None, dims)
         gs.add_gate(rect_gate)
 
         res_path = 'examples/gate_ref/truth/Results_ScaleRange1c.txt'
@@ -1179,7 +1179,7 @@ class GatingTestCase(unittest.TestCase):
         dim1 = fk.Dimension('FITC', 'MySpill', 'Hyperlog_10000_1_4.5_0', range_min=0.37, range_max=0.63)
         dims = [dim1]
 
-        rect_gate = fk.gates.RectangleGate("ScaleRange2c", None, dims, gs)
+        rect_gate = fk.gates.RectangleGate("ScaleRange2c", None, dims)
         gs.add_gate(rect_gate)
 
         res_path = 'examples/gate_ref/truth/Results_ScaleRange2c.txt'
@@ -1201,7 +1201,7 @@ class GatingTestCase(unittest.TestCase):
         dim1 = fk.Dimension('FITC', 'MySpill', 'Linear_10000_500', range_min=0.049, range_max=0.055)
         dims = [dim1]
 
-        rect_gate = fk.gates.RectangleGate("ScaleRange3c", None, dims, gs)
+        rect_gate = fk.gates.RectangleGate("ScaleRange3c", None, dims)
         gs.add_gate(rect_gate)
 
         res_path = 'examples/gate_ref/truth/Results_ScaleRange3c.txt'
@@ -1223,7 +1223,7 @@ class GatingTestCase(unittest.TestCase):
         dim1 = fk.Dimension('FITC', 'MySpill', 'Logicle_10000_0.5_4.5_0', range_min=0.37, range_max=0.63)
         dims = [dim1]
 
-        rect_gate = fk.gates.RectangleGate("ScaleRange4c", None, dims, gs)
+        rect_gate = fk.gates.RectangleGate("ScaleRange4c", None, dims)
         gs.add_gate(rect_gate)
 
         res_path = 'examples/gate_ref/truth/Results_ScaleRange4c.txt'
@@ -1245,7 +1245,7 @@ class GatingTestCase(unittest.TestCase):
         dim1 = fk.Dimension('FITC', 'MySpill', 'Logicle_10000_1_4_0.5', range_min=0.37, range_max=0.63)
         dims = [dim1]
 
-        rect_gate = fk.gates.RectangleGate("ScaleRange5c", None, dims, gs)
+        rect_gate = fk.gates.RectangleGate("ScaleRange5c", None, dims)
         gs.add_gate(rect_gate)
 
         res_path = 'examples/gate_ref/truth/Results_ScaleRange5c.txt'
@@ -1267,7 +1267,7 @@ class GatingTestCase(unittest.TestCase):
         dim1 = fk.Dimension('PE', 'MySpill', 'AsinH_10000_4_1', range_min=0.09, range_max=0.36)
         dims = [dim1]
 
-        rect_gate = fk.gates.RectangleGate("ScaleRange6c", None, dims, gs)
+        rect_gate = fk.gates.RectangleGate("ScaleRange6c", None, dims)
         gs.add_gate(rect_gate)
 
         res_path = 'examples/gate_ref/truth/Results_ScaleRange6c.txt'
@@ -1289,7 +1289,7 @@ class GatingTestCase(unittest.TestCase):
         dim1 = fk.Dimension('PE', 'MySpill', 'Hyperlog_10000_1_4.5_0', range_min=0.09, range_max=0.36)
         dims = [dim1]
 
-        rect_gate = fk.gates.RectangleGate("ScaleRange7c", None, dims, gs)
+        rect_gate = fk.gates.RectangleGate("ScaleRange7c", None, dims)
         gs.add_gate(rect_gate)
 
         res_path = 'examples/gate_ref/truth/Results_ScaleRange7c.txt'
@@ -1311,7 +1311,7 @@ class GatingTestCase(unittest.TestCase):
         dim1 = fk.Dimension('PE', 'MySpill', 'Logicle_10000_1_4_0.5', range_min=0.09, range_max=0.36)
         dims = [dim1]
 
-        rect_gate = fk.gates.RectangleGate("ScaleRange8c", None, dims, gs)
+        rect_gate = fk.gates.RectangleGate("ScaleRange8c", None, dims)
         gs.add_gate(rect_gate)
 
         res_path = 'examples/gate_ref/truth/Results_ScaleRange8c.txt'
@@ -1334,7 +1334,7 @@ class GatingTestCase(unittest.TestCase):
         dim2 = fk.Dimension('PerCP', 'MySpill', 'Logicle_10000_0.5_4.5_0', range_min=0.27, range_max=0.73)
         dims = [dim1, dim2]
 
-        rect_gate = fk.gates.RectangleGate("ScaleRect1", None, dims, gs)
+        rect_gate = fk.gates.RectangleGate("ScaleRect1", None, dims)
         gs.add_gate(rect_gate)
 
         res_path = 'examples/gate_ref/truth/Results_ScaleRect1.txt'
@@ -1352,7 +1352,7 @@ class GatingTestCase(unittest.TestCase):
         dim2 = fk.Dimension("FL3-H", compensation_ref="FCS")
         dims1 = [dim1, dim2]
 
-        poly_gate = fk.gates.PolygonGate("Polygon1", None, dims1, poly1_vertices, gs)
+        poly_gate = fk.gates.PolygonGate("Polygon1", None, dims1, poly1_vertices)
         gs.add_gate(poly_gate)
 
         coords = [12.99701, 16.22941]
@@ -1363,13 +1363,13 @@ class GatingTestCase(unittest.TestCase):
         dim4 = fk.Dimension("FL4-H", compensation_ref="FCS")
         dims2 = [dim3, dim4]
 
-        ellipse_gate = fk.gates.EllipsoidGate("Ellipse1", None, dims2, coords, cov_mat, dist_square, gs)
+        ellipse_gate = fk.gates.EllipsoidGate("Ellipse1", None, dims2, coords, cov_mat, dist_square)
         gs.add_gate(ellipse_gate)
 
         dim5 = fk.Dimension("FSC-H", compensation_ref="uncompensated", range_min=100)
         dims3 = [dim5]
 
-        rect_gate = fk.gates.RectangleGate("Range1", None, dims3, gs)
+        rect_gate = fk.gates.RectangleGate("Range1", None, dims3)
         gs.add_gate(rect_gate)
 
         gate_refs = [
@@ -1383,7 +1383,7 @@ class GatingTestCase(unittest.TestCase):
             }
         ]
 
-        bool_gate = fk.gates.BooleanGate("ParAnd2", "Polygon1", "and", gate_refs, gs)
+        bool_gate = fk.gates.BooleanGate("ParAnd2", "Polygon1", "and", gate_refs)
         gs.add_gate(bool_gate)
 
         res_path = 'examples/gate_ref/truth/Results_ParAnd2.txt'
@@ -1401,7 +1401,7 @@ class GatingTestCase(unittest.TestCase):
         dim2 = fk.Dimension("FL3-H", compensation_ref="FCS")
         dims1 = [dim1, dim2]
 
-        poly_gate = fk.gates.PolygonGate("Polygon1", None, dims1, poly1_vertices, gs)
+        poly_gate = fk.gates.PolygonGate("Polygon1", None, dims1, poly1_vertices)
         gs.add_gate(poly_gate)
 
         coords = [12.99701, 16.22941]
@@ -1412,13 +1412,13 @@ class GatingTestCase(unittest.TestCase):
         dim4 = fk.Dimension("FL4-H", compensation_ref="uncompensated")
         dims2 = [dim3, dim4]
 
-        ellipse_gate = fk.gates.EllipsoidGate("Ellipse1", None, dims2, coords, cov_mat, dist_square, gs)
+        ellipse_gate = fk.gates.EllipsoidGate("Ellipse1", None, dims2, coords, cov_mat, dist_square)
         gs.add_gate(ellipse_gate)
 
         dim5 = fk.Dimension("FSC-H", compensation_ref="uncompensated", range_min=100)
         dims3 = [dim5]
 
-        rect_gate = fk.gates.RectangleGate("Range1", None, dims3, gs)
+        rect_gate = fk.gates.RectangleGate("Range1", None, dims3)
         gs.add_gate(rect_gate)
 
         gate_refs = [
@@ -1432,7 +1432,7 @@ class GatingTestCase(unittest.TestCase):
             }
         ]
 
-        bool_gate = fk.gates.BooleanGate("ParAnd3", "Range1", "and", gate_refs, gs)
+        bool_gate = fk.gates.BooleanGate("ParAnd3", "Range1", "and", gate_refs)
         gs.add_gate(bool_gate)
 
         res_path = 'examples/gate_ref/truth/Results_ParAnd3.txt'
@@ -1453,7 +1453,7 @@ class GatingTestCase(unittest.TestCase):
         dim2 = fk.Dimension("FL3-H", compensation_ref="FCS")
         dims1 = [dim1, dim2]
 
-        poly_gate = fk.gates.PolygonGate("Polygon1", None, dims1, poly1_vertices, gs)
+        poly_gate = fk.gates.PolygonGate("Polygon1", None, dims1, poly1_vertices)
         gs.add_gate(poly_gate)
 
         gs.add_transform(logicle_xform1)
@@ -1463,13 +1463,13 @@ class GatingTestCase(unittest.TestCase):
         dim2 = fk.Dimension('PerCP', 'MySpill', 'Logicle_10000_0.5_4.5_0', range_min=0.27, range_max=0.73)
         dims1 = [dim1, dim2]
 
-        rect_gate1 = fk.gates.RectangleGate("ScaleRect1", None, dims1, gs)
+        rect_gate1 = fk.gates.RectangleGate("ScaleRect1", None, dims1)
         gs.add_gate(rect_gate1)
 
         dim3 = fk.Dimension('FITC', 'MySpill', 'Hyperlog_10000_1_4.5_0', range_min=0.12, range_max=0.43)
         dims2 = [dim3]
 
-        rect_gate2 = fk.gates.RectangleGate("ScalePar1", "ScaleRect1", dims2, gs)
+        rect_gate2 = fk.gates.RectangleGate("ScalePar1", "ScaleRect1", dims2)
         gs.add_gate(rect_gate2)
 
         res_path = 'examples/gate_ref/truth/Results_ScalePar1.txt'
@@ -1488,14 +1488,14 @@ class GatingTestCase(unittest.TestCase):
 
         divs = [div1, div2]
 
-        quad_gate = fk.gates.QuadrantGate("Quadrant1", None, divs, quadrants_q1, gs)
+        quad_gate = fk.gates.QuadrantGate("Quadrant1", None, divs, quadrants_q1)
         gs.add_gate(quad_gate)
 
         dim1 = fk.Dimension('FL2-H', 'uncompensated', None, range_min=6, range_max=14.4)
         dim2 = fk.Dimension('FL4-H', 'uncompensated', None, range_min=7, range_max=16)
         dims1 = [dim1, dim2]
 
-        rect_gate1 = fk.gates.RectangleGate("ParRectangle1", "FL2P-FL4P", dims1, gs)
+        rect_gate1 = fk.gates.RectangleGate("ParRectangle1", "FL2P-FL4P", dims1)
         gs.add_gate(rect_gate1)
 
         res_path = 'examples/gate_ref/truth/Results_ParQuadRect.txt'
