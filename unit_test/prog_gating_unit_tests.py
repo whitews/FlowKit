@@ -1343,3 +1343,164 @@ class GatingTestCase(unittest.TestCase):
         result = gs.gate_sample(data1_sample, 'ScaleRect1')
 
         np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRect1'))
+
+    @staticmethod
+    def test_add_parent_poly1_boolean_and2_gate():
+        gs = fk.GatingStrategy()
+
+        dim1 = fk.Dimension("FL2-H", compensation_ref="FCS")
+        dim2 = fk.Dimension("FL3-H", compensation_ref="FCS")
+        dims1 = [dim1, dim2]
+
+        poly_gate = fk.gates.PolygonGate("Polygon1", None, dims1, poly1_vertices, gs)
+        gs.add_gate(poly_gate)
+
+        coords = [12.99701, 16.22941]
+        cov_mat = [[62.5, 37.5], [37.5, 62.5]]
+        dist_square = 1
+
+        dim3 = fk.Dimension("FL3-H", compensation_ref="FCS")
+        dim4 = fk.Dimension("FL4-H", compensation_ref="FCS")
+        dims2 = [dim3, dim4]
+
+        ellipse_gate = fk.gates.EllipsoidGate("Ellipse1", None, dims2, coords, cov_mat, dist_square, gs)
+        gs.add_gate(ellipse_gate)
+
+        dim5 = fk.Dimension("FSC-H", compensation_ref="uncompensated", range_min=100)
+        dims3 = [dim5]
+
+        rect_gate = fk.gates.RectangleGate("Range1", None, dims3, gs)
+        gs.add_gate(rect_gate)
+
+        gate_refs = [
+            {
+                'ref': 'Range1',
+                'complement': False
+            },
+            {
+                'ref': 'Ellipse1',
+                'complement': False
+            }
+        ]
+
+        bool_gate = fk.gates.BooleanGate("ParAnd2", "Polygon1", "and", gate_refs, gs)
+        gs.add_gate(bool_gate)
+
+        res_path = 'examples/gate_ref/truth/Results_ParAnd2.txt'
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs.gate_sample(data1_sample, 'ParAnd2')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('ParAnd2'))
+
+    @staticmethod
+    def test_add_parent_range1_boolean_and3_gate():
+        gs = fk.GatingStrategy()
+
+        dim1 = fk.Dimension("FL2-H", compensation_ref="FCS")
+        dim2 = fk.Dimension("FL3-H", compensation_ref="FCS")
+        dims1 = [dim1, dim2]
+
+        poly_gate = fk.gates.PolygonGate("Polygon1", None, dims1, poly1_vertices, gs)
+        gs.add_gate(poly_gate)
+
+        coords = [12.99701, 16.22941]
+        cov_mat = [[62.5, 37.5], [37.5, 62.5]]
+        dist_square = 1
+
+        dim3 = fk.Dimension("FL3-H", compensation_ref="uncompensated")
+        dim4 = fk.Dimension("FL4-H", compensation_ref="uncompensated")
+        dims2 = [dim3, dim4]
+
+        ellipse_gate = fk.gates.EllipsoidGate("Ellipse1", None, dims2, coords, cov_mat, dist_square, gs)
+        gs.add_gate(ellipse_gate)
+
+        dim5 = fk.Dimension("FSC-H", compensation_ref="uncompensated", range_min=100)
+        dims3 = [dim5]
+
+        rect_gate = fk.gates.RectangleGate("Range1", None, dims3, gs)
+        gs.add_gate(rect_gate)
+
+        gate_refs = [
+            {
+                'ref': 'Polygon1',
+                'complement': False
+            },
+            {
+                'ref': 'Ellipse1',
+                'complement': True
+            }
+        ]
+
+        bool_gate = fk.gates.BooleanGate("ParAnd3", "Range1", "and", gate_refs, gs)
+        gs.add_gate(bool_gate)
+
+        res_path = 'examples/gate_ref/truth/Results_ParAnd3.txt'
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs.gate_sample(data1_sample, 'ParAnd3')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('ParAnd3'))
+
+    @staticmethod
+    def test_add_parent_rect1_rect_par1_gate():
+        gs = fk.GatingStrategy()
+
+        comp_matrix = fk.Matrix('MySpill', spill01_fluoros, spill01_detectors, spill01_data)
+        gs.add_comp_matrix(comp_matrix)
+
+        dim1 = fk.Dimension("FL2-H", compensation_ref="FCS")
+        dim2 = fk.Dimension("FL3-H", compensation_ref="FCS")
+        dims1 = [dim1, dim2]
+
+        poly_gate = fk.gates.PolygonGate("Polygon1", None, dims1, poly1_vertices, gs)
+        gs.add_gate(poly_gate)
+
+        gs.add_transform(logicle_xform1)
+        gs.add_transform(hyperlog_xform1)
+
+        dim1 = fk.Dimension('PE', 'MySpill', 'Logicle_10000_0.5_4.5_0', range_min=0.31, range_max=0.69)
+        dim2 = fk.Dimension('PerCP', 'MySpill', 'Logicle_10000_0.5_4.5_0', range_min=0.27, range_max=0.73)
+        dims1 = [dim1, dim2]
+
+        rect_gate1 = fk.gates.RectangleGate("ScaleRect1", None, dims1, gs)
+        gs.add_gate(rect_gate1)
+
+        dim3 = fk.Dimension('FITC', 'MySpill', 'Hyperlog_10000_1_4.5_0', range_min=0.12, range_max=0.43)
+        dims2 = [dim3]
+
+        rect_gate2 = fk.gates.RectangleGate("ScalePar1", "ScaleRect1", dims2, gs)
+        gs.add_gate(rect_gate2)
+
+        res_path = 'examples/gate_ref/truth/Results_ScalePar1.txt'
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs.gate_sample(data1_sample, 'ScalePar1')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('ScalePar1'))
+
+    @staticmethod
+    def test_add_parent_quadrant_rect_gate():
+        gs = fk.GatingStrategy()
+
+        div1 = fk.QuadrantDivider("FL2", "FL2-H", "FCS", [12.14748])
+        div2 = fk.QuadrantDivider("FL4", "FL4-H", "FCS", [14.22417])
+
+        divs = [div1, div2]
+
+        quad_gate = fk.gates.QuadrantGate("Quadrant1", None, divs, quadrants_q1, gs)
+        gs.add_gate(quad_gate)
+
+        dim1 = fk.Dimension('FL2-H', 'uncompensated', None, range_min=6, range_max=14.4)
+        dim2 = fk.Dimension('FL4-H', 'uncompensated', None, range_min=7, range_max=16)
+        dims1 = [dim1, dim2]
+
+        rect_gate1 = fk.gates.RectangleGate("ParRectangle1", "FL2P-FL4P", dims1, gs)
+        gs.add_gate(rect_gate1)
+
+        res_path = 'examples/gate_ref/truth/Results_ParQuadRect.txt'
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs.gate_sample(data1_sample, 'ParRectangle1')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('ParRectangle1'))
