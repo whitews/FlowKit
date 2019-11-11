@@ -48,10 +48,10 @@ class RectangleGate(Gate):
 
         for new_dim in new_dims:
             # TODO: RatioTransforms aren't limited to rect gates, refactor to
-            # allow other gate classes to handle new dimensions created from
-            # ratio transforms. Also, the ratio transform's apply method is
-            # different from other transforms in that it takes a sample argument
-            # and not an events arguments
+            #       allow other gate classes to handle new dimensions created from
+            #       ratio transforms. Also, the ratio transform's apply method is
+            #       different from other transforms in that it takes a sample argument
+            #       and not an events argument
 
             # new dimensions are defined by transformations of other dims
             try:

@@ -138,6 +138,7 @@ class GatingStrategy(object):
         self.transformations[transform.id] = transform
 
     def add_comp_matrix(self, matrix):
+        # TODO: accept other matrix types beyond a Matrix instance, or should the Matrix class do that?
         if not isinstance(matrix, Matrix):
             raise ValueError("matrix must be an instance of the Matrix class")
 
