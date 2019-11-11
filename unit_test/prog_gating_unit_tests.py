@@ -11,6 +11,12 @@ import flowkit as fk
 data1_fcs_path = 'examples/gate_ref/data1.fcs'
 data1_sample = fk.Sample(data1_fcs_path)
 
+poly1_vertices = [
+    fk.Vertex([5, 5]),
+    fk.Vertex([500, 5]),
+    fk.Vertex([500, 500])
+]
+
 quadrants_q1 = {
             'FL2P-FL4P': [
                 {
@@ -181,6 +187,59 @@ quadrants_q2 = {
     ]
 }
 
+spill01_fluoros = ['FITC', 'PE', 'PerCP']
+spill01_detectors = ['FL1-H', 'FL2-H', 'FL3-H']
+spill01_data = np.array(
+    [
+        [1, 0.02, 0.06],
+        [0.11, 1, 0.07],
+        [0.09, 0.01, 1]
+    ]
+)
+
+asinh_xform1 = fk.transforms.AsinhTransform(
+    "AsinH_10000_4_1",
+    param_t=10000,
+    param_m=4,
+    param_a=1
+)
+
+hyperlog_xform1 = fk.transforms.HyperlogTransform(
+            "Hyperlog_10000_1_4.5_0",
+            param_t=10000,
+            param_w=1,
+            param_m=4.5,
+            param_a=0
+        )
+
+linear_xform1 = fk.transforms.LinearTransform(
+    "Linear_10000_500",
+    param_t=10000,
+    param_a=500
+)
+
+logicle_xform1 = fk.transforms.LogicleTransform(
+    "Logicle_10000_0.5_4.5_0",
+    param_t=10000,
+    param_w=0.5,
+    param_m=4.5,
+    param_a=0
+)
+logicle_xform2 = fk.transforms.LogicleTransform(
+    "Logicle_10000_0.5_4_0.5",
+    param_t=10000,
+    param_w=0.5,
+    param_m=4,
+    param_a=0.5
+)
+logicle_xform3 = fk.transforms.LogicleTransform(
+    "Logicle_10000_1_4_0.5",
+    param_t=10000,
+    param_w=1,
+    param_m=4,
+    param_a=0.5
+)
+
 
 class GatingTestCase(unittest.TestCase):
     @staticmethod
@@ -245,13 +304,7 @@ class GatingTestCase(unittest.TestCase):
         dim2 = fk.Dimension("FL3-H", compensation_ref="FCS")
         dims = [dim1, dim2]
 
-        vertices = [
-            fk.Vertex([5, 5]),
-            fk.Vertex([500, 5]),
-            fk.Vertex([500, 500])
-        ]
-
-        poly_gate = fk.gates.PolygonGate("Polygon1", None, dims, vertices, gs)
+        poly_gate = fk.gates.PolygonGate("Polygon1", None, dims, poly1_vertices, gs)
         gs.add_gate(poly_gate)
 
         res_path = 'examples/gate_ref/truth/Results_Polygon1.txt'
@@ -565,13 +618,7 @@ class GatingTestCase(unittest.TestCase):
         dim2 = fk.Dimension("FL3-H", compensation_ref="FCS")
         dims = [dim1, dim2]
 
-        vertices = [
-            fk.Vertex([5, 5]),
-            fk.Vertex([500, 5]),
-            fk.Vertex([500, 500])
-        ]
-
-        poly_gate = fk.gates.PolygonGate("Polygon1", None, dims, vertices, gs)
+        poly_gate = fk.gates.PolygonGate("Polygon1", None, dims, poly1_vertices, gs)
         gs.add_gate(poly_gate)
 
         dim3 = fk.Dimension("Time", compensation_ref="uncompensated", range_min=20, range_max=80)
@@ -615,13 +662,7 @@ class GatingTestCase(unittest.TestCase):
         dim3 = fk.Dimension("FL3-H", compensation_ref="FCS")
         poly_dims = [dim2, dim3]
 
-        vertices = [
-            fk.Vertex([5, 5]),
-            fk.Vertex([500, 5]),
-            fk.Vertex([500, 500])
-        ]
-
-        poly_gate = fk.gates.PolygonGate("Polygon1", None, poly_dims, vertices, gs)
+        poly_gate = fk.gates.PolygonGate("Polygon1", None, poly_dims, poly1_vertices, gs)
         gs.add_gate(poly_gate)
 
         dim4 = fk.Dimension("FL3-H", compensation_ref="uncompensated")
@@ -674,13 +715,7 @@ class GatingTestCase(unittest.TestCase):
         dim3 = fk.Dimension("FL3-H", compensation_ref="FCS")
         poly_dims = [dim2, dim3]
 
-        vertices = [
-            fk.Vertex([5, 5]),
-            fk.Vertex([500, 5]),
-            fk.Vertex([500, 500])
-        ]
-
-        poly_gate = fk.gates.PolygonGate("Polygon1", None, poly_dims, vertices, gs)
+        poly_gate = fk.gates.PolygonGate("Polygon1", None, poly_dims, poly1_vertices, gs)
         gs.add_gate(poly_gate)
 
         dim4 = fk.Dimension("FL3-H", compensation_ref="uncompensated")
@@ -733,13 +768,7 @@ class GatingTestCase(unittest.TestCase):
         dim3 = fk.Dimension("FL3-H", compensation_ref="FCS")
         poly_dims = [dim2, dim3]
 
-        vertices = [
-            fk.Vertex([5, 5]),
-            fk.Vertex([500, 5]),
-            fk.Vertex([500, 500])
-        ]
-
-        poly_gate = fk.gates.PolygonGate("Polygon1", None, poly_dims, vertices, gs)
+        poly_gate = fk.gates.PolygonGate("Polygon1", None, poly_dims, poly1_vertices, gs)
         gs.add_gate(poly_gate)
 
         dim4 = fk.Dimension("FL3-H", compensation_ref="uncompensated")
@@ -824,13 +853,7 @@ class GatingTestCase(unittest.TestCase):
         dim3 = fk.Dimension("FL3-H", compensation_ref="FCS")
         poly_dims = [dim2, dim3]
 
-        vertices = [
-            fk.Vertex([5, 5]),
-            fk.Vertex([500, 5]),
-            fk.Vertex([500, 500])
-        ]
-
-        poly_gate = fk.gates.PolygonGate("Polygon1", None, poly_dims, vertices, gs)
+        poly_gate = fk.gates.PolygonGate("Polygon1", None, poly_dims, poly1_vertices, gs)
         gs.add_gate(poly_gate)
 
         dim4 = fk.Dimension("FL3-H", compensation_ref="uncompensated")
@@ -923,31 +946,14 @@ class GatingTestCase(unittest.TestCase):
     def test_add_matrix_poly4_gate():
         gs = fk.GatingStrategy()
 
-        fluoros = ['FITC', 'PE', 'PerCP']
-        detectors = ['FL1-H', 'FL2-H', 'FL3-H']
-
-        spill_data = np.array(
-            [
-                [1, 0.02, 0.06],
-                [0.11, 1, 0.07],
-                [0.09, 0.01, 1]
-            ]
-        )
-
-        comp_matrix = fk.Matrix('MySpill', fluoros, detectors, spill_data)
+        comp_matrix = fk.Matrix('MySpill', spill01_fluoros, spill01_detectors, spill01_data)
         gs.add_comp_matrix(comp_matrix)
 
         dim1 = fk.Dimension("PE", compensation_ref="MySpill")
         dim2 = fk.Dimension("PerCP", compensation_ref="MySpill")
         dims = [dim1, dim2]
 
-        vertices = [
-            fk.Vertex([5, 5]),
-            fk.Vertex([500, 5]),
-            fk.Vertex([500, 500])
-        ]
-
-        poly_gate = fk.gates.PolygonGate("Polygon4", None, dims, vertices, gs)
+        poly_gate = fk.gates.PolygonGate("Polygon4", None, dims, poly1_vertices, gs)
         gs.add_gate(poly_gate)
 
         res_path = 'examples/gate_ref/truth/Results_Polygon4.txt'
@@ -961,18 +967,7 @@ class GatingTestCase(unittest.TestCase):
     def test_add_matrix_rect3_gate():
         gs = fk.GatingStrategy()
 
-        fluoros = ['FITC', 'PE', 'PerCP']
-        detectors = ['FL1-H', 'FL2-H', 'FL3-H']
-
-        spill_data = np.array(
-            [
-                [1, 0.02, 0.06],
-                [0.11, 1, 0.07],
-                [0.09, 0.01, 1]
-            ]
-        )
-
-        comp_matrix = fk.Matrix('MySpill', fluoros, detectors, spill_data)
+        comp_matrix = fk.Matrix('MySpill', spill01_fluoros, spill01_detectors, spill01_data)
         gs.add_comp_matrix(comp_matrix)
 
         dim1 = fk.Dimension("FITC", compensation_ref="MySpill", range_min=5, range_max=70)
@@ -993,18 +988,7 @@ class GatingTestCase(unittest.TestCase):
     def test_add_matrix_rect4_gate():
         gs = fk.GatingStrategy()
 
-        fluoros = ['FITC', 'PE', 'PerCP']
-        detectors = ['FL1-H', 'FL2-H', 'FL3-H']
-
-        spill_data = np.array(
-            [
-                [1, 0.02, 0.06],
-                [0.11, 1, 0.07],
-                [0.09, 0.01, 1]
-            ]
-        )
-
-        comp_matrix = fk.Matrix('MySpill', fluoros, detectors, spill_data)
+        comp_matrix = fk.Matrix('MySpill', spill01_fluoros, spill01_detectors, spill01_data)
         gs.add_comp_matrix(comp_matrix)
 
         dim1 = fk.Dimension("PerCP", compensation_ref="MySpill", range_min=7, range_max=90)
@@ -1025,18 +1009,7 @@ class GatingTestCase(unittest.TestCase):
     def test_add_matrix_rect5_gate():
         gs = fk.GatingStrategy()
 
-        fluoros = ['FITC', 'PE', 'PerCP']
-        detectors = ['FL1-H', 'FL2-H', 'FL3-H']
-
-        spill_data = np.array(
-            [
-                [1, 0.02, 0.06],
-                [0.11, 1, 0.07],
-                [0.09, 0.01, 1]
-            ]
-        )
-
-        comp_matrix = fk.Matrix('MySpill', fluoros, detectors, spill_data)
+        comp_matrix = fk.Matrix('MySpill', spill01_fluoros, spill01_detectors, spill01_data)
         gs.add_comp_matrix(comp_matrix)
 
         dim1 = fk.Dimension("PerCP", compensation_ref="MySpill", range_min=7, range_max=90)
@@ -1057,13 +1030,7 @@ class GatingTestCase(unittest.TestCase):
     def test_add_transform_asinh_range1_gate():
         gs = fk.GatingStrategy()
 
-        asinh_xform = fk.transforms.AsinhTransform(
-            "AsinH_10000_4_1",
-            param_t=10000,
-            param_m=4,
-            param_a=1
-        )
-        gs.add_transform(asinh_xform)
+        gs.add_transform(asinh_xform1)
 
         dim1 = fk.Dimension('FL1-H', 'uncompensated', 'AsinH_10000_4_1', range_min=0.37, range_max=0.63)
         dims = [dim1]
@@ -1082,14 +1049,7 @@ class GatingTestCase(unittest.TestCase):
     def test_add_transform_hyperlog_range2_gate():
         gs = fk.GatingStrategy()
 
-        xform = fk.transforms.HyperlogTransform(
-            "Hyperlog_10000_1_4.5_0",
-            param_t=10000,
-            param_w=1,
-            param_m=4.5,
-            param_a=0
-        )
-        gs.add_transform(xform)
+        gs.add_transform(hyperlog_xform1)
 
         dim1 = fk.Dimension('FL1-H', 'uncompensated', 'Hyperlog_10000_1_4.5_0', range_min=0.37, range_max=0.63)
         dims = [dim1]
@@ -1108,12 +1068,7 @@ class GatingTestCase(unittest.TestCase):
     def test_add_transform_linear_range3_gate():
         gs = fk.GatingStrategy()
 
-        xform = fk.transforms.LinearTransform(
-            "Linear_10000_500",
-            param_t=10000,
-            param_a=500
-        )
-        gs.add_transform(xform)
+        gs.add_transform(linear_xform1)
 
         dim1 = fk.Dimension('FL1-H', 'uncompensated', 'Linear_10000_500', range_min=0.049, range_max=0.055)
         dims = [dim1]
@@ -1132,16 +1087,9 @@ class GatingTestCase(unittest.TestCase):
     def test_add_transform_logicle_range4_gate():
         gs = fk.GatingStrategy()
 
-        xform = fk.transforms.LogicleTransform(
-            "Logicle_10000_1_4.5_0",
-            param_t=10000,
-            param_w=0.5,
-            param_m=4.5,
-            param_a=0
-        )
-        gs.add_transform(xform)
+        gs.add_transform(logicle_xform1)
 
-        dim1 = fk.Dimension('FL1-H', 'uncompensated', 'Logicle_10000_1_4.5_0', range_min=0.37, range_max=0.63)
+        dim1 = fk.Dimension('FL1-H', 'uncompensated', 'Logicle_10000_0.5_4.5_0', range_min=0.37, range_max=0.63)
         dims = [dim1]
 
         rect_gate = fk.gates.RectangleGate("ScaleRange4", None, dims, gs)
@@ -1158,14 +1106,7 @@ class GatingTestCase(unittest.TestCase):
     def test_add_transform_logicle_range5_gate():
         gs = fk.GatingStrategy()
 
-        xform = fk.transforms.LogicleTransform(
-            "Logicle_10000_1_4_0.5",
-            param_t=10000,
-            param_w=1,
-            param_m=4,
-            param_a=0.5
-        )
-        gs.add_transform(xform)
+        gs.add_transform(logicle_xform3)
 
         dim1 = fk.Dimension('FL1-H', 'uncompensated', 'Logicle_10000_1_4_0.5', range_min=0.37, range_max=0.63)
         dims = [dim1]
@@ -1203,3 +1144,91 @@ class GatingTestCase(unittest.TestCase):
         result = gs.gate_sample(data1_sample, 'ScaleRange6')
 
         np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange6'))
+
+    @staticmethod
+    def test_add_matrix_transform_asinh_range1c_gate():
+        gs = fk.GatingStrategy()
+
+        comp_matrix = fk.Matrix('MySpill', spill01_fluoros, spill01_detectors, spill01_data)
+        gs.add_comp_matrix(comp_matrix)
+
+        gs.add_transform(asinh_xform1)
+
+        dim1 = fk.Dimension('FITC', 'MySpill', 'AsinH_10000_4_1', range_min=0.37, range_max=0.63)
+        dims = [dim1]
+
+        rect_gate = fk.gates.RectangleGate("ScaleRange1c", None, dims, gs)
+        gs.add_gate(rect_gate)
+
+        res_path = 'examples/gate_ref/truth/Results_ScaleRange1c.txt'
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs.gate_sample(data1_sample, 'ScaleRange1c')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange1c'))
+
+    @staticmethod
+    def test_add_matrix_transform_hyperlog_range2c_gate():
+        gs = fk.GatingStrategy()
+
+        comp_matrix = fk.Matrix('MySpill', spill01_fluoros, spill01_detectors, spill01_data)
+        gs.add_comp_matrix(comp_matrix)
+
+        gs.add_transform(hyperlog_xform1)
+
+        dim1 = fk.Dimension('FITC', 'MySpill', 'Hyperlog_10000_1_4.5_0', range_min=0.37, range_max=0.63)
+        dims = [dim1]
+
+        rect_gate = fk.gates.RectangleGate("ScaleRange2c", None, dims, gs)
+        gs.add_gate(rect_gate)
+
+        res_path = 'examples/gate_ref/truth/Results_ScaleRange2c.txt'
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs.gate_sample(data1_sample, 'ScaleRange2c')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange2c'))
+
+    @staticmethod
+    def test_add_matrix_transform_linear_range3c_gate():
+        gs = fk.GatingStrategy()
+
+        comp_matrix = fk.Matrix('MySpill', spill01_fluoros, spill01_detectors, spill01_data)
+        gs.add_comp_matrix(comp_matrix)
+
+        gs.add_transform(linear_xform1)
+
+        dim1 = fk.Dimension('FITC', 'MySpill', 'Linear_10000_500', range_min=0.049, range_max=0.055)
+        dims = [dim1]
+
+        rect_gate = fk.gates.RectangleGate("ScaleRange3c", None, dims, gs)
+        gs.add_gate(rect_gate)
+
+        res_path = 'examples/gate_ref/truth/Results_ScaleRange3c.txt'
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs.gate_sample(data1_sample, 'ScaleRange3c')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange3c'))
+
+    @staticmethod
+    def test_add_matrix_transform_linear_range4c_gate():
+        gs = fk.GatingStrategy()
+
+        comp_matrix = fk.Matrix('MySpill', spill01_fluoros, spill01_detectors, spill01_data)
+        gs.add_comp_matrix(comp_matrix)
+
+        gs.add_transform(logicle_xform1)
+
+        dim1 = fk.Dimension('FITC', 'MySpill', 'Logicle_10000_0.5_4.5_0', range_min=0.37, range_max=0.63)
+        dims = [dim1]
+
+        rect_gate = fk.gates.RectangleGate("ScaleRange4c", None, dims, gs)
+        gs.add_gate(rect_gate)
+
+        res_path = 'examples/gate_ref/truth/Results_ScaleRange4c.txt'
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs.gate_sample(data1_sample, 'ScaleRange4c')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange4c'))
