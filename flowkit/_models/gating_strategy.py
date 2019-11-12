@@ -170,6 +170,11 @@ class GatingStrategy(object):
 
         return gate
 
+    def get_parent_gate_id(self, gate_id):
+        gate = self.get_gate_by_reference(gate_id)
+
+        return gate.parent
+
     def get_gate_hierarchy(self, output='ascii'):
         """
         Show hierarchy of gates in multiple formats, including text,

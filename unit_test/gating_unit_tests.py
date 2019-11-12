@@ -8,7 +8,7 @@ import pandas as pd
 
 sys.path.append(os.path.abspath('..'))
 
-from flowkit import Sample, GatingStrategy
+from flowkit import Sample, GatingStrategy, gates
 
 data1_fcs_path = 'examples/gate_ref/data1.fcs'
 data1_sample = Sample(data1_fcs_path)
@@ -577,6 +577,30 @@ class GatingMLTestCase(unittest.TestCase):
         result = gs.gate_sample(data1_sample, 'ParRectangle1')
 
         np.testing.assert_array_equal(truth, result.get_gate_indices('ParRectangle1'))
+
+    def test_get_parent_rect_gate(self):
+        gml_path = 'examples/gate_ref/gml/gml_parent_rect1_rect_par1_gate.xml'
+
+        gs = GatingStrategy(gml_path)
+        parent_id = gs.get_parent_gate_id('ScalePar1')
+
+        self.assertEqual(parent_id, 'ScaleRect1')
+
+        parent_gate = gs.get_gate_by_reference(parent_id)
+
+        self.assertIsInstance(parent_gate, gates.RectangleGate)
+
+    def test_get_parent_quadrant_gate(self):
+        gml_path = 'examples/gate_ref/gml/gml_parent_quadrant_rect_gate.xml'
+
+        gs = GatingStrategy(gml_path)
+        parent_id = gs.get_parent_gate_id('ParRectangle1')
+
+        self.assertEqual(parent_id, 'FL2P-FL4P')
+
+        parent_gate = gs.get_gate_by_reference(parent_id)
+
+        self.assertIsInstance(parent_gate, gates.QuadrantGate)
 
     @staticmethod
     def test_all_gates():

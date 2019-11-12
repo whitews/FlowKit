@@ -148,6 +148,10 @@ class Session(object):
 
     def add_comp_matrix(self, matrix):
         self.gating_strategy.add_comp_matrix(matrix)
+
+    def get_parent_gate_id(self, gate_id):
+        gate = self.gating_strategy.get_gate_by_reference(gate_id)
+        return gate.parent
     # end pass through methods for GatingStrategy
 
     def get_sample(self, sample_id):
