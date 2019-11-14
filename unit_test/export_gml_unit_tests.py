@@ -167,3 +167,84 @@ class ExportGMLTestCase(unittest.TestCase):
         result = gs_out.gate_sample(data1_sample, 'Ellipsoid3D')
 
         np.testing.assert_array_equal(truth, result.get_gate_indices('Ellipsoid3D'))
+
+    @staticmethod
+    def test_time_range_gate():
+        gml_path = 'examples/gate_ref/gml/gml_time_range_gate.xml'
+        res_path = 'examples/gate_ref/truth/Results_Range2.txt'
+
+        gs = GatingStrategy(gml_path)
+
+        out_file = BytesIO()
+
+        gs.export_gml(out_file)
+        out_file.seek(0)
+
+        gs_out = GatingStrategy(out_file)
+
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs_out.gate_sample(data1_sample, 'Range2')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('Range2'))
+
+    @staticmethod
+    def test_quadrant1_gate():
+        gml_path = 'examples/gate_ref/gml/gml_quadrant1_gate.xml'
+        res1_path = 'examples/gate_ref/truth/Results_FL2N-FL4N.txt'
+        res2_path = 'examples/gate_ref/truth/Results_FL2N-FL4P.txt'
+        res3_path = 'examples/gate_ref/truth/Results_FL2P-FL4N.txt'
+        res4_path = 'examples/gate_ref/truth/Results_FL2P-FL4P.txt'
+
+        gs = GatingStrategy(gml_path)
+
+        out_file = BytesIO()
+
+        gs.export_gml(out_file)
+        out_file.seek(0)
+
+        gs_out = GatingStrategy(out_file)
+
+        truth1 = pd.read_csv(res1_path, header=None, squeeze=True, dtype='bool').values
+        truth2 = pd.read_csv(res2_path, header=None, squeeze=True, dtype='bool').values
+        truth3 = pd.read_csv(res3_path, header=None, squeeze=True, dtype='bool').values
+        truth4 = pd.read_csv(res4_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs_out.gate_sample(data1_sample)
+
+        np.testing.assert_array_equal(truth1, result.get_gate_indices('FL2N-FL4N'))
+        np.testing.assert_array_equal(truth2, result.get_gate_indices('FL2N-FL4P'))
+        np.testing.assert_array_equal(truth3, result.get_gate_indices('FL2P-FL4N'))
+        np.testing.assert_array_equal(truth4, result.get_gate_indices('FL2P-FL4P'))
+
+    @staticmethod
+    def test_quadrant2_gate():
+        gml_path = 'examples/gate_ref/gml/gml_quadrant2_gate.xml'
+        res1_path = 'examples/gate_ref/truth/Results_FSCN-SSCN.txt'
+        res2_path = 'examples/gate_ref/truth/Results_FSCD-SSCN-FL1N.txt'
+        res3_path = 'examples/gate_ref/truth/Results_FSCP-SSCN-FL1N.txt'
+        res4_path = 'examples/gate_ref/truth/Results_FSCD-FL1P.txt'
+        res5_path = 'examples/gate_ref/truth/Results_FSCN-SSCP-FL1P.txt'
+
+        gs = GatingStrategy(gml_path)
+
+        out_file = BytesIO()
+
+        gs.export_gml(out_file)
+        out_file.seek(0)
+
+        gs_out = GatingStrategy(out_file)
+
+        truth1 = pd.read_csv(res1_path, header=None, squeeze=True, dtype='bool').values
+        truth2 = pd.read_csv(res2_path, header=None, squeeze=True, dtype='bool').values
+        truth3 = pd.read_csv(res3_path, header=None, squeeze=True, dtype='bool').values
+        truth4 = pd.read_csv(res4_path, header=None, squeeze=True, dtype='bool').values
+        truth5 = pd.read_csv(res5_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs_out.gate_sample(data1_sample)
+
+        np.testing.assert_array_equal(truth1, result.get_gate_indices('FSCN-SSCN'))
+        np.testing.assert_array_equal(truth2, result.get_gate_indices('FSCD-SSCN-FL1N'))
+        np.testing.assert_array_equal(truth3, result.get_gate_indices('FSCP-SSCN-FL1N'))
+        np.testing.assert_array_equal(truth4, result.get_gate_indices('FSCD-FL1P'))
+        np.testing.assert_array_equal(truth5, result.get_gate_indices('FSCN-SSCP-FL1P'))
