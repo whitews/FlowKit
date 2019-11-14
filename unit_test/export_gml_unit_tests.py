@@ -308,3 +308,143 @@ class ExportGMLTestCase(unittest.TestCase):
         result = gs_out.gate_sample(data1_sample, 'RatRange1a')
 
         np.testing.assert_array_equal(truth, result.get_gate_indices('RatRange1a'))
+
+    @staticmethod
+    def test_boolean_and1_gate():
+        gml_path = 'examples/gate_ref/gml/gml_boolean_and1_gate.xml'
+        res_path = 'examples/gate_ref/truth/Results_And1.txt'
+
+        gs = GatingStrategy(gml_path)
+
+        out_file = BytesIO()
+
+        gs.export_gml(out_file)
+        out_file.seek(0)
+
+        gs_out = GatingStrategy(out_file)
+
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs_out.gate_sample(data1_sample, 'And1')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('And1'))
+
+    @staticmethod
+    def test_boolean_and2_gate():
+        gml_path = 'examples/gate_ref/gml/gml_boolean_and2_gate.xml'
+        res_path = 'examples/gate_ref/truth/Results_And2.txt'
+
+        gs = GatingStrategy(gml_path)
+
+        out_file = BytesIO()
+
+        gs.export_gml(out_file)
+        out_file.seek(0)
+
+        gs_out = GatingStrategy(out_file)
+
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs_out.gate_sample(data1_sample, 'And2')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('And2'))
+
+    @staticmethod
+    def test_boolean_or1_gate():
+        gml_path = 'examples/gate_ref/gml/gml_boolean_or1_gate.xml'
+        res_path = 'examples/gate_ref/truth/Results_Or1.txt'
+
+        gs = GatingStrategy(gml_path)
+
+        out_file = BytesIO()
+
+        gs.export_gml(out_file)
+        out_file.seek(0)
+
+        gs_out = GatingStrategy(out_file)
+
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs_out.gate_sample(data1_sample, 'Or1')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('Or1'))
+
+    @staticmethod
+    def test_boolean_and3_complement_gate():
+        gml_path = 'examples/gate_ref/gml/gml_boolean_and3_complement_gate.xml'
+        res_path = 'examples/gate_ref/truth/Results_And3.txt'
+
+        gs = GatingStrategy(gml_path)
+
+        out_file = BytesIO()
+
+        gs.export_gml(out_file)
+        out_file.seek(0)
+
+        gs_out = GatingStrategy(out_file)
+
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs_out.gate_sample(data1_sample, 'And3')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('And3'))
+
+    @staticmethod
+    def test_boolean_not1_gate():
+        gml_path = 'examples/gate_ref/gml/gml_boolean_not1_gate.xml'
+        res_path = 'examples/gate_ref/truth/Results_Not1.txt'
+
+        gs = GatingStrategy(gml_path)
+
+        out_file = BytesIO()
+
+        gs.export_gml(out_file)
+        out_file.seek(0)
+
+        gs_out = GatingStrategy(out_file)
+
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs_out.gate_sample(data1_sample, 'Not1')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('Not1'))
+
+    @staticmethod
+    def test_boolean_and4_not_gate():
+        gml_path = 'examples/gate_ref/gml/gml_boolean_and4_not_gate.xml'
+        res_path = 'examples/gate_ref/truth/Results_And4.txt'
+
+        gs = GatingStrategy(gml_path)
+
+        out_file = BytesIO()
+
+        gs.export_gml(out_file)
+        out_file.seek(0)
+
+        gs_out = GatingStrategy(out_file)
+
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs_out.gate_sample(data1_sample, 'And4')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('And4'))
+
+    @staticmethod
+    def test_boolean_or2_complement_gate():
+        gml_path = 'examples/gate_ref/gml/gml_boolean_or2_gate.xml'
+        res_path = 'examples/gate_ref/truth/Results_Or2.txt'
+
+        gs = GatingStrategy(gml_path)
+
+        out_file = BytesIO()
+
+        gs.export_gml(out_file)
+        out_file.seek(0)
+
+        gs_out = GatingStrategy(out_file)
+
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs_out.gate_sample(data1_sample, 'Or2')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('Or2'))
