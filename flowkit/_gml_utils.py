@@ -495,25 +495,50 @@ def add_gate_to_gml(root, gate, ns_map):
 
     elif isinstance(gate, QuadrantGate):
         gate_ml = etree.SubElement(root, "{%s}QuadrantGate" % ns_map['gating'])
+
+        for q_id, positions in gate.quadrants.items():
+            quad_ml = etree.SubElement(gate_ml, '{%s}Quadrant' % ns_map['gating'])
+            quad_ml.set('{%s}id' % ns_map['gating'], q_id)
+
+            for pos in positions:
+                pos_ml = etree.SubElement(quad_ml, '{%s}position' % ns_map['gating'])
+                pos_ml.set('{%s}divider_ref' % ns_map['gating'], pos['divider'])
+                pos_ml.set('{%s}location' % ns_map['gating'], str(pos['location']))
     else:
         raise(ValueError, "gate is not a valid GatingML 2.0 element")
 
     gate_ml.set('{%s}id' % ns_map['gating'], gate.id)
 
     for i, dim in enumerate(gate.dimensions):
-        dim_ml = etree.Element('{%s}dimension' % ns_map['gating'])
+        if isinstance(dim, QuadrantDivider):
+            dim_ml = etree.Element('{%s}divider' % ns_map['gating'])
+            dim_ml.set('{%s}id' % ns_map['gating'], dim.id)
+            quad = True
+        else:
+            dim_ml = etree.Element('{%s}dimension' % ns_map['gating'])
+            quad = False
+
         gate_ml.insert(i, dim_ml)
+
         if dim.compensation_ref is not None:
             dim_ml.set('{%s}compensation-ref' % ns_map['gating'], dim.compensation_ref)
         if dim.transformation_ref is not None:
             dim_ml.set('{%s}transformation-ref' % ns_map['gating'], dim.transformation_ref)
-        if dim.min is not None:
-            dim_ml.set('{%s}min' % ns_map['gating'], str(dim.min))
-        if dim.max is not None:
-            dim_ml.set('{%s}max' % ns_map['gating'], str(dim.max))
+
+        if not quad:
+            if dim.min is not None:
+                dim_ml.set('{%s}min' % ns_map['gating'], str(dim.min))
+            if dim.max is not None:
+                dim_ml.set('{%s}max' % ns_map['gating'], str(dim.max))
 
         fcs_dim_ml = etree.SubElement(dim_ml, '{%s}fcs-dimension' % ns_map['data-type'])
-        fcs_dim_ml.set('{%s}name' % ns_map['data-type'], dim.label)
+        if not quad:
+            fcs_dim_ml.set('{%s}name' % ns_map['data-type'], dim.label)
+        else:
+            fcs_dim_ml.set('{%s}name' % ns_map['data-type'], dim.dimension_ref)
+            for val in dim.values:
+                value_ml = etree.SubElement(dim_ml, '{%s}value' % ns_map['gating'])
+                value_ml.text = str(val)
 
     return gate_ml
 
