@@ -476,6 +476,10 @@ def add_transform_to_gml(root, transform, ns_map):
         for dim in transform.dimensions:
             fcs_dim_ml = etree.SubElement(ratio_ml, '{%s}fcs-dimension' % ns_map['data-type'])
             fcs_dim_ml.set('{%s}name' % ns_map['data-type'], dim)
+    elif isinstance(transform, transforms.LogTransform):
+        log_ml = etree.SubElement(xform_ml, "{%s}flog" % ns_map['transforms'])
+        log_ml.set('{%s}T' % ns_map['transforms'], str(transform.param_t))
+        log_ml.set('{%s}M' % ns_map['transforms'], str(transform.param_m))
 
 
 def add_gate_to_gml(root, gate, ns_map):
