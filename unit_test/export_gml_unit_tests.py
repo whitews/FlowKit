@@ -147,3 +147,23 @@ class ExportGMLTestCase(unittest.TestCase):
         result = gs_out.gate_sample(data1_sample, 'Ellipse1')
 
         np.testing.assert_array_equal(truth, result.get_gate_indices('Ellipse1'))
+
+    @staticmethod
+    def test_ellipsoid_3d_gate():
+        gml_path = 'examples/gate_ref/gml/gml_ellipsoid3d_gate.xml'
+        res_path = 'examples/gate_ref/truth/Results_Ellipsoid3D.txt'
+
+        gs = GatingStrategy(gml_path)
+
+        out_file = BytesIO()
+
+        gs.export_gml(out_file)
+        out_file.seek(0)
+
+        gs_out = GatingStrategy(out_file)
+
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs_out.gate_sample(data1_sample, 'Ellipsoid3D')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('Ellipsoid3D'))
