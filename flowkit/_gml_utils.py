@@ -463,6 +463,29 @@ def parse_matrix_element(
     return Matrix(matrix_id, fluorochomes, detectors, matrix)
 
 
+def add_matrix_to_gml(root, matrix, ns_map):
+    xform_ml = etree.SubElement(root, "{%s}spectrumMatrix" % ns_map['transforms'])
+    xform_ml.set('{%s}id' % ns_map['transforms'], matrix.id)
+
+    fluoros_ml = etree.SubElement(xform_ml, "{%s}fluorochromes" % ns_map['transforms'])
+
+    for fluoro in matrix.fluorochomes:
+        fluoro_ml = etree.SubElement(fluoros_ml, '{%s}fcs-dimension' % ns_map['data-type'])
+        fluoro_ml.set('{%s}name' % ns_map['data-type'], fluoro)
+
+    detectors_ml = etree.SubElement(xform_ml, "{%s}detectors" % ns_map['transforms'])
+
+    for detector in matrix.detectors:
+        detector_ml = etree.SubElement(detectors_ml, '{%s}fcs-dimension' % ns_map['data-type'])
+        detector_ml.set('{%s}name' % ns_map['data-type'], detector)
+
+    for row in matrix.matrix:
+        row_ml = etree.SubElement(xform_ml, "{%s}spectrum" % ns_map['transforms'])
+        for val in row:
+            coeff_ml = etree.SubElement(row_ml, "{%s}coefficient" % ns_map['transforms'])
+            coeff_ml.set('{%s}value' % ns_map['transforms'], str(val))
+
+
 def add_transform_to_gml(root, transform, ns_map):
     xform_ml = etree.SubElement(root, "{%s}transformation" % ns_map['transforms'])
     xform_ml.set('{%s}id' % ns_map['transforms'], transform.id)
@@ -608,6 +631,10 @@ def export_gatingml(gating_strategy, file_handle):
     # process gating strategy transformations
     for xform_id, xform in gating_strategy.transformations.items():
         add_transform_to_gml(root, xform, ns_map)
+
+    # process gating strategy compensation matrices
+    for matrix_id, matrix in gating_strategy.comp_matrices.items():
+        add_matrix_to_gml(root, matrix, ns_map)
 
     # get gate hierarchy as a dictionary
     gate_dict = gating_strategy.get_gate_hierarchy('dict')
