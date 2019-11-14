@@ -448,3 +448,83 @@ class ExportGMLTestCase(unittest.TestCase):
         result = gs_out.gate_sample(data1_sample, 'Or2')
 
         np.testing.assert_array_equal(truth, result.get_gate_indices('Or2'))
+
+    @staticmethod
+    def test_matrix_poly4_gate():
+        gml_path = 'examples/gate_ref/gml/gml_matrix_poly4_gate.xml'
+        res_path = 'examples/gate_ref/truth/Results_Polygon4.txt'
+
+        gs = GatingStrategy(gml_path)
+
+        out_file = BytesIO()
+
+        gs.export_gml(out_file)
+        out_file.seek(0)
+
+        gs_out = GatingStrategy(out_file)
+
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs_out.gate_sample(data1_sample, 'Polygon4')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('Polygon4'))
+
+    @staticmethod
+    def test_matrix_rect3_gate():
+        gml_path = 'examples/gate_ref/gml/gml_matrix_rect3_gate.xml'
+        res_path = 'examples/gate_ref/truth/Results_Rectangle3.txt'
+
+        gs = GatingStrategy(gml_path)
+
+        out_file = BytesIO()
+
+        gs.export_gml(out_file)
+        out_file.seek(0)
+
+        gs_out = GatingStrategy(out_file)
+
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs_out.gate_sample(data1_sample, 'Rectangle3')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('Rectangle3'))
+
+    @staticmethod
+    def test_matrix_rect4_gate():
+        gml_path = 'examples/gate_ref/gml/gml_matrix_rect4_gate.xml'
+        res_path = 'examples/gate_ref/truth/Results_Rectangle4.txt'
+
+        gs = GatingStrategy(gml_path)
+
+        out_file = BytesIO()
+
+        gs.export_gml(out_file)
+        out_file.seek(0)
+
+        gs_out = GatingStrategy(out_file)
+
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs_out.gate_sample(data1_sample, 'Rectangle4')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('Rectangle4'))
+
+    @staticmethod
+    def test_matrix_rect5_gate():
+        gml_path = 'examples/gate_ref/gml/gml_matrix_rect5_gate.xml'
+        res_path = 'examples/gate_ref/truth/Results_Rectangle5.txt'
+
+        gs = GatingStrategy(gml_path)
+
+        out_file = BytesIO()
+
+        gs.export_gml(out_file)
+        out_file.seek(0)
+
+        gs_out = GatingStrategy(out_file)
+
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs_out.gate_sample(data1_sample, 'Rectangle5')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('Rectangle5'))
