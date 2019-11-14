@@ -248,3 +248,23 @@ class ExportGMLTestCase(unittest.TestCase):
         np.testing.assert_array_equal(truth3, result.get_gate_indices('FSCP-SSCN-FL1N'))
         np.testing.assert_array_equal(truth4, result.get_gate_indices('FSCD-FL1P'))
         np.testing.assert_array_equal(truth5, result.get_gate_indices('FSCN-SSCP-FL1P'))
+
+    @staticmethod
+    def test_ratio_range1_gate():
+        gml_path = 'examples/gate_ref/gml/gml_ratio_range1_gate.xml'
+        res_path = 'examples/gate_ref/truth/Results_RatRange1.txt'
+
+        gs = GatingStrategy(gml_path)
+
+        out_file = BytesIO()
+
+        gs.export_gml(out_file)
+        out_file.seek(0)
+
+        gs_out = GatingStrategy(out_file)
+
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs_out.gate_sample(data1_sample, 'RatRange1')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('RatRange1'))
