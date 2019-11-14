@@ -70,3 +70,60 @@ class ExportGMLTestCase(unittest.TestCase):
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
 
         np.testing.assert_array_equal(truth, result.get_gate_indices('Rectangle2'))
+
+    @staticmethod
+    def test_poly1_gate():
+        gml_path = 'examples/gate_ref/gml/gml_poly1_gate.xml'
+        res_path = 'examples/gate_ref/truth/Results_Polygon1.txt'
+
+        gs = GatingStrategy(gml_path)
+
+        out_file = BytesIO()
+
+        gs.export_gml(out_file)
+        out_file.seek(0)
+
+        gs_out = GatingStrategy(out_file)
+
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        result = gs_out.gate_sample(data1_sample, 'Polygon1')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('Polygon1'))
+
+    @staticmethod
+    def test_poly2_gate():
+        gml_path = 'examples/gate_ref/gml/gml_poly2_gate.xml'
+        res_path = 'examples/gate_ref/truth/Results_Polygon2.txt'
+
+        gs = GatingStrategy(gml_path)
+
+        out_file = BytesIO()
+
+        gs.export_gml(out_file)
+        out_file.seek(0)
+
+        gs_out = GatingStrategy(out_file)
+
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        result = gs_out.gate_sample(data1_sample, 'Polygon2')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('Polygon2'))
+
+    @staticmethod
+    def test_poly3_non_solid_gate():
+        gml_path = 'examples/gate_ref/gml/gml_poly3ns_gate.xml'
+        res_path = 'examples/gate_ref/truth/Results_Polygon3NS.txt'
+
+        gs = GatingStrategy(gml_path)
+
+        out_file = BytesIO()
+
+        gs.export_gml(out_file)
+        out_file.seek(0)
+
+        gs_out = GatingStrategy(out_file)
+
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        result = gs_out.gate_sample(data1_sample, 'Polygon3NS')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('Polygon3NS'))
