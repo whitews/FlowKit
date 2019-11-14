@@ -1,5 +1,4 @@
 import numpy as np
-import os
 from lxml import etree
 from ._resources import gml_schema
 from ._models.dimension import Dimension, RatioDimension, QuadrantDivider
@@ -503,6 +502,11 @@ def add_transform_to_gml(root, transform, ns_map):
         log_ml = etree.SubElement(xform_ml, "{%s}flog" % ns_map['transforms'])
         log_ml.set('{%s}T' % ns_map['transforms'], str(transform.param_t))
         log_ml.set('{%s}M' % ns_map['transforms'], str(transform.param_m))
+    elif isinstance(transform, transforms.AsinhTransform):
+        asinh_ml = etree.SubElement(xform_ml, "{%s}fasinh" % ns_map['transforms'])
+        asinh_ml.set('{%s}T' % ns_map['transforms'], str(transform.param_t))
+        asinh_ml.set('{%s}M' % ns_map['transforms'], str(transform.param_m))
+        asinh_ml.set('{%s}A' % ns_map['transforms'], str(transform.param_a))
 
 
 def add_gate_to_gml(root, gate, ns_map):
