@@ -502,12 +502,11 @@ def add_gate_to_gml(root, gate, ns_map):
     return gate_ml
 
 
-def export_gatingml(gating_strategy, file_name, base_dir=None):
+def export_gatingml(gating_strategy, file_handle):
     """
     Exports a valid GatingML 2.0 document from given GatingStrategy instance
     :param gating_strategy: A GatingStrategy instance
-    :param file_name: File name for exported GatingML 2.0 document
-    :param base_dir: Optional parent directory for exported document. Default is current directory.
+    :param file_handle: File handle for exported GatingML 2.0 document
     :return: None
     """
     ns_g = "http://www.isac-net.org/std/Gating-ML/v2.0/gating"
@@ -531,10 +530,4 @@ def export_gatingml(gating_strategy, file_name, base_dir=None):
 
     et = etree.ElementTree(root)
 
-    if base_dir is not None:
-        file_path = os.path.join(base_dir, file_name)
-    else:
-        file_path = file_name
-
-    with open(file_path, 'wb') as f:
-        et.write(f, encoding="utf-8", xml_declaration=True, pretty_print=True)
+    et.write(file_handle, encoding="utf-8", xml_declaration=True, pretty_print=True)
