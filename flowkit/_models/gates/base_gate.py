@@ -16,7 +16,10 @@ class Gate(ABC):
     ):
         self.id = gate_id
         self.parent = parent_id
-        self.dimensions = dimensions
+        if dimensions is None:
+            self.dimensions = {}
+        else:
+            self.dimensions = dimensions
         self.gate_type = None
 
     def apply_parent_gate(self, sample, results, parent_results, gating_strategy):
