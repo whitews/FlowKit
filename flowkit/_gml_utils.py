@@ -6,6 +6,7 @@ from ._models.dimension import Dimension, RatioDimension, QuadrantDivider
 from ._models.vertex import Vertex
 from flowkit import Matrix
 from ._models.transforms import gml_transforms
+from ._models.transforms import transforms
 from ._models.gates.gml_gates import \
     GMLBooleanGate, \
     GMLEllipsoidGate, \
@@ -462,6 +463,21 @@ def parse_matrix_element(
     return Matrix(matrix_id, fluorochomes, detectors, matrix)
 
 
+def add_transform_to_gml(root, transform, ns_map):
+    xform_ml = etree.SubElement(root, "{%s}transformation" % ns_map['transforms'])
+    xform_ml.set('{%s}id' % ns_map['transforms'], transform.id)
+
+    if isinstance(transform, transforms.RatioTransform):
+        ratio_ml = etree.SubElement(xform_ml, "{%s}fratio" % ns_map['transforms'])
+        ratio_ml.set('{%s}A' % ns_map['transforms'], str(transform.param_a))
+        ratio_ml.set('{%s}B' % ns_map['transforms'], str(transform.param_b))
+        ratio_ml.set('{%s}C' % ns_map['transforms'], str(transform.param_c))
+
+        for dim in transform.dimensions:
+            fcs_dim_ml = etree.SubElement(ratio_ml, '{%s}fcs-dimension' % ns_map['data-type'])
+            fcs_dim_ml.set('{%s}name' % ns_map['data-type'], dim)
+
+
 def add_gate_to_gml(root, gate, ns_map):
     if isinstance(gate, RectangleGate):
         gate_ml = etree.SubElement(root, "{%s}RectangleGate" % ns_map['gating'])
@@ -510,13 +526,17 @@ def add_gate_to_gml(root, gate, ns_map):
     gate_ml.set('{%s}id' % ns_map['gating'], gate.id)
 
     for i, dim in enumerate(gate.dimensions):
+        dim_type = 'dim'
+
         if isinstance(dim, QuadrantDivider):
             dim_ml = etree.Element('{%s}divider' % ns_map['gating'])
             dim_ml.set('{%s}id' % ns_map['gating'], dim.id)
-            quad = True
+            dim_type = 'quad'
+        elif isinstance(dim, RatioDimension):
+            dim_ml = etree.Element('{%s}dimension' % ns_map['gating'])
+            dim_type = 'ratio'
         else:
             dim_ml = etree.Element('{%s}dimension' % ns_map['gating'])
-            quad = False
 
         gate_ml.insert(i, dim_ml)
 
@@ -525,20 +545,24 @@ def add_gate_to_gml(root, gate, ns_map):
         if dim.transformation_ref is not None:
             dim_ml.set('{%s}transformation-ref' % ns_map['gating'], dim.transformation_ref)
 
-        if not quad:
+        if dim_type != 'quad':
             if dim.min is not None:
                 dim_ml.set('{%s}min' % ns_map['gating'], str(dim.min))
             if dim.max is not None:
                 dim_ml.set('{%s}max' % ns_map['gating'], str(dim.max))
 
-        fcs_dim_ml = etree.SubElement(dim_ml, '{%s}fcs-dimension' % ns_map['data-type'])
-        if not quad:
-            fcs_dim_ml.set('{%s}name' % ns_map['data-type'], dim.label)
+        if dim_type == 'ratio':
+            new_dim_el = etree.SubElement(dim_ml, '{%s}new-dimension' % ns_map['data-type'])
+            new_dim_el.set('{%s}transformation-ref' % ns_map['data-type'], dim.ratio_ref)
         else:
-            fcs_dim_ml.set('{%s}name' % ns_map['data-type'], dim.dimension_ref)
-            for val in dim.values:
-                value_ml = etree.SubElement(dim_ml, '{%s}value' % ns_map['gating'])
-                value_ml.text = str(val)
+            fcs_dim_ml = etree.SubElement(dim_ml, '{%s}fcs-dimension' % ns_map['data-type'])
+            if dim_type == 'dim':
+                fcs_dim_ml.set('{%s}name' % ns_map['data-type'], dim.label)
+            elif dim_type == 'quad':
+                fcs_dim_ml.set('{%s}name' % ns_map['data-type'], dim.dimension_ref)
+                for val in dim.values:
+                    value_ml = etree.SubElement(dim_ml, '{%s}value' % ns_map['gating'])
+                    value_ml.text = str(val)
 
     return gate_ml
 
@@ -552,12 +576,18 @@ def export_gatingml(gating_strategy, file_handle):
     """
     ns_g = "http://www.isac-net.org/std/Gating-ML/v2.0/gating"
     ns_dt = "http://www.isac-net.org/std/Gating-ML/v2.0/datatypes"
+    ns_xform = "http://www.isac-net.org/std/Gating-ML/v2.0/transformations"
     ns_map = {
         'gating': ns_g,
-        'data-type': ns_dt
+        'data-type': ns_dt,
+        'transforms': ns_xform
     }
 
     root = etree.Element('{%s}Gating-ML' % ns_g, nsmap=ns_map)
+
+    # process gating strategy transformations
+    for xform_id, xform in gating_strategy.transformations.items():
+        add_transform_to_gml(root, xform, ns_map)
 
     # get gate hierarchy as a dictionary
     gate_dict = gating_strategy.get_gate_hierarchy('dict')
