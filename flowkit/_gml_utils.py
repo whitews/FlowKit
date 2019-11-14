@@ -465,24 +465,14 @@ def parse_matrix_element(
 def add_gate_to_gml(root, gate, ns_map):
     if isinstance(gate, RectangleGate):
         gate_ml = etree.SubElement(root, "{%s}RectangleGate" % ns_map['gating'])
-        gate_ml.set('{%s}id' % ns_map['gating'], gate.id)
-
-        for dim in gate.dimensions:
-            dim_ml = etree.SubElement(gate_ml, '{%s}dimension' % ns_map['gating'])
-            if dim.compensation_ref is not None:
-                dim_ml.set('{%s}compensation-ref' % ns_map['gating'], dim.compensation_ref)
-            if dim.transformation_ref is not None:
-                dim_ml.set('{%s}transformation-ref' % ns_map['gating'], dim.transformation_ref)
-            if dim.min is not None:
-                dim_ml.set('{%s}min' % ns_map['gating'], str(dim.min))
-            if dim.max is not None:
-                dim_ml.set('{%s}max' % ns_map['gating'], str(dim.max))
-
-            fcs_dim_ml = etree.SubElement(dim_ml, '{%s}fcs-dimension' % ns_map['data-type'])
-            fcs_dim_ml.set('{%s}name' % ns_map['data-type'], dim.label)
-
     elif isinstance(gate, PolygonGate):
         gate_ml = etree.SubElement(root, "{%s}PolygonGate" % ns_map['gating'])
+
+        for v in gate.vertices:
+            vert_ml = etree.SubElement(gate_ml, '{%s}vertex' % ns_map['gating'])
+            for c in v.coordinates:
+                coord_ml = etree.SubElement(vert_ml, '{%s}coordinate' % ns_map['gating'])
+                coord_ml.set('{%s}value' % ns_map['data-type'], str(c))
     elif isinstance(gate, BooleanGate):
         gate_ml = etree.SubElement(root, "{%s}BooleanGate" % ns_map['gating'])
     elif isinstance(gate, EllipsoidGate):
@@ -490,7 +480,24 @@ def add_gate_to_gml(root, gate, ns_map):
     elif isinstance(gate, QuadrantGate):
         gate_ml = etree.SubElement(root, "{%s}QuadrantGate" % ns_map['gating'])
     else:
-        gate_ml = None
+        raise(ValueError, "gate is not a valid GatingML 2.0 element")
+
+    gate_ml.set('{%s}id' % ns_map['gating'], gate.id)
+
+    for i, dim in enumerate(gate.dimensions):
+        dim_ml = etree.Element('{%s}dimension' % ns_map['gating'])
+        gate_ml.insert(i, dim_ml)
+        if dim.compensation_ref is not None:
+            dim_ml.set('{%s}compensation-ref' % ns_map['gating'], dim.compensation_ref)
+        if dim.transformation_ref is not None:
+            dim_ml.set('{%s}transformation-ref' % ns_map['gating'], dim.transformation_ref)
+        if dim.min is not None:
+            dim_ml.set('{%s}min' % ns_map['gating'], str(dim.min))
+        if dim.max is not None:
+            dim_ml.set('{%s}max' % ns_map['gating'], str(dim.max))
+
+        fcs_dim_ml = etree.SubElement(dim_ml, '{%s}fcs-dimension' % ns_map['data-type'])
+        fcs_dim_ml.set('{%s}name' % ns_map['data-type'], dim.label)
 
     return gate_ml
 
