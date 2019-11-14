@@ -268,3 +268,43 @@ class ExportGMLTestCase(unittest.TestCase):
         result = gs_out.gate_sample(data1_sample, 'RatRange1')
 
         np.testing.assert_array_equal(truth, result.get_gate_indices('RatRange1'))
+
+    @staticmethod
+    def test_ratio_range2_gate():
+        gml_path = 'examples/gate_ref/gml/gml_ratio_range2_gate.xml'
+        res_path = 'examples/gate_ref/truth/Results_RatRange2.txt'
+
+        gs = GatingStrategy(gml_path)
+
+        out_file = BytesIO()
+
+        gs.export_gml(out_file)
+        out_file.seek(0)
+
+        gs_out = GatingStrategy(out_file)
+
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs_out.gate_sample(data1_sample, 'RatRange2')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('RatRange2'))
+
+    @staticmethod
+    def test_log_ratio_range1_gate():
+        gml_path = 'examples/gate_ref/gml/gml_log_ratio_range1_gate.xml'
+        res_path = 'examples/gate_ref/truth/Results_RatRange1a.txt'
+
+        gs = GatingStrategy(gml_path)
+
+        out_file = BytesIO()
+
+        gs.export_gml(out_file)
+        out_file.seek(0)
+
+        gs_out = GatingStrategy(out_file)
+
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs_out.gate_sample(data1_sample, 'RatRange1a')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('RatRange1a'))
