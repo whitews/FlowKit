@@ -507,6 +507,22 @@ def add_transform_to_gml(root, transform, ns_map):
         asinh_ml.set('{%s}T' % ns_map['transforms'], str(transform.param_t))
         asinh_ml.set('{%s}M' % ns_map['transforms'], str(transform.param_m))
         asinh_ml.set('{%s}A' % ns_map['transforms'], str(transform.param_a))
+    elif isinstance(transform, transforms.LogicleTransform):
+        logicle_ml = etree.SubElement(xform_ml, "{%s}logicle" % ns_map['transforms'])
+        logicle_ml.set('{%s}T' % ns_map['transforms'], str(transform.param_t))
+        logicle_ml.set('{%s}W' % ns_map['transforms'], str(transform.param_w))
+        logicle_ml.set('{%s}M' % ns_map['transforms'], str(transform.param_m))
+        logicle_ml.set('{%s}A' % ns_map['transforms'], str(transform.param_a))
+    elif isinstance(transform, transforms.HyperlogTransform):
+        hlog_ml = etree.SubElement(xform_ml, "{%s}hyperlog" % ns_map['transforms'])
+        hlog_ml.set('{%s}T' % ns_map['transforms'], str(transform.param_t))
+        hlog_ml.set('{%s}W' % ns_map['transforms'], str(transform.param_w))
+        hlog_ml.set('{%s}M' % ns_map['transforms'], str(transform.param_m))
+        hlog_ml.set('{%s}A' % ns_map['transforms'], str(transform.param_a))
+    elif isinstance(transform, transforms.LinearTransform):
+        lin_ml = etree.SubElement(xform_ml, "{%s}flin" % ns_map['transforms'])
+        lin_ml.set('{%s}T' % ns_map['transforms'], str(transform.param_t))
+        lin_ml.set('{%s}A' % ns_map['transforms'], str(transform.param_a))
 
 
 def add_gate_to_gml(root, gate, ns_map):
