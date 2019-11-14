@@ -528,3 +528,303 @@ class ExportGMLTestCase(unittest.TestCase):
         result = gs_out.gate_sample(data1_sample, 'Rectangle5')
 
         np.testing.assert_array_equal(truth, result.get_gate_indices('Rectangle5'))
+
+    @staticmethod
+    def test_transform_asinh_range1_gate():
+        gml_path = 'examples/gate_ref/gml/gml_transform_asinh_range1_gate.xml'
+        res_path = 'examples/gate_ref/truth/Results_ScaleRange1.txt'
+
+        gs = GatingStrategy(gml_path)
+
+        out_file = BytesIO()
+
+        gs.export_gml(out_file)
+        out_file.seek(0)
+
+        gs_out = GatingStrategy(out_file)
+
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs_out.gate_sample(data1_sample, 'ScaleRange1')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange1'))
+
+    @staticmethod
+    def test_transform_hyperlog_range2_gate():
+        gml_path = 'examples/gate_ref/gml/gml_transform_hyperlog_range2_gate.xml'
+        res_path = 'examples/gate_ref/truth/Results_ScaleRange2.txt'
+
+        gs = GatingStrategy(gml_path)
+
+        out_file = BytesIO()
+
+        gs.export_gml(out_file)
+        out_file.seek(0)
+
+        gs_out = GatingStrategy(out_file)
+
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs_out.gate_sample(data1_sample, 'ScaleRange2')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange2'))
+
+    @staticmethod
+    def test_transform_linear_range3_gate():
+        gml_path = 'examples/gate_ref/gml/gml_transform_linear_range3_gate.xml'
+        res_path = 'examples/gate_ref/truth/Results_ScaleRange3.txt'
+
+        gs = GatingStrategy(gml_path)
+
+        out_file = BytesIO()
+
+        gs.export_gml(out_file)
+        out_file.seek(0)
+
+        gs_out = GatingStrategy(out_file)
+
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs_out.gate_sample(data1_sample, 'ScaleRange3')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange3'))
+
+    @staticmethod
+    def test_transform_logicle_range4_gate():
+        gml_path = 'examples/gate_ref/gml/gml_transform_logicle_range4_gate.xml'
+        res_path = 'examples/gate_ref/truth/Results_ScaleRange4.txt'
+
+        gs = GatingStrategy(gml_path)
+
+        out_file = BytesIO()
+
+        gs.export_gml(out_file)
+        out_file.seek(0)
+
+        gs_out = GatingStrategy(out_file)
+
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs_out.gate_sample(data1_sample, 'ScaleRange4')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange4'))
+
+    @staticmethod
+    def test_transform_logicle_range5_gate():
+        gml_path = 'examples/gate_ref/gml/gml_transform_logicle_range5_gate.xml'
+        res_path = 'examples/gate_ref/truth/Results_ScaleRange5.txt'
+
+        gs = GatingStrategy(gml_path)
+
+        out_file = BytesIO()
+
+        gs.export_gml(out_file)
+        out_file.seek(0)
+
+        gs_out = GatingStrategy(out_file)
+
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs_out.gate_sample(data1_sample, 'ScaleRange5')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange5'))
+
+    @staticmethod
+    def test_transform_log_range6_gate():
+        gml_path = 'examples/gate_ref/gml/gml_transform_log_range6_gate.xml'
+        res_path = 'examples/gate_ref/truth/Results_ScaleRange6.txt'
+
+        gs = GatingStrategy(gml_path)
+
+        out_file = BytesIO()
+
+        gs.export_gml(out_file)
+        out_file.seek(0)
+
+        gs_out = GatingStrategy(out_file)
+
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs_out.gate_sample(data1_sample, 'ScaleRange6')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange6'))
+
+    @staticmethod
+    def test_matrix_transform_asinh_range1c_gate():
+        gml_path = 'examples/gate_ref/gml/gml_matrix_transform_asinh_range1c_gate.xml'
+        res_path = 'examples/gate_ref/truth/Results_ScaleRange1c.txt'
+
+        gs = GatingStrategy(gml_path)
+
+        out_file = BytesIO()
+
+        gs.export_gml(out_file)
+        out_file.seek(0)
+
+        gs_out = GatingStrategy(out_file)
+
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs_out.gate_sample(data1_sample, 'ScaleRange1c')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange1c'))
+
+    @staticmethod
+    def test_matrix_transform_hyperlog_range2c_gate():
+        gml_path = 'examples/gate_ref/gml/gml_matrix_transform_hyperlog_range2c_gate.xml'
+        res_path = 'examples/gate_ref/truth/Results_ScaleRange2c.txt'
+
+        gs = GatingStrategy(gml_path)
+
+        out_file = BytesIO()
+
+        gs.export_gml(out_file)
+        out_file.seek(0)
+
+        gs_out = GatingStrategy(out_file)
+
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs_out.gate_sample(data1_sample, 'ScaleRange2c')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange2c'))
+
+    @staticmethod
+    def test_matrix_transform_linear_range3c_gate():
+        gml_path = 'examples/gate_ref/gml/gml_matrix_transform_linear_range3c_gate.xml'
+        res_path = 'examples/gate_ref/truth/Results_ScaleRange3c.txt'
+
+        gs = GatingStrategy(gml_path)
+
+        out_file = BytesIO()
+
+        gs.export_gml(out_file)
+        out_file.seek(0)
+
+        gs_out = GatingStrategy(out_file)
+
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs_out.gate_sample(data1_sample, 'ScaleRange3c')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange3c'))
+
+    @staticmethod
+    def test_matrix_transform_logicle_range4c_gate():
+        gml_path = 'examples/gate_ref/gml/gml_matrix_transform_logicle_range4c_gate.xml'
+        res_path = 'examples/gate_ref/truth/Results_ScaleRange4c.txt'
+
+        gs = GatingStrategy(gml_path)
+
+        out_file = BytesIO()
+
+        gs.export_gml(out_file)
+        out_file.seek(0)
+
+        gs_out = GatingStrategy(out_file)
+
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs_out.gate_sample(data1_sample, 'ScaleRange4c')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange4c'))
+
+    @staticmethod
+    def test_matrix_transform_logicle_range5c_gate():
+        gml_path = 'examples/gate_ref/gml/gml_matrix_transform_logicle_range5c_gate.xml'
+        res_path = 'examples/gate_ref/truth/Results_ScaleRange5c.txt'
+
+        gs = GatingStrategy(gml_path)
+
+        out_file = BytesIO()
+
+        gs.export_gml(out_file)
+        out_file.seek(0)
+
+        gs_out = GatingStrategy(out_file)
+
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs_out.gate_sample(data1_sample, 'ScaleRange5c')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange5c'))
+
+    @staticmethod
+    def test_matrix_transform_asinh_range6c_gate():
+        gml_path = 'examples/gate_ref/gml/gml_matrix_transform_asinh_range6c_gate.xml'
+        res_path = 'examples/gate_ref/truth/Results_ScaleRange6c.txt'
+
+        gs = GatingStrategy(gml_path)
+
+        out_file = BytesIO()
+
+        gs.export_gml(out_file)
+        out_file.seek(0)
+
+        gs_out = GatingStrategy(out_file)
+
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs_out.gate_sample(data1_sample, 'ScaleRange6c')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange6c'))
+
+    @staticmethod
+    def test_matrix_transform_hyperlog_range7c_gate():
+        gml_path = 'examples/gate_ref/gml/gml_matrix_transform_hyperlog_range7c_gate.xml'
+        res_path = 'examples/gate_ref/truth/Results_ScaleRange7c.txt'
+
+        gs = GatingStrategy(gml_path)
+
+        out_file = BytesIO()
+
+        gs.export_gml(out_file)
+        out_file.seek(0)
+
+        gs_out = GatingStrategy(out_file)
+
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs_out.gate_sample(data1_sample, 'ScaleRange7c')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange7c'))
+
+    @staticmethod
+    def test_matrix_transform_logicle_range8c_gate():
+        gml_path = 'examples/gate_ref/gml/gml_matrix_transform_logicle_range8c_gate.xml'
+        res_path = 'examples/gate_ref/truth/Results_ScaleRange8c.txt'
+
+        gs = GatingStrategy(gml_path)
+
+        out_file = BytesIO()
+
+        gs.export_gml(out_file)
+        out_file.seek(0)
+
+        gs_out = GatingStrategy(out_file)
+
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs_out.gate_sample(data1_sample, 'ScaleRange8c')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange8c'))
+
+    @staticmethod
+    def test_matrix_transform_logicle_rect1_gate():
+        gml_path = 'examples/gate_ref/gml/gml_matrix_transform_logicle_rect1_gate.xml'
+        res_path = 'examples/gate_ref/truth/Results_ScaleRect1.txt'
+
+        gs = GatingStrategy(gml_path)
+
+        out_file = BytesIO()
+
+        gs.export_gml(out_file)
+        out_file.seek(0)
+
+        gs_out = GatingStrategy(out_file)
+
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs_out.gate_sample(data1_sample, 'ScaleRect1')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRect1'))
