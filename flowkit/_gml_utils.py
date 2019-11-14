@@ -1,4 +1,5 @@
 import numpy as np
+import os
 from lxml import etree
 from ._resources import gml_schema
 from ._models.dimension import Dimension, RatioDimension, QuadrantDivider
@@ -11,6 +12,12 @@ from ._models.gates.gml_gates import \
     GMLQuadrantGate, \
     GMLPolygonGate, \
     GMLRectangleGate
+from ._models.gates.gates import \
+    BooleanGate, \
+    EllipsoidGate, \
+    QuadrantGate, \
+    PolygonGate, \
+    RectangleGate
 
 
 def parse_gatingml_file(gating_ml_file_path):
@@ -453,3 +460,74 @@ def parse_matrix_element(
     matrix = np.array(matrix)
 
     return Matrix(matrix_id, fluorochomes, detectors, matrix)
+
+
+def add_gate_to_gml(root, gate, ns_map):
+    if isinstance(gate, RectangleGate):
+        gate_ml = etree.SubElement(root, "{%s}RectangleGate" % ns_map['gating'])
+        gate_ml.set('{%s}id' % ns_map['gating'], gate.id)
+
+        for dim in gate.dimensions:
+            dim_ml = etree.SubElement(gate_ml, '{%s}dimension' % ns_map['gating'])
+            if dim.compensation_ref is not None:
+                dim_ml.set('{%s}compensation-ref' % ns_map['gating'], dim.compensation_ref)
+            if dim.transformation_ref is not None:
+                dim_ml.set('{%s}transformation-ref' % ns_map['gating'], dim.transformation_ref)
+            if dim.min is not None:
+                dim_ml.set('{%s}min' % ns_map['gating'], str(dim.min))
+            if dim.max is not None:
+                dim_ml.set('{%s}max' % ns_map['gating'], str(dim.max))
+
+            fcs_dim_ml = etree.SubElement(dim_ml, '{%s}fcs-dimension' % ns_map['data-type'])
+            fcs_dim_ml.set('{%s}name' % ns_map['data-type'], dim.label)
+
+    elif isinstance(gate, PolygonGate):
+        gate_ml = etree.SubElement(root, "{%s}PolygonGate" % ns_map['gating'])
+    elif isinstance(gate, BooleanGate):
+        gate_ml = etree.SubElement(root, "{%s}BooleanGate" % ns_map['gating'])
+    elif isinstance(gate, EllipsoidGate):
+        gate_ml = etree.SubElement(root, "{%s}EllipsoidGate" % ns_map['gating'])
+    elif isinstance(gate, QuadrantGate):
+        gate_ml = etree.SubElement(root, "{%s}QuadrantGate" % ns_map['gating'])
+    else:
+        gate_ml = None
+
+    return gate_ml
+
+
+def export_gatingml(gating_strategy, file_name, base_dir=None):
+    """
+    Exports a valid GatingML 2.0 document from given GatingStrategy instance
+    :param gating_strategy: A GatingStrategy instance
+    :param file_name: File name for exported GatingML 2.0 document
+    :param base_dir: Optional parent directory for exported document. Default is current directory.
+    :return: None
+    """
+    ns_g = "http://www.isac-net.org/std/Gating-ML/v2.0/gating"
+    ns_dt = "http://www.isac-net.org/std/Gating-ML/v2.0/datatypes"
+    ns_map = {
+        'gating': ns_g,
+        'data-type': ns_dt
+    }
+
+    root = etree.Element('{%s}Gating-ML' % ns_g, nsmap=ns_map)
+
+    # get gate hierarchy as a dictionary
+    gate_dict = gating_strategy.get_gate_hierarchy('dict')
+
+    # the gate_dict will have keys 'name' and 'children'. 'name' value is 'root'
+    for child in gate_dict['children']:
+        # all the top-level children have no parents, so we'll process them first
+        gate_id = child['name']
+        gate = gating_strategy.gates[gate_id]
+        add_gate_to_gml(root, gate, ns_map)
+
+    et = etree.ElementTree(root)
+
+    if base_dir is not None:
+        file_path = os.path.join(base_dir, file_name)
+    else:
+        file_path = file_name
+
+    with open(file_path, 'wb') as f:
+        et.write(f, encoding="utf-8", xml_declaration=True, pretty_print=True)

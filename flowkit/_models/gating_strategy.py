@@ -296,6 +296,9 @@ class GatingStrategy(object):
 
         return GatingResults(results, sample_id=sample.original_filename)
 
+    def export_gml(self, file_name, base_dir=None):
+        _gml_utils.export_gatingml(self, file_name, base_dir=None)
+
 
 class GatingResults(object):
     def __init__(self, results_dict, sample_id):
