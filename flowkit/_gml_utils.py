@@ -495,6 +495,22 @@ def add_gate_to_gml(root, gate, ns_map):
                 coord_ml.set('{%s}value' % ns_map['data-type'], str(c))
     elif isinstance(gate, BooleanGate):
         gate_ml = etree.SubElement(root, "{%s}BooleanGate" % ns_map['gating'])
+
+        if gate.type == 'and':
+            bool_type_ml = etree.SubElement(gate_ml, '{%s}and' % ns_map['gating'])
+        elif gate.type == 'or':
+            bool_type_ml = etree.SubElement(gate_ml, '{%s}or' % ns_map['gating'])
+        elif gate.type == 'not':
+            bool_type_ml = etree.SubElement(gate_ml, '{%s}not' % ns_map['gating'])
+        else:
+            raise ValueError("Boolean gate type '%s' is not valid" % gate.type)
+
+        for gate_ref in gate.gate_refs:
+            gate_ref_ml = etree.SubElement(bool_type_ml, '{%s}gateReference' % ns_map['gating'])
+            gate_ref_ml.set('{%s}ref' % ns_map['gating'], gate_ref['ref'])
+            if gate_ref['complement']:
+                gate_ref_ml.set('{%s}use-as-complement' % ns_map['gating'], "true")
+
     elif isinstance(gate, EllipsoidGate):
         gate_ml = etree.SubElement(root, "{%s}EllipsoidGate" % ns_map['gating'])
         mean_ml = etree.SubElement(gate_ml, '{%s}mean' % ns_map['gating'])
