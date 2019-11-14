@@ -477,6 +477,22 @@ def add_gate_to_gml(root, gate, ns_map):
         gate_ml = etree.SubElement(root, "{%s}BooleanGate" % ns_map['gating'])
     elif isinstance(gate, EllipsoidGate):
         gate_ml = etree.SubElement(root, "{%s}EllipsoidGate" % ns_map['gating'])
+        mean_ml = etree.SubElement(gate_ml, '{%s}mean' % ns_map['gating'])
+        cov_ml = etree.SubElement(gate_ml, '{%s}covarianceMatrix' % ns_map['gating'])
+        dist_square_ml = etree.SubElement(gate_ml, '{%s}distanceSquare' % ns_map['gating'])
+        dist_square_ml.set('{%s}value' % ns_map['data-type'], str(gate.distance_square))
+
+        for c in gate.coordinates:
+            coord_ml = etree.SubElement(mean_ml, '{%s}coordinate' % ns_map['gating'])
+            coord_ml.set('{%s}value' % ns_map['data-type'], str(c))
+
+        for row in gate.covariance_matrix:
+            row_ml = etree.SubElement(cov_ml, '{%s}row' % ns_map['gating'])
+
+            for val in row:
+                entry_ml = etree.SubElement(row_ml, '{%s}entry' % ns_map['gating'])
+                entry_ml.set('{%s}value' % ns_map['data-type'], str(val))
+
     elif isinstance(gate, QuadrantGate):
         gate_ml = etree.SubElement(root, "{%s}QuadrantGate" % ns_map['gating'])
     else:
