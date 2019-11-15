@@ -1,13 +1,15 @@
 import unittest
 import sys
 import os
+import glob
+import re
 from io import BytesIO
 import numpy as np
 import pandas as pd
 
 sys.path.append(os.path.abspath('..'))
 
-from flowkit import Sample, GatingStrategy
+from flowkit import Sample, GatingStrategy, gates
 
 data1_fcs_path = 'examples/gate_ref/data1.fcs'
 data1_sample = Sample(data1_fcs_path)
@@ -828,3 +830,123 @@ class ExportGMLTestCase(unittest.TestCase):
         result = gs_out.gate_sample(data1_sample, 'ScaleRect1')
 
         np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRect1'))
+
+    @staticmethod
+    def test_parent_poly1_boolean_and2_gate():
+        gml_path = 'examples/gate_ref/gml/gml_parent_poly1_boolean_and2_gate.xml'
+        res_path = 'examples/gate_ref/truth/Results_ParAnd2.txt'
+
+        gs = GatingStrategy(gml_path)
+
+        out_file = BytesIO()
+
+        gs.export_gml(out_file)
+        out_file.seek(0)
+
+        gs_out = GatingStrategy(out_file)
+
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs_out.gate_sample(data1_sample, 'ParAnd2')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('ParAnd2'))
+
+    @staticmethod
+    def test_parent_range1_boolean_and3_gate():
+        gml_path = 'examples/gate_ref/gml/gml_parent_range1_boolean_and3_gate.xml'
+        res_path = 'examples/gate_ref/truth/Results_ParAnd3.txt'
+
+        gs = GatingStrategy(gml_path)
+
+        out_file = BytesIO()
+
+        gs.export_gml(out_file)
+        out_file.seek(0)
+
+        gs_out = GatingStrategy(out_file)
+
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs_out.gate_sample(data1_sample, 'ParAnd3')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('ParAnd3'))
+
+    @staticmethod
+    def test_parent_rect1_rect_par1_gate():
+        gml_path = 'examples/gate_ref/gml/gml_parent_rect1_rect_par1_gate.xml'
+        res_path = 'examples/gate_ref/truth/Results_ScalePar1.txt'
+
+        gs = GatingStrategy(gml_path)
+
+        out_file = BytesIO()
+
+        gs.export_gml(out_file)
+        out_file.seek(0)
+
+        gs_out = GatingStrategy(out_file)
+
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs_out.gate_sample(data1_sample, 'ScalePar1')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('ScalePar1'))
+
+    @staticmethod
+    def test_parent_quadrant_rect_gate():
+        gml_path = 'examples/gate_ref/gml/gml_parent_quadrant_rect_gate.xml'
+        res_path = 'examples/gate_ref/truth/Results_ParQuadRect.txt'
+
+        gs = GatingStrategy(gml_path)
+
+        out_file = BytesIO()
+
+        gs.export_gml(out_file)
+        out_file.seek(0)
+
+        gs_out = GatingStrategy(out_file)
+
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        result = gs_out.gate_sample(data1_sample, 'ParRectangle1')
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('ParRectangle1'))
+
+    def test_get_parent_rect_gate(self):
+        gml_path = 'examples/gate_ref/gml/gml_parent_rect1_rect_par1_gate.xml'
+
+        gs = GatingStrategy(gml_path)
+
+        out_file = BytesIO()
+
+        gs.export_gml(out_file)
+        out_file.seek(0)
+
+        gs_out = GatingStrategy(out_file)
+
+        parent_id = gs_out.get_parent_gate_id('ScalePar1')
+
+        self.assertEqual(parent_id, 'ScaleRect1')
+
+        parent_gate = gs_out.get_gate_by_reference(parent_id)
+
+        self.assertIsInstance(parent_gate, gates.RectangleGate)
+
+    def test_get_parent_quadrant_gate(self):
+        gml_path = 'examples/gate_ref/gml/gml_parent_quadrant_rect_gate.xml'
+
+        gs = GatingStrategy(gml_path)
+
+        out_file = BytesIO()
+
+        gs.export_gml(out_file)
+        out_file.seek(0)
+
+        gs_out = GatingStrategy(out_file)
+
+        parent_id = gs_out.get_parent_gate_id('ParRectangle1')
+
+        self.assertEqual(parent_id, 'FL2P-FL4P')
+
+        parent_gate = gs_out.get_gate_by_reference(parent_id)
+
+        self.assertIsInstance(parent_gate, gates.QuadrantGate)
