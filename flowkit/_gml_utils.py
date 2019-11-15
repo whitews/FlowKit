@@ -630,6 +630,30 @@ def add_gate_to_gml(root, gate, ns_map):
     return gate_ml
 
 
+def add_gates_from_gate_dict(gating_strategy, gate_dict, ns_map, parent_ml):
+    # the gate_dict will have keys 'name' and 'children'. top-level 'name' value is 'root'
+    for child in gate_dict['children']:
+        gate_id = child['name']
+        skip = False
+        try:
+            gate = gating_strategy.gates[gate_id]
+        except KeyError as e:
+            # may be in a Quadrant gate, the gs method 'get_gate_by_reference' will re-raise
+            # the KeyError if the gate_id is truly not found
+            gate = gating_strategy.get_gate_by_reference(gate_id)
+            skip = True
+
+        if not skip:
+            child_ml = add_gate_to_gml(parent_ml, gate, ns_map)
+
+            if gate_dict['name'] != 'root':
+                # this is a recursion, add the parent reference
+                child_ml.set('{%s}parent_id' % ns_map['gating'], gate_dict['name'])
+
+        if 'children' in child:  # and not isinstance(gate, QuadrantGate):
+            add_gates_from_gate_dict(gating_strategy, child, ns_map, parent_ml)
+
+
 def export_gatingml(gating_strategy, file_handle):
     """
     Exports a valid GatingML 2.0 document from given GatingStrategy instance
@@ -659,12 +683,8 @@ def export_gatingml(gating_strategy, file_handle):
     # get gate hierarchy as a dictionary
     gate_dict = gating_strategy.get_gate_hierarchy('dict')
 
-    # the gate_dict will have keys 'name' and 'children'. 'name' value is 'root'
-    for child in gate_dict['children']:
-        # all the top-level children have no parents, so we'll process them first
-        gate_id = child['name']
-        gate = gating_strategy.gates[gate_id]
-        add_gate_to_gml(root, gate, ns_map)
+    # recursively convert all gates to GatingML
+    add_gates_from_gate_dict(gating_strategy, gate_dict, ns_map, root)
 
     et = etree.ElementTree(root)
 
