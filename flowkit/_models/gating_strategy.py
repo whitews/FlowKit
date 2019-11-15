@@ -1,8 +1,9 @@
 import anytree
 from anytree.exporter import DotExporter
 import pandas as pd
-from flowkit import _gml_utils
-from flowkit._models.gates.gml_gates import GMLQuadrantGate
+from flowkit import _gml_utils, Matrix
+from flowkit import gates as fk_gates
+from flowkit import transforms as fk_transforms
 
 
 class GatingStrategy(object):
@@ -62,7 +63,7 @@ class GatingStrategy(object):
                 parent=root
             )
 
-            if isinstance(gate, GMLQuadrantGate):
+            if isinstance(gate, fk_gates.QuadrantGate):
                 for q_id, quad in gate.quadrants.items():
                     nodes[q_id] = anytree.Node(
                         q_id,
@@ -84,7 +85,7 @@ class GatingStrategy(object):
                         parent=root if parent_id is None else nodes[parent_id]
                     )
 
-                    if isinstance(gate, GMLQuadrantGate):
+                    if isinstance(gate, fk_gates.QuadrantGate):
                         if gate.id not in nodes:
                             nodes[gate.id] = anytree.Node(
                                 gate.id,
@@ -109,7 +110,7 @@ class GatingStrategy(object):
                 parent=nodes[gate.parent]
             )
 
-            if isinstance(gate, GMLQuadrantGate):
+            if isinstance(gate, fk_gates.QuadrantGate):
                 for q_id, quad in gate.quadrants.items():
                     nodes[q_id] = anytree.Node(
                         q_id,
@@ -117,6 +118,34 @@ class GatingStrategy(object):
                     )
 
         return root
+
+    def add_gate(self, gate):
+        if not isinstance(gate, fk_gates.Gate):
+            raise ValueError("gate must be a sub-class of the Gate class")
+
+        if gate.id in self.gates:
+            raise KeyError("Gate ID '%s' is already defined" % gate.id)
+
+        self.gates[gate.id] = gate
+
+    def add_transform(self, transform):
+        if not isinstance(transform, fk_transforms.Transform):
+            raise ValueError("transform must be a sub-class of the Transform class")
+
+        if transform.id in self.transformations:
+            raise KeyError("Transform ID '%s' is already defined" % transform.id)
+
+        self.transformations[transform.id] = transform
+
+    def add_comp_matrix(self, matrix):
+        # TODO: accept other matrix types beyond a Matrix instance, or should the Matrix class do that?
+        if not isinstance(matrix, Matrix):
+            raise ValueError("matrix must be an instance of the Matrix class")
+
+        if matrix.id in self.comp_matrices:
+            raise KeyError("Matrix ID '%s' is already defined" % matrix.id)
+
+        self.comp_matrices[matrix.id] = matrix
 
     def get_gate_by_reference(self, gate_id):
         """
@@ -132,7 +161,7 @@ class GatingStrategy(object):
             # may be in a Quadrant gate
             gate = None
             for g_id, g in self.gates.items():
-                if isinstance(g, GMLQuadrantGate):
+                if isinstance(g, fk_gates.QuadrantGate):
                     if gate_id in g.quadrants:
                         gate = g
                         continue
@@ -140,6 +169,11 @@ class GatingStrategy(object):
                 raise e
 
         return gate
+
+    def get_parent_gate_id(self, gate_id):
+        gate = self.get_gate_by_reference(gate_id)
+
+        return gate.parent
 
     def get_gate_hierarchy(self, output='ascii'):
         """
@@ -247,7 +281,7 @@ class GatingStrategy(object):
             if g_id == 'root':
                 continue
             gate = self.get_gate_by_reference(g_id)
-            if isinstance(gate, GMLQuadrantGate) and g_id in gate.quadrants:
+            if isinstance(gate, fk_gates.QuadrantGate) and g_id in gate.quadrants:
                 # This is a sub-gate, we'll process the sub-gates all at once
                 # with the main QuadrantGate ID
                 continue
@@ -258,9 +292,12 @@ class GatingStrategy(object):
                 parent_results = results[gate.parent]
             else:
                 parent_results = None
-            results[g_id] = gate.apply(sample, parent_results)
+            results[g_id] = gate.apply(sample, parent_results, self)
 
         return GatingResults(results, sample_id=sample.original_filename)
+
+    def export_gml(self, file_handle):
+        _gml_utils.export_gatingml(self, file_handle)
 
 
 class GatingResults(object):

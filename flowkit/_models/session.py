@@ -11,7 +11,7 @@ import seaborn
 from matplotlib import cm
 import matplotlib.pyplot as plt
 from flowio.create_fcs import create_fcs
-from flowkit import Sample, GatingStrategy, _utils
+from flowkit import Sample, GatingStrategy, Matrix, _utils
 import warnings
 
 try:
@@ -43,8 +43,7 @@ def load_samples(fcs_samples):
     sample_list = []
 
     if isinstance(fcs_samples, list):
-        # TODO: should we check that all Samples have the same channels?
-        # and if so, should we determine the common channels and continue?
+        # TODO: check that all Samples have the same channels, issue warning if not
 
         # 'fcs_samples' is a list of either file paths or Sample instances
         sample_types = set()
@@ -75,7 +74,7 @@ def load_samples(fcs_samples):
     return sample_list
 
 
-# TODO: gate_sample & gate_samples should be in the GatingStrategy class
+# gate_sample & gate_samples are multi-proc wrappers for GatingStrategy gate_sample method
 def gate_sample(data):
     gating_strategy = data[0]
     sample = data[1]
@@ -140,6 +139,21 @@ class Session(object):
     def gates(self):
         return self.gating_strategy.gates
 
+    # start pass through methods for GatingStrategy
+    def add_gate(self, gate):
+        self.gating_strategy.add_gate(gate)
+
+    def add_transform(self, transform):
+        self.gating_strategy.add_transform(transform)
+
+    def add_comp_matrix(self, matrix):
+        self.gating_strategy.add_comp_matrix(matrix)
+
+    def get_parent_gate_id(self, gate_id):
+        gate = self.gating_strategy.get_gate_by_reference(gate_id)
+        return gate.parent
+    # end pass through methods for GatingStrategy
+
     def get_sample(self, sample_id):
         for s in self.samples:
             if s.original_filename == sample_id:
@@ -162,10 +176,12 @@ class Session(object):
             raise ValueError("Number of bead samples must match the number of fluorescence channels")
 
         # get PnN channel names from 1st bead sample
+        pnn_labels = []
         for f_idx in fluoro_indices:
             pnn_label = self.bead_samples[0].pnn_labels[f_idx]
-            if pnn_label not in self.bead_lut:
-                self.bead_lut[f_idx] = {'channel_label': pnn_label}
+            if pnn_label not in pnn_labels:
+                pnn_labels.append(pnn_label)
+                self.bead_lut[f_idx] = {'pnn_label': pnn_label}
             else:
                 raise ValueError("Duplicate channel labels are not supported")
 
@@ -178,20 +194,23 @@ class Session(object):
 
             for chan_idx, lut in self.bead_lut.items():
                 # file names typically don't have the "-A", "-H', or "-W" sub-strings
-                pnn_label = lut['channel_label'].replace("-A", "")
+                pnn_label = lut['pnn_label'].replace("-A", "")
 
                 if pnn_label in bs.original_filename:
                     lut['bead_index'] = i
+                    lut['pns_label'] = bs.pns_labels[chan_idx]
 
     def calculate_compensation_from_beads(self):
         if len(self.bead_lut) == 0:
             warnings.warn("No bead samples were loaded")
             return
 
-        header = []
+        detectors = []
+        fluorochromes = []
         comp_values = []
         for chan_idx in sorted(self.bead_lut.keys()):
-            header.append(self.bead_lut[chan_idx]['channel_label'])
+            detectors.append(self.bead_lut[chan_idx]['pnn_label'])
+            fluorochromes.append(self.bead_lut[chan_idx]['pns_label'])
             bead_idx = self.bead_lut[chan_idx]['bead_index']
 
             x = self.bead_samples[bead_idx].get_raw_events()[:, chan_idx]
@@ -201,23 +220,18 @@ class Session(object):
             comp_row_values = []
             for chan_idx2 in sorted(self.bead_lut.keys()):
                 if chan_idx == chan_idx2:
-                    comp_row_values.append('1.0')
+                    comp_row_values.append(1.0)
                 else:
                     y = self.bead_samples[bead_idx].get_raw_events()[:, chan_idx2]
                     y = y[good_events]
                     rlm_res = sm.RLM(y, x).fit()
 
-                    comp_row_values.append("%.8f" % rlm_res.params[0])
+                    # noinspection PyUnresolvedReferences
+                    comp_row_values.append(rlm_res.params[0])
 
-            comp_values.append(",".join(comp_row_values))
+            comp_values.append(comp_row_values)
 
-        header = ",".join(header)
-        comp_values = "\n".join(comp_values)
-
-        comp = "\n".join([header, comp_values])
-
-        # TODO: this should return a Matrix instance
-        return comp
+        return Matrix('comp_bead', fluorochromes, detectors, np.array(comp_values))
 
     def analyze_samples(self, verbose=False):
         # Don't save just the DataFrame report, save the entire

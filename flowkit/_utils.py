@@ -230,6 +230,7 @@ def parse_compensation_matrix(compensation, channel_labels, null_channels=None):
     elif matrix.shape[0] < len(fluoro_labels) + 1:
         raise ValueError("Too few rows in compensation matrix")
 
+    # TODO: should this return a Matrix instance, then the Sample & GatingStrategy classes can use this
     return matrix
 
 

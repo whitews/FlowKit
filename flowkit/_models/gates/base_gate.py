@@ -12,25 +12,26 @@ class Gate(ABC):
             self,
             gate_id,
             parent_id,
-            dimensions,
-            gating_strategy
+            dimensions
     ):
-        self.__parent__ = gating_strategy
         self.id = gate_id
         self.parent = parent_id
-        self.dimensions = dimensions
+        if dimensions is None:
+            self.dimensions = {}
+        else:
+            self.dimensions = dimensions
         self.gate_type = None
 
-    def apply_parent_gate(self, sample, results, parent_results):
+    def apply_parent_gate(self, sample, results, parent_results, gating_strategy):
         if self.parent is not None:
-            parent_gate = self.__parent__.get_gate_by_reference(self.parent)
+            parent_gate = gating_strategy.get_gate_by_reference(self.parent)
             parent_id = parent_gate.id
 
             if parent_results is not None:
                 results_and_parent = np.logical_and(parent_results['events'], results)
                 parent_count = parent_results['count']
             else:
-                parent_result = parent_gate.apply(sample, parent_results)
+                parent_result = parent_gate.apply(sample, parent_results, gating_strategy)
 
                 if isinstance(parent_gate, gates.QuadrantGate):
                     parent_result = parent_result[self.parent]
@@ -63,10 +64,10 @@ class Gate(ABC):
         return final_results
 
     @abstractmethod
-    def apply(self, sample, parent_results):
+    def apply(self, sample, parent_results, gating_strategy):
         pass
 
-    def compensate_sample(self, dim_comp_refs, sample):
+    def compensate_sample(self, dim_comp_refs, sample, gating_strategy):
         dim_comp_ref_count = len(dim_comp_refs)
 
         if dim_comp_ref_count == 0:
@@ -81,7 +82,7 @@ class Gate(ABC):
         else:
             comp_ref = list(dim_comp_refs)[0]
 
-        events = self.__parent__.get_cached_compensation(
+        events = gating_strategy.get_cached_compensation(
             sample,
             comp_ref
         )
@@ -113,13 +114,13 @@ class Gate(ABC):
             fluorochromes = [sample.pns_labels[i] for i in indices]
             matrix = Matrix('fcs', fluorochromes, detectors, spill[1:, :])
         else:
-            # lookup specified comp-ref in parent strategy
-            matrix = self.__parent__.comp_matrices[comp_ref]
+            # lookup specified comp-ref in gating strategy
+            matrix = gating_strategy.comp_matrices[comp_ref]
 
         if matrix is not None:
             events = matrix.apply(sample)
             # cache the comp events
-            self.__parent__.cache_compensated_events(
+            gating_strategy.cache_compensated_events(
                 sample,
                 comp_ref,
                 events
@@ -127,7 +128,7 @@ class Gate(ABC):
 
         return events
 
-    def preprocess_sample_events(self, sample):
+    def preprocess_sample_events(self, sample, gating_strategy):
         pnn_labels = sample.pnn_labels
         pns_labels = sample.pns_labels
 
@@ -170,7 +171,7 @@ class Gate(ABC):
                     raise LookupError(
                         "%s is not found as a channel label or channel reference in %s" % (dim_label, sample)
                     )
-                matrix = self.__parent__.comp_matrices[dim.compensation_ref]
+                matrix = gating_strategy.comp_matrices[dim.compensation_ref]
                 try:
                     matrix_dim_idx = matrix.fluorochomes.index(dim_label)
                 except ValueError:
@@ -180,11 +181,11 @@ class Gate(ABC):
 
             dim_xform.append(dim.transformation_ref)
 
-        events = self.compensate_sample(dim_comp_refs, sample)
+        events = self.compensate_sample(dim_comp_refs, sample, gating_strategy)
 
         for i, dim in enumerate(dim_idx):
             if dim_xform[i] is not None:
-                xform = self.__parent__.transformations[dim_xform[i]]
+                xform = gating_strategy.transformations[dim_xform[i]]
                 events[:, [dim]] = xform.apply(events[:, [dim]])
 
         return events, dim_idx, dim_min, dim_max, new_dims

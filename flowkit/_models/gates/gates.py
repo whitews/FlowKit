@@ -20,14 +20,12 @@ class RectangleGate(Gate):
             self,
             gate_id,
             parent_id,
-            dimensions,
-            gating_strategy,
+            dimensions
     ):
         super().__init__(
             gate_id,
             parent_id,
-            dimensions,
-            gating_strategy
+            dimensions
         )
         self.gate_type = "RectangleGate"
 
@@ -37,8 +35,8 @@ class RectangleGate(Gate):
             f'{self.id}, parent: {self.parent}, dims: {len(self.dimensions)})'
         )
 
-    def apply(self, sample, parent_results):
-        events, dim_idx, dim_min, dim_max, new_dims = super().preprocess_sample_events(sample)
+    def apply(self, sample, parent_results, gating_strategy):
+        events, dim_idx, dim_min, dim_max, new_dims = super().preprocess_sample_events(sample, gating_strategy)
 
         results = np.ones(events.shape[0], dtype=np.bool)
 
@@ -50,21 +48,21 @@ class RectangleGate(Gate):
 
         for new_dim in new_dims:
             # TODO: RatioTransforms aren't limited to rect gates, refactor to
-            # allow other gate classes to handle new dimensions created from
-            # ratio transforms. Also, the ratio transform's apply method is
-            # different from other transforms in that it takes a sample argument
-            # and not an events arguments
+            #       allow other gate classes to handle new dimensions created from
+            #       ratio transforms. Also, the ratio transform's apply method is
+            #       different from other transforms in that it takes a sample argument
+            #       and not an events argument
 
             # new dimensions are defined by transformations of other dims
             try:
-                new_dim_xform = self.__parent__.transformations[new_dim.ratio_ref]
+                new_dim_xform = gating_strategy.transformations[new_dim.ratio_ref]
             except KeyError:
                 raise KeyError("New dimensions must provide a transformation")
 
             xform_events = new_dim_xform.apply(sample)
 
             if new_dim.transformation_ref is not None:
-                xform = self.__parent__.transformations[new_dim.transformation_ref]
+                xform = gating_strategy.transformations[new_dim.transformation_ref]
                 xform_events = xform.apply(xform_events)
 
             if new_dim.min is not None:
@@ -72,7 +70,7 @@ class RectangleGate(Gate):
             if new_dim.max is not None:
                 results = np.bitwise_and(results, xform_events < new_dim.max)
 
-        results = self.apply_parent_gate(sample, results, parent_results)
+        results = self.apply_parent_gate(sample, results, parent_results, gating_strategy)
 
         return results
 
@@ -91,14 +89,12 @@ class PolygonGate(Gate):
             gate_id,
             parent_id,
             dimensions,
-            vertices,
-            gating_strategy,
+            vertices
     ):
         super().__init__(
             gate_id,
             parent_id,
-            dimensions,
-            gating_strategy
+            dimensions
         )
         self.vertices = vertices
         self.gate_type = "PolygonGate"
@@ -109,8 +105,8 @@ class PolygonGate(Gate):
             f'{self.id}, parent: {self.parent}, vertices: {len(self.vertices)})'
         )
 
-    def apply(self, sample, parent_results):
-        events, dim_idx, dim_min, dim_max, new_dims = super().preprocess_sample_events(sample)
+    def apply(self, sample, parent_results, gating_strategy):
+        events, dim_idx, dim_min, dim_max, new_dims = super().preprocess_sample_events(sample, gating_strategy)
         path_vertices = []
 
         for vert in self.vertices:
@@ -118,7 +114,7 @@ class PolygonGate(Gate):
 
         results = _utils.points_in_polygon(np.array(path_vertices, dtype='double'), events[:, dim_idx])
 
-        results = self.apply_parent_gate(sample, results, parent_results)
+        results = self.apply_parent_gate(sample, results, parent_results, gating_strategy)
 
         return results
 
@@ -138,14 +134,12 @@ class EllipsoidGate(Gate):
             dimensions,
             coordinates,
             covariance_matrix,
-            distance_square,
-            gating_strategy
+            distance_square
     ):
         super().__init__(
             gate_id,
             parent_id,
-            dimensions,
-            gating_strategy
+            dimensions
         )
         self.gate_type = "EllipsoidGate"
         self.coordinates = coordinates
@@ -168,8 +162,8 @@ class EllipsoidGate(Gate):
             f'{self.id}, parent: {self.parent}, coords: {self.coordinates})'
         )
 
-    def apply(self, sample, parent_results):
-        events, dim_idx, dim_min, dim_max, new_dims = super().preprocess_sample_events(sample)
+    def apply(self, sample, parent_results, gating_strategy):
+        events, dim_idx, dim_min, dim_max, new_dims = super().preprocess_sample_events(sample, gating_strategy)
 
         results = _utils.points_in_ellipsoid(
             self.covariance_matrix,
@@ -178,7 +172,7 @@ class EllipsoidGate(Gate):
             events[:, dim_idx]
         )
 
-        results = self.apply_parent_gate(sample, results, parent_results)
+        results = self.apply_parent_gate(sample, results, parent_results, gating_strategy)
 
         return results
 
@@ -202,14 +196,12 @@ class QuadrantGate(Gate):
             gate_id,
             parent_id,
             dimensions,
-            quadrants,
-            gating_strategy,
+            quadrants
     ):
         super().__init__(
             gate_id,
             parent_id,
-            dimensions,
-            gating_strategy
+            dimensions
         )
         self.gate_type = "QuadrantGate"
 
@@ -219,6 +211,8 @@ class QuadrantGate(Gate):
 
         # Parse quadrants
         for q_id, dividers in quadrants.items():
+            # TODO: change quadrant from a dict to a Class, or even better maybe we can calc the quadrants fro the divs
+            #       and get rid of the quadrants argument completely...nope, we need the user given quad labels
             # quadrants is a dictionary where keys are quad IDs, value is a list
             # of dicts, each containing keys:
             #  - divider
@@ -248,9 +242,9 @@ class QuadrantGate(Gate):
             f'{self.id}, parent: {self.parent}, quadrants: {len(self.quadrants)})'
         )
 
-    def apply_parent_gate(self, sample, results, parent_results):
+    def apply_parent_gate(self, sample, results, parent_results, gating_strategy):
         if self.parent is not None and parent_results is not None:
-            parent_gate = self.__parent__.get_gate_by_reference(self.parent)
+            parent_gate = gating_strategy.get_gate_by_reference(self.parent)
             parent_id = self.parent
             parent_events = parent_gate.apply(sample)
 
@@ -294,8 +288,8 @@ class QuadrantGate(Gate):
 
         return final_results
 
-    def apply(self, sample, parent_results):
-        events, dim_idx, dim_min, dim_max, new_dims = super().preprocess_sample_events(sample)
+    def apply(self, sample, parent_results, gating_strategy):
+        events, dim_idx, dim_min, dim_max, new_dims = super().preprocess_sample_events(sample, gating_strategy)
 
         results = {}
 
@@ -320,7 +314,7 @@ class QuadrantGate(Gate):
 
                 results[q_id] = q_results
 
-        results = self.apply_parent_gate(sample, results, parent_results)
+        results = self.apply_parent_gate(sample, results, parent_results, gating_strategy)
 
         return results
 
@@ -338,19 +332,17 @@ class BooleanGate(Gate):
             self,
             gate_id,
             parent_id,
-            dimensions,
             bool_type,
-            gate_refs,
-            gating_strategy
+            gate_refs
     ):
         super().__init__(
             gate_id,
             parent_id,
-            dimensions,
-            gating_strategy
+            None
         )
         self.gate_type = "BooleanGate"
 
+        bool_type = bool_type.lower()
         if bool_type not in ['and', 'or', 'not']:
             raise ValueError(
                 "Boolean gate must specify one of 'and', 'or', or 'not'"
@@ -364,12 +356,12 @@ class BooleanGate(Gate):
             f'{self.id}, parent: {self.parent}, type: {self.type})'
         )
 
-    def apply(self, sample, parent_results):
+    def apply(self, sample, parent_results, gating_strategy):
         all_gate_results = []
 
         for gate_ref_dict in self.gate_refs:
-            gate = self.__parent__.get_gate_by_reference(gate_ref_dict['ref'])
-            gate_ref_results = gate.apply(sample, parent_results)
+            gate = gating_strategy.get_gate_by_reference(gate_ref_dict['ref'])
+            gate_ref_results = gate.apply(sample, parent_results, gating_strategy)
 
             if isinstance(gate, QuadrantGate):
                 gate_ref_events = gate_ref_results[gate_ref_dict['ref']]['events']
@@ -393,6 +385,6 @@ class BooleanGate(Gate):
                 "Boolean gate must specify one of 'and', 'or', or 'not'"
             )
 
-        results = self.apply_parent_gate(sample, results, parent_results)
+        results = self.apply_parent_gate(sample, results, parent_results, gating_strategy)
 
         return results

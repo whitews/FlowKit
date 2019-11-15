@@ -19,8 +19,7 @@ class GMLRectangleGate(gates.RectangleGate):
             self,
             gate_element,
             gating_namespace,
-            data_type_namespace,
-            gating_strategy
+            data_type_namespace
     ):
         gate_id, parent_id, dimensions = _gml_utils.parse_gate_element(
             gate_element,
@@ -31,8 +30,7 @@ class GMLRectangleGate(gates.RectangleGate):
         super().__init__(
             gate_id,
             parent_id,
-            dimensions,
-            gating_strategy
+            dimensions
         )
 
 
@@ -49,8 +47,7 @@ class GMLPolygonGate(gates.PolygonGate):
             self,
             gate_element,
             gating_namespace,
-            data_type_namespace,
-            gating_strategy
+            data_type_namespace
     ):
         gate_id, parent_id, dimensions = _gml_utils.parse_gate_element(
             gate_element,
@@ -73,8 +70,7 @@ class GMLPolygonGate(gates.PolygonGate):
             gate_id,
             parent_id,
             dimensions,
-            vertices,
-            gating_strategy
+            vertices
         )
 
 
@@ -90,8 +86,7 @@ class GMLEllipsoidGate(gates.EllipsoidGate):
             self,
             gate_element,
             gating_namespace,
-            data_type_namespace,
-            gating_strategy
+            data_type_namespace
     ):
         gate_id, parent_id, dimensions = _gml_utils.parse_gate_element(
             gate_element,
@@ -175,8 +170,7 @@ class GMLEllipsoidGate(gates.EllipsoidGate):
             dimensions,
             coordinates,
             covariance_matrix,
-            distance_square,
-            gating_strategy
+            distance_square
         )
 
 
@@ -198,8 +192,7 @@ class GMLQuadrantGate(gates.QuadrantGate):
             self,
             gate_element,
             gating_namespace,
-            data_type_namespace,
-            gating_strategy
+            data_type_namespace
     ):
         gate_id, parent_id, dividers = _gml_utils.parse_gate_element(
             gate_element,
@@ -276,8 +269,7 @@ class GMLQuadrantGate(gates.QuadrantGate):
             gate_id,
             parent_id,
             dividers,
-            quadrants,
-            gating_strategy
+            quadrants
         )
 
 
@@ -294,8 +286,7 @@ class GMLBooleanGate(gates.BooleanGate):
             self,
             gate_element,
             gating_namespace,
-            data_type_namespace,
-            gating_strategy
+            data_type_namespace
     ):
         gate_id, parent_id, dimensions = _gml_utils.parse_gate_element(
             gate_element,
@@ -352,6 +343,7 @@ class GMLBooleanGate(gates.BooleanGate):
             else:
                 use_complement = False
 
+            # TODO: see if 'gate_refs' list of dictionaries can be to something more easily documented
             gate_refs.append(
                 {
                     'ref': gate_ref,
@@ -362,8 +354,6 @@ class GMLBooleanGate(gates.BooleanGate):
         super().__init__(
             gate_id,
             parent_id,
-            dimensions,
             bool_type,
-            gate_refs,
-            gating_strategy
+            gate_refs
         )
