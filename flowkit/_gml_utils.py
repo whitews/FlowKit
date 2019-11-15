@@ -637,7 +637,7 @@ def add_gates_from_gate_dict(gating_strategy, gate_dict, ns_map, parent_ml):
         skip = False
         try:
             gate = gating_strategy.gates[gate_id]
-        except KeyError as e:
+        except KeyError:
             # may be in a Quadrant gate, the gs method 'get_gate_by_reference' will re-raise
             # the KeyError if the gate_id is truly not found
             gate = gating_strategy.get_gate_by_reference(gate_id)
