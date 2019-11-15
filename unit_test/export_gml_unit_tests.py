@@ -950,3 +950,36 @@ class ExportGMLTestCase(unittest.TestCase):
         parent_gate = gs_out.get_gate_by_reference(parent_id)
 
         self.assertIsInstance(parent_gate, gates.QuadrantGate)
+
+    @staticmethod
+    def test_all_gates():
+        gml_path = 'examples/gate_ref/gml/gml_all_gates.xml'
+
+        gs = GatingStrategy(gml_path)
+
+        out_file = BytesIO()
+
+        gs.export_gml(out_file)
+        out_file.seek(0)
+
+        gs_out = GatingStrategy(out_file)
+
+        gs_results = gs_out.gate_sample(data1_sample)
+
+        truth_pattern = 'examples/gate_ref/truth/Results*.txt'
+        res_files = glob.glob(truth_pattern)
+        truth_dict = {}
+
+        for res_path in res_files:
+            match = re.search("Results_(.+)\\.txt$", res_path)
+            if match is not None:
+                g_id = match.group(1)
+                truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+                truth_dict[g_id] = truth
+
+        for row in gs_results.report.itertuples():
+            np.testing.assert_array_equal(
+                truth_dict[row[0][1]],
+                gs_results.get_gate_indices(row[0][1])
+            )
