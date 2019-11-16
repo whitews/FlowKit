@@ -8,8 +8,9 @@ from matplotlib import cm, colors
 from matplotlib import pyplot
 from matplotlib.patches import Ellipse
 import colorsys
-# noinspection PyUnresolvedReferences
+# noinspection PyUnresolvedReferences, PyProtectedMember
 from flowkit import utils_c
+import flowutils
 
 
 def generate_custom_colormap(cmap_sample_indices, base_cmap):
@@ -46,6 +47,53 @@ cm_sample = [
 new_jet = generate_custom_colormap(cm_sample, cm.get_cmap('jet'))
 
 
+def parse_multiline_matrix(matrix_text, fluoro_labels):
+    # first, we must find a valid header line and we will require that the matrix
+    # follows on the next lines, ignoring any additional lines before or after
+    # the header contains labels matching the PnN value(FCS text field)
+    # and may be tab or comma delimited
+    # (spaces can't be delimiters b/c they are allowed in the PnN value)
+    header = None
+    header_line_index = None
+    for i, line in enumerate(matrix_text):
+        line_values = re.split('[\t,]', line)
+
+        label_diff = set(fluoro_labels).symmetric_difference(line_values)
+
+        if len(label_diff) != 0:
+            # if any labels are missing or extra ones found, then not a valid header row
+            continue
+        else:
+            header = line_values
+            header_line_index = i
+            break
+
+    matrix_start = header_line_index + 1
+    matrix_end = matrix_start + len(fluoro_labels)
+
+    if len(matrix_text) < matrix_end:
+        raise ValueError("Too few rows in compensation")
+
+    matrix_text = matrix_text[matrix_start:matrix_end]
+    matrix_array = []
+
+    # convert the matrix text to numpy array
+    for line in matrix_text:
+        line_values = re.split('[\t,]', line)
+        line_values = [float(value) for value in line_values]
+
+        if len(line_values) > len(fluoro_labels):
+            raise ValueError("Too many values in line: %s" % line)
+        elif len(line_values) < len(fluoro_labels):
+            raise ValueError("Too few values in line: %s" % line)
+        else:
+            matrix_array.append(line_values)
+
+    matrix_array = np.array(matrix_array)
+
+    return matrix_array, header
+
+
 def convert_matrix_text_to_array(matrix_text, fluoro_labels, fluoro_indices):
     """
     Converts a CSV text string to a NumPy array
@@ -59,44 +107,27 @@ def convert_matrix_text_to_array(matrix_text, fluoro_labels, fluoro_indices):
     # values are numbers (can be exp notation)
     matrix_text = matrix_text.splitlines()
 
-    # TODO: verify function can parse FCS spill value properly
+    if len(matrix_text) == 0:
+        raise ValueError("matrix text appears to be empty")
+    elif len(matrix_text) == 1:
+        # probably a single-line CSV from FCS metadata
+        matrix, header = flowutils.compensate.get_spill(matrix_text[0])
+    else:
+        matrix, header = parse_multiline_matrix(matrix_text, fluoro_labels)
 
-    # but first we must find a valid header line and we will require that the matrix
-    # follows on the next lines, ignoring any additional lines before or after
-    # the header contains labels matching the PnN value(FCS text field)
-    # and may be tab or comma delimited
-    # (spaces can't be delimiters b/c they are allowed in the PnN value)
-    header = None
-    header_line_index = None
-    non_matching_labels = fluoro_labels.copy()
-    for i, line in enumerate(matrix_text):
-        line_values = re.split('[\t,]', line)
+    label_diff = set(fluoro_labels).symmetric_difference(header)
 
-        label_diff = set(fluoro_labels).symmetric_difference(line_values)
-
-        if len(label_diff) != 0:
-            # if any labels are missing or extra ones found, then not a valid header row
-            # And, for more informative error reporting, we keep track of the mis-matches
-            # to include in the error message
-            if len(label_diff) < len(non_matching_labels):
-                non_matching_labels = label_diff
-            continue
-        else:
-            header = line_values
-            header_line_index = i
-            break
-
-    if header is None:
+    if len(label_diff) > 0:
         in_fcs_not_comp = []
         in_comp_not_fcs = []
 
-        for label in non_matching_labels:
+        for label in label_diff:
             if label in fluoro_labels:
                 in_fcs_not_comp.append(label)
             else:
                 in_comp_not_fcs.append(label)
 
-        error_message = "Matrix labels do not match fluorescent labels in FCS file"
+        error_message = "Matrix labels do not match given fluorescent labels"
 
         if len(in_fcs_not_comp) > 0:
             error_message = "\n".join(
@@ -122,14 +153,6 @@ def convert_matrix_text_to_array(matrix_text, fluoro_labels, fluoro_indices):
 
         raise ValueError(error_message)
 
-    matrix_start = header_line_index + 1
-    matrix_end = matrix_start + len(fluoro_labels)
-
-    if len(matrix_text) < matrix_end:
-        raise ValueError("Too few rows in compensation")
-
-    matrix_text = matrix_text[matrix_start:matrix_end]
-
     header_channel_numbers = []
 
     for h in header:
@@ -144,19 +167,7 @@ def convert_matrix_text_to_array(matrix_text, fluoro_labels, fluoro_indices):
         true_fluoro_index = fluoro_indices[fluoro_index]
         header_channel_numbers.append(true_fluoro_index + 1)
 
-    matrix_array = np.array(header_channel_numbers)
-
-    # convert the matrix text to numpy array
-    for line in matrix_text:
-        line_values = re.split('[\t,]', line)
-        line_values = [float(value) for value in line_values]
-
-        if len(line_values) > len(fluoro_labels):
-            raise ValueError("Too many values in line: %s" % line)
-        elif len(line_values) < len(fluoro_labels):
-            raise ValueError("Too few values in line: %s" % line)
-        else:
-            matrix_array = np.vstack([matrix_array, line_values])
+    matrix_array = np.vstack([header_channel_numbers, matrix])
 
     return matrix_array
 
@@ -213,6 +224,7 @@ def parse_compensation_matrix(compensation, channel_labels, null_channels=None):
             matrix_text = compensation
 
         matrix = convert_matrix_text_to_array(matrix_text, fluoro_labels, fluoro_indices)
+
     elif isinstance(compensation, Path):
         fh = compensation.open('r')
         matrix_text = fh.read()
@@ -342,6 +354,7 @@ def filter_anomalous_events(
         ref_sets = []
         for j in range(0, ref_set_count):
             ref_subsample_idx = rng.choice(int(event_count * 0.5), ref_size, replace=False)
+            # noinspection PyUnresolvedReferences
             ref_sets.append(chan_events[reference_indices.values[ref_subsample_idx]])
 
         # calculate piece-wise KS test, we'll test every roll / 5 interval, cause
@@ -426,8 +439,8 @@ def filter_anomalous_events(
             ax.axhline(p_value_threshold, linestyle='-', linewidth=1, c='coral')
 
             combined_refs = np.hstack(ref_sets)
-            ref_y_min = combined_refs.min()
-            ref_y_max = combined_refs.max()
+            ref_y_min = np.min(combined_refs)
+            ref_y_max = np.max(combined_refs)
 
             for ref_i, reference_events in enumerate(ref_sets):
                 ax = fig.add_subplot(4, ref_set_count, (3 * ref_set_count) + ref_i + 1)
