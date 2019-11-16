@@ -646,8 +646,15 @@ class Sample(object):
         )
         p.title.align = 'center'
 
-        p.xaxis.axis_label = self.pnn_labels[x_index]
-        p.yaxis.axis_label = self.pnn_labels[y_index]
+        if self.pns_labels[x_index] != '':
+            p.xaxis.axis_label = '%s (%s)' % (self.pns_labels[x_index], self.pnn_labels[x_index])
+        else:
+            p.xaxis.axis_label = self.pnn_labels[x_index]
+
+        if self.pns_labels[y_index] != '':
+            p.yaxis.axis_label = '%s (%s)' % (self.pns_labels[y_index], self.pnn_labels[y_index])
+        else:
+            p.yaxis.axis_label = self.pnn_labels[y_index]
 
         if y_max > x_max:
             radius_dimension = 'y'
