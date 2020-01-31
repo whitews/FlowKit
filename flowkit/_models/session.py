@@ -143,6 +143,9 @@ class Session(object):
     def add_gate(self, gate):
         self.gating_strategy.add_gate(gate)
 
+    def add_sample(self, samples):
+        self.samples.extend(load_samples(samples))
+
     def add_transform(self, transform):
         self.gating_strategy.add_transform(transform)
 
