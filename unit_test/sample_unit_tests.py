@@ -90,6 +90,27 @@ class LoadSampleTestCase(unittest.TestCase):
 
         self.assertIsInstance(data1_sample._transformed_events, np.ndarray)
 
+    def test_create_fcs(self):
+        fcs_file_path = "examples/test_comp_example.fcs"
+        comp_file_path = Path("examples/comp_complete_example.csv")
+
+        sample = Sample(
+            fcs_path_or_data=fcs_file_path,
+            compensation=comp_file_path
+        )
+
+        sample.export("test_fcs_export.fcs", source='comp', directory="examples")
+
+        exported_fcs_file = "examples/test_fcs_export.fcs"
+        exported_sample = Sample(fcs_path_or_data=exported_fcs_file)
+        os.unlink(exported_fcs_file)
+
+        self.assertIsInstance(exported_sample, Sample)
+
+        # TODO: Excluding time channel here, as the difference was nearly 0.01. Need to investigate why the
+        #       exported comp data isn't exactly equal
+        np.testing.assert_almost_equal(sample._comp_events[:, :-1], exported_sample._raw_events[:, :-1], decimal=3)
+
 
 if __name__ == '__main__':
     unittest.main()

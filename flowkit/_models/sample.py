@@ -853,7 +853,7 @@ class Sample(object):
 
         ext = os.path.splitext(filename)[-1]
 
-        if ext == 'csv':
+        if ext == '.csv':
             np.savetxt(
                 output_path,
                 events,
@@ -861,7 +861,7 @@ class Sample(object):
                 header=",".join(self.pnn_labels),
                 comments=''
             )
-        elif ext == 'fcs':
+        elif ext == '.fcs':
             fh = open(output_path, 'wb')
 
             flowio.create_fcs(
