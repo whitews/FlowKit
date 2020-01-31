@@ -154,6 +154,9 @@ class Sample(object):
         except KeyError:
             self.acquisition_date = None
 
+        # TODO: Allow user to set some sort of Sample ID or the orig filename,
+        #       would be useful for Samples created from data arrays or if
+        #       2 FCS files had the same file name.
         try:
             self.original_filename = self.metadata['fil']
         except KeyError:
