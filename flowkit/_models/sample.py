@@ -154,6 +154,9 @@ class Sample(object):
         except KeyError:
             self.acquisition_date = None
 
+        # TODO: Allow user to set some sort of Sample ID or the orig filename,
+        #       would be useful for Samples created from data arrays or if
+        #       2 FCS files had the same file name.
         try:
             self.original_filename = self.metadata['fil']
         except KeyError:
@@ -850,7 +853,7 @@ class Sample(object):
 
         ext = os.path.splitext(filename)[-1]
 
-        if ext == 'csv':
+        if ext == '.csv':
             np.savetxt(
                 output_path,
                 events,
@@ -858,7 +861,7 @@ class Sample(object):
                 header=",".join(self.pnn_labels),
                 comments=''
             )
-        elif ext == 'fcs':
+        elif ext == '.fcs':
             fh = open(output_path, 'wb')
 
             flowio.create_fcs(

@@ -83,6 +83,9 @@ def gate_sample(data):
 
 
 def gate_samples(gating_strategy, samples, verbose):
+    # TODO: Looks like multiprocessing can fail for very large workloads (lots of gates), maybe due
+    #       to running out of memory. Will investigate further, but for now maybe provide an option
+    #       for turning off multiprocessing so end user can avoid this issue if it occurs.
     if multi_proc:
         if len(samples) < mp.cpu_count():
             proc_count = len(samples)
@@ -141,7 +144,11 @@ class Session(object):
 
     # start pass through methods for GatingStrategy
     def add_gate(self, gate):
+        # TODO: allow adding multiple gates at once, while still allowing a single gate. Check if list or Gate instance
         self.gating_strategy.add_gate(gate)
+
+    def add_sample(self, samples):
+        self.samples.extend(load_samples(samples))
 
     def add_transform(self, transform):
         self.gating_strategy.add_transform(transform)
@@ -239,6 +246,7 @@ class Session(object):
         # indices for each sample. Add convenience functions inside
         # GatingResults class for conveniently extracting information from
         # the DataFrame
+        # TODO: should this method take a subsample option to gate on just the sub-sampled events?
         results = gate_samples(self.gating_strategy, self.samples, verbose)
 
         all_reports = [res.report for res in results]

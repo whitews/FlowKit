@@ -28,3 +28,4 @@ wheels/
 
 # Jupyter Notebook
 .ipynb_checkpoints
+*.ipynb
