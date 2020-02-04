@@ -142,7 +142,8 @@ class Sample(object):
         self._subsample_count = None
         self._subsample_seed = None
 
-        self.apply_compensation(compensation)
+        if compensation is not None:
+            self.apply_compensation(compensation)
 
         # if filtering any events, save those in case they want to be retrieved
         self.negative_scatter_indices = None
@@ -305,6 +306,7 @@ class Sample(object):
         `get_comp_events`.
 
         :param compensation: Compensation matrix, which can be a:
+                - Matrix instance
                 - NumPy array
                 - CSV file path
                 - pathlib Path object to a CSV or TSV file
@@ -316,22 +318,27 @@ class Sample(object):
         :param comp_id: text ID for identifying compensation matrix
         :return: None
         """
-        comp_labels = self.pnn_labels
-
-        # TODO: should also accept a Matrix instance
-        if compensation is not None:
+        if isinstance(compensation, Matrix):
+            self.compensation = compensation
+            self._comp_events = self.compensation.apply(self)
+        elif compensation is not None:
             spill = _utils.parse_compensation_matrix(
                 compensation,
-                comp_labels,
+                self.pnn_labels,
                 null_channels=self.null_channels
             )
             fluorochromes = [self.pns_labels[i] for i in self.fluoro_indices]
             detectors = [self.pnn_labels[i] for i in self.fluoro_indices]
             self.compensation = Matrix(comp_id, fluorochromes, detectors, spill[1:, :])
-            self._transformed_events = None
             self._comp_events = self.compensation.apply(self)
         else:
+            # compensation must be None so clear any matrix and comp events
             self.compensation = None
+            self._comp_events = None
+
+        # Clear any previously transformed events
+        # TODO: Consider caching the transform and re-applying
+        self._transformed_events = None
 
     def get_metadata(self):
         """

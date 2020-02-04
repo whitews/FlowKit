@@ -154,6 +154,9 @@ class Session(object):
         self.gating_strategy.add_transform(transform)
 
     def add_comp_matrix(self, matrix):
+        # TODO: GatingStrategy method add_comp_matrix accepts only Matrix instances, so this pass through does as well.
+        #       Consider adding a pass through Session method to parse comp matrices for convienently getting a
+        #       Matrix instance from a comp source (npy, CSV, str, etc.)
         self.gating_strategy.add_comp_matrix(matrix)
 
     def get_parent_gate_id(self, gate_id):
