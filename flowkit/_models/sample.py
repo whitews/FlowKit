@@ -652,7 +652,7 @@ class Sample(object):
             tools=tools,
             x_range=(x_min, x_max),
             y_range=(y_min, y_max),
-            title=self.original_filename
+            title=self.original_filename if self.original_filename else 'unknown'
         )
         p.title.align = 'center'
 
