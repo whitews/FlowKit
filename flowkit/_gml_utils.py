@@ -20,15 +20,23 @@ from ._models.gates.gates import \
     RectangleGate
 
 
-def parse_gatingml_file(gating_ml_file_path):
+def parse_gating_xml_file(gating_ml_file_path):
     xml_document = etree.parse(gating_ml_file_path)
 
     val = gml_schema.validate(xml_document)
-
-    if not val:
-        raise ValueError("Document is not valid GatingML")
-
     root = xml_document.getroot()
+
+    if val:
+        doc_type = 'gatingml'
+    else:
+        # Try parsing as a FlowJo workspace
+        if 'flowJoVersion' in root.attrib:
+            if int(root.attrib['flowJoVersion'].split('.')[0]) >= 10:
+                doc_type = 'flowjo'
+            else:
+                raise ValueError("FlowKit only supports FlowJo workspaces for version 10 or higher.")
+        else:
+            raise ValueError("File is neither GatingML 2.0 compliant nor a FlowJo workspace.")
 
     gating_ns = None
     data_type_ns = None
@@ -46,7 +54,7 @@ def parse_gatingml_file(gating_ml_file_path):
     if gating_ns is None:
         raise ValueError("GatingML namespace reference is missing from GatingML file")
 
-    return root, gating_ns, data_type_ns, transform_ns
+    return doc_type, root, gating_ns, data_type_ns, transform_ns
 
 
 def construct_gates(gating_strategy, root_gml):

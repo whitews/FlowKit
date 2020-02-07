@@ -1,7 +1,7 @@
 import anytree
 from anytree.exporter import DotExporter
 import pandas as pd
-from flowkit import _gml_utils, Matrix
+from flowkit import _gml_utils, _wsp_utils, Matrix
 from flowkit import gates as fk_gates
 from flowkit import transforms as fk_transforms
 
@@ -12,7 +12,7 @@ class GatingStrategy(object):
     for compensation and transformation. Takes an optional, valid GatingML
     document as an input.
     """
-    def __init__(self, gating_ml_file_path=None):
+    def __init__(self, gating_file_path=None):
         self.gating_ns = None
         self.data_type_ns = None
         self.transform_ns = None
@@ -24,15 +24,21 @@ class GatingStrategy(object):
         self.transformations = {}
         self.comp_matrices = {}
 
-        if gating_ml_file_path is not None:
-            root_gml, gating_ns, dt_ns, xform_ns = _gml_utils.parse_gatingml_file(gating_ml_file_path)
+        if gating_file_path is not None:
+            doc_type, root_gml, gating_ns, dt_ns, xform_ns = _gml_utils.parse_gating_xml_file(gating_file_path)
             self.gating_ns = gating_ns
             self.data_type_ns = dt_ns
             self.transform_ns = xform_ns
 
-            self.gates = _gml_utils.construct_gates(self, root_gml)
-            self.transformations = _gml_utils.construct_transforms(root_gml, self.transform_ns, self.data_type_ns)
-            self.comp_matrices = _gml_utils.construct_matrices(root_gml, self.transform_ns, self.data_type_ns)
+            if doc_type == 'gatingml':
+                self.gates = _gml_utils.construct_gates(self, root_gml)
+                self.transformations = _gml_utils.construct_transforms(root_gml, self.transform_ns, self.data_type_ns)
+                self.comp_matrices = _gml_utils.construct_matrices(root_gml, self.transform_ns, self.data_type_ns)
+            elif doc_type == 'flowjo':
+                self.gates = _wsp_utils.construct_gates(self, root_gml)
+                # TODO: handle xforms and comps
+            else:
+                raise ValueError("Gating file format is not supported.")
 
     def __repr__(self):
         return (
@@ -138,7 +144,7 @@ class GatingStrategy(object):
         self.transformations[transform.id] = transform
 
     def add_comp_matrix(self, matrix):
-        # TODO: accept other matrix types beyond a Matrix instance, or should the Matrix class do that?
+        # Only accept Matrix class instances as we need the ID
         if not isinstance(matrix, Matrix):
             raise ValueError("matrix must be an instance of the Matrix class")
 
