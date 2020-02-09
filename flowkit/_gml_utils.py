@@ -20,8 +20,8 @@ from ._models.gates.gates import \
     RectangleGate
 
 
-def parse_gating_xml_file(gating_ml_file_path):
-    xml_document = etree.parse(gating_ml_file_path)
+def parse_gating_xml_file(xml_file_path):
+    xml_document = etree.parse(xml_file_path)
 
     val = gml_schema.validate(xml_document)
     root = xml_document.getroot()

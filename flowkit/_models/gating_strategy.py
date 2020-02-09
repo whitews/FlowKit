@@ -35,8 +35,11 @@ class GatingStrategy(object):
                 self.transformations = _gml_utils.construct_transforms(root_gml, self.transform_ns, self.data_type_ns)
                 self.comp_matrices = _gml_utils.construct_matrices(root_gml, self.transform_ns, self.data_type_ns)
             elif doc_type == 'flowjo':
-                self.gates = _wsp_utils.construct_gates(self, root_gml)
-                # TODO: handle xforms and comps
+                # WSP files have gates, xforms, & comps nested in each sample tag, so one function to parse
+                wsp_dict = _wsp_utils.parse_wsp(self, root_gml)
+                self.gates = wsp_dict['gates']
+                self.transformations = wsp_dict['transforms']
+                self.comp_matrices = wsp_dict['comp']
             else:
                 raise ValueError("Gating file format is not supported.")
 
