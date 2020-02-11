@@ -1,3 +1,4 @@
+import numpy as np
 from flowkit import _gml_utils
 from ._models.transforms import transforms
 from ._models.gates.gml_gates import \
@@ -47,25 +48,30 @@ def parse_wsp(gating_strategy, root_xml):
 
     for sample_el in sample_els:
         xforms_el = sample_el.find('Transformations', ns_map)
+
         sample_node_el = sample_el.find('SampleNode', ns_map)
 
         sample_id = sample_node_el.attrib['sampleID']
         sample_name = sample_node_el.attrib['name']
 
-        # FlowJo WSP gates are nested so we'll have to do a recursive search from the root Sub-populations node
-        sample_root_sub_pop_el = sample_node_el.find('Subpopulations', ns_map)
-        sample_gates = recurse_sub_populations(sample_root_sub_pop_el, gating_strategy, ns_map)
-
         # It appears there is only a single set of xforms per sample, one for each channel.
         # And, the xforms have no IDs. We'll extract it and give it IDs based on ???
         sample_xform_lut = parse_wsp_transforms(xforms_el, gating_strategy.transform_ns, gating_strategy.data_type_ns)
 
-        # TODO: parse spilloverMatrix elements
+        # parse spilloverMatrix elements
+        sample_comp = parse_wsp_compensation(sample_el, gating_strategy.transform_ns, gating_strategy.data_type_ns)
+
+        # FlowJo WSP gates are nested so we'll have to do a recursive search from the root Sub-populations node
+        sample_root_sub_pop_el = sample_node_el.find('Subpopulations', ns_map)
+        # TODO: FJ WSP gates are stored in non-transformed space. After parsing the XML the values need
+        #       to be converted to the compensated & transformed space
+        sample_gates = recurse_sub_populations(sample_root_sub_pop_el, gating_strategy, ns_map)
 
         samples[sample_id] = {
             'name': sample_name,
             'gates': sample_gates,
-            'transform_lut': sample_xform_lut
+            'transform_lut': sample_xform_lut,
+            'compensation': sample_comp
         }
 
     gates_dict = {}
@@ -142,6 +148,7 @@ def parse_wsp_transforms(transforms_el, transform_ns, data_type_ns):
                 param_a=float(min_range)
             )
         elif xform_type == 'log':
+            # TODO: implement log transform
             pass
         elif xform_type == 'logicle':
             # logicle transform has 4 parameters: T, W, M, and A
@@ -165,3 +172,68 @@ def parse_wsp_transforms(transforms_el, transform_ns, data_type_ns):
             raise ValueError(error_msg)
 
     return xforms_lut
+
+
+def parse_wsp_compensation(sample_el, transform_ns, data_type_ns):
+    # find spilloverMatrix elements, not sure if there should be just a single matrix or multiple
+    # going with a single one now since there do not appear to be comp references in the WSP gate elements
+    matrix_els = sample_el.findall(
+        '%s:spilloverMatrix' % transform_ns,
+        namespaces=sample_el.nsmap
+    )
+
+    if len(matrix_els) > 1:
+        raise ValueError("Multiple spillover matrices per sample are not supported.")
+    elif len(matrix_els) == 0:
+        return None
+
+    matrix_el = matrix_els[0]
+
+    matrix_id = _gml_utils.find_attribute_value(matrix_el, transform_ns, 'id')
+    matrix_prefix = matrix_el.attrib['prefix']
+    matrix_suffix = matrix_el.attrib['suffix']
+
+    detectors = []
+    matrix = []
+
+    params_els = matrix_el.find('%s:parameters' % data_type_ns, namespaces=matrix_el.nsmap)
+    param_els = params_els.findall('%s:parameter' % data_type_ns, namespaces=matrix_el.nsmap)
+    for param_el in param_els:
+        param_name = _gml_utils.find_attribute_value(param_el, data_type_ns, 'name')
+        detectors.append(param_name)
+
+    spill_els = matrix_el.findall(
+        '%s:spillover' % transform_ns,
+        namespaces=matrix_el.nsmap
+    )
+
+    for spill_el in spill_els:
+        matrix_row = []
+
+        coefficient_els = spill_el.findall(
+            '%s:coefficient' % transform_ns,
+            namespaces=spill_el.nsmap
+        )
+
+        for co_el in coefficient_els:
+            value = _gml_utils.find_attribute_value(co_el, transform_ns, 'value')
+            if value is None:
+                raise ValueError(
+                    'Matrix coefficient must have only 1 value (line %d)' % co_el.sourceline
+                )
+
+            matrix_row.append(float(value))
+
+        matrix.append(matrix_row)
+
+    matrix = np.array(matrix)
+
+    matrix_dict = {
+        'matrix_id': matrix_id,
+        'prefix': matrix_prefix,
+        'suffix': matrix_suffix,
+        'detectors': detectors,
+        'matrix': matrix
+    }
+
+    return matrix_dict
