@@ -44,10 +44,10 @@ def parse_wsp(gating_strategy, root_xml):
 
         group_sample_lut[group_node_el.attrib['name']] = sample_ids
 
-    samples = {}
+    wsp_dict = {}
 
     for sample_el in sample_els:
-        xforms_el = sample_el.find('Transformations', ns_map)
+        transforms_el = sample_el.find('Transformations', ns_map)
 
         sample_node_el = sample_el.find('SampleNode', ns_map)
 
@@ -56,7 +56,7 @@ def parse_wsp(gating_strategy, root_xml):
 
         # It appears there is only a single set of xforms per sample, one for each channel.
         # And, the xforms have no IDs. We'll extract it and give it IDs based on ???
-        sample_xform_lut = parse_wsp_transforms(xforms_el, gating_strategy.transform_ns, gating_strategy.data_type_ns)
+        sample_xform_lut = parse_wsp_transforms(transforms_el, gating_strategy.transform_ns, gating_strategy.data_type_ns)
 
         # parse spilloverMatrix elements
         sample_comp = parse_wsp_compensation(sample_el, gating_strategy.transform_ns, gating_strategy.data_type_ns)
@@ -67,16 +67,14 @@ def parse_wsp(gating_strategy, root_xml):
         #       to be converted to the compensated & transformed space
         sample_gates = recurse_sub_populations(sample_root_sub_pop_el, gating_strategy, ns_map)
 
-        samples[sample_id] = {
+        wsp_dict[sample_id] = {
             'name': sample_name,
             'gates': sample_gates,
             'transform_lut': sample_xform_lut,
             'compensation': sample_comp
         }
 
-    gates_dict = {}
-
-    return gates_dict
+    return wsp_dict
 
 
 def recurse_sub_populations(sub_pop_el, gating_strategy, ns_map):
