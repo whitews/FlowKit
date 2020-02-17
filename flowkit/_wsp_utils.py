@@ -1,6 +1,11 @@
+import copy
 import numpy as np
-from flowkit import _gml_utils
+from flowkit import _gml_utils, Matrix
+from ._models.dimension import Dimension
 from ._models.transforms import transforms
+from ._models.gates.gates import \
+    PolygonGate, \
+    RectangleGate
 from ._models.gates.gml_gates import \
     GMLPolygonGate, \
     GMLRectangleGate
@@ -15,34 +20,11 @@ gate_constructor_lut = {
 }
 
 
-def parse_wsp(gating_strategy, root_xml):
-    # first, find Groups & SampleList elements
+def parse_wsp(root_xml, gating_ns, transform_ns, data_type_ns):
+    # first, find SampleList elements
     ns_map = root_xml.nsmap
-    groups_el = root_xml.find('Groups', ns_map)
     sample_list_el = root_xml.find('SampleList', ns_map)
-
-    # next, find which samples belong to which groups
-    group_node_els = groups_el.findall('GroupNode', ns_map)
     sample_els = sample_list_el.findall('Sample', ns_map)
-
-    # Note, sample IDs are strings
-    group_sample_lut = {}
-
-    for group_node_el in group_node_els:
-        group_el = group_node_el.find('Group', ns_map)
-        group_sample_refs_el = group_el.find('SampleRefs', ns_map)
-
-        if group_sample_refs_el is None:
-            # TODO: handle 'Compensation' group if necessary
-            continue
-        group_sample_els = group_sample_refs_el.findall('SampleRef', ns_map)
-
-        sample_ids = []
-
-        for sample_el in group_sample_els:
-            sample_ids.append(sample_el.attrib['sampleID'])
-
-        group_sample_lut[group_node_el.attrib['name']] = sample_ids
 
     wsp_dict = {}
 
@@ -56,29 +38,54 @@ def parse_wsp(gating_strategy, root_xml):
 
         # It appears there is only a single set of xforms per sample, one for each channel.
         # And, the xforms have no IDs. We'll extract it and give it IDs based on ???
-        sample_xform_lut = parse_wsp_transforms(transforms_el, gating_strategy.transform_ns, gating_strategy.data_type_ns)
+        sample_xform_lut = parse_wsp_transforms(transforms_el, transform_ns, data_type_ns)
 
         # parse spilloverMatrix elements
-        sample_comp = parse_wsp_compensation(sample_el, gating_strategy.transform_ns, gating_strategy.data_type_ns)
+        sample_comp = parse_wsp_compensation(sample_el, transform_ns, data_type_ns)
 
         # FlowJo WSP gates are nested so we'll have to do a recursive search from the root Sub-populations node
         sample_root_sub_pop_el = sample_node_el.find('Subpopulations', ns_map)
-        # TODO: FJ WSP gates are stored in non-transformed space. After parsing the XML the values need
-        #       to be converted to the compensated & transformed space
-        sample_gates = recurse_sub_populations(sample_root_sub_pop_el, gating_strategy, ns_map)
 
-        wsp_dict[sample_id] = {
-            'name': sample_name,
-            'gates': sample_gates,
-            'transform_lut': sample_xform_lut,
-            'compensation': sample_comp
-        }
+        # FJ WSP gates are stored in non-transformed space. After parsing the XML the values need
+        # to be converted to the compensated & transformed space. Also, the recurse_sub_populations
+        # function replaces the non-human readable IDs in the XML with population names
+        sample_gates = recurse_sub_populations(
+            sample_root_sub_pop_el,
+            None,  # starting at root, so no parent ID
+            gating_ns,
+            data_type_ns
+        )
+
+        for sample_gate in sample_gates:
+            group = sample_gate['owning_group']
+            gate = sample_gate['gate']
+
+            if group not in wsp_dict:
+                wsp_dict[group] = {}
+            if sample_name not in wsp_dict[group]:
+                detectors = sample_comp['detectors']
+                matrix = Matrix(
+                    sample_comp['matrix_name'],
+                    fluorochromes=['' for d in detectors],
+                    detectors=detectors,
+                    matrix=sample_comp['matrix']
+                )
+
+                wsp_dict[group][sample_name] = {
+                    'gates': [],
+                    'transform_lut': sample_xform_lut,
+                    'compensation': matrix
+                }
+
+            gate = convert_wsp_gate(gate, sample_comp, sample_xform_lut)
+            wsp_dict[group][sample_name]['gates'].append(gate)
 
     return wsp_dict
 
 
-def recurse_sub_populations(sub_pop_el, gating_strategy, ns_map):
+def recurse_sub_populations(sub_pop_el, parent_id, gating_ns, data_type_ns):
     gates = []
+    ns_map = sub_pop_el.nsmap
 
     pop_els = sub_pop_el.findall('Population', ns_map)
     for pop_el in pop_els:
@@ -100,13 +107,16 @@ def recurse_sub_populations(sub_pop_el, gating_strategy, ns_map):
 
         g = gate_class(
             gate_child_el,
-            gating_strategy.gating_ns,
-            gating_strategy.data_type_ns
+            gating_ns,
+            data_type_ns
         )
+
+        # replace ID and parent ID with population names
+        g.id = pop_name
+        g.parent = parent_id
 
         gates.append(
             {
-                'node': pop_name,
                 'owning_group': owning_group,
                 'gate': g
             }
@@ -114,7 +124,7 @@ def recurse_sub_populations(sub_pop_el, gating_strategy, ns_map):
 
         sub_pop_els = pop_el.findall('Subpopulations', ns_map)
         for el in sub_pop_els:
-            gates.extend(recurse_sub_populations(el, gating_strategy, ns_map))
+            gates.extend(recurse_sub_populations(el, pop_name, gating_ns, data_type_ns))
 
     return gates
 
@@ -187,7 +197,8 @@ def parse_wsp_compensation(sample_el, transform_ns, data_type_ns):
 
     matrix_el = matrix_els[0]
 
-    matrix_id = _gml_utils.find_attribute_value(matrix_el, transform_ns, 'id')
+    # we'll ignore the non-human readable matrix ID and use the name instead
+    matrix_name = matrix_el.attrib['name']
     matrix_prefix = matrix_el.attrib['prefix']
     matrix_suffix = matrix_el.attrib['suffix']
 
@@ -227,7 +238,7 @@ def parse_wsp_compensation(sample_el, transform_ns, data_type_ns):
     matrix = np.array(matrix)
 
     matrix_dict = {
-        'matrix_id': matrix_id,
+        'matrix_name': matrix_name,
         'prefix': matrix_prefix,
         'suffix': matrix_suffix,
         'detectors': detectors,
@@ -235,3 +246,50 @@ def parse_wsp_compensation(sample_el, transform_ns, data_type_ns):
     }
 
     return matrix_dict
+
+
+def convert_wsp_gate(wsp_gate, comp_matrix, xform_lut):
+    new_dims = []
+    xforms = []
+
+    for dim in wsp_gate.dimensions:
+        dim_label = dim.label.lstrip(comp_matrix['prefix'])
+        dim_label = dim_label.rstrip(comp_matrix['suffix'])
+
+        comp_ref = None
+        xform_id = None
+        new_dim_min = None
+        new_dim_max = None
+
+        if dim_label in comp_matrix['detectors']:
+            comp_ref = comp_matrix['matrix_name']
+
+        if dim_label in xform_lut:
+            xform = xform_lut[dim_label]
+            xforms.append(xform)  # need these later for vertices, coordinates, etc.
+            xform_id = xform.id
+            if dim.min is not None:
+                new_dim_min = xform.apply(np.array([[float(dim.min)]]))
+
+            if dim.max is not None:
+                new_dim_max = xform.apply(np.array([[float(dim.max)]]))
+        else:
+            xforms.append(None)
+
+        new_dim = Dimension(dim_label, comp_ref, xform_id, range_min=new_dim_min, range_max=new_dim_max)
+        new_dims.append(new_dim)
+
+    if isinstance(wsp_gate, GMLPolygonGate):
+        # convert vertices using saved xforms
+        vertices = copy.deepcopy(wsp_gate.vertices)
+        for v in vertices:
+            for i, c in enumerate(v.coordinates):
+                if xforms[i] is not None:
+                    v.coordinates[i] = xforms[i].apply(np.array([[float(c)]]))
+
+        # TODO: support more than just PolygonGate
+        gate = PolygonGate(wsp_gate.id, wsp_gate.parent, new_dims, vertices)
+    else:
+        raise NotImplemented("Only polygon gates for FlowJo workspaces are currently supported.")
+
+    return gate
