@@ -9,7 +9,7 @@ import pandas as pd
 
 sys.path.append(os.path.abspath('..'))
 
-from flowkit import Sample, GatingStrategy, gates
+from flowkit import Sample, Session, gates
 
 data1_fcs_path = 'examples/gate_ref/data1.fcs'
 data1_sample = Sample(data1_fcs_path)
@@ -21,174 +21,216 @@ class ExportGMLTestCase(unittest.TestCase):
         gml_path = 'examples/gate_ref/gml/gml_range_gate.xml'
         res_path = 'examples/gate_ref/truth/Results_Range1.txt'
 
-        gs = GatingStrategy(gml_path)
+        s = Session()
+        group_name = 'gml'
+        s.add_sample_group(group_name, gating_strategy=gml_path)
 
         out_file = BytesIO()
-
-        gs.export_gml(out_file)
+        s.export_gml(out_file, group_name)
         out_file.seek(0)
 
-        gs_out = GatingStrategy(out_file)
+        sess_out = Session()
+        sess_out.add_sample_group(group_name, gating_strategy=out_file)
+        sess_out.add_samples(data1_sample)
+        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.analyze_samples(group_name)
+
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        result = sess_out.get_gate_indices(group_name, data1_sample.original_filename, 'Range1')
 
-        result = gs_out.gate_sample(data1_sample, 'Range1')
-
-        np.testing.assert_array_equal(truth, result.get_gate_indices('Range1'))
+        np.testing.assert_array_equal(truth, result)
 
     @staticmethod
     def test_rect1_gate():
         gml_path = 'examples/gate_ref/gml/gml_rect1_gate.xml'
         res_path = 'examples/gate_ref/truth/Results_Rectangle1.txt'
 
-        gs = GatingStrategy(gml_path)
+        s = Session()
+        group_name = 'gml'
+        s.add_sample_group(group_name, gating_strategy=gml_path)
 
         out_file = BytesIO()
-
-        gs.export_gml(out_file)
+        s.export_gml(out_file, group_name)
         out_file.seek(0)
 
-        gs_out = GatingStrategy(out_file)
+        sess_out = Session()
+        sess_out.add_sample_group(group_name, gating_strategy=out_file)
+        sess_out.add_samples(data1_sample)
+        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.analyze_samples(group_name)
 
-        result = gs_out.gate_sample(data1_sample, 'Rectangle1')
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        result = sess_out.get_gate_indices(group_name, data1_sample.original_filename, 'Rectangle1')
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('Rectangle1'))
+        np.testing.assert_array_equal(truth, result)
 
     @staticmethod
     def test_rect2_gate():
         gml_path = 'examples/gate_ref/gml/gml_rect2_gate.xml'
         res_path = 'examples/gate_ref/truth/Results_Rectangle2.txt'
 
-        gs = GatingStrategy(gml_path)
+        s = Session()
+        group_name = 'gml'
+        s.add_sample_group(group_name, gating_strategy=gml_path)
 
         out_file = BytesIO()
-
-        gs.export_gml(out_file)
+        s.export_gml(out_file, group_name)
         out_file.seek(0)
 
-        gs_out = GatingStrategy(out_file)
+        sess_out = Session()
+        sess_out.add_sample_group(group_name, gating_strategy=out_file)
+        sess_out.add_samples(data1_sample)
+        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.analyze_samples(group_name)
 
-        result = gs_out.gate_sample(data1_sample, 'Rectangle2')
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        result = sess_out.get_gate_indices(group_name, data1_sample.original_filename, 'Rectangle2')
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('Rectangle2'))
+        np.testing.assert_array_equal(truth, result)
 
     @staticmethod
     def test_poly1_gate():
         gml_path = 'examples/gate_ref/gml/gml_poly1_gate.xml'
         res_path = 'examples/gate_ref/truth/Results_Polygon1.txt'
 
-        gs = GatingStrategy(gml_path)
+        s = Session()
+        group_name = 'gml'
+        s.add_sample_group(group_name, gating_strategy=gml_path)
 
         out_file = BytesIO()
-
-        gs.export_gml(out_file)
+        s.export_gml(out_file, group_name)
         out_file.seek(0)
 
-        gs_out = GatingStrategy(out_file)
+        sess_out = Session()
+        sess_out.add_sample_group(group_name, gating_strategy=out_file)
+        sess_out.add_samples(data1_sample)
+        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = gs_out.gate_sample(data1_sample, 'Polygon1')
+        result = sess_out.get_gate_indices(group_name, data1_sample.original_filename, 'Polygon1')
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('Polygon1'))
+        np.testing.assert_array_equal(truth, result)
 
     @staticmethod
     def test_poly2_gate():
         gml_path = 'examples/gate_ref/gml/gml_poly2_gate.xml'
         res_path = 'examples/gate_ref/truth/Results_Polygon2.txt'
 
-        gs = GatingStrategy(gml_path)
+        s = Session()
+        group_name = 'gml'
+        s.add_sample_group(group_name, gating_strategy=gml_path)
 
         out_file = BytesIO()
-
-        gs.export_gml(out_file)
+        s.export_gml(out_file, group_name)
         out_file.seek(0)
 
-        gs_out = GatingStrategy(out_file)
+        sess_out = Session()
+        sess_out.add_sample_group(group_name, gating_strategy=out_file)
+        sess_out.add_samples(data1_sample)
+        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = gs_out.gate_sample(data1_sample, 'Polygon2')
+        result = sess_out.get_gate_indices(group_name, data1_sample.original_filename, 'Polygon2')
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('Polygon2'))
+        np.testing.assert_array_equal(truth, result)
 
     @staticmethod
     def test_poly3_non_solid_gate():
         gml_path = 'examples/gate_ref/gml/gml_poly3ns_gate.xml'
         res_path = 'examples/gate_ref/truth/Results_Polygon3NS.txt'
 
-        gs = GatingStrategy(gml_path)
+        s = Session()
+        group_name = 'gml'
+        s.add_sample_group(group_name, gating_strategy=gml_path)
 
         out_file = BytesIO()
-
-        gs.export_gml(out_file)
+        s.export_gml(out_file, group_name)
         out_file.seek(0)
 
-        gs_out = GatingStrategy(out_file)
+        sess_out = Session()
+        sess_out.add_sample_group(group_name, gating_strategy=out_file)
+        sess_out.add_samples(data1_sample)
+        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = gs_out.gate_sample(data1_sample, 'Polygon3NS')
+        result = sess_out.get_gate_indices(group_name, data1_sample.original_filename, 'Polygon3NS')
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('Polygon3NS'))
+        np.testing.assert_array_equal(truth, result)
 
     @staticmethod
     def test_ellipse1_gate():
         gml_path = 'examples/gate_ref/gml/gml_ellipse1_gate.xml'
         res_path = 'examples/gate_ref/truth/Results_Ellipse1.txt'
 
-        gs = GatingStrategy(gml_path)
+        s = Session()
+        group_name = 'gml'
+        s.add_sample_group(group_name, gating_strategy=gml_path)
 
         out_file = BytesIO()
-
-        gs.export_gml(out_file)
+        s.export_gml(out_file, group_name)
         out_file.seek(0)
 
-        gs_out = GatingStrategy(out_file)
+        sess_out = Session()
+        sess_out.add_sample_group(group_name, gating_strategy=out_file)
+        sess_out.add_samples(data1_sample)
+        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        result = sess_out.get_gate_indices(group_name, data1_sample.original_filename, 'Ellipse1')
 
-        result = gs_out.gate_sample(data1_sample, 'Ellipse1')
-
-        np.testing.assert_array_equal(truth, result.get_gate_indices('Ellipse1'))
+        np.testing.assert_array_equal(truth, result)
 
     @staticmethod
     def test_ellipsoid_3d_gate():
         gml_path = 'examples/gate_ref/gml/gml_ellipsoid3d_gate.xml'
         res_path = 'examples/gate_ref/truth/Results_Ellipsoid3D.txt'
 
-        gs = GatingStrategy(gml_path)
+        s = Session()
+        group_name = 'gml'
+        s.add_sample_group(group_name, gating_strategy=gml_path)
 
         out_file = BytesIO()
-
-        gs.export_gml(out_file)
+        s.export_gml(out_file, group_name)
         out_file.seek(0)
 
-        gs_out = GatingStrategy(out_file)
+        sess_out = Session()
+        sess_out.add_sample_group(group_name, gating_strategy=out_file)
+        sess_out.add_samples(data1_sample)
+        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        result = sess_out.get_gate_indices(group_name, data1_sample.original_filename, 'Ellipsoid3D')
 
-        result = gs_out.gate_sample(data1_sample, 'Ellipsoid3D')
-
-        np.testing.assert_array_equal(truth, result.get_gate_indices('Ellipsoid3D'))
+        np.testing.assert_array_equal(truth, result)
 
     @staticmethod
     def test_time_range_gate():
         gml_path = 'examples/gate_ref/gml/gml_time_range_gate.xml'
         res_path = 'examples/gate_ref/truth/Results_Range2.txt'
 
-        gs = GatingStrategy(gml_path)
+        s = Session()
+        group_name = 'gml'
+        s.add_sample_group(group_name, gating_strategy=gml_path)
 
         out_file = BytesIO()
-
-        gs.export_gml(out_file)
+        s.export_gml(out_file, group_name)
         out_file.seek(0)
 
-        gs_out = GatingStrategy(out_file)
+        sess_out = Session()
+        sess_out.add_sample_group(group_name, gating_strategy=out_file)
+        sess_out.add_samples(data1_sample)
+        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        result = sess_out.get_gate_indices(group_name, data1_sample.original_filename, 'Range2')
 
-        result = gs_out.gate_sample(data1_sample, 'Range2')
-
-        np.testing.assert_array_equal(truth, result.get_gate_indices('Range2'))
+        np.testing.assert_array_equal(truth, result)
 
     @staticmethod
     def test_quadrant1_gate():
@@ -198,21 +240,26 @@ class ExportGMLTestCase(unittest.TestCase):
         res3_path = 'examples/gate_ref/truth/Results_FL2P-FL4N.txt'
         res4_path = 'examples/gate_ref/truth/Results_FL2P-FL4P.txt'
 
-        gs = GatingStrategy(gml_path)
+        s = Session()
+        group_name = 'gml'
+        s.add_sample_group(group_name, gating_strategy=gml_path)
 
         out_file = BytesIO()
-
-        gs.export_gml(out_file)
+        s.export_gml(out_file, group_name)
         out_file.seek(0)
 
-        gs_out = GatingStrategy(out_file)
+        sess_out = Session()
+        sess_out.add_sample_group(group_name, gating_strategy=out_file)
+        sess_out.add_samples(data1_sample)
+        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.analyze_samples(group_name)
 
         truth1 = pd.read_csv(res1_path, header=None, squeeze=True, dtype='bool').values
         truth2 = pd.read_csv(res2_path, header=None, squeeze=True, dtype='bool').values
         truth3 = pd.read_csv(res3_path, header=None, squeeze=True, dtype='bool').values
         truth4 = pd.read_csv(res4_path, header=None, squeeze=True, dtype='bool').values
 
-        result = gs_out.gate_sample(data1_sample)
+        result = sess_out.get_gating_results(group_name, data1_sample.original_filename)
 
         np.testing.assert_array_equal(truth1, result.get_gate_indices('FL2N-FL4N'))
         np.testing.assert_array_equal(truth2, result.get_gate_indices('FL2N-FL4P'))
@@ -228,14 +275,19 @@ class ExportGMLTestCase(unittest.TestCase):
         res4_path = 'examples/gate_ref/truth/Results_FSCD-FL1P.txt'
         res5_path = 'examples/gate_ref/truth/Results_FSCN-SSCP-FL1P.txt'
 
-        gs = GatingStrategy(gml_path)
+        s = Session()
+        group_name = 'gml'
+        s.add_sample_group(group_name, gating_strategy=gml_path)
 
         out_file = BytesIO()
-
-        gs.export_gml(out_file)
+        s.export_gml(out_file, group_name)
         out_file.seek(0)
 
-        gs_out = GatingStrategy(out_file)
+        sess_out = Session()
+        sess_out.add_sample_group(group_name, gating_strategy=out_file)
+        sess_out.add_samples(data1_sample)
+        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.analyze_samples(group_name)
 
         truth1 = pd.read_csv(res1_path, header=None, squeeze=True, dtype='bool').values
         truth2 = pd.read_csv(res2_path, header=None, squeeze=True, dtype='bool').values
@@ -243,7 +295,7 @@ class ExportGMLTestCase(unittest.TestCase):
         truth4 = pd.read_csv(res4_path, header=None, squeeze=True, dtype='bool').values
         truth5 = pd.read_csv(res5_path, header=None, squeeze=True, dtype='bool').values
 
-        result = gs_out.gate_sample(data1_sample)
+        result = sess_out.get_gating_results(group_name, data1_sample.original_filename)
 
         np.testing.assert_array_equal(truth1, result.get_gate_indices('FSCN-SSCN'))
         np.testing.assert_array_equal(truth2, result.get_gate_indices('FSCD-SSCN-FL1N'))
@@ -256,298 +308,358 @@ class ExportGMLTestCase(unittest.TestCase):
         gml_path = 'examples/gate_ref/gml/gml_ratio_range1_gate.xml'
         res_path = 'examples/gate_ref/truth/Results_RatRange1.txt'
 
-        gs = GatingStrategy(gml_path)
+        s = Session()
+        group_name = 'gml'
+        s.add_sample_group(group_name, gating_strategy=gml_path)
 
         out_file = BytesIO()
-
-        gs.export_gml(out_file)
+        s.export_gml(out_file, group_name)
         out_file.seek(0)
 
-        gs_out = GatingStrategy(out_file)
+        sess_out = Session()
+        sess_out.add_sample_group(group_name, gating_strategy=out_file)
+        sess_out.add_samples(data1_sample)
+        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        result = sess_out.get_gate_indices(group_name, data1_sample.original_filename, 'RatRange1')
 
-        result = gs_out.gate_sample(data1_sample, 'RatRange1')
-
-        np.testing.assert_array_equal(truth, result.get_gate_indices('RatRange1'))
+        np.testing.assert_array_equal(truth, result)
 
     @staticmethod
     def test_ratio_range2_gate():
         gml_path = 'examples/gate_ref/gml/gml_ratio_range2_gate.xml'
         res_path = 'examples/gate_ref/truth/Results_RatRange2.txt'
 
-        gs = GatingStrategy(gml_path)
+        s = Session()
+        group_name = 'gml'
+        s.add_sample_group(group_name, gating_strategy=gml_path)
 
         out_file = BytesIO()
-
-        gs.export_gml(out_file)
+        s.export_gml(out_file, group_name)
         out_file.seek(0)
 
-        gs_out = GatingStrategy(out_file)
+        sess_out = Session()
+        sess_out.add_sample_group(group_name, gating_strategy=out_file)
+        sess_out.add_samples(data1_sample)
+        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        result = sess_out.get_gate_indices(group_name, data1_sample.original_filename, 'RatRange2')
 
-        result = gs_out.gate_sample(data1_sample, 'RatRange2')
-
-        np.testing.assert_array_equal(truth, result.get_gate_indices('RatRange2'))
+        np.testing.assert_array_equal(truth, result)
 
     @staticmethod
     def test_log_ratio_range1_gate():
         gml_path = 'examples/gate_ref/gml/gml_log_ratio_range1_gate.xml'
         res_path = 'examples/gate_ref/truth/Results_RatRange1a.txt'
 
-        gs = GatingStrategy(gml_path)
+        s = Session()
+        group_name = 'gml'
+        s.add_sample_group(group_name, gating_strategy=gml_path)
 
         out_file = BytesIO()
-
-        gs.export_gml(out_file)
+        s.export_gml(out_file, group_name)
         out_file.seek(0)
 
-        gs_out = GatingStrategy(out_file)
+        sess_out = Session()
+        sess_out.add_sample_group(group_name, gating_strategy=out_file)
+        sess_out.add_samples(data1_sample)
+        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        result = sess_out.get_gate_indices(group_name, data1_sample.original_filename, 'RatRange1a')
 
-        result = gs_out.gate_sample(data1_sample, 'RatRange1a')
-
-        np.testing.assert_array_equal(truth, result.get_gate_indices('RatRange1a'))
+        np.testing.assert_array_equal(truth, result)
 
     @staticmethod
     def test_boolean_and1_gate():
         gml_path = 'examples/gate_ref/gml/gml_boolean_and1_gate.xml'
         res_path = 'examples/gate_ref/truth/Results_And1.txt'
 
-        gs = GatingStrategy(gml_path)
+        s = Session()
+        group_name = 'gml'
+        s.add_sample_group(group_name, gating_strategy=gml_path)
 
         out_file = BytesIO()
-
-        gs.export_gml(out_file)
+        s.export_gml(out_file, group_name)
         out_file.seek(0)
 
-        gs_out = GatingStrategy(out_file)
+        sess_out = Session()
+        sess_out.add_sample_group(group_name, gating_strategy=out_file)
+        sess_out.add_samples(data1_sample)
+        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        result = sess_out.get_gate_indices(group_name, data1_sample.original_filename, 'And1')
 
-        result = gs_out.gate_sample(data1_sample, 'And1')
-
-        np.testing.assert_array_equal(truth, result.get_gate_indices('And1'))
+        np.testing.assert_array_equal(truth, result)
 
     @staticmethod
     def test_boolean_and2_gate():
         gml_path = 'examples/gate_ref/gml/gml_boolean_and2_gate.xml'
         res_path = 'examples/gate_ref/truth/Results_And2.txt'
 
-        gs = GatingStrategy(gml_path)
+        s = Session()
+        group_name = 'gml'
+        s.add_sample_group(group_name, gating_strategy=gml_path)
 
         out_file = BytesIO()
-
-        gs.export_gml(out_file)
+        s.export_gml(out_file, group_name)
         out_file.seek(0)
 
-        gs_out = GatingStrategy(out_file)
+        sess_out = Session()
+        sess_out.add_sample_group(group_name, gating_strategy=out_file)
+        sess_out.add_samples(data1_sample)
+        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        result = sess_out.get_gate_indices(group_name, data1_sample.original_filename, 'And2')
 
-        result = gs_out.gate_sample(data1_sample, 'And2')
-
-        np.testing.assert_array_equal(truth, result.get_gate_indices('And2'))
+        np.testing.assert_array_equal(truth, result)
 
     @staticmethod
     def test_boolean_or1_gate():
         gml_path = 'examples/gate_ref/gml/gml_boolean_or1_gate.xml'
         res_path = 'examples/gate_ref/truth/Results_Or1.txt'
 
-        gs = GatingStrategy(gml_path)
+        s = Session()
+        group_name = 'gml'
+        s.add_sample_group(group_name, gating_strategy=gml_path)
 
         out_file = BytesIO()
-
-        gs.export_gml(out_file)
+        s.export_gml(out_file, group_name)
         out_file.seek(0)
 
-        gs_out = GatingStrategy(out_file)
+        sess_out = Session()
+        sess_out.add_sample_group(group_name, gating_strategy=out_file)
+        sess_out.add_samples(data1_sample)
+        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        result = sess_out.get_gate_indices(group_name, data1_sample.original_filename, 'Or1')
 
-        result = gs_out.gate_sample(data1_sample, 'Or1')
-
-        np.testing.assert_array_equal(truth, result.get_gate_indices('Or1'))
+        np.testing.assert_array_equal(truth, result)
 
     @staticmethod
     def test_boolean_and3_complement_gate():
         gml_path = 'examples/gate_ref/gml/gml_boolean_and3_complement_gate.xml'
         res_path = 'examples/gate_ref/truth/Results_And3.txt'
 
-        gs = GatingStrategy(gml_path)
+        s = Session()
+        group_name = 'gml'
+        s.add_sample_group(group_name, gating_strategy=gml_path)
 
         out_file = BytesIO()
-
-        gs.export_gml(out_file)
+        s.export_gml(out_file, group_name)
         out_file.seek(0)
 
-        gs_out = GatingStrategy(out_file)
+        sess_out = Session()
+        sess_out.add_sample_group(group_name, gating_strategy=out_file)
+        sess_out.add_samples(data1_sample)
+        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        result = sess_out.get_gate_indices(group_name, data1_sample.original_filename, 'And3')
 
-        result = gs_out.gate_sample(data1_sample, 'And3')
-
-        np.testing.assert_array_equal(truth, result.get_gate_indices('And3'))
+        np.testing.assert_array_equal(truth, result)
 
     @staticmethod
     def test_boolean_not1_gate():
         gml_path = 'examples/gate_ref/gml/gml_boolean_not1_gate.xml'
         res_path = 'examples/gate_ref/truth/Results_Not1.txt'
 
-        gs = GatingStrategy(gml_path)
+        s = Session()
+        group_name = 'gml'
+        s.add_sample_group(group_name, gating_strategy=gml_path)
 
         out_file = BytesIO()
-
-        gs.export_gml(out_file)
+        s.export_gml(out_file, group_name)
         out_file.seek(0)
 
-        gs_out = GatingStrategy(out_file)
+        sess_out = Session()
+        sess_out.add_sample_group(group_name, gating_strategy=out_file)
+        sess_out.add_samples(data1_sample)
+        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        result = sess_out.get_gate_indices(group_name, data1_sample.original_filename, 'Not1')
 
-        result = gs_out.gate_sample(data1_sample, 'Not1')
-
-        np.testing.assert_array_equal(truth, result.get_gate_indices('Not1'))
+        np.testing.assert_array_equal(truth, result)
 
     @staticmethod
     def test_boolean_and4_not_gate():
         gml_path = 'examples/gate_ref/gml/gml_boolean_and4_not_gate.xml'
         res_path = 'examples/gate_ref/truth/Results_And4.txt'
 
-        gs = GatingStrategy(gml_path)
+        s = Session()
+        group_name = 'gml'
+        s.add_sample_group(group_name, gating_strategy=gml_path)
 
         out_file = BytesIO()
-
-        gs.export_gml(out_file)
+        s.export_gml(out_file, group_name)
         out_file.seek(0)
 
-        gs_out = GatingStrategy(out_file)
+        sess_out = Session()
+        sess_out.add_sample_group(group_name, gating_strategy=out_file)
+        sess_out.add_samples(data1_sample)
+        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        result = sess_out.get_gate_indices(group_name, data1_sample.original_filename, 'And4')
 
-        result = gs_out.gate_sample(data1_sample, 'And4')
-
-        np.testing.assert_array_equal(truth, result.get_gate_indices('And4'))
+        np.testing.assert_array_equal(truth, result)
 
     @staticmethod
     def test_boolean_or2_complement_gate():
         gml_path = 'examples/gate_ref/gml/gml_boolean_or2_gate.xml'
         res_path = 'examples/gate_ref/truth/Results_Or2.txt'
 
-        gs = GatingStrategy(gml_path)
+        s = Session()
+        group_name = 'gml'
+        s.add_sample_group(group_name, gating_strategy=gml_path)
 
         out_file = BytesIO()
-
-        gs.export_gml(out_file)
+        s.export_gml(out_file, group_name)
         out_file.seek(0)
 
-        gs_out = GatingStrategy(out_file)
+        sess_out = Session()
+        sess_out.add_sample_group(group_name, gating_strategy=out_file)
+        sess_out.add_samples(data1_sample)
+        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        result = sess_out.get_gate_indices(group_name, data1_sample.original_filename, 'Or2')
 
-        result = gs_out.gate_sample(data1_sample, 'Or2')
-
-        np.testing.assert_array_equal(truth, result.get_gate_indices('Or2'))
+        np.testing.assert_array_equal(truth, result)
 
     @staticmethod
     def test_matrix_poly4_gate():
         gml_path = 'examples/gate_ref/gml/gml_matrix_poly4_gate.xml'
         res_path = 'examples/gate_ref/truth/Results_Polygon4.txt'
 
-        gs = GatingStrategy(gml_path)
+        s = Session()
+        group_name = 'gml'
+        s.add_sample_group(group_name, gating_strategy=gml_path)
 
         out_file = BytesIO()
-
-        gs.export_gml(out_file)
+        s.export_gml(out_file, group_name)
         out_file.seek(0)
 
-        gs_out = GatingStrategy(out_file)
+        sess_out = Session()
+        sess_out.add_sample_group(group_name, gating_strategy=out_file)
+        sess_out.add_samples(data1_sample)
+        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        result = sess_out.get_gate_indices(group_name, data1_sample.original_filename, 'Polygon4')
 
-        result = gs_out.gate_sample(data1_sample, 'Polygon4')
-
-        np.testing.assert_array_equal(truth, result.get_gate_indices('Polygon4'))
+        np.testing.assert_array_equal(truth, result)
 
     @staticmethod
     def test_matrix_rect3_gate():
         gml_path = 'examples/gate_ref/gml/gml_matrix_rect3_gate.xml'
         res_path = 'examples/gate_ref/truth/Results_Rectangle3.txt'
 
-        gs = GatingStrategy(gml_path)
+        s = Session()
+        group_name = 'gml'
+        s.add_sample_group(group_name, gating_strategy=gml_path)
 
         out_file = BytesIO()
-
-        gs.export_gml(out_file)
+        s.export_gml(out_file, group_name)
         out_file.seek(0)
 
-        gs_out = GatingStrategy(out_file)
+        sess_out = Session()
+        sess_out.add_sample_group(group_name, gating_strategy=out_file)
+        sess_out.add_samples(data1_sample)
+        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        result = sess_out.get_gate_indices(group_name, data1_sample.original_filename, 'Rectangle3')
 
-        result = gs_out.gate_sample(data1_sample, 'Rectangle3')
-
-        np.testing.assert_array_equal(truth, result.get_gate_indices('Rectangle3'))
+        np.testing.assert_array_equal(truth, result)
 
     @staticmethod
     def test_matrix_rect4_gate():
         gml_path = 'examples/gate_ref/gml/gml_matrix_rect4_gate.xml'
         res_path = 'examples/gate_ref/truth/Results_Rectangle4.txt'
 
-        gs = GatingStrategy(gml_path)
+        s = Session()
+        group_name = 'gml'
+        s.add_sample_group(group_name, gating_strategy=gml_path)
 
         out_file = BytesIO()
-
-        gs.export_gml(out_file)
+        s.export_gml(out_file, group_name)
         out_file.seek(0)
 
-        gs_out = GatingStrategy(out_file)
+        sess_out = Session()
+        sess_out.add_sample_group(group_name, gating_strategy=out_file)
+        sess_out.add_samples(data1_sample)
+        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        result = sess_out.get_gate_indices(group_name, data1_sample.original_filename, 'Rectangle4')
 
-        result = gs_out.gate_sample(data1_sample, 'Rectangle4')
-
-        np.testing.assert_array_equal(truth, result.get_gate_indices('Rectangle4'))
+        np.testing.assert_array_equal(truth, result)
 
     @staticmethod
     def test_matrix_rect5_gate():
         gml_path = 'examples/gate_ref/gml/gml_matrix_rect5_gate.xml'
         res_path = 'examples/gate_ref/truth/Results_Rectangle5.txt'
 
-        gs = GatingStrategy(gml_path)
+        s = Session()
+        group_name = 'gml'
+        s.add_sample_group(group_name, gating_strategy=gml_path)
 
         out_file = BytesIO()
-
-        gs.export_gml(out_file)
+        s.export_gml(out_file, group_name)
         out_file.seek(0)
 
-        gs_out = GatingStrategy(out_file)
+        sess_out = Session()
+        sess_out.add_sample_group(group_name, gating_strategy=out_file)
+        sess_out.add_samples(data1_sample)
+        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        result = sess_out.get_gate_indices(group_name, data1_sample.original_filename, 'Rectangle5')
 
-        result = gs_out.gate_sample(data1_sample, 'Rectangle5')
-
-        np.testing.assert_array_equal(truth, result.get_gate_indices('Rectangle5'))
+        np.testing.assert_array_equal(truth, result)
 
     @staticmethod
     def test_transform_asinh_range1_gate():
         gml_path = 'examples/gate_ref/gml/gml_transform_asinh_range1_gate.xml'
         res_path = 'examples/gate_ref/truth/Results_ScaleRange1.txt'
 
-        gs = GatingStrategy(gml_path)
+        s = Session()
+        group_name = 'gml'
+        s.add_sample_group(group_name, gating_strategy=gml_path)
 
         out_file = BytesIO()
-
-        gs.export_gml(out_file)
+        s.export_gml(out_file, group_name)
         out_file.seek(0)
 
-        gs_out = GatingStrategy(out_file)
+        sess_out = Session()
+        sess_out.add_sample_group(group_name, gating_strategy=out_file)
+        sess_out.add_samples(data1_sample)
+        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-
-        result = gs_out.gate_sample(data1_sample, 'ScaleRange1')
+        result = sess_out.get_gating_results(group_name, data1_sample.original_filename)
 
         np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange1'))
 
@@ -556,118 +668,142 @@ class ExportGMLTestCase(unittest.TestCase):
         gml_path = 'examples/gate_ref/gml/gml_transform_hyperlog_range2_gate.xml'
         res_path = 'examples/gate_ref/truth/Results_ScaleRange2.txt'
 
-        gs = GatingStrategy(gml_path)
+        s = Session()
+        group_name = 'gml'
+        s.add_sample_group(group_name, gating_strategy=gml_path)
 
         out_file = BytesIO()
-
-        gs.export_gml(out_file)
+        s.export_gml(out_file, group_name)
         out_file.seek(0)
 
-        gs_out = GatingStrategy(out_file)
+        sess_out = Session()
+        sess_out.add_sample_group(group_name, gating_strategy=out_file)
+        sess_out.add_samples(data1_sample)
+        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        result = sess_out.get_gate_indices(group_name, data1_sample.original_filename, 'ScaleRange2')
 
-        result = gs_out.gate_sample(data1_sample, 'ScaleRange2')
-
-        np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange2'))
+        np.testing.assert_array_equal(truth, result)
 
     @staticmethod
     def test_transform_linear_range3_gate():
         gml_path = 'examples/gate_ref/gml/gml_transform_linear_range3_gate.xml'
         res_path = 'examples/gate_ref/truth/Results_ScaleRange3.txt'
 
-        gs = GatingStrategy(gml_path)
+        s = Session()
+        group_name = 'gml'
+        s.add_sample_group(group_name, gating_strategy=gml_path)
 
         out_file = BytesIO()
-
-        gs.export_gml(out_file)
+        s.export_gml(out_file, group_name)
         out_file.seek(0)
 
-        gs_out = GatingStrategy(out_file)
+        sess_out = Session()
+        sess_out.add_sample_group(group_name, gating_strategy=out_file)
+        sess_out.add_samples(data1_sample)
+        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        result = sess_out.get_gate_indices(group_name, data1_sample.original_filename, 'ScaleRange3')
 
-        result = gs_out.gate_sample(data1_sample, 'ScaleRange3')
-
-        np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange3'))
+        np.testing.assert_array_equal(truth, result)
 
     @staticmethod
     def test_transform_logicle_range4_gate():
         gml_path = 'examples/gate_ref/gml/gml_transform_logicle_range4_gate.xml'
         res_path = 'examples/gate_ref/truth/Results_ScaleRange4.txt'
 
-        gs = GatingStrategy(gml_path)
+        s = Session()
+        group_name = 'gml'
+        s.add_sample_group(group_name, gating_strategy=gml_path)
 
         out_file = BytesIO()
-
-        gs.export_gml(out_file)
+        s.export_gml(out_file, group_name)
         out_file.seek(0)
 
-        gs_out = GatingStrategy(out_file)
+        sess_out = Session()
+        sess_out.add_sample_group(group_name, gating_strategy=out_file)
+        sess_out.add_samples(data1_sample)
+        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        result = sess_out.get_gate_indices(group_name, data1_sample.original_filename, 'ScaleRange4')
 
-        result = gs_out.gate_sample(data1_sample, 'ScaleRange4')
-
-        np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange4'))
+        np.testing.assert_array_equal(truth, result)
 
     @staticmethod
     def test_transform_logicle_range5_gate():
         gml_path = 'examples/gate_ref/gml/gml_transform_logicle_range5_gate.xml'
         res_path = 'examples/gate_ref/truth/Results_ScaleRange5.txt'
 
-        gs = GatingStrategy(gml_path)
+        s = Session()
+        group_name = 'gml'
+        s.add_sample_group(group_name, gating_strategy=gml_path)
 
         out_file = BytesIO()
-
-        gs.export_gml(out_file)
+        s.export_gml(out_file, group_name)
         out_file.seek(0)
 
-        gs_out = GatingStrategy(out_file)
+        sess_out = Session()
+        sess_out.add_sample_group(group_name, gating_strategy=out_file)
+        sess_out.add_samples(data1_sample)
+        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        result = sess_out.get_gate_indices(group_name, data1_sample.original_filename, 'ScaleRange5')
 
-        result = gs_out.gate_sample(data1_sample, 'ScaleRange5')
-
-        np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange5'))
+        np.testing.assert_array_equal(truth, result)
 
     @staticmethod
     def test_transform_log_range6_gate():
         gml_path = 'examples/gate_ref/gml/gml_transform_log_range6_gate.xml'
         res_path = 'examples/gate_ref/truth/Results_ScaleRange6.txt'
 
-        gs = GatingStrategy(gml_path)
+        s = Session()
+        group_name = 'gml'
+        s.add_sample_group(group_name, gating_strategy=gml_path)
 
         out_file = BytesIO()
-
-        gs.export_gml(out_file)
+        s.export_gml(out_file, group_name)
         out_file.seek(0)
 
-        gs_out = GatingStrategy(out_file)
+        sess_out = Session()
+        sess_out.add_sample_group(group_name, gating_strategy=out_file)
+        sess_out.add_samples(data1_sample)
+        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        result = sess_out.get_gate_indices(group_name, data1_sample.original_filename, 'ScaleRange6')
 
-        result = gs_out.gate_sample(data1_sample, 'ScaleRange6')
-
-        np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange6'))
+        np.testing.assert_array_equal(truth, result)
 
     @staticmethod
     def test_matrix_transform_asinh_range1c_gate():
         gml_path = 'examples/gate_ref/gml/gml_matrix_transform_asinh_range1c_gate.xml'
         res_path = 'examples/gate_ref/truth/Results_ScaleRange1c.txt'
 
-        gs = GatingStrategy(gml_path)
+        s = Session()
+        group_name = 'gml'
+        s.add_sample_group(group_name, gating_strategy=gml_path)
 
         out_file = BytesIO()
-
-        gs.export_gml(out_file)
+        s.export_gml(out_file, group_name)
         out_file.seek(0)
 
-        gs_out = GatingStrategy(out_file)
+        sess_out = Session()
+        sess_out.add_sample_group(group_name, gating_strategy=out_file)
+        sess_out.add_samples(data1_sample)
+        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-
-        result = gs_out.gate_sample(data1_sample, 'ScaleRange1c')
+        result = sess_out.get_gating_results(group_name, data1_sample.original_filename)
 
         np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange1c'))
 
@@ -676,18 +812,22 @@ class ExportGMLTestCase(unittest.TestCase):
         gml_path = 'examples/gate_ref/gml/gml_matrix_transform_hyperlog_range2c_gate.xml'
         res_path = 'examples/gate_ref/truth/Results_ScaleRange2c.txt'
 
-        gs = GatingStrategy(gml_path)
+        s = Session()
+        group_name = 'gml'
+        s.add_sample_group(group_name, gating_strategy=gml_path)
 
         out_file = BytesIO()
-
-        gs.export_gml(out_file)
+        s.export_gml(out_file, group_name)
         out_file.seek(0)
 
-        gs_out = GatingStrategy(out_file)
+        sess_out = Session()
+        sess_out.add_sample_group(group_name, gating_strategy=out_file)
+        sess_out.add_samples(data1_sample)
+        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-
-        result = gs_out.gate_sample(data1_sample, 'ScaleRange2c')
+        result = sess_out.get_gating_results(group_name, data1_sample.original_filename)
 
         np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange2c'))
 
@@ -696,18 +836,22 @@ class ExportGMLTestCase(unittest.TestCase):
         gml_path = 'examples/gate_ref/gml/gml_matrix_transform_linear_range3c_gate.xml'
         res_path = 'examples/gate_ref/truth/Results_ScaleRange3c.txt'
 
-        gs = GatingStrategy(gml_path)
+        s = Session()
+        group_name = 'gml'
+        s.add_sample_group(group_name, gating_strategy=gml_path)
 
         out_file = BytesIO()
-
-        gs.export_gml(out_file)
+        s.export_gml(out_file, group_name)
         out_file.seek(0)
 
-        gs_out = GatingStrategy(out_file)
+        sess_out = Session()
+        sess_out.add_sample_group(group_name, gating_strategy=out_file)
+        sess_out.add_samples(data1_sample)
+        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-
-        result = gs_out.gate_sample(data1_sample, 'ScaleRange3c')
+        result = sess_out.get_gating_results(group_name, data1_sample.original_filename)
 
         np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange3c'))
 
@@ -716,18 +860,22 @@ class ExportGMLTestCase(unittest.TestCase):
         gml_path = 'examples/gate_ref/gml/gml_matrix_transform_logicle_range4c_gate.xml'
         res_path = 'examples/gate_ref/truth/Results_ScaleRange4c.txt'
 
-        gs = GatingStrategy(gml_path)
+        s = Session()
+        group_name = 'gml'
+        s.add_sample_group(group_name, gating_strategy=gml_path)
 
         out_file = BytesIO()
-
-        gs.export_gml(out_file)
+        s.export_gml(out_file, group_name)
         out_file.seek(0)
 
-        gs_out = GatingStrategy(out_file)
+        sess_out = Session()
+        sess_out.add_sample_group(group_name, gating_strategy=out_file)
+        sess_out.add_samples(data1_sample)
+        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-
-        result = gs_out.gate_sample(data1_sample, 'ScaleRange4c')
+        result = sess_out.get_gating_results(group_name, data1_sample.original_filename)
 
         np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange4c'))
 
@@ -736,18 +884,22 @@ class ExportGMLTestCase(unittest.TestCase):
         gml_path = 'examples/gate_ref/gml/gml_matrix_transform_logicle_range5c_gate.xml'
         res_path = 'examples/gate_ref/truth/Results_ScaleRange5c.txt'
 
-        gs = GatingStrategy(gml_path)
+        s = Session()
+        group_name = 'gml'
+        s.add_sample_group(group_name, gating_strategy=gml_path)
 
         out_file = BytesIO()
-
-        gs.export_gml(out_file)
+        s.export_gml(out_file, group_name)
         out_file.seek(0)
 
-        gs_out = GatingStrategy(out_file)
+        sess_out = Session()
+        sess_out.add_sample_group(group_name, gating_strategy=out_file)
+        sess_out.add_samples(data1_sample)
+        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-
-        result = gs_out.gate_sample(data1_sample, 'ScaleRange5c')
+        result = sess_out.get_gating_results(group_name, data1_sample.original_filename)
 
         np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange5c'))
 
@@ -756,18 +908,22 @@ class ExportGMLTestCase(unittest.TestCase):
         gml_path = 'examples/gate_ref/gml/gml_matrix_transform_asinh_range6c_gate.xml'
         res_path = 'examples/gate_ref/truth/Results_ScaleRange6c.txt'
 
-        gs = GatingStrategy(gml_path)
+        s = Session()
+        group_name = 'gml'
+        s.add_sample_group(group_name, gating_strategy=gml_path)
 
         out_file = BytesIO()
-
-        gs.export_gml(out_file)
+        s.export_gml(out_file, group_name)
         out_file.seek(0)
 
-        gs_out = GatingStrategy(out_file)
+        sess_out = Session()
+        sess_out.add_sample_group(group_name, gating_strategy=out_file)
+        sess_out.add_samples(data1_sample)
+        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-
-        result = gs_out.gate_sample(data1_sample, 'ScaleRange6c')
+        result = sess_out.get_gating_results(group_name, data1_sample.original_filename)
 
         np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange6c'))
 
@@ -776,18 +932,22 @@ class ExportGMLTestCase(unittest.TestCase):
         gml_path = 'examples/gate_ref/gml/gml_matrix_transform_hyperlog_range7c_gate.xml'
         res_path = 'examples/gate_ref/truth/Results_ScaleRange7c.txt'
 
-        gs = GatingStrategy(gml_path)
+        s = Session()
+        group_name = 'gml'
+        s.add_sample_group(group_name, gating_strategy=gml_path)
 
         out_file = BytesIO()
-
-        gs.export_gml(out_file)
+        s.export_gml(out_file, group_name)
         out_file.seek(0)
 
-        gs_out = GatingStrategy(out_file)
+        sess_out = Session()
+        sess_out.add_sample_group(group_name, gating_strategy=out_file)
+        sess_out.add_samples(data1_sample)
+        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-
-        result = gs_out.gate_sample(data1_sample, 'ScaleRange7c')
+        result = sess_out.get_gating_results(group_name, data1_sample.original_filename)
 
         np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange7c'))
 
@@ -796,18 +956,22 @@ class ExportGMLTestCase(unittest.TestCase):
         gml_path = 'examples/gate_ref/gml/gml_matrix_transform_logicle_range8c_gate.xml'
         res_path = 'examples/gate_ref/truth/Results_ScaleRange8c.txt'
 
-        gs = GatingStrategy(gml_path)
+        s = Session()
+        group_name = 'gml'
+        s.add_sample_group(group_name, gating_strategy=gml_path)
 
         out_file = BytesIO()
-
-        gs.export_gml(out_file)
+        s.export_gml(out_file, group_name)
         out_file.seek(0)
 
-        gs_out = GatingStrategy(out_file)
+        sess_out = Session()
+        sess_out.add_sample_group(group_name, gating_strategy=out_file)
+        sess_out.add_samples(data1_sample)
+        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-
-        result = gs_out.gate_sample(data1_sample, 'ScaleRange8c')
+        result = sess_out.get_gating_results(group_name, data1_sample.original_filename)
 
         np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange8c'))
 
@@ -816,18 +980,22 @@ class ExportGMLTestCase(unittest.TestCase):
         gml_path = 'examples/gate_ref/gml/gml_matrix_transform_logicle_rect1_gate.xml'
         res_path = 'examples/gate_ref/truth/Results_ScaleRect1.txt'
 
-        gs = GatingStrategy(gml_path)
+        s = Session()
+        group_name = 'gml'
+        s.add_sample_group(group_name, gating_strategy=gml_path)
 
         out_file = BytesIO()
-
-        gs.export_gml(out_file)
+        s.export_gml(out_file, group_name)
         out_file.seek(0)
 
-        gs_out = GatingStrategy(out_file)
+        sess_out = Session()
+        sess_out.add_sample_group(group_name, gating_strategy=out_file)
+        sess_out.add_samples(data1_sample)
+        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-
-        result = gs_out.gate_sample(data1_sample, 'ScaleRect1')
+        result = sess_out.get_gating_results(group_name, data1_sample.original_filename)
 
         np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRect1'))
 
@@ -836,18 +1004,22 @@ class ExportGMLTestCase(unittest.TestCase):
         gml_path = 'examples/gate_ref/gml/gml_parent_poly1_boolean_and2_gate.xml'
         res_path = 'examples/gate_ref/truth/Results_ParAnd2.txt'
 
-        gs = GatingStrategy(gml_path)
+        s = Session()
+        group_name = 'gml'
+        s.add_sample_group(group_name, gating_strategy=gml_path)
 
         out_file = BytesIO()
-
-        gs.export_gml(out_file)
+        s.export_gml(out_file, group_name)
         out_file.seek(0)
 
-        gs_out = GatingStrategy(out_file)
+        sess_out = Session()
+        sess_out.add_sample_group(group_name, gating_strategy=out_file)
+        sess_out.add_samples(data1_sample)
+        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-
-        result = gs_out.gate_sample(data1_sample, 'ParAnd2')
+        result = sess_out.get_gating_results(group_name, data1_sample.original_filename)
 
         np.testing.assert_array_equal(truth, result.get_gate_indices('ParAnd2'))
 
@@ -856,18 +1028,22 @@ class ExportGMLTestCase(unittest.TestCase):
         gml_path = 'examples/gate_ref/gml/gml_parent_range1_boolean_and3_gate.xml'
         res_path = 'examples/gate_ref/truth/Results_ParAnd3.txt'
 
-        gs = GatingStrategy(gml_path)
+        s = Session()
+        group_name = 'gml'
+        s.add_sample_group(group_name, gating_strategy=gml_path)
 
         out_file = BytesIO()
-
-        gs.export_gml(out_file)
+        s.export_gml(out_file, group_name)
         out_file.seek(0)
 
-        gs_out = GatingStrategy(out_file)
+        sess_out = Session()
+        sess_out.add_sample_group(group_name, gating_strategy=out_file)
+        sess_out.add_samples(data1_sample)
+        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-
-        result = gs_out.gate_sample(data1_sample, 'ParAnd3')
+        result = sess_out.get_gating_results(group_name, data1_sample.original_filename)
 
         np.testing.assert_array_equal(truth, result.get_gate_indices('ParAnd3'))
 
@@ -876,18 +1052,22 @@ class ExportGMLTestCase(unittest.TestCase):
         gml_path = 'examples/gate_ref/gml/gml_parent_rect1_rect_par1_gate.xml'
         res_path = 'examples/gate_ref/truth/Results_ScalePar1.txt'
 
-        gs = GatingStrategy(gml_path)
+        s = Session()
+        group_name = 'gml'
+        s.add_sample_group(group_name, gating_strategy=gml_path)
 
         out_file = BytesIO()
-
-        gs.export_gml(out_file)
+        s.export_gml(out_file, group_name)
         out_file.seek(0)
 
-        gs_out = GatingStrategy(out_file)
+        sess_out = Session()
+        sess_out.add_sample_group(group_name, gating_strategy=out_file)
+        sess_out.add_samples(data1_sample)
+        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-
-        result = gs_out.gate_sample(data1_sample, 'ScalePar1')
+        result = sess_out.get_gating_results(group_name, data1_sample.original_filename)
 
         np.testing.assert_array_equal(truth, result.get_gate_indices('ScalePar1'))
 
@@ -896,58 +1076,72 @@ class ExportGMLTestCase(unittest.TestCase):
         gml_path = 'examples/gate_ref/gml/gml_parent_quadrant_rect_gate.xml'
         res_path = 'examples/gate_ref/truth/Results_ParQuadRect.txt'
 
-        gs = GatingStrategy(gml_path)
+        s = Session()
+        group_name = 'gml'
+        s.add_sample_group(group_name, gating_strategy=gml_path)
 
         out_file = BytesIO()
-
-        gs.export_gml(out_file)
+        s.export_gml(out_file, group_name)
         out_file.seek(0)
 
-        gs_out = GatingStrategy(out_file)
+        sess_out = Session()
+        sess_out.add_sample_group(group_name, gating_strategy=out_file)
+        sess_out.add_samples(data1_sample)
+        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-
-        result = gs_out.gate_sample(data1_sample, 'ParRectangle1')
+        result = sess_out.get_gating_results(group_name, data1_sample.original_filename)
 
         np.testing.assert_array_equal(truth, result.get_gate_indices('ParRectangle1'))
 
     def test_get_parent_rect_gate(self):
         gml_path = 'examples/gate_ref/gml/gml_parent_rect1_rect_par1_gate.xml'
 
-        gs = GatingStrategy(gml_path)
+        s = Session()
+        group_name = 'gml'
+        s.add_sample_group(group_name, gating_strategy=gml_path)
 
         out_file = BytesIO()
-
-        gs.export_gml(out_file)
+        s.export_gml(out_file, group_name)
         out_file.seek(0)
 
-        gs_out = GatingStrategy(out_file)
+        sess_out = Session()
+        sess_out.add_sample_group(group_name, gating_strategy=out_file)
+        sess_out.add_samples(data1_sample)
+        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.analyze_samples(group_name)
 
-        parent_id = gs_out.get_parent_gate_id('ScalePar1')
+        parent_id = sess_out.get_parent_gate_id(group_name, 'ScalePar1')
 
         self.assertEqual(parent_id, 'ScaleRect1')
 
-        parent_gate = gs_out.get_gate_by_reference(parent_id)
+        parent_gate = sess_out.get_gate_by_reference(group_name, data1_sample.original_filename, parent_id)
 
         self.assertIsInstance(parent_gate, gates.RectangleGate)
 
     def test_get_parent_quadrant_gate(self):
         gml_path = 'examples/gate_ref/gml/gml_parent_quadrant_rect_gate.xml'
 
-        gs = GatingStrategy(gml_path)
+        s = Session()
+        group_name = 'gml'
+        s.add_sample_group(group_name, gating_strategy=gml_path)
 
         out_file = BytesIO()
-
-        gs.export_gml(out_file)
+        s.export_gml(out_file, group_name)
         out_file.seek(0)
 
-        gs_out = GatingStrategy(out_file)
+        sess_out = Session()
+        sess_out.add_sample_group(group_name, gating_strategy=out_file)
+        sess_out.add_samples(data1_sample)
+        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.analyze_samples(group_name)
 
-        parent_id = gs_out.get_parent_gate_id('ParRectangle1')
+        parent_id = sess_out.get_parent_gate_id(group_name, 'ParRectangle1')
 
         self.assertEqual(parent_id, 'FL2P-FL4P')
 
-        parent_gate = gs_out.get_gate_by_reference(parent_id)
+        parent_gate = sess_out.get_gate_by_reference(group_name, data1_sample.original_filename, parent_id)
 
         self.assertIsInstance(parent_gate, gates.QuadrantGate)
 
@@ -955,16 +1149,21 @@ class ExportGMLTestCase(unittest.TestCase):
     def test_all_gates():
         gml_path = 'examples/gate_ref/gml/gml_all_gates.xml'
 
-        gs = GatingStrategy(gml_path)
+        s = Session()
+        group_name = 'gml'
+        s.add_sample_group(group_name, gating_strategy=gml_path)
 
         out_file = BytesIO()
-
-        gs.export_gml(out_file)
+        s.export_gml(out_file, group_name)
         out_file.seek(0)
 
-        gs_out = GatingStrategy(out_file)
+        sess_out = Session()
+        sess_out.add_sample_group(group_name, gating_strategy=out_file)
+        sess_out.add_samples(data1_sample)
+        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.analyze_samples(group_name)
 
-        gs_results = gs_out.gate_sample(data1_sample)
+        gs_results = sess_out.get_gating_results(group_name, data1_sample.original_filename)
 
         truth_pattern = 'examples/gate_ref/truth/Results*.txt'
         res_files = glob.glob(truth_pattern)

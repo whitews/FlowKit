@@ -1,22 +1,25 @@
+import io
 import os
+import copy
 from glob import glob
 import numpy as np
 import pandas as pd
 from scipy.stats import gaussian_kde
+from scipy.interpolate import interpn
 from sklearn.preprocessing import StandardScaler
 import statsmodels.api as sm
 from MulticoreTSNE import MulticoreTSNE
-from bokeh.plotting import figure, show
+from bokeh.plotting import figure
 import seaborn
-from matplotlib import cm
+from matplotlib import cm, colors
 import matplotlib.pyplot as plt
 from flowio.create_fcs import create_fcs
-from flowkit import Sample, GatingStrategy, Matrix, _utils
+from flowkit import Sample, GatingStrategy, Matrix, _utils, _xml_utils
 import warnings
 
 try:
     import multiprocessing as mp
-    multi_proc = True
+    multi_proc = False
 except ImportError:
     mp = None
     multi_proc = False
@@ -43,8 +46,6 @@ def load_samples(fcs_samples):
     sample_list = []
 
     if isinstance(fcs_samples, list):
-        # TODO: check that all Samples have the same channels, issue warning if not
-
         # 'fcs_samples' is a list of either file paths or Sample instances
         sample_types = set()
 
@@ -70,11 +71,15 @@ def load_samples(fcs_samples):
             fcs_paths = glob(os.path.join(fcs_samples, '*.fcs'))
             if len(fcs_paths) > 0:
                 sample_list = get_samples_from_paths(fcs_paths)
+        elif os.path.isfile(fcs_samples):
+            sample_list = get_samples_from_paths([fcs_samples])
+
 
     return sample_list
 
 
 # gate_sample & gate_samples are multi-proc wrappers for GatingStrategy gate_sample method
+# These are functions external to GatingStrategy as mp doesn't work well for class methods
 def gate_sample(data):
     gating_strategy = data[0]
     sample = data[1]
@@ -82,7 +87,7 @@ def gate_sample(data):
     return gating_strategy.gate_sample(sample, verbose=verbose)
 
 
-def gate_samples(gating_strategy, samples, verbose):
+def gate_samples(gating_strategies, samples, verbose):
     # TODO: Looks like multiprocessing can fail for very large workloads (lots of gates), maybe due
     #       to running out of memory. Will investigate further, but for now maybe provide an option
     #       for turning off multiprocessing so end user can avoid this issue if it occurs.
@@ -93,92 +98,179 @@ def gate_samples(gating_strategy, samples, verbose):
             proc_count = mp.cpu_count() - 1  # leave a CPU free just to be nice
 
         pool = mp.Pool(processes=proc_count)
-        data = [(gating_strategy, sample, verbose) for sample in samples]
+        data = [(gating_strategies[i], sample, verbose) for i, sample in enumerate(samples)]
         all_results = pool.map(gate_sample, data)
     else:
         all_results = []
-        for sample in samples:
-            results = gating_strategy.gate_sample(sample, verbose=verbose)
+        for i, sample in enumerate(samples):
+            results = gating_strategies[i].gate_sample(sample, verbose=verbose)
             all_results.append(results)
 
     return all_results
 
 
 class Session(object):
-    def __init__(self, fcs_samples=None, comp_bead_samples=None, gating_strategy=None, subsample_count=10000):
-        self.samples = []
-        self.bead_samples = []
-        self.bead_lut = {}
+    def __init__(self, fcs_samples=None, subsample_count=10000):
+        self.subsample_count = subsample_count
+        self.sample_lut = {}
+        self._results_lut = {}
+        self._sample_group_lut = {}
         self.report = None
-        self._results = None
 
-        if comp_bead_samples == fcs_samples and isinstance(fcs_samples, str):
-            # there's a mix of regular FCS files with bead files in the same directory,
-            # which isn't supported at this time. Raise error
-            raise ValueError("Specify bead samples as a list of paths if in the same directory as other samples")
+        self.add_sample_group('default')
 
-        self.samples = load_samples(fcs_samples)
+        self.add_samples(fcs_samples)
 
-        for s in self.samples:
-            s.subsample_events(subsample_count)
-
-        if comp_bead_samples is not None:
-            self.bead_samples = load_samples(comp_bead_samples)
-            self.process_bead_samples()
+    def add_sample_group(self, group_name, gating_strategy=None):
+        if group_name in self._sample_group_lut:
+            warnings.warn("A sample group with this name already exists...skipping")
+            return
 
         if isinstance(gating_strategy, GatingStrategy):
-            self.gating_strategy = gating_strategy
-        elif isinstance(gating_strategy, str):
-            # assume a path to a GatingML XML file
-            self.gating_strategy = GatingStrategy(gating_strategy)
+            gating_strategy = gating_strategy
+        elif isinstance(gating_strategy, str) or isinstance(gating_strategy, io.IOBase):
+            # assume a path to an XML file representing either a GatingML document or FlowJo workspace
+            gating_strategy = _xml_utils.parse_gating_xml(gating_strategy)
         elif gating_strategy is None:
-            self.gating_strategy = GatingStrategy()
+            gating_strategy = GatingStrategy()
         else:
             raise ValueError(
                 "'gating_strategy' must be either a GatingStrategy instance or a path to a GatingML document"
             )
 
-    @property
-    def gates(self):
-        return self.gating_strategy.gates
+        self._sample_group_lut[group_name] = {
+            'template': gating_strategy,
+            'samples': {}
+        }
 
-    # start pass through methods for GatingStrategy
-    def add_gate(self, gate):
+    def import_flowjo_workspace(self, workspace_file_or_path):
+        wsp_sample_groups = _xml_utils.parse_wsp(workspace_file_or_path)
+        for group_name, sample_data in wsp_sample_groups.items():
+            for sample, data_dict in sample_data.items():
+                if sample not in self.sample_lut:
+                    self.sample_lut[sample] = None
+                    msg = "Sample %s has not been added to the session. \n" % sample
+                    msg += "A GatingStrategy was loaded for this sample ID, but the file needs to be added " \
+                           "to the Session prior to running the analyze_samples method."
+                    warnings.warn(msg)
+
+                gs = GatingStrategy()
+
+                gs.gates = {gate.id: gate for gate in data_dict['gates']}
+                matrix = data_dict['compensation']
+                if isinstance(matrix, Matrix):
+                    gs.comp_matrices[matrix.id] = matrix
+                gs.transformations = {xform.id: xform for xform in data_dict['transforms']}
+
+                if group_name not in self._sample_group_lut:
+                    self.add_sample_group(group_name, gs)
+
+                self._sample_group_lut[group_name]['samples'][sample] = gs
+
+    def add_samples(self, samples):
+        new_samples = load_samples(samples)
+        for s in new_samples:
+            s.subsample_events(self.subsample_count)
+            if s.original_filename in self.sample_lut:
+                # sample ID may have been added via a FlowJo workspace,
+                # check if Sample value is None
+                if self.sample_lut[s.original_filename] is not None:
+                    warnings.warn("A sample with this ID already exists...skipping")
+                    continue
+            self.sample_lut[s.original_filename] = s
+
+    def assign_sample(self, sample_id, group_name):
+        group = self._sample_group_lut[group_name]
+        if sample_id in group['samples']:
+            warnings.warn("Sample %s is already assigned to the group %s...nothing changed" % (sample_id, group_name))
+            return
+        template = group['template']
+        group['samples'][sample_id] = copy.deepcopy(template)
+
+    def get_group_samples(self, sample_group):
+        sample_ids = self._sample_group_lut[sample_group]['samples'].keys()
+
+        samples = []
+        for s_id in sample_ids:
+            samples.append(self.sample_lut[s_id])
+
+        return samples
+
+    # start pass through methods for GatingStrategy class
+    def add_gate(self, gate, group_name='default'):
         # TODO: allow adding multiple gates at once, while still allowing a single gate. Check if list or Gate instance
-        self.gating_strategy.add_gate(gate)
+        group = self._sample_group_lut[group_name]
+        template = group['template']
+        s_members = group['samples']
 
-    def add_sample(self, samples):
-        self.samples.extend(load_samples(samples))
+        # first, add gate to template, then add a copy to each group sample gating strategy
+        template.add_gate(copy.deepcopy(gate))
+        for s_id, s_strategy in s_members.items():
+            s_strategy.add_gate(copy.deepcopy(gate))
 
-    def add_transform(self, transform):
-        self.gating_strategy.add_transform(transform)
+    def add_transform(self, transform, group_name='default'):
+        group = self._sample_group_lut[group_name]
+        template = group['template']
+        s_members = group['samples']
 
-    def add_comp_matrix(self, matrix):
+        # first, add gate to template, then add a copy to each group sample gating strategy
+        template.add_transform(copy.deepcopy(transform))
+        for s_id, s_strategy in s_members.items():
+            s_strategy.add_transform(copy.deepcopy(transform))
+
+    def add_comp_matrix(self, matrix, group_name='default'):
         # TODO: GatingStrategy method add_comp_matrix accepts only Matrix instances, so this pass through does as well.
-        #       Consider adding a pass through Session method to parse comp matrices for convienently getting a
+        #       Consider adding a pass through Session method to parse comp matrices for conveniently getting a
         #       Matrix instance from a comp source (npy, CSV, str, etc.)
-        self.gating_strategy.add_comp_matrix(matrix)
+        group = self._sample_group_lut[group_name]
+        template = group['template']
+        s_members = group['samples']
 
-    def get_parent_gate_id(self, gate_id):
-        gate = self.gating_strategy.get_gate_by_reference(gate_id)
+        # first, add gate to template, then add a copy to each group sample gating strategy
+        template.add_comp_matrix(copy.deepcopy(matrix))
+        for s_id, s_strategy in s_members.items():
+            s_strategy.add_comp_matrix(copy.deepcopy(matrix))
+
+    def get_parent_gate_id(self, group_name, gate_id):
+        group = self._sample_group_lut[group_name]
+        template = group['template']
+        gate = template.get_gate_by_reference(gate_id)
         return gate.parent
+
+    def get_gate_by_reference(self, group_name, sample_id, gate_id):
+        group = self._sample_group_lut[group_name]
+        gating_strategy = group['samples'][sample_id]
+        gate = gating_strategy.get_gate_by_reference(gate_id)
+        return gate
+
+    def get_gate_hierarchy(self, sample_group, output='ascii'):
+        return self._sample_group_lut[sample_group]['template'].get_gate_hierarchy(output)
     # end pass through methods for GatingStrategy
 
-    def get_sample(self, sample_id):
-        for s in self.samples:
-            if s.original_filename == sample_id:
-                return s
+    def export_gml(self, file_handle, group_name, sample_id=None):
+        group = self._sample_group_lut[group_name]
+        if sample_id is not None:
+            gating_strategy = group['samples'][sample_id]
+        else:
+            gating_strategy = group['template']
+        _xml_utils.export_gatingml(gating_strategy, file_handle)
 
-    def process_bead_samples(self):
+    def get_sample(self, sample_id):
+        return self.sample_lut[sample_id]
+
+    @staticmethod
+    def _process_bead_samples(bead_samples):
         # do nothing if there are no bead samples
-        bead_sample_count = len(self.bead_samples)
+        bead_sample_count = len(bead_samples)
         if bead_sample_count == 0:
             warnings.warn("No bead samples were loaded")
             return
 
+        bead_lut = {}
+
         # all the bead samples must have the same panel, use the 1st one to
         # determine the fluorescence channels
-        fluoro_indices = self.bead_samples[0].fluoro_indices
+        fluoro_indices = bead_samples[0].fluoro_indices
 
         # 1st check is to make sure the # of bead samples matches the #
         # of fluorescence channels
@@ -188,21 +280,21 @@ class Session(object):
         # get PnN channel names from 1st bead sample
         pnn_labels = []
         for f_idx in fluoro_indices:
-            pnn_label = self.bead_samples[0].pnn_labels[f_idx]
+            pnn_label = bead_samples[0].pnn_labels[f_idx]
             if pnn_label not in pnn_labels:
                 pnn_labels.append(pnn_label)
-                self.bead_lut[f_idx] = {'pnn_label': pnn_label}
+                bead_lut[f_idx] = {'pnn_label': pnn_label}
             else:
                 raise ValueError("Duplicate channel labels are not supported")
 
         # now, determine which bead file goes with which channel, and make sure
         # they all have the same channels
-        for i, bs in enumerate(self.bead_samples):
+        for i, bs in enumerate(bead_samples):
             # check file name for a match with a channel
             if bs.fluoro_indices != fluoro_indices:
                 raise ValueError("All bead samples must have the same channel labels")
 
-            for chan_idx, lut in self.bead_lut.items():
+            for chan_idx, lut in bead_lut.items():
                 # file names typically don't have the "-A", "-H', or "-W" sub-strings
                 pnn_label = lut['pnn_label'].replace("-A", "")
 
@@ -210,29 +302,33 @@ class Session(object):
                     lut['bead_index'] = i
                     lut['pns_label'] = bs.pns_labels[chan_idx]
 
-    def calculate_compensation_from_beads(self):
-        if len(self.bead_lut) == 0:
+        return bead_lut
+
+    def calculate_compensation_from_beads(self, comp_bead_samples, matrix_id='comp_bead'):
+        bead_samples = load_samples(comp_bead_samples)
+        bead_lut = self._process_bead_samples(bead_samples)
+        if len(bead_lut) == 0:
             warnings.warn("No bead samples were loaded")
             return
 
         detectors = []
         fluorochromes = []
         comp_values = []
-        for chan_idx in sorted(self.bead_lut.keys()):
-            detectors.append(self.bead_lut[chan_idx]['pnn_label'])
-            fluorochromes.append(self.bead_lut[chan_idx]['pns_label'])
-            bead_idx = self.bead_lut[chan_idx]['bead_index']
+        for chan_idx in sorted(bead_lut.keys()):
+            detectors.append(bead_lut[chan_idx]['pnn_label'])
+            fluorochromes.append(bead_lut[chan_idx]['pns_label'])
+            bead_idx = bead_lut[chan_idx]['bead_index']
 
-            x = self.bead_samples[bead_idx].get_raw_events()[:, chan_idx]
+            x = bead_samples[bead_idx].get_raw_events()[:, chan_idx]
             good_events = x < (2 ** 18) - 1
             x = x[good_events]
 
             comp_row_values = []
-            for chan_idx2 in sorted(self.bead_lut.keys()):
+            for chan_idx2 in sorted(bead_lut.keys()):
                 if chan_idx == chan_idx2:
                     comp_row_values.append(1.0)
                 else:
-                    y = self.bead_samples[bead_idx].get_raw_events()[:, chan_idx2]
+                    y = bead_samples[bead_idx].get_raw_events()[:, chan_idx2]
                     y = y[good_events]
                     rlm_res = sm.RLM(y, x).fit()
 
@@ -241,26 +337,42 @@ class Session(object):
 
             comp_values.append(comp_row_values)
 
-        return Matrix('comp_bead', fluorochromes, detectors, np.array(comp_values))
+        return Matrix(matrix_id, fluorochromes, detectors, np.array(comp_values))
 
-    def analyze_samples(self, verbose=False):
+    def analyze_samples(self, sample_group='default', verbose=False):
         # Don't save just the DataFrame report, save the entire
         # GatingResults objects for each sample, since we'll need the gate
-        # indices for each sample. Add convenience functions inside
-        # GatingResults class for conveniently extracting information from
-        # the DataFrame
-        # TODO: should this method take a subsample option to gate on just the sub-sampled events?
-        results = gate_samples(self.gating_strategy, self.samples, verbose)
+        # indices for each sample.
+        samples = self.get_group_samples(sample_group)
+        if len(samples) == 0:
+            warnings.warn("No samples have been assigned to sample group %s" % sample_group)
+            return
+        gating_strategies = []
+        for s in samples:
+            gating_strategies.append(self._sample_group_lut[sample_group]['samples'][s.original_filename])
+
+        results = gate_samples(gating_strategies, samples, verbose)
 
         all_reports = [res.report for res in results]
-        self.report = pd.concat(all_reports)
 
-        self._results = {}
+        self._results_lut[sample_group] = {
+            'report': pd.concat(all_reports),
+            'samples': {}  # dict will have sample ID keys and results values
+        }
         for r in results:
-            self._results[r.sample_id] = r
+            self._results_lut[sample_group]['samples'][r.sample_id] = r
+
+    def get_gating_results(self, sample_group, sample_id):
+        gating_result = self._results_lut[sample_group]['samples'][sample_id]
+        return copy.deepcopy(gating_result)
+
+    def get_gate_indices(self, sample_group, sample_id, gate_id):
+        gating_result = self._results_lut[sample_group]['samples'][sample_id]
+        return gating_result.get_gate_indices(gate_id)
 
     def calculate_tsne(
             self,
+            sample_group,
             n_dims=2,
             ignore_scatter=True,
             scale_scatter=True,
@@ -269,6 +381,7 @@ class Session(object):
     ):
         """
         Performs dimensional reduction using the TSNE algorithm
+        :param sample_group: The sample group on which to run TSNE
         :param n_dims: Number of dimensions to which the source data is reduced
         :param ignore_scatter: If True, the scatter channels are excluded
         :param scale_scatter: If True, the scatter channel data is scaled to be
@@ -281,14 +394,15 @@ class Session(object):
         """
         tsne_events = None
         sample_events_lut = {}
+        samples = self.get_group_samples(sample_group)
 
-        for s in self.samples:
+        for s in samples:
             # Determine channels to include for TSNE analysis
             if ignore_scatter:
                 tsne_indices = s.fluoro_indices
             else:
                 # need to get all channel indices except time
-                tsne_indices = list(range(len(self.samples[0].channels)))
+                tsne_indices = list(range(len(samples[0].channels)))
                 tsne_indices.remove(s.get_channel_index('Time'))
 
                 # TODO: implement scale_scatter option
@@ -470,30 +584,69 @@ class Session(object):
                    cmap='bwr')
         plt.show()
 
-    def get_gate_indices(self, sample_id, gate_id):
-        gating_result = self._results[sample_id]
-        return gating_result.get_gate_indices(gate_id)
+    def plot_gate(
+            self,
+            sample_group,
+            sample_id,
+            gate_id,
+            color_density=True,
+            x_min=None,
+            x_max=None,
+            y_min=None,
+            y_max=None
+    ):
+        group = self._sample_group_lut[sample_group]
+        gating_strategy = group['samples'][sample_id]
+        gate = gating_strategy.get_gate_by_reference(gate_id)
 
-    def plot_gate(self, sample_id, gate_id):
-        in_gate = self.get_gate_indices(sample_id, gate_id)
-        gate = self.gates[gate_id]
-        sample = self.get_sample(sample_id)
-        events, dim_idx, dim_min, dim_max, new_dims = gate.preprocess_sample_events(sample)
+        plot_sample = self.get_sample(sample_id)
+        events, dim_idx, dim_min, dim_max, new_dims = gate.preprocess_sample_events(
+            plot_sample,
+            copy.deepcopy(gating_strategy)
+        )
+        x = events[plot_sample.subsample_indices, dim_idx[0]]
+        y = events[plot_sample.subsample_indices, dim_idx[1]]
 
         dim_labels = [dim.label for dim in gate.dimensions]
 
-        z_colors = []
-        for e in in_gate:
-            if e:
-                z_colors.append("#0000ffff")
-            else:
-                z_colors.append("#99999999")
+        x_min, x_max = _utils.calculate_extent(x, d_min=x_min, d_max=x_max, pad=0.02)
+        y_min, y_max = _utils.calculate_extent(y, d_min=y_min, d_max=y_max, pad=0.02)
+
+        if y_max > x_max:
+            radius_dimension = 'y'
+            radius = 0.003 * y_max
+        else:
+            radius_dimension = 'x'
+            radius = 0.003 * x_max
+
+        if color_density:
+            data, x_e, y_e = np.histogram2d(x, y, bins=[38, 38])
+            z = interpn(
+                (0.5 * (x_e[1:] + x_e[:-1]), 0.5 * (y_e[1:] + y_e[:-1])),
+                data,
+                np.vstack([x, y]).T,
+                method="splinef2d",
+                bounds_error=False
+            )
+            z[np.isnan(z)] = 0
+
+            # sort by density (z) so the more dense points are on top for better
+            # color display
+            idx = z.argsort()
+            x, y, z = x[idx], y[idx], z[idx]
+        else:
+            z = np.zeros(len(x))
+
+        colors_array = _utils.new_jet(colors.Normalize()(z))
+        z_colors = [
+            "#%02x%02x%02x" % (int(c[0] * 255), int(c[1] * 255), int(c[2] * 255)) for c in colors_array
+        ]
 
         tools = "crosshair,pan,zoom_in,zoom_out,box_zoom,undo,redo,reset,save,"
         p = figure(
             tools=tools,
-            x_range=(dim_min[0], dim_max[0]),
-            y_range=(dim_min[1], dim_max[1]),
+            x_range=(x_min, x_max),
+            y_range=(y_min, y_max),
             title=sample_id
         )
         p.title.align = 'center'
@@ -501,16 +654,9 @@ class Session(object):
         p.xaxis.axis_label = dim_labels[0]
         p.yaxis.axis_label = dim_labels[1]
 
-        if dim_max[1] > dim_max[0]:
-            radius_dimension = 'y'
-            radius = 0.003 * dim_max[1]
-        else:
-            radius_dimension = 'x'
-            radius = 0.003 * dim_max[0]
-
         p.scatter(
-            events[:, dim_idx[0]],
-            events[:, dim_idx[1]],
+            x,
+            y,
             radius=radius,
             radius_dimension=radius_dimension,
             fill_color=z_colors,
@@ -518,6 +664,7 @@ class Session(object):
             line_color=None
         )
 
-        show(p)
+        x_coords, y_coords = list(zip(*[v.coordinates for v in gate.vertices]))
+        p.patch(x_coords, y_coords, fill_color=None, line_width=3)
 
         return p

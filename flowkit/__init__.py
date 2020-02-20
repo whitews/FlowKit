@@ -6,7 +6,7 @@ from ._models.gating_strategy import GatingStrategy
 from ._models.session import Session
 from ._models.dimension import Dimension, RatioDimension, QuadrantDivider
 from ._models.vertex import Vertex
-
+from ._xml_utils import export_gatingml
 
 __all__ = [
     'Sample',
@@ -18,5 +18,6 @@ __all__ = [
     'QuadrantDivider',
     'Vertex',
     'gates',
-    'transforms'
+    'transforms',
+    'export_gatingml'
 ]

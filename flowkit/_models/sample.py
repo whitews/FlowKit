@@ -119,6 +119,8 @@ class Sample(object):
             else:
                 self.pns_labels.append('')
 
+        self._flowjo_pnn_labels = [label.replace('/', '_') for label in self.pnn_labels]
+
         # Raw events need to be scaled according to channel gain, as well
         # as corrected for proper lin/log display
         # These are the only pre-processing we will do on raw events
@@ -428,7 +430,11 @@ class Sample(object):
         :param label: PnN label of a channel
         :return: Channel number (not index)
         """
-        return self.pnn_labels.index(label) + 1
+        if label in self.pnn_labels:
+            return self.pnn_labels.index(label) + 1
+        else:
+            # as a last resort we can try the FJ labels and fail if no match
+            return self._flowjo_pnn_labels.index(label) + 1
 
     def get_channel_index(self, channel_label_or_number):
         """

@@ -1,4 +1,4 @@
-from flowkit import _gml_utils
+from flowkit import _xml_utils
 from .transforms import \
     RatioTransform, \
     LinearTransform, \
@@ -15,7 +15,7 @@ class RatioGMLTransform(RatioTransform):
             xform_namespace,
             data_type_namespace
     ):
-        t_id = _gml_utils.find_attribute_value(xform_element, xform_namespace, 'id')
+        t_id = _xml_utils.find_attribute_value(xform_element, xform_namespace, 'id')
 
         f_ratio_els = xform_element.findall(
             '%s:fratio' % xform_namespace,
@@ -29,9 +29,9 @@ class RatioGMLTransform(RatioTransform):
 
         # f ratio transform has 3 parameters: A, B, and C
         # these are attributes of the 'fratio' element
-        param_a = _gml_utils.find_attribute_value(f_ratio_els[0], xform_namespace, 'A')
-        param_b = _gml_utils.find_attribute_value(f_ratio_els[0], xform_namespace, 'B')
-        param_c = _gml_utils.find_attribute_value(f_ratio_els[0], xform_namespace, 'C')
+        param_a = _xml_utils.find_attribute_value(f_ratio_els[0], xform_namespace, 'A')
+        param_b = _xml_utils.find_attribute_value(f_ratio_els[0], xform_namespace, 'B')
+        param_c = _xml_utils.find_attribute_value(f_ratio_els[0], xform_namespace, 'C')
 
         if None in [param_a, param_b, param_c]:
             raise ValueError(
@@ -47,7 +47,7 @@ class RatioGMLTransform(RatioTransform):
         dim_labels = []
 
         for dim_el in fcs_dim_els:
-            label = _gml_utils.find_attribute_value(dim_el, data_type_namespace, 'name')
+            label = _xml_utils.find_attribute_value(dim_el, data_type_namespace, 'name')
 
             if label is None:
                 raise ValueError(
@@ -75,7 +75,7 @@ class LinearGMLTransform(LinearTransform):
             xform_element,
             xform_namespace
     ):
-        t_id = _gml_utils.find_attribute_value(xform_element, xform_namespace, 'id')
+        t_id = _xml_utils.find_attribute_value(xform_element, xform_namespace, 'id')
 
         f_lin_els = xform_element.findall(
             '%s:flin' % xform_namespace,
@@ -89,8 +89,8 @@ class LinearGMLTransform(LinearTransform):
 
         # f linear transform has 2 parameters: T and A
         # these are attributes of the 'flin' element
-        param_t = _gml_utils.find_attribute_value(f_lin_els[0], xform_namespace, 'T')
-        param_a = _gml_utils.find_attribute_value(f_lin_els[0], xform_namespace, 'A')
+        param_t = _xml_utils.find_attribute_value(f_lin_els[0], xform_namespace, 'T')
+        param_a = _xml_utils.find_attribute_value(f_lin_els[0], xform_namespace, 'A')
 
         if None in [param_t, param_a]:
             raise ValueError(
@@ -115,7 +115,7 @@ class LogGMLTransform(LogTransform):
             xform_element,
             xform_namespace
     ):
-        t_id = _gml_utils.find_attribute_value(xform_element, xform_namespace, 'id')
+        t_id = _xml_utils.find_attribute_value(xform_element, xform_namespace, 'id')
 
         f_log_els = xform_element.findall(
             '%s:flog' % xform_namespace,
@@ -129,8 +129,8 @@ class LogGMLTransform(LogTransform):
 
         # f log transform has 2 parameters: T and M
         # these are attributes of the 'flog' element
-        param_t = _gml_utils.find_attribute_value(f_log_els[0], xform_namespace, 'T')
-        param_m = _gml_utils.find_attribute_value(f_log_els[0], xform_namespace, 'M')
+        param_t = _xml_utils.find_attribute_value(f_log_els[0], xform_namespace, 'T')
+        param_m = _xml_utils.find_attribute_value(f_log_els[0], xform_namespace, 'M')
 
         if None in [param_t, param_m]:
             raise ValueError(
@@ -155,7 +155,7 @@ class HyperlogGMLTransform(HyperlogTransform):
             xform_element,
             xform_namespace
     ):
-        t_id = _gml_utils.find_attribute_value(xform_element, xform_namespace, 'id')
+        t_id = _xml_utils.find_attribute_value(xform_element, xform_namespace, 'id')
 
         hyperlog_els = xform_element.findall(
             '%s:hyperlog' % xform_namespace,
@@ -169,10 +169,10 @@ class HyperlogGMLTransform(HyperlogTransform):
 
         # hyperlog transform has 4 parameters: T, W, M, and A
         # these are attributes of the 'hyperlog' element
-        param_t = _gml_utils.find_attribute_value(hyperlog_els[0], xform_namespace, 'T')
-        param_w = _gml_utils.find_attribute_value(hyperlog_els[0], xform_namespace, 'W')
-        param_m = _gml_utils.find_attribute_value(hyperlog_els[0], xform_namespace, 'M')
-        param_a = _gml_utils.find_attribute_value(hyperlog_els[0], xform_namespace, 'A')
+        param_t = _xml_utils.find_attribute_value(hyperlog_els[0], xform_namespace, 'T')
+        param_w = _xml_utils.find_attribute_value(hyperlog_els[0], xform_namespace, 'W')
+        param_m = _xml_utils.find_attribute_value(hyperlog_els[0], xform_namespace, 'M')
+        param_a = _xml_utils.find_attribute_value(hyperlog_els[0], xform_namespace, 'A')
 
         if None in [param_t, param_w, param_m, param_a]:
             raise ValueError(
@@ -200,7 +200,7 @@ class LogicleGMLTransform(LogicleTransform):
             xform_element,
             xform_namespace
     ):
-        t_id = _gml_utils.find_attribute_value(xform_element, xform_namespace, 'id')
+        t_id = _xml_utils.find_attribute_value(xform_element, xform_namespace, 'id')
 
         logicle_els = xform_element.findall(
             '%s:logicle' % xform_namespace,
@@ -214,10 +214,10 @@ class LogicleGMLTransform(LogicleTransform):
 
         # logicle transform has 4 parameters: T, W, M, and A
         # these are attributes of the 'logicle' element
-        param_t = _gml_utils.find_attribute_value(logicle_els[0], xform_namespace, 'T')
-        param_w = _gml_utils.find_attribute_value(logicle_els[0], xform_namespace, 'W')
-        param_m = _gml_utils.find_attribute_value(logicle_els[0], xform_namespace, 'M')
-        param_a = _gml_utils.find_attribute_value(logicle_els[0], xform_namespace, 'A')
+        param_t = _xml_utils.find_attribute_value(logicle_els[0], xform_namespace, 'T')
+        param_w = _xml_utils.find_attribute_value(logicle_els[0], xform_namespace, 'W')
+        param_m = _xml_utils.find_attribute_value(logicle_els[0], xform_namespace, 'M')
+        param_a = _xml_utils.find_attribute_value(logicle_els[0], xform_namespace, 'A')
 
         if None in [param_t, param_w, param_m, param_a]:
             raise ValueError(
@@ -245,7 +245,7 @@ class AsinhGMLTransform(AsinhTransform):
             xform_element,
             xform_namespace
     ):
-        t_id = _gml_utils.find_attribute_value(xform_element, xform_namespace, 'id')
+        t_id = _xml_utils.find_attribute_value(xform_element, xform_namespace, 'id')
 
         f_asinh_els = xform_element.findall(
             '%s:fasinh' % xform_namespace,
@@ -259,9 +259,9 @@ class AsinhGMLTransform(AsinhTransform):
 
         # f asinh transform has 3 parameters: T, M, and A
         # these are attributes of the 'fasinh' element
-        param_t = _gml_utils.find_attribute_value(f_asinh_els[0], xform_namespace, 'T')
-        param_m = _gml_utils.find_attribute_value(f_asinh_els[0], xform_namespace, 'M')
-        param_a = _gml_utils.find_attribute_value(f_asinh_els[0], xform_namespace, 'A')
+        param_t = _xml_utils.find_attribute_value(f_asinh_els[0], xform_namespace, 'T')
+        param_m = _xml_utils.find_attribute_value(f_asinh_els[0], xform_namespace, 'M')
+        param_a = _xml_utils.find_attribute_value(f_asinh_els[0], xform_namespace, 'A')
 
         if None in [param_t, param_m, param_a]:
             raise ValueError(

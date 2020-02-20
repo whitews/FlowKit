@@ -123,7 +123,7 @@ class Gate(ABC):
             gating_strategy.cache_compensated_events(
                 sample,
                 comp_ref,
-                events
+                events.copy()  # think this needs to be copied to de-couple from user's analysis
             )
 
         return events
@@ -131,6 +131,8 @@ class Gate(ABC):
     def preprocess_sample_events(self, sample, gating_strategy):
         pnn_labels = sample.pnn_labels
         pns_labels = sample.pns_labels
+        # FlowJo replaces slashes with underscores, so make a set of labels with that replacement
+        flowjo_pnn_labels = [label.replace('/', '_') for label in pnn_labels]
 
         dim_idx = []
         dim_min = []
@@ -162,6 +164,8 @@ class Gate(ABC):
                 dim_idx.append(pnn_labels.index(dim_label))
             elif dim.label in pns_labels:
                 dim_idx.append(pns_labels.index(dim_label))
+            elif dim_label in flowjo_pnn_labels:
+                dim_idx.append(flowjo_pnn_labels.index(dim_label))
             else:
                 # for a referenced comp, the label may have been the
                 # fluorochrome instead of the channel's PnN label. If so,

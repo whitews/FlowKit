@@ -1,7 +1,7 @@
 import anytree
 from anytree.exporter import DotExporter
 import pandas as pd
-from flowkit import _gml_utils, _wsp_utils, Matrix
+from flowkit import Matrix
 from flowkit import gates as fk_gates
 from flowkit import transforms as fk_transforms
 
@@ -12,10 +12,7 @@ class GatingStrategy(object):
     for compensation and transformation. Takes an optional, valid GatingML
     document as an input.
     """
-    def __init__(self, gating_file_path=None):
-        self.gating_ns = None
-        self.data_type_ns = None
-        self.transform_ns = None
+    def __init__(self):
         self._cached_compensations = {}
 
         # keys are the object's ID (gate, xform, or matrix,
@@ -23,25 +20,6 @@ class GatingStrategy(object):
         self.gates = {}
         self.transformations = {}
         self.comp_matrices = {}
-
-        if gating_file_path is not None:
-            doc_type, root_gml, gating_ns, dt_ns, xform_ns = _gml_utils.parse_gating_xml_file(gating_file_path)
-            self.gating_ns = gating_ns
-            self.data_type_ns = dt_ns
-            self.transform_ns = xform_ns
-
-            if doc_type == 'gatingml':
-                self.gates = _gml_utils.construct_gates(self, root_gml)
-                self.transformations = _gml_utils.construct_transforms(root_gml, self.transform_ns, self.data_type_ns)
-                self.comp_matrices = _gml_utils.construct_matrices(root_gml, self.transform_ns, self.data_type_ns)
-            elif doc_type == 'flowjo':
-                # WSP files have gates, xforms, & comps nested in each sample tag, so one function to parse
-                wsp_dict = _wsp_utils.parse_wsp(self, root_gml)
-                self.gates = wsp_dict['gates']
-                self.transformations = wsp_dict['transforms']
-                self.comp_matrices = wsp_dict['comp']
-            else:
-                raise ValueError("Gating file format is not supported.")
 
     def __repr__(self):
         return (
@@ -304,9 +282,6 @@ class GatingStrategy(object):
             results[g_id] = gate.apply(sample, parent_results, self)
 
         return GatingResults(results, sample_id=sample.original_filename)
-
-    def export_gml(self, file_handle):
-        _gml_utils.export_gatingml(self, file_handle)
 
 
 class GatingResults(object):
