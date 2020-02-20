@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 import numpy as np
-from flowkit import _utils, Matrix
+from flowkit import Matrix
 from flowkit._models import gates, dimension
 
 
@@ -103,16 +103,9 @@ class Gate(ABC):
             except KeyError:
                 spill = meta['spill']
 
-            spill = _utils.parse_compensation_matrix(
-                spill,
-                sample.pnn_labels,
-                null_channels=sample.null_channels
-            )
-            indices = spill[0, :]  # headers are channel #'s
-            indices = [int(i - 1) for i in indices]
-            detectors = [sample.pnn_labels[i] for i in indices]
-            fluorochromes = [sample.pns_labels[i] for i in indices]
-            matrix = Matrix('fcs', fluorochromes, detectors, spill[1:, :])
+            detectors = [sample.pnn_labels[i] for i in sample.fluoro_indices]
+            fluorochromes = [sample.pns_labels[i] for i in sample.fluoro_indices]
+            matrix = Matrix('fcs', spill, detectors, fluorochromes, null_channels=sample.null_channels)
         else:
             # lookup specified comp-ref in gating strategy
             matrix = gating_strategy.comp_matrices[comp_ref]

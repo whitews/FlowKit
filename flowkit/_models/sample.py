@@ -324,14 +324,9 @@ class Sample(object):
             self.compensation = compensation
             self._comp_events = self.compensation.apply(self)
         elif compensation is not None:
-            spill = _utils.parse_compensation_matrix(
-                compensation,
-                self.pnn_labels,
-                null_channels=self.null_channels
-            )
-            fluorochromes = [self.pns_labels[i] for i in self.fluoro_indices]
             detectors = [self.pnn_labels[i] for i in self.fluoro_indices]
-            self.compensation = Matrix(comp_id, fluorochromes, detectors, spill[1:, :])
+            fluorochromes = [self.pns_labels[i] for i in self.fluoro_indices]
+            self.compensation = Matrix(comp_id, compensation, detectors, fluorochromes)
             self._comp_events = self.compensation.apply(self)
         else:
             # compensation must be None so clear any matrix and comp events

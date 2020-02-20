@@ -337,7 +337,7 @@ class Session(object):
 
             comp_values.append(comp_row_values)
 
-        return Matrix(matrix_id, fluorochromes, detectors, np.array(comp_values))
+        return Matrix(matrix_id, np.array(comp_values), detectors, fluorochromes)
 
     def analyze_samples(self, sample_group='default', verbose=False):
         # Don't save just the DataFrame report, save the entire

@@ -493,7 +493,7 @@ def parse_matrix_element(
 
     matrix = np.array(matrix)
 
-    return Matrix(matrix_id, fluorochomes, detectors, matrix)
+    return Matrix(matrix_id, matrix, detectors, fluorochomes)
 
 
 def add_matrix_to_gml(root, matrix, ns_map):
@@ -770,9 +770,9 @@ def parse_wsp(workspace_file_or_path):
                 detectors = sample_comp['detectors']
                 matrix = Matrix(
                     sample_comp['matrix_name'],
-                    fluorochromes=['' for _ in detectors],
+                    sample_comp['matrix'],
                     detectors=detectors,
-                    matrix=sample_comp['matrix']
+                    fluorochromes=['' for _ in detectors]
                 )
 
                 wsp_dict[group][sample_name] = {
