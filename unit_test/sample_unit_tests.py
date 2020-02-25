@@ -3,6 +3,7 @@ import sys
 import os
 from pathlib import Path
 import numpy as np
+import pandas as pd
 
 sys.path.append(os.path.abspath('..'))
 
@@ -10,6 +11,8 @@ from flowkit import Sample, transforms
 
 data1_fcs_path = 'examples/gate_ref/data1.fcs'
 data1_sample = Sample(data1_fcs_path)
+
+xform_logicle = transforms.LogicleTransform('logicle', param_t=10000, param_w=0.5, param_m=4.5, param_a=0)
 
 
 class LoadSampleTestCase(unittest.TestCase):
@@ -79,8 +82,7 @@ class LoadSampleTestCase(unittest.TestCase):
         self.assertIsInstance(data1_sample._transformed_events, np.ndarray)
 
     def test_transform_sample_logical(self):
-        xform = transforms.LogicleTransform('logicle', param_t=10000, param_w=0.5, param_m=4.5, param_a=0)
-        data1_sample.apply_transform(xform)
+        data1_sample.apply_transform(xform_logicle)
 
         self.assertIsInstance(data1_sample._transformed_events, np.ndarray)
 
@@ -89,6 +91,39 @@ class LoadSampleTestCase(unittest.TestCase):
         data1_sample.apply_transform(xform)
 
         self.assertIsInstance(data1_sample._transformed_events, np.ndarray)
+
+    def test_get_events_as_data_frame_xform(self):
+        data1_sample.apply_transform(xform_logicle)
+        df = data1_sample.get_events_as_data_frame(source='xform')
+
+        self.assertIsInstance(df, pd.DataFrame)
+        np.testing.assert_equal(df.values, data1_sample.get_transformed_events())
+
+    def test_get_events_as_data_frame_comp(self):
+        fcs_file_path = "examples/test_comp_example.fcs"
+        comp_file_path = "examples/comp_complete_example.csv"
+
+        sample = Sample(
+            fcs_path_or_data=fcs_file_path,
+            compensation=comp_file_path
+        )
+
+        df = sample.get_events_as_data_frame(source='comp')
+
+        self.assertIsInstance(df, pd.DataFrame)
+        np.testing.assert_equal(df.values, sample.get_comp_events())
+
+    def test_get_events_as_data_frame_raw(self):
+        df = data1_sample.get_events_as_data_frame(source='raw')
+
+        self.assertIsInstance(df, pd.DataFrame)
+        np.testing.assert_equal(df.values, data1_sample.get_raw_events())
+
+    def test_get_events_as_data_frame_orig(self):
+        df = data1_sample.get_events_as_data_frame(source='orig')
+
+        self.assertIsInstance(df, pd.DataFrame)
+        np.testing.assert_equal(df.values, data1_sample.get_orig_events())
 
     def test_create_fcs(self):
         fcs_file_path = "examples/test_comp_example.fcs"

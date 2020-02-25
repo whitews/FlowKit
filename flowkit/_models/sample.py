@@ -4,6 +4,7 @@ from pathlib import Path
 import io
 from tempfile import TemporaryFile
 import numpy as np
+import pandas as pd
 from flowkit._models.transforms import transforms
 from flowkit._models.transforms.matrix import Matrix
 from .. import _utils
@@ -373,6 +374,7 @@ class Sample(object):
         else:
             return self._raw_events
 
+    # TODO: make event type names/references consistent across the API...is it xform/transform comp/compensated, etc.
     def get_comp_events(self, subsample=False):
         """
         Returns compensated events, (not transformed)
@@ -415,6 +417,23 @@ class Sample(object):
             return self._transformed_events[self.subsample_indices]
         else:
             return self._transformed_events
+
+    def get_events_as_data_frame(self, source='xform', subsample=False):
+        if source == 'xform':
+            events = self.get_transformed_events(subsample=subsample)
+        elif source == 'comp':
+            events = self.get_comp_events(subsample=subsample)
+        elif source == 'raw':
+            events = self.get_raw_events(subsample=subsample)
+        elif source == 'orig':
+            events = self.get_orig_events(subsample=subsample)
+        else:
+            raise ValueError("source must be one of 'raw', 'comp', or 'xform'")
+
+        multi_cols = pd.MultiIndex.from_arrays([self.pnn_labels, self.pns_labels], names=['pnn', 'pns'])
+        events_df = pd.DataFrame(data=events, columns=multi_cols)
+
+        return events_df
 
     def get_channel_number_by_label(self, label):
         """
