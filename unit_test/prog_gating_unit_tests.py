@@ -1349,3 +1349,7 @@ class GatingTestCase(unittest.TestCase):
         result = gs.gate_sample(data1_sample, 'ParRectangle1')
 
         np.testing.assert_array_equal(truth, result.get_gate_indices('ParRectangle1'))
+
+    def test_add_gate_non_gate_class(self):
+        gs = fk.GatingStrategy()
+        self.assertRaises(ValueError, gs.add_gate, "not a gate class")
