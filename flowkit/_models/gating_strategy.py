@@ -97,6 +97,7 @@ class GatingStrategy(object):
                 parent=nodes[gate.parent]
             )
 
+            # TODO: this conditional isn't covered in tests
             if isinstance(gate, fk_gates.QuadrantGate):
                 for q_id, quad in gate.quadrants.items():
                     nodes[q_id] = anytree.Node(
