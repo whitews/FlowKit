@@ -1404,11 +1404,12 @@ class GatingTestCase(unittest.TestCase):
         rect_gate2 = fk.gates.RectangleGate('ScalePar1', 'ScaleRect1', dims2)
         gs.add_gate(rect_gate2)
 
-        result = gs.gate_sample(data1_sample, 'ScalePar1')
-        parent_gate_count = result.get_gate_count('ScaleRect1')
-        gate_count = result.get_gate_count('ScalePar1')
-        gate_abs_pct = result.get_gate_absolute_percent('ScalePar1')
-        gate_rel_pct = result.get_gate_relative_percent('ScalePar1')
+        result = gs.gate_sample(data1_sample, rect_gate2.id)
+        parent_gate_id = gs.get_parent_gate_id(rect_gate2.id)
+        parent_gate_count = result.get_gate_count(parent_gate_id)
+        gate_count = result.get_gate_count(rect_gate2.id)
+        gate_abs_pct = result.get_gate_absolute_percent(rect_gate2.id)
+        gate_rel_pct = result.get_gate_relative_percent(rect_gate2.id)
 
         true_count = 558
         true_abs_pct = (558 / data1_sample.event_count) * 100

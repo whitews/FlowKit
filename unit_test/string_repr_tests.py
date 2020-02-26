@@ -8,9 +8,9 @@ data1_sample = fk.Sample(data1_fcs_path)
 
 class StringReprTestCase(unittest.TestCase):
     """Tests related to string representations of FlowKit classes"""
-    def test_dim_repr(self):
+    def test_vert_repr(self):
         vert = fk.Vertex([500, 5])
-        vert_string = "Vertex(500, 5)"
+        vert_string = "Vertex([500, 5])"
 
         self.assertEqual(repr(vert), vert_string)
 
