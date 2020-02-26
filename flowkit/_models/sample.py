@@ -190,7 +190,7 @@ class Sample(object):
         self.negative_scatter_indices = is_neg
 
         if reapply_subsample and self._subsample_count is not None:
-            self.subsample_indices(self._subsample_count, self._subsample_seed)
+            self.subsample_events(self._subsample_count, self._subsample_seed)
 
     def filter_anomalous_events(
             self,
@@ -250,7 +250,7 @@ class Sample(object):
         self.anomalous_indices = anomalous_idx
 
         if reapply_subsample and self._subsample_count is not None:
-            self.subsample_indices(self._subsample_count, self._subsample_seed)
+            self.subsample_events(self._subsample_count, self._subsample_seed)
 
     def subsample_events(
             self,
