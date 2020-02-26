@@ -275,6 +275,7 @@ def rolling_window(a, window):
     return np.lib.stride_tricks.as_strided(a, shape=shape, strides=strides)
 
 
+# TODO: integrate functionality into Sample class, change xform to accept/use Sample instance xform
 def plot_channel(chan_events, label, subplot_ax, xform=False, bad_events=None):
     if xform:
         chan_events = np.arcsinh(chan_events * 0.003)
@@ -309,6 +310,7 @@ def plot_channel(chan_events, label, subplot_ax, xform=False, bad_events=None):
             )
 
 
+# TODO: somehow save anomalous event data in Sample class, maybe in some new class AnomData?
 def filter_anomalous_events(
         transformed_events,
         channel_labels,
@@ -458,6 +460,7 @@ def filter_anomalous_events(
     return np.where(bad_events)[0]
 
 
+# TODO: change to Bokeh Ellipse
 def calculate_ellipse(center_x, center_y, covariance_matrix, n_std_dev=3):
     values, vectors = np.linalg.eigh(covariance_matrix)
     order = values.argsort()[::-1]
