@@ -7,7 +7,13 @@ data1_sample = fk.Sample(data1_fcs_path)
 
 
 class StringReprTestCase(unittest.TestCase):
-    """Tests related to compensation matrices and the Matrix class"""
+    """Tests related to string representations of FlowKit classes"""
+    def test_dim_repr(self):
+        vert = fk.Vertex([500, 5])
+        vert_string = "Vertex(500, 5)"
+
+        self.assertEqual(repr(vert), vert_string)
+
     def test_dim_repr(self):
         poly1_dim1 = fk.Dimension('FL2-H', compensation_ref='FCS')
         dim_string = "Dimension(label: FL2-H)"

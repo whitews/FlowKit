@@ -1333,7 +1333,6 @@ class GatingTestCase(unittest.TestCase):
     @staticmethod
     def test_add_parent_quadrant_rect_gate():
         gs = fk.GatingStrategy()
-
         gs.add_gate(quad1_gate)
 
         dim1 = fk.Dimension('FL2-H', 'uncompensated', None, range_min=6, range_max=14.4)
@@ -1353,3 +1352,68 @@ class GatingTestCase(unittest.TestCase):
     def test_add_gate_non_gate_class(self):
         gs = fk.GatingStrategy()
         self.assertRaises(ValueError, gs.add_gate, "not a gate class")
+
+    def test_add_duplicate_gate_id(self):
+        gs = fk.GatingStrategy()
+        gs.add_gate(poly1_gate)
+
+        self.assertRaises(KeyError, gs.add_gate, poly1_gate)
+
+    def test_add_transform_non_transform_class(self):
+        gs = fk.GatingStrategy()
+        self.assertRaises(ValueError, gs.add_transform, "not a transform class")
+
+    def test_add_duplicate_transform_id(self):
+        gs = fk.GatingStrategy()
+        gs.add_transform(logicle_xform1)
+
+        self.assertRaises(KeyError, gs.add_transform, logicle_xform1)
+
+    def test_add_matrix_non_matrix_class(self):
+        gs = fk.GatingStrategy()
+        self.assertRaises(ValueError, gs.add_comp_matrix, "not a matrix class")
+
+    def test_add_duplicate_matrix_id(self):
+        gs = fk.GatingStrategy()
+        comp_matrix = fk.Matrix('MySpill', spill01_data, spill01_detectors, spill01_fluoros)
+        gs.add_comp_matrix(comp_matrix)
+
+        self.assertRaises(KeyError, gs.add_comp_matrix, comp_matrix)
+
+    def test_absolute_percent(self):
+        gs = fk.GatingStrategy()
+
+        comp_matrix = fk.Matrix('MySpill', spill01_data, spill01_detectors, spill01_fluoros)
+        gs.add_comp_matrix(comp_matrix)
+
+        gs.add_transform(logicle_xform1)
+        gs.add_transform(hyperlog_xform1)
+
+        gs.add_gate(poly1_gate)
+
+        dim1 = fk.Dimension('PE', 'MySpill', 'Logicle_10000_0.5_4.5_0', range_min=0.31, range_max=0.69)
+        dim2 = fk.Dimension('PerCP', 'MySpill', 'Logicle_10000_0.5_4.5_0', range_min=0.27, range_max=0.73)
+        dims1 = [dim1, dim2]
+
+        rect_gate1 = fk.gates.RectangleGate('ScaleRect1', None, dims1)
+        gs.add_gate(rect_gate1)
+
+        dim3 = fk.Dimension('FITC', 'MySpill', 'Hyperlog_10000_1_4.5_0', range_min=0.12, range_max=0.43)
+        dims2 = [dim3]
+
+        rect_gate2 = fk.gates.RectangleGate('ScalePar1', 'ScaleRect1', dims2)
+        gs.add_gate(rect_gate2)
+
+        result = gs.gate_sample(data1_sample, 'ScalePar1')
+        parent_gate_count = result.get_gate_count('ScaleRect1')
+        gate_count = result.get_gate_count('ScalePar1')
+        gate_abs_pct = result.get_gate_absolute_percent('ScalePar1')
+        gate_rel_pct = result.get_gate_relative_percent('ScalePar1')
+
+        true_count = 558
+        true_abs_pct = (558 / data1_sample.event_count) * 100
+        true_rel_pct = (558 / float(parent_gate_count)) * 100
+
+        self.assertEqual(true_count, gate_count)
+        self.assertEqual(true_abs_pct, gate_abs_pct)
+        self.assertEqual(true_rel_pct, gate_rel_pct)

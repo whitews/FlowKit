@@ -74,7 +74,6 @@ def load_samples(fcs_samples):
         elif os.path.isfile(fcs_samples):
             sample_list = get_samples_from_paths([fcs_samples])
 
-
     return sample_list
 
 
