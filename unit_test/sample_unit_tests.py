@@ -146,6 +146,23 @@ class LoadSampleTestCase(unittest.TestCase):
         #       exported comp data isn't exactly equal
         np.testing.assert_almost_equal(sample._comp_events[:, :-1], exported_sample._raw_events[:, :-1], decimal=3)
 
+    def test_filter_negative_scatter(self):
+        # there are 2 negative SSC-A events in this file (of 65016 total events)
+        fcs_file_path = "examples/100715.fcs"
+        sample = Sample(fcs_path_or_data=fcs_file_path)
+        sample.subsample_events(50000)
+        sample.filter_negative_scatter(reapply_subsample=False)
+
+        # using the default seed, the 2 negative events are in the subsample
+        common_idx = np.intersect1d(sample.subsample_indices, sample.negative_scatter_indices)
+        self.assertEqual(common_idx.shape[0], 2)
+
+        sample.filter_negative_scatter(reapply_subsample=True)
+        common_idx = np.intersect1d(sample.subsample_indices, sample.negative_scatter_indices)
+        self.assertEqual(common_idx.shape[0], 0)
+
+        self.assertEqual(sample.negative_scatter_indices.shape[0], 2)
+
 
 if __name__ == '__main__':
     unittest.main()
