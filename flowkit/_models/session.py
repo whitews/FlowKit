@@ -178,6 +178,9 @@ class Session(object):
                     continue
             self.sample_lut[s.original_filename] = s
 
+            # all samples get added to the 'default' group
+            self.assign_sample(s.original_filename, 'default')
+
     def assign_sample(self, sample_id, group_name):
         group = self._sample_group_lut[group_name]
         if sample_id in group['samples']:
@@ -185,6 +188,12 @@ class Session(object):
             return
         template = group['template']
         group['samples'][sample_id] = copy.deepcopy(template)
+
+    def get_sample_ids(self):
+        return list(self.sample_lut.keys())
+
+    def get_sample_groups(self):
+        return list(self._sample_group_lut.keys())
 
     def get_group_samples(self, sample_group):
         sample_ids = self._sample_group_lut[sample_group]['samples'].keys()
@@ -347,10 +356,15 @@ class Session(object):
             warnings.warn("No samples have been assigned to sample group %s" % sample_group)
             return
         gating_strategies = []
+        samples_to_run = []
         for s in samples:
+            if s is None:
+                # sample hasn't been added to Session
+                continue
             gating_strategies.append(self._sample_group_lut[sample_group]['samples'][s.original_filename])
+            samples_to_run.append(s)
 
-        results = gate_samples(gating_strategies, samples, verbose)
+        results = gate_samples(gating_strategies, samples_to_run, verbose)
 
         all_reports = [res.report for res in results]
 
