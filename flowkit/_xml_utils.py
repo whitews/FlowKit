@@ -730,8 +730,14 @@ def parse_wsp(workspace_file_or_path):
 
     # first, find SampleList elements
     ns_map = root_xml.nsmap
+    groups_el = root_xml.find('Groups', ns_map)
+    group_node_els = groups_el.findall('GroupNode', ns_map)
     sample_list_el = root_xml.find('SampleList', ns_map)
     sample_els = sample_list_el.findall('Sample', ns_map)
+
+    for group_node_el in group_node_els:
+        # TODO: parse compensation to use for default 'All Samples' group
+        pass
 
     wsp_dict = {}
 
@@ -761,19 +767,27 @@ def parse_wsp(workspace_file_or_path):
         )
 
         for sample_gate in sample_gates:
-            group = sample_gate['owning_group']
+            if sample_gate['owning_group'] == '':
+                # TODO: implement 'All Samples' group...the default group for WSP files is "All Samples"
+                # group = "All Samples"
+                continue
+            else:
+                group = sample_gate['owning_group']
             gate = sample_gate['gate']
 
             if group not in wsp_dict:
                 wsp_dict[group] = {}
             if sample_name not in wsp_dict[group]:
-                detectors = sample_comp['detectors']
-                matrix = Matrix(
-                    sample_comp['matrix_name'],
-                    sample_comp['matrix'],
-                    detectors=detectors,
-                    fluorochromes=['' for _ in detectors]
-                )
+                if sample_comp is None:
+                    matrix = None
+                else:
+                    detectors = sample_comp['detectors']
+                    matrix = Matrix(
+                        sample_comp['matrix_name'],
+                        sample_comp['matrix'],
+                        detectors=detectors,
+                        fluorochromes=['' for _ in detectors]
+                    )
 
                 wsp_dict[group][sample_name] = {
                     'gates': [],
@@ -957,16 +971,21 @@ def convert_wsp_gate(wsp_gate, comp_matrix, xform_lut):
     xforms = []
 
     for dim in wsp_gate.dimensions:
-        dim_label = dim.label.lstrip(comp_matrix['prefix'])
-        dim_label = dim_label.rstrip(comp_matrix['suffix'])
+        if comp_matrix is not None:
+            dim_label = dim.label.lstrip(comp_matrix['prefix'])
+            dim_label = dim_label.rstrip(comp_matrix['suffix'])
 
-        comp_ref = None
+            if dim_label in comp_matrix['detectors']:
+                comp_ref = comp_matrix['matrix_name']
+            else:
+                comp_ref = None
+        else:
+            dim_label = dim.label
+            comp_ref = None
+
         xform_id = None
         new_dim_min = None
         new_dim_max = None
-
-        if dim_label in comp_matrix['detectors']:
-            comp_ref = comp_matrix['matrix_name']
 
         if dim_label in xform_lut:
             xform = xform_lut[dim_label]
@@ -993,7 +1012,9 @@ def convert_wsp_gate(wsp_gate, comp_matrix, xform_lut):
 
         # TODO: support more than just PolygonGate
         gate = PolygonGate(wsp_gate.id, wsp_gate.parent, new_dims, vertices)
+    elif isinstance(wsp_gate, GMLRectangleGate):
+        gate = wsp_gate
     else:
-        raise NotImplemented("Only polygon gates for FlowJo workspaces are currently supported.")
+        raise NotImplemented("Only polygon & rectangle gates for FlowJo workspaces are currently supported.")
 
     return gate
