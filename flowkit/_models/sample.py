@@ -198,7 +198,8 @@ class Sample(object):
             p_value_threshold=0.03,
             ref_size=10000,
             channel_labels_or_numbers=None,
-            reapply_subsample=True
+            reapply_subsample=True,
+            plot=False
     ):
         """
         Anomalous events are determined via Kolmogorov-Smirnov (KS) statistical
@@ -245,7 +246,7 @@ class Sample(object):
             ref_set_count=3,
             p_value_threshold=p_value_threshold,
             ref_size=ref_size,
-            plot=False
+            plot=plot
         )
         self.anomalous_indices = anomalous_idx
 
