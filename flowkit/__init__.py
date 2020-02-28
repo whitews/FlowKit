@@ -7,6 +7,7 @@ from ._models.session import Session
 from ._models.dimension import Dimension, RatioDimension, QuadrantDivider
 from ._models.vertex import Vertex
 from ._xml_utils import parse_gating_xml, export_gatingml
+from ._utils import plot_channel
 
 __all__ = [
     'Sample',
@@ -20,5 +21,6 @@ __all__ = [
     'gates',
     'transforms',
     'parse_gating_xml',
-    'export_gatingml'
+    'export_gatingml',
+    'plot_channel'
 ]

@@ -282,6 +282,7 @@ def rolling_window(a, window):
 # TODO: integrate functionality into Sample class, change xform to accept/use Sample instance xform
 def plot_channel(chan_events, label, subplot_ax, xform=False, bad_events=None):
     if xform:
+        # TODO: change to accept a Transform sub-class instance
         chan_events = np.arcsinh(chan_events * 0.003)
 
     my_cmap = pyplot.cm.get_cmap('jet')
