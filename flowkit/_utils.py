@@ -117,6 +117,10 @@ def convert_matrix_text_to_array(matrix_text, fluoro_labels, fluoro_indices):
 
     label_diff = set(fluoro_labels).symmetric_difference(header)
 
+    # re-order matrix according to provided fluoro label order
+    idx_order = [header.index(fluoro_label) for fluoro_label in fluoro_labels]
+    matrix = matrix[idx_order, :][:, idx_order]
+
     if len(label_diff) > 0:
         in_fcs_not_comp = []
         in_comp_not_fcs = []
