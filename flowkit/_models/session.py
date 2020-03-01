@@ -8,7 +8,6 @@ from scipy.stats import gaussian_kde
 from sklearn.preprocessing import StandardScaler
 import statsmodels.api as sm
 from MulticoreTSNE import MulticoreTSNE
-from bokeh.models import Span, BoxAnnotation
 import seaborn
 from matplotlib import cm
 import matplotlib.pyplot as plt
@@ -658,79 +657,29 @@ class Session(object):
         else:
             raise NotImplementedError("Only histograms and scatter plots are supported in this version of FlowKit")
 
-        g_line_color = "#1F77B4"
-        g_line_width = 3
-        g_fill_color = 'lime'
-        g_fill_alpha = 0.05
-
         if isinstance(gate, gates.PolygonGate):
-            x_coords, y_coords = list(zip(*[v.coordinates for v in gate.vertices]))
-            p.patch(
-                x_coords,
-                y_coords,
-                fill_color=g_fill_color,
-                fill_alpha=g_fill_alpha,
-                line_width=g_line_width
+            source, glyph = _plot_utils.render_polygon(gate.vertices)
+            p.add_glyph(source, glyph)
+        elif isinstance(gate, gates.EllipsoidGate):
+            ellipse = _plot_utils.calculate_ellipse(
+                gate.coordinates[0],
+                gate.coordinates[1],
+                gate.covariance_matrix,
+                gate.distance_square
             )
+            p.add_glyph(ellipse)
         elif isinstance(gate, gates.RectangleGate):
             # rectangle gates in GatingML may not actually be rectangles, as the min/max for the dimensions
             # are options. So, if any of the dim min/max values are missing it is essentially a set of ranges.
 
             if None in dim_min or None in dim_max or dim_count == 1:
-                renderers = []
-                left = None
-                right = None
-                bottom = None
-                top = None
-
-                if dim_min[0] is not None:
-                    left = dim_min[0]
-                    renderers.append(
-                        Span(location=left, dimension='height', line_width=g_line_width, line_color=g_line_color)
-                    )
-                if dim_max[0] is not None:
-                    right = dim_max[0]
-                    renderers.append(
-                        Span(location=right, dimension='height', line_width=g_line_width, line_color=g_line_color)
-                    )
-                if dim_count > 1:
-                    if dim_min[1] is not None:
-                        bottom = dim_min[1]
-                        renderers.append(
-                            Span(location=bottom, dimension='width', line_width=g_line_width, line_color=g_line_color)
-                        )
-                    if dim_max[1] is not None:
-                        top = dim_max[1]
-                        renderers.append(
-                            Span(location=top, dimension='width', line_width=g_line_width, line_color=g_line_color)
-                        )
-
-                mid_box = BoxAnnotation(
-                    left=left,
-                    right=right,
-                    bottom=bottom,
-                    top=top,
-                    fill_alpha=g_fill_alpha,
-                    fill_color=g_fill_color
-                )
-                renderers.append(mid_box)
+                renderers = _plot_utils.render_ranges(dim_min, dim_max)
 
                 p.renderers.extend(renderers)
             else:
                 # a true rectangle
-                x_center = (dim_min[0] + dim_max[0]) / 2.0
-                y_center = (dim_min[1] + dim_max[1]) / 2.0
-                x_width = dim_max[0] - dim_min[0]
-                y_height = dim_max[1] - dim_min[1]
-                p.rect(
-                    x_center,
-                    y_center,
-                    x_width,
-                    y_height,
-                    fill_color=g_fill_color,
-                    fill_alpha=g_fill_alpha,
-                    line_width=g_line_width
-                )
+                rect = _plot_utils.render_rectangle(dim_min, dim_max)
+                p.add_glyph(rect)
         else:
             raise NotImplementedError("Only polygon and rectangle gates are supported in this version of FlowKit")
 

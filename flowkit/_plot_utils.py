@@ -3,8 +3,14 @@ from scipy.interpolate import interpn
 import colorsys
 from matplotlib import cm, colors
 from matplotlib import pyplot
-from matplotlib.patches import Ellipse
 from bokeh.plotting import figure
+from bokeh.models import Ellipse, Patch, Span, BoxAnnotation, Rect, ColumnDataSource
+
+
+line_color = "#1F77B4"
+line_width = 3
+fill_color = 'lime'
+fill_alpha = 0.05
 
 
 def generate_custom_colormap(cmap_sample_indices, base_cmap):
@@ -101,27 +107,103 @@ def calculate_extent(data_1d, d_min=None, d_max=None, pad=0.0):
     return d_min, d_max
 
 
-# TODO: change to Bokeh Ellipse
-def calculate_ellipse(center_x, center_y, covariance_matrix, n_std_dev=3):
+def render_polygon(vertices):
+    x_coords, y_coords = list(zip(*[v.coordinates for v in vertices]))
+
+    source = ColumnDataSource(dict(x=x_coords, y=y_coords))
+
+    poly = Patch(
+        x='x',
+        y='y',
+        fill_color=fill_color,
+        fill_alpha=fill_alpha,
+        line_width=line_width
+    )
+
+    return source, poly
+
+
+def render_ranges(dim_mins, dim_maxes):
+    renderers = []
+    left = None
+    right = None
+    bottom = None
+    top = None
+
+    if dim_mins[0] is not None:
+        left = dim_mins[0]
+        renderers.append(
+            Span(location=left, dimension='height', line_width=line_width, line_color=line_color)
+        )
+    if dim_maxes[0] is not None:
+        right = dim_maxes[0]
+        renderers.append(
+            Span(location=right, dimension='height', line_width=line_width, line_color=line_color)
+        )
+    if len(dim_mins) > 1:
+        if dim_mins[1] is not None:
+            bottom = dim_mins[1]
+            renderers.append(
+                Span(location=bottom, dimension='width', line_width=line_width, line_color=line_color)
+            )
+        if dim_maxes[1] is not None:
+            top = dim_maxes[1]
+            renderers.append(
+                Span(location=top, dimension='width', line_width=line_width, line_color=line_color)
+            )
+
+    mid_box = BoxAnnotation(
+        left=left,
+        right=right,
+        bottom=bottom,
+        top=top,
+        fill_alpha=fill_alpha,
+        fill_color=fill_color
+    )
+    renderers.append(mid_box)
+
+    return renderers
+
+
+def render_rectangle(dim_mins, dim_maxes):
+    x_center = (dim_mins[0] + dim_maxes[0]) / 2.0
+    y_center = (dim_mins[1] + dim_maxes[1]) / 2.0
+    x_width = dim_maxes[0] - dim_mins[0]
+    y_height = dim_maxes[1] - dim_mins[1]
+    rect = Rect(
+        x=x_center,
+        y=y_center,
+        width=x_width,
+        height=y_height,
+        fill_color=fill_color,
+        fill_alpha=fill_alpha,
+        line_width=line_width
+    )
+
+    return rect
+
+
+def calculate_ellipse(center_x, center_y, covariance_matrix, distance_square):
     values, vectors = np.linalg.eigh(covariance_matrix)
     order = values.argsort()[::-1]
     values = values[order]
     vectors = vectors[:, order]
 
-    theta = np.degrees(np.arctan2(*vectors[:, 0][::-1]))
+    angle_rads = -np.arctan2(*vectors[:, 0][::-1])
 
-    # make all angles positive
-    if theta < 0:
-        theta += 360
-
-    # Width and height are "full" widths, not radius
-    width, height = 2.0 * n_std_dev * np.sqrt(values)
+    # Width and height are full width (the axes lengths are thus multiplied by 2.0 here)
+    width, height = 2.0 * np.sqrt(values * distance_square)
 
     ellipse = Ellipse(
-        xy=(center_x, center_y),
+        x=center_x,
+        y=center_y,
         width=width,
         height=height,
-        angle=float(theta)
+        angle=angle_rads,
+        line_width=line_width,
+        line_color=line_color,
+        fill_color=fill_color,
+        fill_alpha=fill_alpha
     )
 
     return ellipse
