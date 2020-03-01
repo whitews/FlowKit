@@ -204,6 +204,11 @@ class Session(object):
 
         return samples
 
+    def get_gate_ids(self, sample_group):
+        group = self._sample_group_lut[sample_group]
+        template = group['template']
+        return list(template.gates.keys())
+
     # start pass through methods for GatingStrategy class
     def add_gate(self, gate, group_name='default'):
         # TODO: allow adding multiple gates at once, while still allowing a single gate. Check if list or Gate instance
