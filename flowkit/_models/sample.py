@@ -275,7 +275,7 @@ class Sample(object):
         self._subsample_seed = random_seed
         rng = np.random.RandomState(seed=self._subsample_seed)
 
-        bad_idx = np.empty(0)
+        bad_idx = np.empty(0, dtype=np.int)
 
         if self.negative_scatter_indices is not None:
             bad_idx = self.negative_scatter_indices
