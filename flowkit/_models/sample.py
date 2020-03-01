@@ -736,7 +736,7 @@ class Sample(object):
             channel_label_or_number,
             source='xform',
             subsample=False,
-            bins=64
+            bins=None
     ):
         """
         Returns a histogram plot of the specified channel events, available
@@ -752,12 +752,6 @@ class Sample(object):
             sub-sampled events can be much faster.
         :param bins: Number of bins to use for the histogram. If None, the
             number of bins is determined by the Freedman-Diaconis rule.
-        :param x_min: Lower bound of x-axis. If None, channel's min value will
-            be used with some padding to keep events off the edge of the plot.
-        :param x_max: Upper bound of x-axis. If None, channel's max value will
-            be used with some padding to keep events off the edge of the plot.
-        :param fig_size: Tuple of 2 values specifying the size of the returned
-            figure. Values are in Matplotlib size units.
         :return: Matplotlib figure of the histogram plot with KDE curve.
         """
 
