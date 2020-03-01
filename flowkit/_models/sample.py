@@ -7,12 +7,9 @@ import numpy as np
 import pandas as pd
 from flowkit._models.transforms import transforms
 from flowkit._models.transforms.matrix import Matrix
-from .. import _utils
-from scipy.interpolate import interpn
+from .. import _utils, _plot_utils
 import matplotlib.pyplot as plt
-from matplotlib import colors
 import seaborn
-from bokeh.plotting import figure
 from bokeh.layouts import gridplot
 import warnings
 
@@ -214,6 +211,7 @@ class Sample(object):
             to evaluate for anomalous events. If None, then all fluorescent channels will be evaluated.
             Default is None
         :param reapply_subsample: Whether to re-subsample the Sample events after filtering. Default is True
+        :param plot: Whether to plot the intermediate data for the provided channel labels
         :return: None
         """
         rng = np.random.RandomState(seed=random_seed)
@@ -559,8 +557,8 @@ class Sample(object):
         x = self.get_channel_data(x_index, source=source, subsample=subsample)
         y = self.get_channel_data(y_index, source=source, subsample=subsample)
 
-        x_min, x_max = _utils.calculate_extent(x, d_min=x_min, d_max=x_max, pad=0.02)
-        y_min, y_max = _utils.calculate_extent(y, d_min=y_min, d_max=y_max, pad=0.02)
+        x_min, x_max = _plot_utils.calculate_extent(x, d_min=x_min, d_max=x_max, pad=0.02)
+        y_min, y_max = _plot_utils.calculate_extent(y, d_min=y_min, d_max=y_max, pad=0.02)
 
         fig, ax = plt.subplots(figsize=fig_size)
         ax.set_title(self.original_filename)
@@ -574,7 +572,7 @@ class Sample(object):
             seaborn.scatterplot(
                 x,
                 y,
-                palette=_utils.new_jet,
+                palette=_plot_utils.new_jet,
                 legend=False,
                 s=5,
                 linewidth=0,
@@ -586,7 +584,7 @@ class Sample(object):
                 x,
                 y,
                 bw='scott',
-                cmap=_utils.new_jet,
+                cmap=_plot_utils.new_jet,
                 linewidths=2,
                 alpha=1
             )
@@ -642,66 +640,28 @@ class Sample(object):
         x = self.get_channel_data(x_index, source=source, subsample=subsample)
         y = self.get_channel_data(y_index, source=source, subsample=subsample)
 
-        x_min, x_max = _utils.calculate_extent(x, d_min=x_min, d_max=x_max, pad=0.02)
-        y_min, y_max = _utils.calculate_extent(y, d_min=y_min, d_max=y_max, pad=0.02)
-
-        if color_density:
-            data, x_e, y_e = np.histogram2d(x, y, bins=[38, 38])
-            z = interpn(
-                (0.5 * (x_e[1:] + x_e[:-1]), 0.5 * (y_e[1:] + y_e[:-1])),
-                data,
-                np.vstack([x, y]).T,
-                method="splinef2d",
-                bounds_error=False
-            )
-            z[np.isnan(z)] = 0
-
-            # sort by density (z) so the more dense points are on top for better
-            # color display
-            idx = z.argsort()
-            x, y, z = x[idx], y[idx], z[idx]
-        else:
-            z = np.zeros(len(x))
-
-        colors_array = _utils.new_jet(colors.Normalize()(z))
-        z_colors = [
-            "#%02x%02x%02x" % (int(c[0] * 255), int(c[1] * 255), int(c[2] * 255)) for c in colors_array
-        ]
-
-        tools = "crosshair,pan,zoom_in,zoom_out,box_zoom,undo,redo,reset,save,"
-        p = figure(
-            tools=tools,
-            x_range=(x_min, x_max),
-            y_range=(y_min, y_max),
-            title=self.original_filename if self.original_filename else 'unknown'
-        )
-        p.title.align = 'center'
+        dim_labels = []
 
         if self.pns_labels[x_index] != '':
-            p.xaxis.axis_label = '%s (%s)' % (self.pns_labels[x_index], self.pnn_labels[x_index])
+            dim_labels.append('%s (%s)' % (self.pns_labels[x_index], self.pnn_labels[x_index]))
         else:
-            p.xaxis.axis_label = self.pnn_labels[x_index]
+            dim_labels.append(self.pnn_labels[x_index])
 
         if self.pns_labels[y_index] != '':
-            p.yaxis.axis_label = '%s (%s)' % (self.pns_labels[y_index], self.pnn_labels[y_index])
+            dim_labels.append('%s (%s)' % (self.pns_labels[y_index], self.pnn_labels[y_index]))
         else:
-            p.yaxis.axis_label = self.pnn_labels[y_index]
+            dim_labels.append(self.pnn_labels[y_index])
 
-        if y_max > x_max:
-            radius_dimension = 'y'
-            radius = 0.003 * y_max
-        else:
-            radius_dimension = 'x'
-            radius = 0.003 * x_max
-
-        p.scatter(
+        p = _plot_utils.plot_scatter(
             x,
             y,
-            radius=radius,
-            radius_dimension=radius_dimension,
-            fill_color=z_colors,
-            fill_alpha=0.4,
-            line_color=None
+            dim_labels,
+            title=self.original_filename,
+            x_min=x_min,
+            x_max=x_max,
+            y_min=y_min,
+            y_max=y_max,
+            color_density=color_density
         )
 
         return p
@@ -776,10 +736,7 @@ class Sample(object):
             channel_label_or_number,
             source='xform',
             subsample=False,
-            bins=None,
-            x_min=None,
-            x_max=None,
-            fig_size=(15, 7)
+            bins=64
     ):
         """
         Returns a histogram plot of the specified channel events, available
@@ -807,25 +764,9 @@ class Sample(object):
         channel_index = self.get_channel_index(channel_label_or_number)
         channel_data = self.get_channel_data(channel_index, source=source, subsample=subsample)
 
-        fig, ax = plt.subplots(figsize=fig_size)
-        ax.set_title(self.original_filename)
+        p = _plot_utils.plot_histogram(channel_data, bins=bins, title=self.original_filename)
 
-        if x_min is None:
-            x_min = channel_data.min()
-        if x_max is None:
-            x_max = channel_data.max()
-
-        ax.set_xlim([x_min, x_max])
-        ax.set_xlabel(self.pnn_labels[channel_index])
-
-        seaborn.distplot(
-            channel_data,
-            hist_kws=dict(edgecolor="w", linewidth=1),
-            label=self.pnn_labels[channel_index],
-            bins=bins
-        )
-
-        return fig
+        return p
 
     def export(
             self,

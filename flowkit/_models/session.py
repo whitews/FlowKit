@@ -5,16 +5,15 @@ from glob import glob
 import numpy as np
 import pandas as pd
 from scipy.stats import gaussian_kde
-from scipy.interpolate import interpn
 from sklearn.preprocessing import StandardScaler
 import statsmodels.api as sm
 from MulticoreTSNE import MulticoreTSNE
-from bokeh.plotting import figure
+from bokeh.models import Span, BoxAnnotation
 import seaborn
-from matplotlib import cm, colors
+from matplotlib import cm
 import matplotlib.pyplot as plt
 from flowio.create_fcs import create_fcs
-from flowkit import Sample, GatingStrategy, Matrix, _utils, _xml_utils
+from flowkit import Sample, GatingStrategy, Matrix, gates, _xml_utils, _plot_utils
 import warnings
 
 try:
@@ -487,8 +486,8 @@ class Session(object):
 
                 # determine padding to keep min/max events off the edge,
                 # but only if user didn't specify the limits
-                x_min, x_max = _utils.calculate_extent(x, d_min=x_min, d_max=x_max, pad=0.02)
-                y_min, y_max = _utils.calculate_extent(y, d_min=y_min, d_max=y_max, pad=0.02)
+                x_min, x_max = _plot_utils.calculate_extent(x, d_min=x_min, d_max=x_max, pad=0.02)
+                y_min, y_max = _plot_utils.calculate_extent(y, d_min=y_min, d_max=y_max, pad=0.02)
 
                 z = s_results['events'][:, i]
                 z_sort = np.argsort(z)
@@ -607,82 +606,132 @@ class Session(object):
             sample_group,
             sample_id,
             gate_id,
-            color_density=True,
             x_min=None,
             x_max=None,
             y_min=None,
-            y_max=None
+            y_max=None,
+            color_density=True
     ):
         group = self._sample_group_lut[sample_group]
         gating_strategy = group['samples'][sample_id]
         gate = gating_strategy.get_gate_by_reference(gate_id)
 
-        plot_sample = self.get_sample(sample_id)
+        # dim count determines if we need a histogram, scatter, or multi-scatter
+        dim_count = len(gate.dimensions)
+        if dim_count == 1:
+            gate_type = 'hist'
+        elif dim_count == 2:
+            gate_type = 'scatter'
+        else:
+            raise NotImplementedError("Plotting of gates with >2 dimensions is not yet supported")
+
+        sample_to_plot = self.get_sample(sample_id)
         events, dim_idx, dim_min, dim_max, new_dims = gate.preprocess_sample_events(
-            plot_sample,
+            sample_to_plot,
             copy.deepcopy(gating_strategy)
         )
-        x = events[plot_sample.subsample_indices, dim_idx[0]]
-        y = events[plot_sample.subsample_indices, dim_idx[1]]
+        if len(new_dims) > 0:
+            raise NotImplementedError("Plotting of RatioDimenstions is not yet supported.")
+        if isinstance(gate, gates.QuadrantGate):
+            raise NotImplementedError("Plotting of quadrant gates is not supported in this version of FlowKit")
+        x = events[sample_to_plot.subsample_indices, dim_idx[0]]
 
         dim_labels = [dim.label for dim in gate.dimensions]
+        plot_title = "%s - %s - %s" % (sample_id, sample_group, gate_id)
 
-        x_min, x_max = _utils.calculate_extent(x, d_min=x_min, d_max=x_max, pad=0.02)
-        y_min, y_max = _utils.calculate_extent(y, d_min=y_min, d_max=y_max, pad=0.02)
+        if gate_type == 'scatter':
+            y = events[sample_to_plot.subsample_indices, dim_idx[1]]
 
-        if y_max > x_max:
-            radius_dimension = 'y'
-            radius = 0.003 * y_max
-        else:
-            radius_dimension = 'x'
-            radius = 0.003 * x_max
-
-        if color_density:
-            data, x_e, y_e = np.histogram2d(x, y, bins=[38, 38])
-            z = interpn(
-                (0.5 * (x_e[1:] + x_e[:-1]), 0.5 * (y_e[1:] + y_e[:-1])),
-                data,
-                np.vstack([x, y]).T,
-                method="splinef2d",
-                bounds_error=False
+            p = _plot_utils.plot_scatter(
+                x,
+                y,
+                dim_labels,
+                title=plot_title,
+                x_min=x_min,
+                x_max=x_max,
+                y_min=y_min,
+                y_max=y_max,
+                color_density=color_density
             )
-            z[np.isnan(z)] = 0
-
-            # sort by density (z) so the more dense points are on top for better
-            # color display
-            idx = z.argsort()
-            x, y, z = x[idx], y[idx], z[idx]
+        elif gate_type == 'hist':
+            p = _plot_utils.plot_histogram(x, dim_labels[0], title=plot_title)
         else:
-            z = np.zeros(len(x))
+            raise NotImplementedError("Only histograms and scatter plots are supported in this version of FlowKit")
 
-        colors_array = _utils.new_jet(colors.Normalize()(z))
-        z_colors = [
-            "#%02x%02x%02x" % (int(c[0] * 255), int(c[1] * 255), int(c[2] * 255)) for c in colors_array
-        ]
+        g_line_color = "#1F77B4"
+        g_line_width = 3
+        g_fill_color = 'lime'
+        g_fill_alpha = 0.05
 
-        tools = "crosshair,pan,zoom_in,zoom_out,box_zoom,undo,redo,reset,save,"
-        p = figure(
-            tools=tools,
-            x_range=(x_min, x_max),
-            y_range=(y_min, y_max),
-            title=sample_id
-        )
-        p.title.align = 'center'
+        if isinstance(gate, gates.PolygonGate):
+            x_coords, y_coords = list(zip(*[v.coordinates for v in gate.vertices]))
+            p.patch(
+                x_coords,
+                y_coords,
+                fill_color=g_fill_color,
+                fill_alpha=g_fill_alpha,
+                line_width=g_line_width
+            )
+        elif isinstance(gate, gates.RectangleGate):
+            # rectangle gates in GatingML may not actually be rectangles, as the min/max for the dimensions
+            # are options. So, if any of the dim min/max values are missing it is essentially a set of ranges.
 
-        p.xaxis.axis_label = dim_labels[0]
-        p.yaxis.axis_label = dim_labels[1]
+            if None in dim_min or None in dim_max or dim_count == 1:
+                renderers = []
+                left = None
+                right = None
+                bottom = None
+                top = None
 
-        p.scatter(
-            x,
-            y,
-            radius=radius,
-            radius_dimension=radius_dimension,
-            fill_color=z_colors,
-            fill_alpha=0.4,
-            line_color=None
-        )
+                if dim_min[0] is not None:
+                    left = dim_min[0]
+                    renderers.append(
+                        Span(location=left, dimension='height', line_width=g_line_width, line_color=g_line_color)
+                    )
+                if dim_max[0] is not None:
+                    right = dim_max[0]
+                    renderers.append(
+                        Span(location=right, dimension='height', line_width=g_line_width, line_color=g_line_color)
+                    )
+                if dim_count > 1:
+                    if dim_min[1] is not None:
+                        bottom = dim_min[1]
+                        renderers.append(
+                            Span(location=bottom, dimension='width', line_width=g_line_width, line_color=g_line_color)
+                        )
+                    if dim_max[1] is not None:
+                        top = dim_max[1]
+                        renderers.append(
+                            Span(location=top, dimension='width', line_width=g_line_width, line_color=g_line_color)
+                        )
 
-        x_coords, y_coords = list(zip(*[v.coordinates for v in gate.vertices]))
-        p.patch(x_coords, y_coords, fill_color=None, line_width=3)
+                mid_box = BoxAnnotation(
+                    left=left,
+                    right=right,
+                    bottom=bottom,
+                    top=top,
+                    fill_alpha=g_fill_alpha,
+                    fill_color=g_fill_color
+                )
+                renderers.append(mid_box)
+
+                p.renderers.extend(renderers)
+            else:
+                # a true rectangle
+                x_center = (dim_min[0] + dim_max[0]) / 2.0
+                y_center = (dim_min[1] + dim_max[1]) / 2.0
+                x_width = dim_max[0] - dim_min[0]
+                y_height = dim_max[1] - dim_min[1]
+                p.rect(
+                    x_center,
+                    y_center,
+                    x_width,
+                    y_height,
+                    fill_color=g_fill_color,
+                    fill_alpha=g_fill_alpha,
+                    line_width=g_line_width
+                )
+        else:
+            raise NotImplementedError("Only polygon and rectangle gates are supported in this version of FlowKit")
 
         return p
