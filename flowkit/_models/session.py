@@ -630,12 +630,27 @@ class Session(object):
             copy.deepcopy(gating_strategy)
         )
         if len(new_dims) > 0:
-            raise NotImplementedError("Plotting of RatioDimenstions is not yet supported.")
+            raise NotImplementedError("Plotting of RatioDimensions is not yet supported.")
         if isinstance(gate, gates.QuadrantGate):
             raise NotImplementedError("Plotting of quadrant gates is not supported in this version of FlowKit")
         x = events[sample_to_plot.subsample_indices, dim_idx[0]]
 
-        dim_labels = [dim.label for dim in gate.dimensions]
+        dim_labels = []
+
+        x_index = dim_idx[0]
+        if sample_to_plot.pns_labels[x_index] != '':
+            dim_labels.append('%s (%s)' % (sample_to_plot.pns_labels[x_index], sample_to_plot.pnn_labels[x_index]))
+        else:
+            dim_labels.append(sample_to_plot.pnn_labels[x_index])
+
+        if len(dim_idx) > 1:
+            y_index = dim_idx[1]
+
+            if sample_to_plot.pns_labels[y_index] != '':
+                dim_labels.append('%s (%s)' % (sample_to_plot.pns_labels[y_index], sample_to_plot.pnn_labels[y_index]))
+            else:
+                dim_labels.append(sample_to_plot.pnn_labels[y_index])
+
         plot_title = "%s - %s - %s" % (sample_id, sample_group, gate_id)
 
         if gate_type == 'scatter':
