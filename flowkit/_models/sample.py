@@ -4,14 +4,12 @@ from pathlib import Path
 import io
 from tempfile import TemporaryFile
 import numpy as np
+import pandas as pd
 from flowkit._models.transforms import transforms
 from flowkit._models.transforms.matrix import Matrix
-from .. import _utils
-from scipy.interpolate import interpn
+from .. import _utils, _plot_utils
 import matplotlib.pyplot as plt
-from matplotlib import colors
 import seaborn
-from bokeh.plotting import figure
 from bokeh.layouts import gridplot
 import warnings
 
@@ -119,6 +117,8 @@ class Sample(object):
             else:
                 self.pns_labels.append('')
 
+        self._flowjo_pnn_labels = [label.replace('/', '_') for label in self.pnn_labels]
+
         # Raw events need to be scaled according to channel gain, as well
         # as corrected for proper lin/log display
         # These are the only pre-processing we will do on raw events
@@ -142,7 +142,8 @@ class Sample(object):
         self._subsample_count = None
         self._subsample_seed = None
 
-        self.apply_compensation(compensation)
+        if compensation is not None:
+            self.apply_compensation(compensation)
 
         # if filtering any events, save those in case they want to be retrieved
         self.negative_scatter_indices = None
@@ -186,7 +187,7 @@ class Sample(object):
         self.negative_scatter_indices = is_neg
 
         if reapply_subsample and self._subsample_count is not None:
-            self.subsample_indices(self._subsample_count, self._subsample_seed)
+            self.subsample_events(self._subsample_count, self._subsample_seed)
 
     def filter_anomalous_events(
             self,
@@ -194,7 +195,8 @@ class Sample(object):
             p_value_threshold=0.03,
             ref_size=10000,
             channel_labels_or_numbers=None,
-            reapply_subsample=True
+            reapply_subsample=True,
+            plot=False
     ):
         """
         Anomalous events are determined via Kolmogorov-Smirnov (KS) statistical
@@ -209,6 +211,7 @@ class Sample(object):
             to evaluate for anomalous events. If None, then all fluorescent channels will be evaluated.
             Default is None
         :param reapply_subsample: Whether to re-subsample the Sample events after filtering. Default is True
+        :param plot: Whether to plot the intermediate data for the provided channel labels
         :return: None
         """
         rng = np.random.RandomState(seed=random_seed)
@@ -241,12 +244,12 @@ class Sample(object):
             ref_set_count=3,
             p_value_threshold=p_value_threshold,
             ref_size=ref_size,
-            plot=False
+            plot=plot
         )
         self.anomalous_indices = anomalous_idx
 
         if reapply_subsample and self._subsample_count is not None:
-            self.subsample_indices(self._subsample_count, self._subsample_seed)
+            self.subsample_events(self._subsample_count, self._subsample_seed)
 
     def subsample_events(
             self,
@@ -272,7 +275,7 @@ class Sample(object):
         self._subsample_seed = random_seed
         rng = np.random.RandomState(seed=self._subsample_seed)
 
-        bad_idx = np.empty(0)
+        bad_idx = np.empty(0, dtype=np.int)
 
         if self.negative_scatter_indices is not None:
             bad_idx = self.negative_scatter_indices
@@ -305,6 +308,7 @@ class Sample(object):
         `get_comp_events`.
 
         :param compensation: Compensation matrix, which can be a:
+                - Matrix instance
                 - NumPy array
                 - CSV file path
                 - pathlib Path object to a CSV or TSV file
@@ -316,22 +320,22 @@ class Sample(object):
         :param comp_id: text ID for identifying compensation matrix
         :return: None
         """
-        comp_labels = self.pnn_labels
-
-        # TODO: should also accept a Matrix instance
-        if compensation is not None:
-            spill = _utils.parse_compensation_matrix(
-                compensation,
-                comp_labels,
-                null_channels=self.null_channels
-            )
-            fluorochromes = [self.pns_labels[i] for i in self.fluoro_indices]
+        if isinstance(compensation, Matrix):
+            self.compensation = compensation
+            self._comp_events = self.compensation.apply(self)
+        elif compensation is not None:
             detectors = [self.pnn_labels[i] for i in self.fluoro_indices]
-            self.compensation = Matrix(comp_id, fluorochromes, detectors, spill[1:, :])
-            self._transformed_events = None
+            fluorochromes = [self.pns_labels[i] for i in self.fluoro_indices]
+            self.compensation = Matrix(comp_id, compensation, detectors, fluorochromes)
             self._comp_events = self.compensation.apply(self)
         else:
+            # compensation must be None so clear any matrix and comp events
             self.compensation = None
+            self._comp_events = None
+
+        # Clear any previously transformed events
+        # TODO: Consider caching the transform and re-applying
+        self._transformed_events = None
 
     def get_metadata(self):
         """
@@ -369,6 +373,7 @@ class Sample(object):
         else:
             return self._raw_events
 
+    # TODO: make event type names/references consistent across the API...is it xform/transform comp/compensated, etc.
     def get_comp_events(self, subsample=False):
         """
         Returns compensated events, (not transformed)
@@ -412,6 +417,23 @@ class Sample(object):
         else:
             return self._transformed_events
 
+    def get_events_as_data_frame(self, source='xform', subsample=False):
+        if source == 'xform':
+            events = self.get_transformed_events(subsample=subsample)
+        elif source == 'comp':
+            events = self.get_comp_events(subsample=subsample)
+        elif source == 'raw':
+            events = self.get_raw_events(subsample=subsample)
+        elif source == 'orig':
+            events = self.get_orig_events(subsample=subsample)
+        else:
+            raise ValueError("source must be one of 'raw', 'comp', or 'xform'")
+
+        multi_cols = pd.MultiIndex.from_arrays([self.pnn_labels, self.pns_labels], names=['pnn', 'pns'])
+        events_df = pd.DataFrame(data=events, columns=multi_cols)
+
+        return events_df
+
     def get_channel_number_by_label(self, label):
         """
         Returns the channel number for the given PnN label. Note, this is the
@@ -421,7 +443,11 @@ class Sample(object):
         :param label: PnN label of a channel
         :return: Channel number (not index)
         """
-        return self.pnn_labels.index(label) + 1
+        if label in self.pnn_labels:
+            return self.pnn_labels.index(label) + 1
+        else:
+            # as a last resort we can try the FJ labels and fail if no match
+            return self._flowjo_pnn_labels.index(label) + 1
 
     def get_channel_index(self, channel_label_or_number):
         """
@@ -531,8 +557,8 @@ class Sample(object):
         x = self.get_channel_data(x_index, source=source, subsample=subsample)
         y = self.get_channel_data(y_index, source=source, subsample=subsample)
 
-        x_min, x_max = _utils.calculate_extent(x, d_min=x_min, d_max=x_max, pad=0.02)
-        y_min, y_max = _utils.calculate_extent(y, d_min=y_min, d_max=y_max, pad=0.02)
+        x_min, x_max = _plot_utils.calculate_extent(x, d_min=x_min, d_max=x_max, pad=0.02)
+        y_min, y_max = _plot_utils.calculate_extent(y, d_min=y_min, d_max=y_max, pad=0.02)
 
         fig, ax = plt.subplots(figsize=fig_size)
         ax.set_title(self.original_filename)
@@ -546,7 +572,7 @@ class Sample(object):
             seaborn.scatterplot(
                 x,
                 y,
-                palette=_utils.new_jet,
+                palette=_plot_utils.new_jet,
                 legend=False,
                 s=5,
                 linewidth=0,
@@ -558,7 +584,7 @@ class Sample(object):
                 x,
                 y,
                 bw='scott',
-                cmap=_utils.new_jet,
+                cmap=_plot_utils.new_jet,
                 linewidths=2,
                 alpha=1
             )
@@ -614,66 +640,28 @@ class Sample(object):
         x = self.get_channel_data(x_index, source=source, subsample=subsample)
         y = self.get_channel_data(y_index, source=source, subsample=subsample)
 
-        x_min, x_max = _utils.calculate_extent(x, d_min=x_min, d_max=x_max, pad=0.02)
-        y_min, y_max = _utils.calculate_extent(y, d_min=y_min, d_max=y_max, pad=0.02)
-
-        if color_density:
-            data, x_e, y_e = np.histogram2d(x, y, bins=[38, 38])
-            z = interpn(
-                (0.5 * (x_e[1:] + x_e[:-1]), 0.5 * (y_e[1:] + y_e[:-1])),
-                data,
-                np.vstack([x, y]).T,
-                method="splinef2d",
-                bounds_error=False
-            )
-            z[np.isnan(z)] = 0
-
-            # sort by density (z) so the more dense points are on top for better
-            # color display
-            idx = z.argsort()
-            x, y, z = x[idx], y[idx], z[idx]
-        else:
-            z = np.zeros(len(x))
-
-        colors_array = _utils.new_jet(colors.Normalize()(z))
-        z_colors = [
-            "#%02x%02x%02x" % (int(c[0] * 255), int(c[1] * 255), int(c[2] * 255)) for c in colors_array
-        ]
-
-        tools = "crosshair,pan,zoom_in,zoom_out,box_zoom,undo,redo,reset,save,"
-        p = figure(
-            tools=tools,
-            x_range=(x_min, x_max),
-            y_range=(y_min, y_max),
-            title=self.original_filename
-        )
-        p.title.align = 'center'
+        dim_labels = []
 
         if self.pns_labels[x_index] != '':
-            p.xaxis.axis_label = '%s (%s)' % (self.pns_labels[x_index], self.pnn_labels[x_index])
+            dim_labels.append('%s (%s)' % (self.pns_labels[x_index], self.pnn_labels[x_index]))
         else:
-            p.xaxis.axis_label = self.pnn_labels[x_index]
+            dim_labels.append(self.pnn_labels[x_index])
 
         if self.pns_labels[y_index] != '':
-            p.yaxis.axis_label = '%s (%s)' % (self.pns_labels[y_index], self.pnn_labels[y_index])
+            dim_labels.append('%s (%s)' % (self.pns_labels[y_index], self.pnn_labels[y_index]))
         else:
-            p.yaxis.axis_label = self.pnn_labels[y_index]
+            dim_labels.append(self.pnn_labels[y_index])
 
-        if y_max > x_max:
-            radius_dimension = 'y'
-            radius = 0.003 * y_max
-        else:
-            radius_dimension = 'x'
-            radius = 0.003 * x_max
-
-        p.scatter(
+        p = _plot_utils.plot_scatter(
             x,
             y,
-            radius=radius,
-            radius_dimension=radius_dimension,
-            fill_color=z_colors,
-            fill_alpha=0.4,
-            line_color=None
+            dim_labels,
+            title=self.original_filename,
+            x_min=x_min,
+            x_max=x_max,
+            y_min=y_min,
+            y_max=y_max,
+            color_density=color_density
         )
 
         return p
@@ -748,10 +736,7 @@ class Sample(object):
             channel_label_or_number,
             source='xform',
             subsample=False,
-            bins=None,
-            x_min=None,
-            x_max=None,
-            fig_size=(15, 7)
+            bins=None
     ):
         """
         Returns a histogram plot of the specified channel events, available
@@ -767,37 +752,15 @@ class Sample(object):
             sub-sampled events can be much faster.
         :param bins: Number of bins to use for the histogram. If None, the
             number of bins is determined by the Freedman-Diaconis rule.
-        :param x_min: Lower bound of x-axis. If None, channel's min value will
-            be used with some padding to keep events off the edge of the plot.
-        :param x_max: Upper bound of x-axis. If None, channel's max value will
-            be used with some padding to keep events off the edge of the plot.
-        :param fig_size: Tuple of 2 values specifying the size of the returned
-            figure. Values are in Matplotlib size units.
         :return: Matplotlib figure of the histogram plot with KDE curve.
         """
 
         channel_index = self.get_channel_index(channel_label_or_number)
         channel_data = self.get_channel_data(channel_index, source=source, subsample=subsample)
 
-        fig, ax = plt.subplots(figsize=fig_size)
-        ax.set_title(self.original_filename)
+        p = _plot_utils.plot_histogram(channel_data, bins=bins, title=self.original_filename)
 
-        if x_min is None:
-            x_min = channel_data.min()
-        if x_max is None:
-            x_max = channel_data.max()
-
-        ax.set_xlim([x_min, x_max])
-        ax.set_xlabel(self.pnn_labels[channel_index])
-
-        seaborn.distplot(
-            channel_data,
-            hist_kws=dict(edgecolor="w", linewidth=1),
-            label=self.pnn_labels[channel_index],
-            bins=bins
-        )
-
-        return fig
+        return p
 
     def export(
             self,

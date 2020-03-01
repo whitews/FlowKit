@@ -1,7 +1,7 @@
 import anytree
 from anytree.exporter import DotExporter
 import pandas as pd
-from flowkit import _gml_utils, Matrix
+from flowkit import Matrix
 from flowkit import gates as fk_gates
 from flowkit import transforms as fk_transforms
 
@@ -12,10 +12,7 @@ class GatingStrategy(object):
     for compensation and transformation. Takes an optional, valid GatingML
     document as an input.
     """
-    def __init__(self, gating_ml_file_path=None):
-        self.gating_ns = None
-        self.data_type_ns = None
-        self.transform_ns = None
+    def __init__(self):
         self._cached_compensations = {}
 
         # keys are the object's ID (gate, xform, or matrix,
@@ -23,16 +20,6 @@ class GatingStrategy(object):
         self.gates = {}
         self.transformations = {}
         self.comp_matrices = {}
-
-        if gating_ml_file_path is not None:
-            root_gml, gating_ns, dt_ns, xform_ns = _gml_utils.parse_gatingml_file(gating_ml_file_path)
-            self.gating_ns = gating_ns
-            self.data_type_ns = dt_ns
-            self.transform_ns = xform_ns
-
-            self.gates = _gml_utils.construct_gates(self, root_gml)
-            self.transformations = _gml_utils.construct_transforms(root_gml, self.transform_ns, self.data_type_ns)
-            self.comp_matrices = _gml_utils.construct_matrices(root_gml, self.transform_ns, self.data_type_ns)
 
     def __repr__(self):
         return (
@@ -110,6 +97,7 @@ class GatingStrategy(object):
                 parent=nodes[gate.parent]
             )
 
+            # TODO: this conditional isn't covered in tests
             if isinstance(gate, fk_gates.QuadrantGate):
                 for q_id, quad in gate.quadrants.items():
                     nodes[q_id] = anytree.Node(
@@ -138,7 +126,7 @@ class GatingStrategy(object):
         self.transformations[transform.id] = transform
 
     def add_comp_matrix(self, matrix):
-        # TODO: accept other matrix types beyond a Matrix instance, or should the Matrix class do that?
+        # Only accept Matrix class instances as we need the ID
         if not isinstance(matrix, Matrix):
             raise ValueError("matrix must be an instance of the Matrix class")
 
@@ -295,9 +283,6 @@ class GatingStrategy(object):
             results[g_id] = gate.apply(sample, parent_results, self)
 
         return GatingResults(results, sample_id=sample.original_filename)
-
-    def export_gml(self, file_handle):
-        _gml_utils.export_gatingml(self, file_handle)
 
 
 class GatingResults(object):

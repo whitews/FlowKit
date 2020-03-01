@@ -3,6 +3,8 @@
 scratch/*
 *.png
 *.html
+*.xml
+*.fcs
 
 ### macOS template
 # General

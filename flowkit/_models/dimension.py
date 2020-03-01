@@ -88,3 +88,6 @@ class QuadrantDivider(object):
         self.transformation_ref = transformation_ref
 
         self.values = values
+
+    def __repr__(self):
+        return f'{self.__class__.__name__}(id: {self.id}, dim_ref: {self.dimension_ref})'

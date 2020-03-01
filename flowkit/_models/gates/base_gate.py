@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 import numpy as np
-from flowkit import _utils, Matrix
+from flowkit import Matrix
 from flowkit._models import gates, dimension
 
 
@@ -103,16 +103,9 @@ class Gate(ABC):
             except KeyError:
                 spill = meta['spill']
 
-            spill = _utils.parse_compensation_matrix(
-                spill,
-                sample.pnn_labels,
-                null_channels=sample.null_channels
-            )
-            indices = spill[0, :]  # headers are channel #'s
-            indices = [int(i - 1) for i in indices]
-            detectors = [sample.pnn_labels[i] for i in indices]
-            fluorochromes = [sample.pns_labels[i] for i in indices]
-            matrix = Matrix('fcs', fluorochromes, detectors, spill[1:, :])
+            detectors = [sample.pnn_labels[i] for i in sample.fluoro_indices]
+            fluorochromes = [sample.pns_labels[i] for i in sample.fluoro_indices]
+            matrix = Matrix('fcs', spill, detectors, fluorochromes, null_channels=sample.null_channels)
         else:
             # lookup specified comp-ref in gating strategy
             matrix = gating_strategy.comp_matrices[comp_ref]
@@ -123,7 +116,7 @@ class Gate(ABC):
             gating_strategy.cache_compensated_events(
                 sample,
                 comp_ref,
-                events
+                events.copy()  # think this needs to be copied to de-couple from user's analysis
             )
 
         return events
@@ -131,6 +124,8 @@ class Gate(ABC):
     def preprocess_sample_events(self, sample, gating_strategy):
         pnn_labels = sample.pnn_labels
         pns_labels = sample.pns_labels
+        # FlowJo replaces slashes with underscores, so make a set of labels with that replacement
+        flowjo_pnn_labels = [label.replace('/', '_') for label in pnn_labels]
 
         dim_idx = []
         dim_min = []
@@ -162,6 +157,8 @@ class Gate(ABC):
                 dim_idx.append(pnn_labels.index(dim_label))
             elif dim.label in pns_labels:
                 dim_idx.append(pns_labels.index(dim_label))
+            elif dim_label in flowjo_pnn_labels:
+                dim_idx.append(flowjo_pnn_labels.index(dim_label))
             else:
                 # for a referenced comp, the label may have been the
                 # fluorochrome instead of the channel's PnN label. If so,
