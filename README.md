@@ -19,24 +19,41 @@ FlowKit is an intuitive Python toolkit for flow cytometry analysis and visualiza
   * NumPy array
   * Pandas DataFrame
   * CSV text file
-* Compensating FCS events using spillover matrices in multiple formats:
-  * As the $SPILL or $SPILLOVER keyword value format
-  * FlowJo tab-delimited text format
-  * NumPy array
-  * GatingML 2.0 spectrumMatrix XML element
-* Tranformation of original or compensated events in a variety of transforms used in the flow community:
+* Compensation of FCS events
+  * Apply compensation from spillover matrices in multiple formats:
+    * As the $SPILL or $SPILLOVER keyword value format
+    * FlowJo tab-delimited text format
+    * NumPy array
+    * GatingML 2.0 spectrumMatrix XML element
+  * Automatically create a compensation matrix from a set of compensation bead files
+* Tranformation of FCS events in a variety of transforms used in the flow community:
   * Logicle
   * Inverse hyperbolic sine (arcsinh)
   * Hyperlog
   * Logarithmic
   * Channel ratios
   * Linear
+* Gating
+  * Full support for the GatingML 2.0 specification
+    * Import GatingML XML documents as gating strategies
+    * Export gating strategies as a valid GatingML XML document
+  * Limited support for importing FlowJo 10 workspace files. Workspace files are currently limited to the following features:
+    * Linear, logarithmic, and logicle transforms
+    * Polygon gates
+  * Programmatically create gating strategies including polygon, rectangle, range, ellipsoid, quadrant, and boolean gates
+  * Easily retrieve gating results from a gating strategies as a Pandas DataFrame. Results include:
+    * FCS sample ID
+    * Gate name
+    * Absolute event count
+    * Relative percentage
+    * Absolute percentage
 * Optional, automatic filtering of negative scatter events and/or anomalous events
 * Visualizing FCS event data:
   * Histogram of single channel data with a Gaussian kernel density estimate curve
   * Contour density plot of two channels
   * Interactive scatter plot of two channels
   * Interactive scatter plot matrix of any combination of channels
+  * Interactive scatter plots of gates with sample events
 
 <img alt="Screenshot of scatterplot" src="examples/fk_scatterplot.png" style="width:200px;" />
 
@@ -53,14 +70,17 @@ Required Python dependencies:
 
 * [flowio](https://github.com/whitews/flowio) >= 0.9.5
 * [flowutils](https://github.com/whitews/flowutils) >= 0.7.1
-* numpy >= 0.15
-* scipy >= 1.0
-* pandas >= 0.19
+* numpy >= 1.13
+* scipy >= 1.3
+* scikit-learn >= 0.21
+* statsmodels >= 0.8
+* pandas >= 0.22
 * matplotlib >= 3.0
 * seaborn >= 0.9
-* bokeh >= 1.0
+* bokeh >= 1.4
 * lxml >= 4.2
-* anytree >= 2.4
+* anytree >= 2.6
+* MulticoreTSNE >= 0.1
 
 ## Installation
 
