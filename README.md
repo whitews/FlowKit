@@ -39,7 +39,7 @@ FlowKit is an intuitive Python toolkit for flow cytometry analysis and visualiza
     * Export gating strategies as a valid GatingML XML document
   * Limited support for importing FlowJo 10 workspace files. Workspace files are currently limited to the following features:
     * Linear, logarithmic, and logicle transforms
-    * Polygon gates
+    * Polygon and rectangle gates
   * Programmatically create gating strategies including polygon, rectangle, range, ellipsoid, quadrant, and boolean gates
   * Easily retrieve gating results from a gating strategies as a Pandas DataFrame. Results include:
     * FCS sample ID

@@ -629,11 +629,23 @@ class Session(object):
             sample_to_plot,
             copy.deepcopy(gating_strategy)
         )
+
+        # get parent gate results to display only those events
+        if False:  # gate.parent is not None:
+            parent_results = gating_strategy.gate_sample(sample_to_plot, gate.parent)
+            is_parent_event = parent_results.get_gate_indices(gate.parent)
+            is_subsample = np.zeros(sample_to_plot.event_count, dtype=np.bool)
+            is_subsample[sample_to_plot.subsample_indices] = True
+            idx_to_plot = np.logical_and(is_parent_event, is_subsample)
+        else:
+            idx_to_plot = sample_to_plot.subsample_indices
+
         if len(new_dims) > 0:
             raise NotImplementedError("Plotting of RatioDimensions is not yet supported.")
         if isinstance(gate, gates.QuadrantGate):
             raise NotImplementedError("Plotting of quadrant gates is not supported in this version of FlowKit")
-        x = events[sample_to_plot.subsample_indices, dim_idx[0]]
+
+        x = events[idx_to_plot, dim_idx[0]]
 
         dim_labels = []
 
@@ -654,7 +666,7 @@ class Session(object):
         plot_title = "%s - %s - %s" % (sample_id, sample_group, gate_id)
 
         if gate_type == 'scatter':
-            y = events[sample_to_plot.subsample_indices, dim_idx[1]]
+            y = events[idx_to_plot, dim_idx[1]]
 
             p = _plot_utils.plot_scatter(
                 x,
