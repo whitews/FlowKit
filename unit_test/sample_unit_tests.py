@@ -92,6 +92,41 @@ class LoadSampleTestCase(unittest.TestCase):
 
         self.assertIsInstance(data1_sample._transformed_events, np.ndarray)
 
+    @staticmethod
+    def test_get_channel_data_raw():
+        data_idx_0 = data1_sample.get_channel_data(0, source='raw')
+
+        np.testing.assert_equal(data1_sample._raw_events[:, 0], data_idx_0)
+
+    @staticmethod
+    def test_get_channel_data_comp():
+        fcs_file_path = "examples/test_comp_example.fcs"
+        comp_file_path = Path("examples/comp_complete_example.csv")
+
+        sample = Sample(
+            fcs_path_or_data=fcs_file_path,
+            compensation=comp_file_path
+        )
+
+        data_idx_6 = sample.get_channel_data(6, source='comp')
+
+        np.testing.assert_equal(sample._comp_events[:, 6], data_idx_6)
+
+    @staticmethod
+    def test_get_channel_data_xform():
+        fcs_file_path = "examples/test_comp_example.fcs"
+        comp_file_path = Path("examples/comp_complete_example.csv")
+
+        sample = Sample(
+            fcs_path_or_data=fcs_file_path,
+            compensation=comp_file_path
+        )
+        sample.apply_transform(xform_logicle)
+
+        data_idx_6 = sample.get_channel_data(6, source='xform')
+
+        np.testing.assert_equal(sample._transformed_events[:, 6], data_idx_6)
+
     def test_get_events_as_data_frame_xform(self):
         data1_sample.apply_transform(xform_logicle)
         df = data1_sample.get_events_as_data_frame(source='xform')
