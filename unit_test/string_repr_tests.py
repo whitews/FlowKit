@@ -37,6 +37,13 @@ class StringReprTestCase(unittest.TestCase):
 
         self.assertEqual(repr(quad1_div1), quad_div_string)
 
+    def test_sample_repr(self):
+        fcs_file_path = "examples/gate_ref/data1.fcs"
+        sample = fk.Sample(fcs_path_or_data=fcs_file_path)
+        sample_string = "Sample(v2.0, B07, 8 channels, 13367 events)"
+
+        self.assertEqual(repr(sample), sample_string)
+
     def test_gating_strategy_repr(self):
         gs = fk.GatingStrategy()
 

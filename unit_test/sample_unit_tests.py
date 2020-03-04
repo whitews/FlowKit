@@ -64,6 +64,19 @@ class LoadSampleTestCase(unittest.TestCase):
 
         self.assertIsNotNone(sample._comp_events)
 
+    def test_clearing_comp_events(self):
+        fcs_file_path = "examples/test_comp_example.fcs"
+        comp_file_path = "examples/comp_complete_example.csv"
+
+        sample = Sample(
+            fcs_path_or_data=fcs_file_path,
+            compensation=comp_file_path
+        )
+
+        sample.apply_compensation(None)
+
+        self.assertIsNone(sample._comp_events)
+
     def test_comp_matrix_from_pathlib_path(self):
         fcs_file_path = "examples/test_comp_example.fcs"
         comp_file_path = Path("examples/comp_complete_example.csv")
@@ -91,6 +104,20 @@ class LoadSampleTestCase(unittest.TestCase):
         data1_sample.apply_transform(xform)
 
         self.assertIsInstance(data1_sample._transformed_events, np.ndarray)
+
+    @staticmethod
+    def test_get_channel_index_by_channel_number_int():
+        chan_number = data1_sample.get_channel_index(1)
+
+        np.testing.assert_equal(0, chan_number)
+
+    def test_get_channel_index_fails_by_chan_number_0(self):
+        # chan numbers are indexed at 1, not 0
+        self.assertRaises(ValueError, data1_sample.get_channel_index, 0)
+
+    def test_get_channel_index_fails(self):
+        # give an unsupported list as the arg
+        self.assertRaises(ValueError, data1_sample.get_channel_index, [0, 1])
 
     @staticmethod
     def test_get_channel_data_raw():
@@ -126,6 +153,24 @@ class LoadSampleTestCase(unittest.TestCase):
         data_idx_6 = sample.get_channel_data(6, source='xform')
 
         np.testing.assert_equal(sample._transformed_events[:, 6], data_idx_6)
+
+    def test_get_comp_events_if_no_comp(self):
+        fcs_file_path = "examples/test_comp_example.fcs"
+
+        sample = Sample(fcs_path_or_data=fcs_file_path)
+
+        comp_events = sample.get_comp_events()
+
+        self.assertIsNone(comp_events)
+
+    def test_get_transformed_events_if_no_xform(self):
+        fcs_file_path = "examples/test_comp_example.fcs"
+
+        sample = Sample(fcs_path_or_data=fcs_file_path)
+
+        xform_events = sample.get_transformed_events()
+
+        self.assertIsNone(xform_events)
 
     def test_get_events_as_data_frame_xform(self):
         data1_sample.apply_transform(xform_logicle)
