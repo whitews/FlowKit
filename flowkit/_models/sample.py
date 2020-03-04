@@ -460,6 +460,8 @@ class Sample(object):
         if isinstance(channel_label_or_number, str):
             index = self.get_channel_number_by_label(channel_label_or_number) - 1
         elif isinstance(channel_label_or_number, int):
+            if channel_label_or_number < 1:
+                raise ValueError("Channel numbers are indexed at 1, got %d" % channel_label_or_number)
             index = channel_label_or_number - 1
         else:
             raise ValueError("x_label_or_number must be a label string or channel number")
