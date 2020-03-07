@@ -8,7 +8,7 @@
 [![Coverage](https://codecov.io/gh/whitews/FlowKit/branch/develop/graph/badge.svg)](https://codecov.io/gh/whitews/flowkit)
 ## Overview
 
-FlowKit is an intuitive Python toolkit for flow cytometry analysis and visualization, including GatingML 2.0 support. Features include:
+FlowKit is an intuitive Python toolkit for flow cytometry analysis and visualization, with full support for the [GatingML 2.0 standard](http://flowcyt.sourceforge.net/gating/latest.pdf) limited support for FlowJo 10 workspace files. Features include:
 
 * Reading Flow Cytometry Standard data (FCS files), including FCS versions:
   * 2.0
@@ -41,7 +41,7 @@ FlowKit is an intuitive Python toolkit for flow cytometry analysis and visualiza
     * Linear, logarithmic, and logicle transforms
     * Polygon and rectangle gates
   * Programmatically create gating strategies including polygon, rectangle, range, ellipsoid, quadrant, and boolean gates
-  * Easily retrieve gating results from a gating strategies as a Pandas DataFrame. Results include:
+  * Easily retrieve gating results from a gating strategy as a Pandas DataFrame. Results include:
     * FCS sample ID
     * Gate name
     * Absolute event count
@@ -49,7 +49,7 @@ FlowKit is an intuitive Python toolkit for flow cytometry analysis and visualiza
     * Absolute percentage
 * Optional, automatic filtering of negative scatter events and/or anomalous events
 * Visualizing FCS event data:
-  * Histogram of single channel data with a Gaussian kernel density estimate curve
+  * Histogram of single channel data
   * Contour density plot of two channels
   * Interactive scatter plot of two channels
   * Interactive scatter plot matrix of any combination of channels
