@@ -1,10 +1,14 @@
 import unittest
 import sys
 import os
+import numpy as np
+import pandas as pd
 
 sys.path.append(os.path.abspath('..'))
 
-from flowkit import Session, Sample, Matrix, gates
+from flowkit import Session, Sample, Matrix, Dimension, gates
+from .prog_gating_unit_tests import data1_sample, poly1_gate, poly1_vertices, spill01_data, \
+    spill01_fluoros, spill01_detectors, asinh_xform1
 
 fcs_file_paths = [
     "examples/100715.fcs",
@@ -86,6 +90,59 @@ class SessionTestCase(unittest.TestCase):
         groups = fks.get_sample_groups()
 
         self.assertListEqual(groups, groups_truth)
+
+    @staticmethod
+    def test_add_poly1_gate():
+        fks = Session(fcs_samples=data1_sample)
+        fks.add_gate(poly1_gate)
+        fks.analyze_samples()
+        result = fks.get_gating_results('default', data1_sample.original_filename)
+
+        res_path = 'examples/gate_ref/truth/Results_Polygon1.txt'
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('Polygon1'))
+
+    @staticmethod
+    def test_add_matrix_poly4_gate():
+        fks = Session(fcs_samples=data1_sample)
+
+        comp_matrix = Matrix('MySpill', spill01_data, spill01_detectors, spill01_fluoros)
+        fks.add_comp_matrix(comp_matrix)
+
+        dim1 = Dimension('PE', compensation_ref='MySpill')
+        dim2 = Dimension('PerCP', compensation_ref='MySpill')
+        dims = [dim1, dim2]
+
+        poly_gate = gates.PolygonGate('Polygon4', None, dims, poly1_vertices)
+        fks.add_gate(poly_gate)
+
+        res_path = 'examples/gate_ref/truth/Results_Polygon4.txt'
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        fks.analyze_samples()
+        result = fks.get_gating_results('default', data1_sample.original_filename)
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('Polygon4'))
+
+    @staticmethod
+    def test_add_transform_asinh_range1_gate():
+        fks = Session(fcs_samples=data1_sample)
+        fks.add_transform(asinh_xform1)
+
+        dim1 = Dimension('FL1-H', 'uncompensated', 'AsinH_10000_4_1', range_min=0.37, range_max=0.63)
+        dims = [dim1]
+
+        rect_gate = gates.RectangleGate('ScaleRange1', None, dims)
+        fks.add_gate(rect_gate)
+
+        res_path = 'examples/gate_ref/truth/Results_ScaleRange1.txt'
+        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+
+        fks.analyze_samples()
+        result = fks.get_gating_results('default', data1_sample.original_filename)
+
+        np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange1'))
 
     def test_calculate_comp_from_beads(self):
         bead_dir = "examples/4_color_beads"
