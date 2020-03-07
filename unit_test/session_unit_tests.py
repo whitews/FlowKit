@@ -21,6 +21,9 @@ class SessionTestCase(unittest.TestCase):
         self.assertEqual(len(fks.sample_lut.keys()), 3)
         self.assertIsInstance(fks.get_sample('100715.fcs'), Sample)
 
+        sample_ids = ["100715.fcs", "109567.fcs", "113548.fcs"]
+        self.assertListEqual(fks.get_sample_ids(), sample_ids)
+
     def test_load_samples_from_list_of_samples(self):
         samples = [Sample(file_path) for file_path in fcs_file_paths]
         fks = Session(fcs_samples=samples)
@@ -43,6 +46,9 @@ class SessionTestCase(unittest.TestCase):
             gates.PolygonGate
         )
 
+        gate_ids = {'rect1', 'poly1'}
+        self.assertSetEqual(set(fks.get_gate_ids('my_group')), gate_ids)
+
     def test_load_wsp_single_ellipse(self):
         wsp_path = "examples/simple_line_example/single_ellipse_51_events.wsp"
         fcs_path = "examples/simple_line_example/data_set_simple_line_100.fcs"
@@ -62,6 +68,24 @@ class SessionTestCase(unittest.TestCase):
         results = fks.get_gating_results('All Samples', 'data_set_simple_line_100.fcs')
         gate_count = results.get_gate_count('ellipse1')
         self.assertEqual(gate_count, 48)
+
+    def test_get_sample_groups(self):
+        wsp_path = "examples/simple_line_example/simple_poly_and_rect.wsp"
+        fcs_path = "examples/simple_line_example/data_set_simple_line_100.fcs"
+
+        fks = Session(fcs_samples=fcs_path)
+        fks.import_flowjo_workspace(wsp_path)
+
+        groups = fks.get_sample_groups()
+        groups_truth = ['default', 'my_group']
+
+        self.assertListEqual(groups, groups_truth)
+
+        fks.add_sample_group('group2')
+        groups_truth.append('group2')
+        groups = fks.get_sample_groups()
+
+        self.assertListEqual(groups, groups_truth)
 
     def test_calculate_comp_from_beads(self):
         bead_dir = "examples/4_color_beads"
