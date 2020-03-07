@@ -1,10 +1,13 @@
+import os
 import numpy as np
 from scipy.interpolate import interpn
+from scipy.stats import gaussian_kde
 import colorsys
 from matplotlib import cm, colors
-from matplotlib import pyplot
+import matplotlib.pyplot as plt
 from bokeh.plotting import figure
 from bokeh.models import Ellipse, Patch, Span, BoxAnnotation, Rect, ColumnDataSource
+from flowio.create_fcs import create_fcs
 
 
 line_color = "#1F77B4"
@@ -62,7 +65,7 @@ def plot_channel(chan_events, label, subplot_ax, xform=False, bad_events=None):
         # TODO: change to accept a Transform sub-class instance
         chan_events = np.arcsinh(chan_events * 0.003)
 
-    my_cmap = pyplot.cm.get_cmap('jet')
+    my_cmap = plt.cm.get_cmap('jet')
     my_cmap.set_under('w', alpha=0)
 
     bins = int(np.sqrt(chan_events.shape[0]))
@@ -301,3 +304,85 @@ def plot_scatter(
     )
 
     return p
+
+
+def plot_tsne_difference(
+        tsne_results1,
+        tsne_results2,
+        x_min=None,
+        x_max=None,
+        y_min=None,
+        y_max=None,
+        fig_size=(16, 16),
+        export_fcs=False,
+        export_cnt=20000,
+        fcs_export_dir=None
+):
+    # fit an array of size [Ndim, Nsamples]
+    kde1 = gaussian_kde(
+        np.vstack(
+            [
+                tsne_results1[:, 0],
+                tsne_results1[:, 1]
+            ]
+        )
+    )
+    kde2 = gaussian_kde(
+        np.vstack(
+            [
+                tsne_results2[:, 0],
+                tsne_results2[:, 1]
+            ]
+        )
+    )
+
+    # evaluate on a regular grid
+    x_grid = np.linspace(x_min, x_max, 250)
+    y_grid = np.linspace(y_min, y_max, 250)
+    x_grid, y_grid = np.meshgrid(x_grid, y_grid)
+    xy_grid = np.vstack([x_grid.ravel(), y_grid.ravel()])
+
+    z1 = kde1.evaluate(xy_grid)
+    z2 = kde2.evaluate(xy_grid)
+
+    z = z2 - z1
+
+    if export_fcs:
+        z_g2 = z.copy()
+        z_g2[z_g2 < 0] = 0
+        z_g1 = z.copy()
+        z_g1[z_g1 > 0] = 0
+        z_g1 = np.abs(z_g1)
+
+        z_g2_norm = [float(i) / sum(z_g2) for i in z_g2]
+        z_g1_norm = [float(i) / sum(z_g1) for i in z_g1]
+
+        cdf = np.cumsum(z_g2_norm)
+        cdf = cdf / cdf[-1]
+        values = np.random.rand(export_cnt)
+        value_bins = np.searchsorted(cdf, values)
+        new_g2_events = np.array([xy_grid[:, i] for i in value_bins])
+
+        cdf = np.cumsum(z_g1_norm)
+        cdf = cdf / cdf[-1]
+        values = np.random.rand(export_cnt)
+        value_bins = np.searchsorted(cdf, values)
+        new_g1_events = np.array([xy_grid[:, i] for i in value_bins])
+
+        pnn_labels = ['tsne_0', 'tsne_1']
+
+        fh = open(os.path.join(fcs_export_dir, "tsne_group_1.fcs"), 'wb')
+        create_fcs(new_g1_events.flatten(), pnn_labels, fh)
+        fh.close()
+
+        fh = open(os.path.join(fcs_export_dir, "tsne_group_2.fcs"), 'wb')
+        create_fcs(new_g2_events.flatten(), pnn_labels, fh)
+        fh.close()
+
+    # Plot the result as an image
+    _, _ = plt.subplots(figsize=fig_size)
+    plt.imshow(z.reshape(x_grid.shape),
+               origin='lower', aspect='auto',
+               extent=[x_min, x_max, y_min, y_max],
+               cmap='bwr')
+    plt.show()
