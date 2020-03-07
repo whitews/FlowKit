@@ -7,6 +7,7 @@ from .export_gml_unit_tests import ExportGMLTestCase
 from .matrix_unit_tests import MatrixTestCase
 from .string_repr_tests import StringReprTestCase
 from .session_unit_tests import SessionTestCase
+from .plot_unit_tests import PlotTestCase
 
 if __name__ == "__main__":
     unittest.main()
