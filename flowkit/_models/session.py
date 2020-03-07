@@ -631,7 +631,7 @@ class Session(object):
         )
 
         # get parent gate results to display only those events
-        if False:  # gate.parent is not None:
+        if gate.parent is not None:
             parent_results = gating_strategy.gate_sample(sample_to_plot, gate.parent)
             is_parent_event = parent_results.get_gate_indices(gate.parent)
             is_subsample = np.zeros(sample_to_plot.event_count, dtype=np.bool)
