@@ -189,7 +189,7 @@ def calculate_ellipse(center_x, center_y, covariance_matrix, distance_square):
     values = values[order]
     vectors = vectors[:, order]
 
-    angle_rads = -np.arctan2(*vectors[:, 0][::-1])
+    angle_rads = np.arctan2(*vectors[:, 0][::-1])
 
     # Width and height are full width (the axes lengths are thus multiplied by 2.0 here)
     width, height = 2.0 * np.sqrt(values * distance_square)
