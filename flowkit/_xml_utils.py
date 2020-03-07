@@ -13,6 +13,7 @@ from ._models.gates.gml_gates import \
     GMLQuadrantGate, \
     GMLPolygonGate, \
     GMLRectangleGate
+from ._models.gates.wsp_gates import WSPEllipsoidGate
 from ._models.gates.gates import \
     BooleanGate, \
     EllipsoidGate, \
@@ -26,6 +27,13 @@ gate_constructor_lut = {
     'RectangleGate': GMLRectangleGate,
     'PolygonGate': GMLPolygonGate,
     'EllipsoidGate': GMLEllipsoidGate,
+    'QuadrantGate': GMLQuadrantGate,
+    'BooleanGate': GMLBooleanGate
+}
+wsp_gate_constructor_lut = {
+    'RectangleGate': GMLRectangleGate,
+    'PolygonGate': GMLPolygonGate,
+    'EllipsoidGate': WSPEllipsoidGate,
     'QuadrantGate': GMLQuadrantGate,
     'BooleanGate': GMLBooleanGate
 }
@@ -759,7 +767,7 @@ def parse_wsp(workspace_file_or_path):
         # FJ WSP gates are stored in non-transformed space. After parsing the XML the values need
         # to be converted to the compensated & transformed space. Also, the recurse_sub_populations
         # function replaces the non-human readable IDs in the XML with population names
-        sample_gates = recurse_sub_populations(
+        sample_gates = recurse_wsp_sub_populations(
             sample_root_sub_pop_el,
             None,  # starting at root, so no parent ID
             gating_ns,
@@ -768,9 +776,7 @@ def parse_wsp(workspace_file_or_path):
 
         for sample_gate in sample_gates:
             if sample_gate['owning_group'] == '':
-                # TODO: implement 'All Samples' group...the default group for WSP files is "All Samples"
-                # group = "All Samples"
-                continue
+                group = "All Samples"
             else:
                 group = sample_gate['owning_group']
             gate = sample_gate['gate']
@@ -801,7 +807,7 @@ def parse_wsp(workspace_file_or_path):
     return wsp_dict
 
 
-def recurse_sub_populations(sub_pop_el, parent_id, gating_ns, data_type_ns):
+def recurse_wsp_sub_populations(sub_pop_el, parent_id, gating_ns, data_type_ns):
     gates = []
     ns_map = sub_pop_el.nsmap
 
@@ -821,7 +827,7 @@ def recurse_sub_populations(sub_pop_el, parent_id, gating_ns, data_type_ns):
         # determine gate type
         # TODO: this string parsing seems fragile, may need to be shored up
         gate_type = gate_child_el.tag.partition('}')[-1]
-        gate_class = gate_constructor_lut[gate_type]
+        gate_class = wsp_gate_constructor_lut[gate_type]
 
         g = gate_class(
             gate_child_el,
@@ -842,7 +848,7 @@ def recurse_sub_populations(sub_pop_el, parent_id, gating_ns, data_type_ns):
 
         sub_pop_els = pop_el.findall('Subpopulations', ns_map)
         for el in sub_pop_els:
-            gates.extend(recurse_sub_populations(el, pop_name, gating_ns, data_type_ns))
+            gates.extend(recurse_wsp_sub_populations(el, pop_name, gating_ns, data_type_ns))
 
     return gates
 
@@ -1012,7 +1018,7 @@ def convert_wsp_gate(wsp_gate, comp_matrix, xform_lut):
 
         # TODO: support more than just PolygonGate
         gate = PolygonGate(wsp_gate.id, wsp_gate.parent, new_dims, vertices)
-    elif isinstance(wsp_gate, GMLRectangleGate):
+    elif isinstance(wsp_gate, GMLRectangleGate) or isinstance(wsp_gate, WSPEllipsoidGate):
         gate = wsp_gate
     else:
         raise NotImplemented("Only polygon & rectangle gates for FlowJo workspaces are currently supported.")

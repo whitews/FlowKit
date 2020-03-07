@@ -408,3 +408,12 @@ def points_in_polygon(poly_vertices, points):
     """
     wind_counts = utils_c.points_in_polygon(poly_vertices, len(poly_vertices), points, len(points))
     return wind_counts % 2 != 0
+
+
+def rotate_point_around_point(point, cov_mat, center_point=(0, 0)):
+    # rotates point around center_point
+    point_trans = np.array([point[0] - center_point[0], point[1] - center_point[1]])
+    point_rot = np.dot(point_trans, cov_mat)
+    point_untrans = point_rot + center_point
+
+    return point_untrans
