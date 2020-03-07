@@ -43,6 +43,26 @@ class SessionTestCase(unittest.TestCase):
             gates.PolygonGate
         )
 
+    def test_load_wsp_single_ellipse(self):
+        wsp_path = "examples/simple_line_example/single_ellipse_51_events.wsp"
+        fcs_path = "examples/simple_line_example/data_set_simple_line_100.fcs"
+
+        fks = Session(fcs_samples=fcs_path)
+        fks.import_flowjo_workspace(wsp_path)
+
+        self.assertIsInstance(
+            fks.get_gate_by_reference(
+                'All Samples',
+                'data_set_simple_line_100.fcs',
+                'ellipse1'),
+            gates.EllipsoidGate
+        )
+
+        fks.analyze_samples('All Samples')
+        results = fks.get_gating_results('All Samples', 'data_set_simple_line_100.fcs')
+        gate_count = results.get_gate_count('ellipse1')
+        self.assertEqual(gate_count, 48)
+
     def test_calculate_comp_from_beads(self):
         bead_dir = "examples/4_color_beads"
         fks = Session()
