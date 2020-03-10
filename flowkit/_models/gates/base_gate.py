@@ -17,7 +17,7 @@ class Gate(ABC):
         self.id = gate_id
         self.parent = parent_id
         if dimensions is None:
-            self.dimensions = {}
+            self.dimensions = []
         else:
             self.dimensions = dimensions
         self.gate_type = None
