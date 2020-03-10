@@ -26,14 +26,12 @@ quadrants_q1 = {
         {
             'divider': 'FL2',
             'dimension': 'FL2-H',
-            'location': 15.0,
             'min': 12.14748,
             'max': None
         },
         {
             'divider': 'FL4',
             'dimension': 'FL4-H',
-            'location': 15.0,
             'min': 14.22417,
             'max': None
         }
@@ -42,14 +40,12 @@ quadrants_q1 = {
         {
             'divider': 'FL2',
             'dimension': 'FL2-H',
-            'location': 5.0,
             'min': None,
             'max': 12.14748
         },
         {
             'divider': 'FL4',
             'dimension': 'FL4-H',
-            'location': 15.0,
             'min': 14.22417,
             'max': None
         }
@@ -58,14 +54,12 @@ quadrants_q1 = {
         {
             'divider': 'FL2',
             'dimension': 'FL2-H',
-            'location': 5.0,
             'min': None,
             'max': 12.14748
         },
         {
             'divider': 'FL4',
             'dimension': 'FL4-H',
-            'location': 5.0,
             'min': None,
             'max': 14.22417
         }
@@ -74,14 +68,12 @@ quadrants_q1 = {
         {
             'divider': 'FL2',
             'dimension': 'FL2-H',
-            'location': 15.0,
             'min': 12.14748,
             'max': None
         },
         {
             'divider': 'FL4',
             'dimension': 'FL4-H',
-            'location': 5.0,
             'min': None,
             'max': 14.22417
         }
@@ -97,13 +89,11 @@ quadrants_q2 = {
         {
             'dimension': 'FSC-H',
             'divider': 'FSC',
-            'location': 30.0,
             'max': 70.02725,
             'min': 28.0654},
         {
             'dimension': 'FL1-H',
             'divider': 'FL1',
-            'location': 10.0,
             'max': None,
             'min': 6.43567
         }
@@ -112,21 +102,18 @@ quadrants_q2 = {
         {
             'dimension': 'FSC-H',
             'divider': 'FSC',
-            'location': 30.0,
             'max': 70.02725,
             'min': 28.0654
         },
         {
             'dimension': 'SSC-H',
             'divider': 'SSC',
-            'location': 10.0,
             'max': 17.75,
             'min': None
         },
         {
             'dimension': 'FL1-H',
             'divider': 'FL1',
-            'location': 5.0,
             'max': 6.43567,
             'min': None
         }
@@ -135,14 +122,12 @@ quadrants_q2 = {
         {
             'dimension': 'FSC-H',
             'divider': 'FSC',
-            'location': 10.0,
             'max': 28.0654,
             'min': None
         },
         {
             'dimension': 'SSC-H',
             'divider': 'SSC',
-            'location': 10.0,
             'max': 17.75,
             'min': None
         }
@@ -151,21 +136,18 @@ quadrants_q2 = {
         {
             'dimension': 'FSC-H',
             'divider': 'FSC',
-            'location': 10.0,
             'max': 28.0654,
             'min': None
         },
         {
             'dimension': 'SSC-H',
             'divider': 'SSC',
-            'location': 20.0,
             'max': None,
             'min': 17.75
         },
         {
             'dimension': 'FL1-H',
             'divider': 'FL1',
-            'location': 15.0,
             'max': None,
             'min': 6.43567
         }
@@ -174,21 +156,18 @@ quadrants_q2 = {
         {
             'dimension': 'FSC-H',
             'divider': 'FSC',
-            'location': 80.0,
             'max': None,
             'min': 70.02725
         },
         {
             'dimension': 'SSC-H',
             'divider': 'SSC',
-            'location': 10.0,
             'max': 17.75,
             'min': None
         },
         {
             'dimension': 'FL1-H',
             'divider': 'FL1',
-            'location': 5.0,
             'max': 6.43567,
             'min': None
         }
