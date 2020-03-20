@@ -186,6 +186,27 @@ def render_rectangle(dim_mins, dim_maxes):
     return rect
 
 
+def render_dividers(x_locs, y_locs):
+    """
+    Renders lines for divider boundaries (2-D only)
+    :param x_locs: list of divider locations in x-axis
+    :param y_locs: list of divider locations in y-axis
+    :return: list of Bokeh renderer objects
+    """
+    renderers = []
+
+    for x_loc in x_locs:
+        renderers.append(
+            Span(location=x_loc, dimension='height', line_width=line_width, line_color=line_color)
+        )
+    for y_loc in y_locs:
+        renderers.append(
+            Span(location=y_loc, dimension='width', line_width=line_width, line_color=line_color)
+        )
+
+    return renderers
+
+
 def calculate_ellipse(center_x, center_y, covariance_matrix, distance_square):
     values, vectors = np.linalg.eigh(covariance_matrix)
     order = values.argsort()[::-1]

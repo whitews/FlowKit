@@ -558,24 +558,26 @@ class Session(object):
 
         if len(new_dims) > 0:
             raise NotImplementedError("Plotting of RatioDimensions is not yet supported.")
-        if isinstance(gate, gates.QuadrantGate):
-            raise NotImplementedError("Plotting of quadrant gates is not supported in this version of FlowKit")
 
         x = events[idx_to_plot, dim_idx[0]]
 
         dim_labels = []
 
         x_index = dim_idx[0]
+        x_pnn_label = sample_to_plot.pnn_labels[x_index]
+        y_pnn_label = None
+
         if sample_to_plot.pns_labels[x_index] != '':
-            dim_labels.append('%s (%s)' % (sample_to_plot.pns_labels[x_index], sample_to_plot.pnn_labels[x_index]))
+            dim_labels.append('%s (%s)' % (sample_to_plot.pns_labels[x_index], x_pnn_label))
         else:
             dim_labels.append(sample_to_plot.pnn_labels[x_index])
 
         if len(dim_idx) > 1:
             y_index = dim_idx[1]
+            y_pnn_label = sample_to_plot.pnn_labels[y_index]
 
             if sample_to_plot.pns_labels[y_index] != '':
-                dim_labels.append('%s (%s)' % (sample_to_plot.pns_labels[y_index], sample_to_plot.pnn_labels[y_index]))
+                dim_labels.append('%s (%s)' % (sample_to_plot.pns_labels[y_index], y_pnn_label))
             else:
                 dim_labels.append(sample_to_plot.pnn_labels[y_index])
 
@@ -623,6 +625,18 @@ class Session(object):
                 # a true rectangle
                 rect = _plot_utils.render_rectangle(dim_min, dim_max)
                 p.add_glyph(rect)
+        elif isinstance(gate, gates.QuadrantGate):
+            x_locations = []
+            y_locations = []
+
+            for div in gate.dimensions:
+                if div.dimension_ref == x_pnn_label:
+                    x_locations.extend(div.values)
+                elif div.dimension_ref == y_pnn_label and y_pnn_label is not None:
+                    y_locations.extend(div.values)
+
+            renderers = _plot_utils.render_dividers(x_locations, y_locations)
+            p.renderers.extend(renderers)
         else:
             raise NotImplementedError("Plotting of %s gates is not supported in this version of FlowKit" % gate.__class__)
 
