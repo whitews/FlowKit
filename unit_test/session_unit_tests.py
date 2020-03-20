@@ -73,6 +73,34 @@ class SessionTestCase(unittest.TestCase):
         gate_count = results.get_gate_count('ellipse1')
         self.assertEqual(gate_count, 48)
 
+    def test_load_wsp_single_quad(self):
+        wsp_path = "examples/simple_diamond_example/simple_diamond_example_quad_gate.wsp"
+        fcs_path = "examples/simple_diamond_example/test_data_diamond_01.fcs"
+
+        fks = Session(fcs_samples=fcs_path)
+        fks.import_flowjo_workspace(wsp_path)
+
+        # FlowJo quadrant gates are not true quadrant gates, rather a collection of rectangle gates
+        self.assertIsInstance(
+            fks.get_gate_by_reference(
+                'All Samples',
+                'test_data_diamond_01.fcs',
+                'Q1: channel_A- , channel_B+'),
+            gates.RectangleGate
+        )
+
+        fks.analyze_samples('All Samples')
+        results = fks.get_gating_results('All Samples', 'test_data_diamond_01.fcs')
+
+        gate_count_q1 = results.get_gate_count('Q1: channel_A- , channel_B+')
+        gate_count_q2 = results.get_gate_count('Q2: channel_A+ , channel_B+')
+        gate_count_q3 = results.get_gate_count('Q3: channel_A+ , channel_B-')
+        gate_count_q4 = results.get_gate_count('Q4: channel_A- , channel_B-')
+        self.assertEqual(gate_count_q1, 49671)
+        self.assertEqual(gate_count_q2, 50596)
+        self.assertEqual(gate_count_q3, 50330)
+        self.assertEqual(gate_count_q4, 49403)
+
     def test_get_sample_groups(self):
         wsp_path = "examples/simple_line_example/simple_poly_and_rect.wsp"
         fcs_path = "examples/simple_line_example/data_set_simple_line_100.fcs"
