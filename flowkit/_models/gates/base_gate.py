@@ -22,6 +22,11 @@ class Gate(ABC):
             self.dimensions = dimensions
         self.gate_type = None
 
+    def get_dimension(self, dim_id):
+        for dim in self.dimensions:
+            if dim_id == dim.id:
+                return dim
+
     def apply_parent_gate(self, sample, results, parent_results, gating_strategy):
         if self.parent is not None:
             parent_gate = gating_strategy.get_gate_by_reference(self.parent)
