@@ -21,158 +21,33 @@ poly1_dim2 = fk.Dimension('FL3-H', compensation_ref='FCS')
 poly1_dims1 = [poly1_dim1, poly1_dim2]
 poly1_gate = fk.gates.PolygonGate('Polygon1', None, poly1_dims1, poly1_vertices)
 
-quadrants_q1 = {
-    'FL2P-FL4P': [
-        {
-            'divider': 'FL2',
-            'dimension': 'FL2-H',
-            'min': 12.14748,
-            'max': None
-        },
-        {
-            'divider': 'FL4',
-            'dimension': 'FL4-H',
-            'min': 14.22417,
-            'max': None
-        }
-    ],
-    'FL2N-FL4P': [
-        {
-            'divider': 'FL2',
-            'dimension': 'FL2-H',
-            'min': None,
-            'max': 12.14748
-        },
-        {
-            'divider': 'FL4',
-            'dimension': 'FL4-H',
-            'min': 14.22417,
-            'max': None
-        }
-    ],
-    'FL2N-FL4N': [
-        {
-            'divider': 'FL2',
-            'dimension': 'FL2-H',
-            'min': None,
-            'max': 12.14748
-        },
-        {
-            'divider': 'FL4',
-            'dimension': 'FL4-H',
-            'min': None,
-            'max': 14.22417
-        }
-    ],
-    'FL2P-FL4N': [
-        {
-            'divider': 'FL2',
-            'dimension': 'FL2-H',
-            'min': 12.14748,
-            'max': None
-        },
-        {
-            'divider': 'FL4',
-            'dimension': 'FL4-H',
-            'min': None,
-            'max': 14.22417
-        }
-    ]
-}
 quad1_div1 = fk.QuadrantDivider('FL2', 'FL2-H', 'FCS', [12.14748])
 quad1_div2 = fk.QuadrantDivider('FL4', 'FL4-H', 'FCS', [14.22417])
 quad1_divs = [quad1_div1, quad1_div2]
-quad1_gate = fk.gates.QuadrantGate('Quadrant1', None, quad1_divs, quadrants_q1)
 
-quadrants_q2 = {
-    'FSCD-FL1P': [
-        {
-            'dimension': 'FSC-H',
-            'divider': 'FSC',
-            'max': 70.02725,
-            'min': 28.0654},
-        {
-            'dimension': 'FL1-H',
-            'divider': 'FL1',
-            'max': None,
-            'min': 6.43567
-        }
-    ],
-    'FSCD-SSCN-FL1N': [
-        {
-            'dimension': 'FSC-H',
-            'divider': 'FSC',
-            'max': 70.02725,
-            'min': 28.0654
-        },
-        {
-            'dimension': 'SSC-H',
-            'divider': 'SSC',
-            'max': 17.75,
-            'min': None
-        },
-        {
-            'dimension': 'FL1-H',
-            'divider': 'FL1',
-            'max': 6.43567,
-            'min': None
-        }
-    ],
-    'FSCN-SSCN': [
-        {
-            'dimension': 'FSC-H',
-            'divider': 'FSC',
-            'max': 28.0654,
-            'min': None
-        },
-        {
-            'dimension': 'SSC-H',
-            'divider': 'SSC',
-            'max': 17.75,
-            'min': None
-        }
-    ],
-    'FSCN-SSCP-FL1P': [
-        {
-            'dimension': 'FSC-H',
-            'divider': 'FSC',
-            'max': 28.0654,
-            'min': None
-        },
-        {
-            'dimension': 'SSC-H',
-            'divider': 'SSC',
-            'max': None,
-            'min': 17.75
-        },
-        {
-            'dimension': 'FL1-H',
-            'divider': 'FL1',
-            'max': None,
-            'min': 6.43567
-        }
-    ],
-    'FSCP-SSCN-FL1N': [
-        {
-            'dimension': 'FSC-H',
-            'divider': 'FSC',
-            'max': None,
-            'min': 70.02725
-        },
-        {
-            'dimension': 'SSC-H',
-            'divider': 'SSC',
-            'max': 17.75,
-            'min': None
-        },
-        {
-            'dimension': 'FL1-H',
-            'divider': 'FL1',
-            'max': 6.43567,
-            'min': None
-        }
-    ]
-}
+quad_1 = fk.gates.Quadrant(
+    quadrant_id='FL2P-FL4P',
+    divider_refs=['FL2', 'FL4'],
+    divider_ranges=[(12.14748, None), (14.22417, None)]
+)
+quad_2 = fk.gates.Quadrant(
+    quadrant_id='FL2N-FL4P',
+    divider_refs=['FL2', 'FL4'],
+    divider_ranges=[(None, 12.14748), (14.22417, None)]
+)
+quad_3 = fk.gates.Quadrant(
+    quadrant_id='FL2N-FL4N',
+    divider_refs=['FL2', 'FL4'],
+    divider_ranges=[(None, 12.14748), (None, 14.22417)]
+)
+quad_4 = fk.gates.Quadrant(
+    quadrant_id='FL2P-FL4N',
+    divider_refs=['FL2', 'FL4'],
+    divider_ranges=[(12.14748, None), (None, 14.22417)]
+)
+quadrants_q1 = [quad_1, quad_2, quad_3, quad_4]
+
+quad1_gate = fk.gates.QuadrantGate('Quadrant1', None, quad1_divs, quadrants_q1)
 
 range1_dim1 = fk.Dimension('FSC-H', compensation_ref='uncompensated', range_min=100)
 range1_dims = [range1_dim1]
@@ -472,6 +347,34 @@ class GatingTestCase(unittest.TestCase):
         div3 = fk.QuadrantDivider('FL1', 'FL1-H', 'uncompensated', [6.43567])
 
         divs = [div1, div2, div3]
+
+        quad_1 = fk.gates.Quadrant(
+            quadrant_id='FSCD-FL1P',
+            divider_refs=['FSC', 'FL1'],
+            divider_ranges=[(28.0654, 70.02725), (6.43567, None)]
+        )
+        quad_2 = fk.gates.Quadrant(
+            quadrant_id='FSCD-SSCN-FL1N',
+            divider_refs=['FSC', 'SSC', 'FL1'],
+            divider_ranges=[(28.0654, 70.02725), (None, 17.75), (None, 6.43567)]
+        )
+        quad_3 = fk.gates.Quadrant(
+            quadrant_id='FSCN-SSCN',
+            divider_refs=['FSC', 'SSC'],
+            divider_ranges=[(None, 28.0654), (None, 17.75)]
+        )
+        quad_4 = fk.gates.Quadrant(
+            quadrant_id='FSCN-SSCP-FL1P',
+            divider_refs=['FSC', 'SSC', 'FL1'],
+            divider_ranges=[(None, 28.0654), (17.75, None), (6.43567, None)]
+        )
+        quad_5 = fk.gates.Quadrant(
+            quadrant_id='FSCP-SSCN-FL1N',
+            divider_refs=['FSC', 'SSC', 'FL1'],
+            divider_ranges=[(70.02725, None), (None, 17.75), (None, 6.43567)]
+        )
+
+        quadrants_q2 = [quad_1, quad_2, quad_3, quad_4, quad_5]
 
         quad_gate = fk.gates.QuadrantGate('Quadrant2', None, divs, quadrants_q2)
         gs.add_gate(quad_gate)
