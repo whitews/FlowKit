@@ -177,6 +177,34 @@ class EllipsoidGate(Gate):
         return results
 
 
+class Quadrant(object):
+    """
+    Represents a single quadrant of a QuadrantGate.
+    """
+    def __init__(self, quadrant_id, divider_refs, divider_ranges):
+        self.id = quadrant_id
+
+        div_count = len(divider_refs)
+
+        if div_count != len(divider_ranges):
+            raise ValueError("A min/max range must be specified for each divider reference")
+
+        self.divider_refs = divider_refs
+        self._divider_ranges = {}
+
+        for i, div_range in enumerate(divider_ranges):
+            if len(div_range) != 2:
+                raise ValueError("Each divider range must have both a min & max value")
+
+            self._divider_ranges[self.divider_refs[i]] = div_range
+
+        if self._divider_ranges is None or len(self._divider_ranges) != div_count:
+            raise ValueError("Failed to parse divider ranges")
+
+    def get_divider_range(self, div_ref):
+        return self._divider_ranges[div_ref]
+
+
 class QuadrantGate(Gate):
     """
     Represents a GatingML Quadrant Gate
@@ -195,13 +223,13 @@ class QuadrantGate(Gate):
             self,
             gate_id,
             parent_id,
-            dimensions,
+            dividers,
             quadrants
     ):
         super().__init__(
             gate_id,
             parent_id,
-            dimensions
+            dividers
         )
         self.gate_type = "QuadrantGate"
 
@@ -210,21 +238,15 @@ class QuadrantGate(Gate):
             raise ValueError('Quadrant gates must have at least 1 divider')
 
         # Parse quadrants
-        for q_id, dividers in quadrants.items():
-            # TODO: change quadrant from a dict to a Class, or even better maybe we can calc the quadrants fro the divs
-            #       and get rid of the quadrants argument completely...nope, we need the user given quad labels
-            # quadrants is a dictionary where keys are quad IDs, value is a list
-            # of dicts, each containing keys:
-            #  - divider
-            #  - dimension: dimension label
-            #  - location
-            #  - min
-            #  - max
-            for divider in dividers:
+        for quadrant in quadrants:
+            for divider_ref in quadrant.divider_refs:
                 dim_label = None
 
+                # self.dimensions in a QuadrantGate are dividers
+                # make sure all divider IDs are referenced in the list of quadrants
+                # and verify there is a dimension label (for each quad)
                 for dim in self.dimensions:
-                    if dim.id != divider['divider']:
+                    if dim.id != divider_ref:
                         continue
                     else:
                         dim_label = dim.dimension_ref
@@ -234,7 +256,7 @@ class QuadrantGate(Gate):
                         'Quadrant must define a divider reference'
                     )
 
-        self.quadrants = quadrants
+        self.quadrants = {q.id: q for q in quadrants}
 
     def __repr__(self):
         return (
@@ -296,23 +318,27 @@ class QuadrantGate(Gate):
         for q_id, quadrant in self.quadrants.items():
             q_results = np.ones(events.shape[0], dtype=np.bool)
 
+            dim_lut = {dim.id: dim.dimension_ref for dim in self.dimensions}
+
             # quadrant is a list of dicts containing quadrant bounds and
             # the referenced dimension
-            for bound in quadrant:
-                dim_idx = sample.pnn_labels.index(bound['dimension'])
+            for div_ref in quadrant.divider_refs:
+                dim_ref = dim_lut[div_ref]
+                dim_idx = sample.pnn_labels.index(dim_ref)
+                div_ranges = quadrant.get_divider_range(div_ref)
 
-                if bound['min'] is not None:
+                if div_ranges[0] is not None:
                     q_results = np.bitwise_and(
                         q_results,
-                        events[:, dim_idx] >= bound['min']
+                        events[:, dim_idx] >= div_ranges[0]
                     )
-                if bound['max'] is not None:
+                if div_ranges[1] is not None:
                     q_results = np.bitwise_and(
                         q_results,
-                        events[:, dim_idx] < bound['max']
+                        events[:, dim_idx] < div_ranges[1]
                     )
 
-                results[q_id] = q_results
+                results[quadrant.id] = q_results
 
         results = self.apply_parent_gate(sample, results, parent_results, gating_strategy)
 

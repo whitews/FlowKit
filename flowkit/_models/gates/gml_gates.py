@@ -214,29 +214,29 @@ class GMLQuadrantGate(gates.QuadrantGate):
             namespaces=gate_element.nsmap
         )
 
-        quadrants = {}
+        quadrants = []
 
         for quadrant_el in quadrant_els:
             quad_id = _xml_utils.find_attribute_value(quadrant_el, gating_namespace, 'id')
-            quadrants[quad_id] = []
 
             position_els = quadrant_el.findall(
                 '%s:position' % gating_namespace,
                 namespaces=gate_element.nsmap
             )
 
+            divider_refs = []
+            divider_ranges = []
+
             for pos_el in position_els:
                 divider_ref = _xml_utils.find_attribute_value(pos_el, gating_namespace, 'divider_ref')
                 location = _xml_utils.find_attribute_value(pos_el, gating_namespace, 'location')
-
-                divider = divider_ref
                 location = float(location)
                 q_min = None
                 q_max = None
                 dim_label = None
 
                 for div in dividers:
-                    if div.id != divider:
+                    if div.id != divider_ref:
                         continue
                     else:
                         dim_label = div.dimension_ref
@@ -255,15 +255,16 @@ class GMLQuadrantGate(gates.QuadrantGate):
                         'Quadrant must define a divider reference (line %d)' % pos_el.sourceline
                     )
 
-                quadrants[quad_id].append(
-                    {
-                        'divider': divider,
-                        'dimension': dim_label,
-                        'location': location,
-                        'min': q_min,
-                        'max': q_max
-                    }
+                divider_refs.append(divider_ref)
+                divider_ranges.append((q_min, q_max))
+
+            quadrants.append(
+                gates.Quadrant(
+                    quad_id,
+                    divider_refs=divider_refs,
+                    divider_ranges=divider_ranges
                 )
+            )
 
         super().__init__(
             gate_id,

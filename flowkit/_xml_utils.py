@@ -617,14 +617,23 @@ def add_gate_to_gml(root, gate, ns_map):
     elif isinstance(gate, QuadrantGate):
         gate_ml = etree.SubElement(root, "{%s}QuadrantGate" % ns_map['gating'])
 
-        for q_id, positions in gate.quadrants.items():
+        for q_id, quadrant in gate.quadrants.items():
             quad_ml = etree.SubElement(gate_ml, '{%s}Quadrant' % ns_map['gating'])
             quad_ml.set('{%s}id' % ns_map['gating'], q_id)
 
-            for pos in positions:
+            for div_ref in quadrant.divider_refs:
                 pos_ml = etree.SubElement(quad_ml, '{%s}position' % ns_map['gating'])
-                pos_ml.set('{%s}divider_ref' % ns_map['gating'], pos['divider'])
-                pos_ml.set('{%s}location' % ns_map['gating'], str(pos['location']))
+                pos_ml.set('{%s}divider_ref' % ns_map['gating'], div_ref)
+
+                div_ranges = quadrant.get_divider_range(div_ref)
+                if div_ranges[0] is None:
+                    loc_coord = div_ranges[1] / 2.0
+                elif div_ranges[1] is None:
+                    loc_coord = div_ranges[0] * 2.0
+                else:
+                    loc_coord = np.mean(div_ranges)
+                
+                pos_ml.set('{%s}location' % ns_map['gating'], str(loc_coord))
     else:
         raise(ValueError, "gate is not a valid GatingML 2.0 element")
 
