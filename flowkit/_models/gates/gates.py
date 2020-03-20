@@ -204,6 +204,12 @@ class Quadrant(object):
     def get_divider_range(self, div_ref):
         return self._divider_ranges[div_ref]
 
+    def __repr__(self):
+        return (
+            f'{self.__class__.__name__}('
+            f'{self.id}, dividers: {len(self.divider_refs)})'
+        )
+
 
 class QuadrantGate(Gate):
     """
