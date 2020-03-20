@@ -633,7 +633,8 @@ class Sample(object):
         if source == 'xform' and self._transformed_events is None:
             raise AttributeError(
                 "Transformed events were requested but do not exist.\n"
-                "Have you called a transform method?"
+                "Have you called a transform method? \n"
+                "Or, maybe you meant to plot the non-transformed events? If so, use the source='raw' option."
             )
 
         x_index = self.get_channel_index(x_label_or_number)
