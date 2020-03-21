@@ -1,4 +1,6 @@
-from setuptools import setup, find_packages, Extension
+from setuptools import setup, find_packages, Extension, dist
+dist.Distribution().fetch_build_eggs(['numpy>=1.13'])
+
 import numpy as np
 
 with open("README.md", "r") as fh:
