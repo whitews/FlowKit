@@ -1,5 +1,5 @@
 from setuptools import setup, find_packages, Extension, dist
-dist.Distribution().fetch_build_eggs(['numpy>=1.13'])
+dist.Distribution().fetch_build_eggs(['numpy>=1.13', 'cmake'])
 
 import numpy as np
 
