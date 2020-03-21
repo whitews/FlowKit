@@ -1,5 +1,5 @@
 FlowKit API
 ===================================
 
-.. automodule:: flowkit
+.. autoclass:: flowkit.Sample
     :members:
