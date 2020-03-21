@@ -30,6 +30,7 @@ setup(
     url="https://github.com/whitews/flowkit",
     ext_modules=[utils_extension],
     install_requires=[
+        'cmake',
         'flowio',
         'flowutils',
         'matplotlib',
