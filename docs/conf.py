@@ -21,7 +21,7 @@ class Mock(MagicMock):
         return MagicMock()
 
 
-MOCK_MODULES = ['MulticoreTSNE']
+MOCK_MODULES = ['MulticoreTSNE', 'flowkit.utils_c']
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 # -- Path setup --------------------------------------------------------------
