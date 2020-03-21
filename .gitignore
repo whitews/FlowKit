@@ -31,6 +31,6 @@ wheels/
 # Jupyter Notebook
 .ipynb_checkpoints
 *.ipynb
-/docs/_build/
-/docs/_static/
-/docs/_templates/
+/docs/_build/*
+/docs/_static/*
+/docs/_templates/*
