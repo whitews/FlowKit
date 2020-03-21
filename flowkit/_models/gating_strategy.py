@@ -200,13 +200,13 @@ class GatingStrategy(object):
         """
         Saves an image of the gate hierarchy in many common formats
         according to the extension given in `output_file_path`, including
-          - SVG  ('svg')
-          - PNG  ('png')
-          - JPEG ('jpeg', 'jpg')
-          - TIFF ('tiff', 'tif')
-          - GIF  ('gif')
-          - PS   ('ps')
-          - PDF  ('pdf')
+        - SVG  ('svg')
+        - PNG  ('png')
+        - JPEG ('jpeg', 'jpg')
+        - TIFF ('tiff', 'tif')
+        - GIF  ('gif')
+        - PS   ('ps')
+        - PDF  ('pdf')
 
         *Requires that `graphviz` is installed.*
 
