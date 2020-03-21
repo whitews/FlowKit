@@ -1,5 +1,4 @@
-from setuptools import setup, find_packages, Extension, dist
-dist.Distribution().fetch_build_eggs(['numpy>=1.13', 'cmake'])
+from setuptools import setup, find_packages, Extension
 
 import numpy as np
 
@@ -30,7 +29,6 @@ setup(
     url="https://github.com/whitews/flowkit",
     ext_modules=[utils_extension],
     install_requires=[
-        'cmake',
         'flowio',
         'flowutils',
         'matplotlib',
