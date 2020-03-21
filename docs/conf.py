@@ -14,7 +14,7 @@ class Mock(MagicMock):
         return MagicMock()
 
 
-MOCK_MODULES = ['multicoretsne']
+MOCK_MODULES = ['MulticoreTSNE']
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 # -- Path setup --------------------------------------------------------------
