@@ -8,8 +8,11 @@ import os
 import sys
 from unittest.mock import MagicMock
 
-
-sys.path.insert(0, os.path.abspath('../..'))
+on_rtd = os.environ.get('READTHEDOCS') == 'True'
+if on_rtd:
+    sys.path.insert(0, os.path.abspath('..'))
+else:
+    sys.path.insert(0, os.path.abspath('../..'))
 
 
 class Mock(MagicMock):
