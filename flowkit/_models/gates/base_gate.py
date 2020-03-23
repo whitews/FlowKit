@@ -87,7 +87,7 @@ class Gate(ABC):
         else:
             comp_ref = list(dim_comp_refs)[0]
 
-        events = gating_strategy.get_cached_compensation(
+        events = gating_strategy._get_cached_compensation(
             sample,
             comp_ref
         )
@@ -118,7 +118,7 @@ class Gate(ABC):
         if matrix is not None:
             events = matrix.apply(sample)
             # cache the comp events
-            gating_strategy.cache_compensated_events(
+            gating_strategy._cache_compensated_events(
                 sample,
                 comp_ref,
                 events.copy()  # think this needs to be copied to de-couple from user's analysis

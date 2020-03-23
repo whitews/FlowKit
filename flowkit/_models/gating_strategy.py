@@ -1,3 +1,7 @@
+"""
+GatingStrategy & GatingResults classes
+"""
+
 import anytree
 from anytree.exporter import DotExporter
 import pandas as pd
@@ -8,9 +12,8 @@ from flowkit import transforms as fk_transforms
 
 class GatingStrategy(object):
     """
-    Represents an entire flow cytometry gating strategy, including instructions
-    for compensation and transformation. Takes an optional, valid GatingML
-    document as an input.
+    Represents a flow cytometry gating strategy, including instructions
+    for compensation and transformation.
     """
     def __init__(self):
         self._cached_compensations = {}
@@ -108,6 +111,13 @@ class GatingStrategy(object):
         return root
 
     def add_gate(self, gate):
+        """
+        Add a gate to the gating strategy, see `gates` module. The gate ID must be unique in the gating strategy.
+
+        :param gate: instance from a sub-class of the Gate class
+        :return: None
+        """
+
         if not isinstance(gate, fk_gates.Gate):
             raise ValueError("gate must be a sub-class of the Gate class")
 
@@ -117,6 +127,13 @@ class GatingStrategy(object):
         self.gates[gate.id] = gate
 
     def add_transform(self, transform):
+        """
+        Add a transform to the gating strategy, see `transforms` module. The transform ID must be unique in the
+        gating strategy.
+
+        :param transform: instance from a sub-class of the Transform class
+        :return: None
+        """
         if not isinstance(transform, fk_transforms.Transform):
             raise ValueError("transform must be a sub-class of the Transform class")
 
@@ -126,6 +143,13 @@ class GatingStrategy(object):
         self.transformations[transform.id] = transform
 
     def add_comp_matrix(self, matrix):
+        """
+        Add a compensation matrix to the gating strategy, see `transforms` module. The matrix ID must be unique in the
+        gating strategy.
+
+        :param matrix: an instance of the Matrix class
+        :return: None
+        """
         # Only accept Matrix class instances as we need the ID
         if not isinstance(matrix, Matrix):
             raise ValueError("matrix must be an instance of the Matrix class")
@@ -137,12 +161,16 @@ class GatingStrategy(object):
 
     def get_gate_by_reference(self, gate_id):
         """
-        For gates to lookup any reference gates in their parent gating
-        strategy. It's not safe to just look at the gates dictionary as
-        QuadrantGate IDs cannot be parents themselves, only their component
-        Quadrant IDs can be parents.
+        Retrieve a gate instance from its gate ID. reference gates in their parent gating
+        strategy.
+
+        :param gate_id: text string of a gate ID
         :return: Subclass of a Gate object
+        :raises KeyError: if gate ID is not found in gating strategy
         """
+        # It's not safe to just look at the gates dictionary as
+        # QuadrantGate IDs cannot be parents themselves, only their component
+        # Quadrant IDs can be parents.
         try:
             gate = self.gates[gate_id]
         except KeyError as e:
@@ -159,18 +187,24 @@ class GatingStrategy(object):
         return gate
 
     def get_parent_gate_id(self, gate_id):
+        """
+        Retrieve the gate ID for a parent gate of the given gate ID.
+
+        :param gate_id: text string of a gate ID
+        :return: text string of the parent gate ID, None if given gate reference has no parent gate.
+        """
         gate = self.get_gate_by_reference(gate_id)
 
         return gate.parent
 
     def get_gate_hierarchy(self, output='ascii'):
         """
-        Show hierarchy of gates in multiple formats, including text,
-        dictionary, or JSON,
+        Retrieve the hierarchy of gates in the gating strategy in several formats, including text,
+        dictionary, or JSON.
 
-        :param output: Determines format of hierarchy returned, either 'text',
-            'dict', or 'JSON' (default is 'text')
-        :return: either a text string or a dictionary
+        :param output: Determines format of hierarchy returned, either 'ascii',
+            'dict', or 'JSON' (default is 'ascii')
+        :return: gate hierarchy as a text string or a dictionary
         """
         root = self._build_hierarchy_tree()
 
@@ -200,13 +234,14 @@ class GatingStrategy(object):
         """
         Saves an image of the gate hierarchy in many common formats
         according to the extension given in `output_file_path`, including
-        - SVG  ('svg')
-        - PNG  ('png')
-        - JPEG ('jpeg', 'jpg')
-        - TIFF ('tiff', 'tif')
-        - GIF  ('gif')
-        - PS   ('ps')
-        - PDF  ('pdf')
+
+            - SVG  ('svg')
+            - PNG  ('png')
+            - JPEG ('jpeg', 'jpg')
+            - TIFF ('tiff', 'tif')
+            - GIF  ('gif')
+            - PS   ('ps')
+            - PDF  ('pdf')
 
         *Requires that `graphviz` is installed.*
 
@@ -216,14 +251,27 @@ class GatingStrategy(object):
         root = self._build_hierarchy_tree()
         DotExporter(root).to_picture(output_file_path)
 
-    def get_cached_compensation(self, sample, comp_ref):
+    def _get_cached_compensation(self, sample, comp_ref):
+        """
+        Retrieve cached comp events if they exist
+        :param sample: a Sample instance
+        :param comp_ref: text string for a Matrix ID
+        :return: NumPy array of the cached compensated events for the given sample, None if no cache exists.
+        """
         try:
             # return a copy of cached events in case downstream modifies them
             return self._cached_compensations[sample.original_filename][comp_ref].copy()
         except KeyError:
             return None
 
-    def cache_compensated_events(self, sample, comp_ref, comp_events):
+    def _cache_compensated_events(self, sample, comp_ref, comp_events):
+        """
+        Cache comp events for a sample
+        :param sample: a Sample instance
+        :param comp_ref: text string for a Matrix ID
+        :param comp_events: NumPy array of the cached compensated events for the given sample
+        :return: None
+        """
         if sample.original_filename not in self._cached_compensations:
             self._cached_compensations[sample.original_filename] = {
                 comp_ref: comp_events
@@ -286,6 +334,12 @@ class GatingStrategy(object):
 
 
 class GatingResults(object):
+    """
+    A GatingResults instance is returned from the GatingStrategy `gate_samples` method
+    as well as the Session `get_gating_results` method. End users will never create an
+    instance of GatingResults directly, only via these GatingStrategy and Session
+    methods. However, there are several GatingResults methods to retrieve the results.
+    """
     def __init__(self, results_dict, sample_id):
         self._raw_results = results_dict
         self.report = None
@@ -335,6 +389,12 @@ class GatingResults(object):
         self.report = df.set_index(['sample', 'gate_id']).sort_index()
 
     def get_gate_indices(self, gate_id):
+        """
+        Retrieve a boolean array indicating gate membership for the gating results sample
+
+        :param gate_id: text string of a gate ID
+        :return: NumPy boolean array (length of sample event count)
+        """
         gate_series = self.report.loc[(self.sample_id, gate_id)]
         if isinstance(gate_series, pd.DataFrame):
             gate_series = gate_series.iloc[0]
@@ -347,10 +407,29 @@ class GatingResults(object):
             return self._raw_results[gate_id]['events']
 
     def get_gate_count(self, gate_id):
+        """
+        Retrieve event count for the specified gate ID for the gating results sample
+
+        :param gate_id: text string of a gate ID
+        :return: integer count of events in gate ID
+        """
         return self.report.loc[(self.sample_id, gate_id), 'count']
 
     def get_gate_absolute_percent(self, gate_id):
+        """
+        Retrieve percent of events, relative to the total sample events, of the specified gate ID for the
+        gating results sample
+
+        :param gate_id: text string of a gate ID
+        :return: floating point number of the absolute percent
+        """
         return self.report.loc[(self.sample_id, gate_id), 'absolute_percent']
 
     def get_gate_relative_percent(self, gate_id):
+        """
+        Retrieve percent of events, relative to parent gate, of the specified gate ID for the gating results sample
+
+        :param gate_id: text string of a gate ID
+        :return: floating point number of the relative percent
+        """
         return self.report.loc[(self.sample_id, gate_id), 'relative_percent']
