@@ -1,4 +1,4 @@
-# <img alt="FlowKit" src="flowkit/_resources/flowkit.png" />
+# <img alt="FlowKit" src="flowkit/_resources/_static/flowkit.png" />
 
 [![PyPI license](https://img.shields.io/pypi/l/flowkit.svg?colorB=dodgerblue)](https://pypi.python.org/pypi/flowkit/)
 [![PyPI pyversions](https://img.shields.io/pypi/pyversions/flowkit.svg)](https://pypi.python.org/pypi/flowkit/)
@@ -11,7 +11,7 @@
 
 ## Overview
 
-FlowKit is an intuitive Python toolkit for flow cytometry analysis and visualization, with full support for the [GatingML 2.0 standard](http://flowcyt.sourceforge.net/gating/latest.pdf) limited support for FlowJo 10 workspace files. Features include:
+FlowKit is an intuitive Python toolkit for flow cytometry analysis and visualization, with full support for the [GatingML 2.0 standard](http://flowcyt.sourceforge.net/gating/latest.pdf) and limited support for FlowJo 10 workspace files. Features include:
 
 * Reading Flow Cytometry Standard data (FCS files), including FCS versions:
   * 2.0
