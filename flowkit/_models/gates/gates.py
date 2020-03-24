@@ -82,7 +82,8 @@ class PolygonGate(Gate):
     A PolygonGate must have exactly 2 dimensions, and must specify at least
     three vertices. Polygons can have crossing boundaries, and interior regions
     are defined by the winding number method:
-        https://en.wikipedia.org/wiki/Winding_number
+
+    https://en.wikipedia.org/wiki/Winding_number
     """
     def __init__(
             self,

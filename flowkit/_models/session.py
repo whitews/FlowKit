@@ -1,3 +1,6 @@
+"""
+Session class
+"""
 import io
 import os
 import copy
@@ -395,16 +398,19 @@ class Session(object):
     ):
         """
         Performs dimensional reduction using the TSNE algorithm
+
         :param sample_group: The sample group on which to run TSNE
         :param n_dims: Number of dimensions to which the source data is reduced
         :param ignore_scatter: If True, the scatter channels are excluded
         :param scale_scatter: If True, the scatter channel data is scaled to be
-            in the same range as the fluorescent channel data. If
-            ignore_scatter is True, this option has no effect.
+          in the same range as the fluorescent channel data. If
+          ignore_scatter is True, this option has no effect.
         :param transform: A Transform instance to apply to events
         :param subsample: Whether to sub-sample events from FCS files (default: True)
+
         :return: Dictionary of TSNE results where the keys are the FCS sample
-            IDs and the values are the TSNE data for events with n_dims
+          IDs and the values are the TSNE data for events with n_dims
+
         """
         tsne_events = None
         sample_events_lut = {}

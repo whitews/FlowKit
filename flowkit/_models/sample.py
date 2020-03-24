@@ -1,3 +1,7 @@
+"""
+Sample class
+"""
+
 import flowio
 import os
 from pathlib import Path
@@ -18,6 +22,30 @@ class Sample(object):
     """
     Represents a single FCS sample from an FCS file, NumPy array or Pandas
     DataFrame.
+
+    :param fcs_path_or_data: FCS data, can be either:
+
+        - a file path or file handle to an FCS file
+        - a pathlib Path object
+        - a FlowIO FlowData object
+        - a NumPy array of FCS event data (must provide channel_labels)
+        - a Pandas DataFrame containing FCS event data (channel labels as headers)
+
+    :param channel_labels: A list of strings or a list of tuples to use for the channel
+        labels. Required if fcs_path_or_data is a NumPy array
+
+    :param compensation: Compensation matrix, which can be a:
+
+        - Matrix instance
+        - NumPy array
+        - CSV file path
+        - pathlib Path object to a CSV or TSV file
+        - string of CSV text
+
+    :param null_channel_list: List of PnN labels for channels that were collected
+        but do not contain useful data. Note, this should only be used if there were
+        truly no fluorochromes used targeting those detectors and the channels
+        do not contribute to compensation.
     """
     def __init__(
             self,
@@ -28,23 +56,6 @@ class Sample(object):
     ):
         """
         Create a Sample instance
-
-        :param fcs_path_or_data: FCS data, can be either:
-                - a file path or file handle to an FCS file
-                - a pathlib Path object
-                - a FlowIO FlowData object
-                - a NumPy array of FCS event data (must provide channel_labels)
-                - a Pandas DataFrame containing FCS event data (channel labels as headers)
-        :param channel_labels: A list of strings or a list of tuples to use for the channel
-            labels. Required if fcs_path_or_data is a NumPy array
-        :param compensation: Compensation matrix. Can be either:
-                - a text string in CSV or TSV format
-                - a string path to a CSV or TSV file
-                - a pathlib Path object to a CSV or TSV file
-        :param null_channel_list: List of PnN labels for channels that were collected
-            but do not contain useful data. Note, this should only be used if there were
-            truly no fluorochromes used targeting those detectors and the channels
-            do not contribute to compensation.
         """
         # inspect our fcs_path_or_data argument
         if isinstance(fcs_path_or_data, str):
@@ -176,6 +187,8 @@ class Sample(object):
     def filter_negative_scatter(self, reapply_subsample=True):
         """
         Determines indices of negative scatter events, optionally re-subsample the Sample events afterward
+
+        :param reapply_subsample: Whether to re-subsample the Sample events after filtering. Default is True
         """
         scatter_indices = []
         for i, p in enumerate(self.pnn_labels):
@@ -308,6 +321,7 @@ class Sample(object):
         `get_comp_events`.
 
         :param compensation: Compensation matrix, which can be a:
+
                 - Matrix instance
                 - NumPy array
                 - CSV file path
@@ -418,6 +432,15 @@ class Sample(object):
             return self._transformed_events
 
     def get_events_as_data_frame(self, source='xform', subsample=False):
+        """
+        Returns a Pandas DataFrame of event data
+
+        :param source: 'raw', 'comp', 'xform' for whether the raw, compensated
+            or transformed events will be returned
+        :param subsample: Whether to return all events or just the sub-sampled
+            events. Default is False (all events)
+        :return: Pandas DataFrame of event data
+        """
         if source == 'xform':
             events = self.get_transformed_events(subsample=subsample)
         elif source == 'comp':
@@ -508,6 +531,12 @@ class Sample(object):
         return transformed_events
 
     def apply_transform(self, transform):
+        """
+        Applies given transform to Sample events, and overwrites the `transform` attribute.
+
+        :param transform: an instance of one of the various Transform sub-classes in the transforms module
+        """
+
         self._transformed_events = self._transform(transform)
         self.transform = transform
 
