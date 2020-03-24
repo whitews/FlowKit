@@ -1,4 +1,4 @@
-# <img alt="FlowKit" src="flowkit/docs/_static/flowkit.png" />
+# <img alt="FlowKit" src="docs/_static/flowkit.png" />
 
 [![PyPI license](https://img.shields.io/pypi/l/flowkit.svg?colorB=dodgerblue)](https://pypi.python.org/pypi/flowkit/)
 [![PyPI pyversions](https://img.shields.io/pypi/pyversions/flowkit.svg)](https://pypi.python.org/pypi/flowkit/)
