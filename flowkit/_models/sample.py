@@ -95,6 +95,7 @@ class Sample(object):
         channel_lin_log = []
         channel_range = []
         self.metadata = flow_data.text
+        time_index = None
 
         for n in sorted([int(k) for k in self.channels.keys()]):
             chan_label = self.channels[str(n)]['PnN']
@@ -122,6 +123,8 @@ class Sample(object):
 
             if chan_label.lower()[:4] not in ['fsc-', 'ssc-', 'time']:
                 self.fluoro_indices.append(n - 1)
+            elif chan_label.lower() == 'time':
+                time_index = n - 1
 
             if 'PnS' in self.channels[str(n)]:
                 self.pns_labels.append(self.channels[str(n)]['PnS'])
@@ -132,11 +135,15 @@ class Sample(object):
 
         # Raw events need to be scaled according to channel gain, as well
         # as corrected for proper lin/log display
-        # These are the only pre-processing we will do on raw events
+        # This is the only pre-processing we will do on raw events
         raw_events = np.reshape(
             np.array(flow_data.events, dtype=np.float),
             (-1, flow_data.channel_count)
         )
+
+        if 'timestep' in self.metadata and time_index is not None:
+            time_step = float(self.metadata['timestep'])
+            raw_events[:, time_index] = raw_events[:, time_index] * time_step
 
         # But first, we'll save the unprocessed events
         self._orig_events = raw_events.copy()
