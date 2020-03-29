@@ -1,6 +1,7 @@
 import copy
 import numpy as np
 from lxml import etree
+import re
 from ._resources import gml_schema
 from ._models.dimension import Dimension, RatioDimension, QuadrantDivider
 from ._models.vertex import Vertex
@@ -987,8 +988,14 @@ def convert_wsp_gate(wsp_gate, comp_matrix, xform_lut):
 
     for dim in wsp_gate.dimensions:
         if comp_matrix is not None:
-            dim_label = dim.label.lstrip(comp_matrix['prefix'])
-            dim_label = dim_label.rstrip(comp_matrix['suffix'])
+            pre = comp_matrix['prefix']
+            suf = comp_matrix['suffix']
+            dim_label = dim.label
+
+            if dim_label.startswith(pre):
+                dim_label = re.sub(r'^%s' % pre, '', dim_label)
+            if dim_label.endswith(suf):
+                dim_label = re.sub(r'%s$' % suf, '', dim_label)
 
             if dim_label in comp_matrix['detectors']:
                 comp_ref = comp_matrix['matrix_name']
