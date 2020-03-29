@@ -108,6 +108,17 @@ def gate_samples(gating_strategies, samples, verbose):
 
 
 class Session(object):
+    """
+    The Session class is intended as the main interface in FlowKit for complex flow cytometry analysis.
+    A Session represents a collection of gating strategies and FCS samples. FCS samples are added and assigned to sample
+    groups, and each sample group has a single gating strategy template. The gates in a template can be customized
+    per sample.
+
+    :param fcs_samples: a list of either file paths or Sample instances
+    :param subsample_count: Number of events to use as a sub-sample. If the number of
+        events in the Sample is less than the requested sub-sample count, then the
+        maximum number of available events is used for the sub-sample.
+    """
     def __init__(self, fcs_samples=None, subsample_count=10000):
         self.subsample_count = subsample_count
         self.sample_lut = {}
@@ -120,6 +131,14 @@ class Session(object):
         self.add_samples(fcs_samples)
 
     def add_sample_group(self, group_name, gating_strategy=None):
+        """
+        Create a new sample group to the session. The group name must be unique to the session.
+
+        :param group_name: an instance of the Matrix class
+        :param gating_strategy: a gating strategy instance to use for the group template. If None, then a new, blank
+            gating strategy will be created.
+        :return: None
+        """
         if group_name in self._sample_group_lut:
             warnings.warn("A sample group with this name already exists...skipping")
             return
@@ -142,6 +161,30 @@ class Session(object):
         }
 
     def import_flowjo_workspace(self, workspace_file_or_path):
+        """
+        Imports a FlowJo workspace (version 10+) into the Session. Each sample group in the workspace will
+        be a sample group in the FlowKit session. Referenced samples in the workspace will be imported as
+        references in the session. Ideally, these samples should have already been loaded into the session,
+        and a warning will be issued for each sample reference that has not yet been loaded.
+        Support for FlowJo workspaces is limited to the following
+        features:
+
+          - Transformations:
+
+            - linear
+            - log
+            - logicle
+          - Gates:
+
+            - rectangle
+            - polygon
+            - ellipse
+            - quadrant
+            - range
+
+        :param workspace_file_or_path: WSP workspace file as a file name/path, file object, or file-like object
+        :return: None
+        """
         wsp_sample_groups = _xml_utils.parse_wsp(workspace_file_or_path)
         for group_name, sample_data in wsp_sample_groups.items():
             for sample, data_dict in sample_data.items():
@@ -154,6 +197,7 @@ class Session(object):
 
                 gs = GatingStrategy()
 
+                # TODO: change keys to tuple of gate ID, parent ID so gates can be "reused" for different branches
                 gs.gates = {gate.id: gate for gate in data_dict['gates']}
                 matrix = data_dict['compensation']
                 if isinstance(matrix, Matrix):
@@ -166,6 +210,14 @@ class Session(object):
                 self._sample_group_lut[group_name]['samples'][sample] = gs
 
     def add_samples(self, samples):
+        """
+        Adds FCS samples to the session.
+
+        :param samples: an instance of the Matrix class
+        :param gating_strategy: a gating strategy instance to use for the group template. If None, then a new, blank
+            gating strategy will be created.
+        :return: None
+        """
         new_samples = load_samples(samples)
         for s in new_samples:
             s.subsample_events(self.subsample_count)
