@@ -1032,11 +1032,13 @@ def convert_wsp_gate(wsp_gate, comp_matrix, xform_lut):
                 if xforms[i] is not None:
                     v.coordinates[i] = xforms[i].apply(np.array([[float(c)]]))[0][0]
 
-        # TODO: support more than just PolygonGate
         gate = PolygonGate(wsp_gate.id, wsp_gate.parent, new_dims, vertices)
-    elif isinstance(wsp_gate, GMLRectangleGate) or isinstance(wsp_gate, WSPEllipsoidGate):
+    elif isinstance(wsp_gate, GMLRectangleGate):
+        gate = wsp_gate
+        gate.dimensions = new_dims
+    elif isinstance(wsp_gate, WSPEllipsoidGate):
         gate = wsp_gate
     else:
-        raise NotImplemented("Only polygon & rectangle gates for FlowJo workspaces are currently supported.")
+        raise NotImplemented("%s gates for FlowJo workspaces are not currently supported." % type(wsp_gate).__name__)
 
     return gate
