@@ -89,7 +89,13 @@ Required Python dependencies:
 
 ### From PyPI
 
-`pip install flowkit`
+FlowKit is available via the `pip` command. However, NumPy must be installed prior in order to
+compile the C extensions.
+
+```
+pip install numpy
+pip install flowkit
+```
 
 ### From source
 

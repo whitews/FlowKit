@@ -1,6 +1,10 @@
+"""
+Utility functions for parsing & exporting gating related XML documents
+"""
 import copy
 import numpy as np
 from lxml import etree
+import anytree
 import re
 from ._resources import gml_schema
 from ._models.dimension import Dimension, RatioDimension, QuadrantDivider
@@ -18,6 +22,7 @@ from ._models.gates.wsp_gates import WSPEllipsoidGate
 from ._models.gates.gates import \
     BooleanGate, \
     EllipsoidGate, \
+    Quadrant, \
     QuadrantGate, \
     PolygonGate, \
     RectangleGate
@@ -40,15 +45,100 @@ wsp_gate_constructor_lut = {
 }
 
 
+def _build_hierarchy_tree(gates_dict, use_uid=False):
+    nodes = {}
+
+    root = anytree.Node('root')
+    parent_gates = set()
+
+    for g_id, gate in gates_dict.items():
+        if gate.parent is not None:
+            # record the set of parents so we can find the leaves later
+            if use_uid:
+                parent_gates.add(gate.parent_uid)
+            else:
+                parent_gates.add(gate.parent)
+
+            # we'll get children nodes after
+            continue
+
+        # use g_id for lookup (for uid), gate.id for Node name
+        nodes[g_id] = anytree.Node(
+            g_id,
+            parent=root,
+            gate=gate
+        )
+
+        if isinstance(gate, QuadrantGate):
+            for q_id, quad in gate.quadrants.items():
+                nodes[q_id] = anytree.Node(
+                    q_id,
+                    parent=nodes[gate.id],
+                    gate=quad
+                )
+
+    parent_gates.difference_update(set(nodes.keys()))
+    # Now we have all the root-level nodes and the set of parents.
+    # Process the parent gates
+    parents_remaining = len(parent_gates)
+    while parents_remaining > 0:
+        discard = []
+        for gate_id in parent_gates:
+            gate = gates_dict[gate_id]
+            if use_uid:
+                parent_id = gate.parent_uid
+            else:
+                parent_id = gate.parent
+            if parent_id in nodes or parent_id is None:
+                nodes[gate_id] = anytree.Node(
+                    gate_id,
+                    parent=root if parent_id is None else nodes[parent_id],
+                    gate=gate
+                )
+
+                if isinstance(gate, QuadrantGate):
+                    for q_id, quad in gate.quadrants.items():
+                        nodes[q_id] = anytree.Node(
+                            q_id,
+                            parent=nodes[gate.id],
+                            gate=quad
+                        )
+                discard.append(gate_id)
+        parent_gates.difference_update(set(discard))
+        parents_remaining = len(parent_gates)
+
+    # Process remaining leaves
+    for g_id, gate in gates_dict.items():
+        if g_id in nodes:
+            continue
+
+        nodes[g_id] = anytree.Node(
+            g_id,
+            parent=nodes[gate.parent_uid] if use_uid else nodes[gate.parent],
+            gate=gate
+        )
+
+        # TODO: this conditional isn't covered in tests
+        if isinstance(gate, QuadrantGate):
+            for q_id, quad in gate.quadrants.items():
+                nodes[q_id] = anytree.Node(
+                    q_id,
+                    parent=nodes[g_id],
+                    gate=quad
+                )
+
+    return root
+
+
 def parse_gating_xml(xml_file_or_path):
-    doc_type, root_gml, gating_ns, data_type_ns, xform_ns = get_xml_type(xml_file_or_path)
+    doc_type, root_gml, gating_ns, data_type_ns, xform_ns = _get_xml_type(xml_file_or_path)
 
     gating_strategy = GatingStrategy()
 
     if doc_type == 'gatingml':
-        gates = construct_gates(root_gml, gating_ns, data_type_ns)
-        transformations = construct_transforms(root_gml, xform_ns, data_type_ns)
-        comp_matrices = construct_matrices(root_gml, xform_ns, data_type_ns)
+        gates = _construct_gates(root_gml, gating_ns, data_type_ns)
+        transformations = _construct_transforms(root_gml, xform_ns, data_type_ns)
+        comp_matrices = _construct_matrices(root_gml, xform_ns, data_type_ns)
     elif doc_type == 'flowjo':
         raise ValueError("File is a FlowJo workspace, use parse_wsp or Session.import_flowjo_workspace.")
     else:
@@ -58,13 +148,16 @@ def parse_gating_xml(xml_file_or_path):
         gating_strategy.add_comp_matrix(c)
     for t_id, t in transformations.items():
         gating_strategy.add_transform(t)
-    for g_id, g in gates.items():
-        gating_strategy.add_gate(g)
+    root = _build_hierarchy_tree(gates)
+    for n in root.descendants:
+        if isinstance(n.gate, Quadrant):
+            continue
+        gating_strategy.add_gate(n.gate)
 
     return gating_strategy
 
 
-def get_xml_type(xml_file_or_path):
+def _get_xml_type(xml_file_or_path):
     xml_document = etree.parse(xml_file_or_path)
 
     val = gml_schema.validate(xml_document)
@@ -101,7 +194,7 @@ def get_xml_type(xml_file_or_path):
     return doc_type, root, gating_ns, data_type_ns, transform_ns
 
 
-def construct_gates(root_gml, gating_ns, data_type_ns):
+def _construct_gates(root_gml, gating_ns, data_type_ns):
     gates_dict = {}
 
     for gate_str, gate_class in gate_constructor_lut.items():
@@ -127,7 +220,7 @@ def construct_gates(root_gml, gating_ns, data_type_ns):
     return gates_dict
 
 
-def construct_transforms(root_gml, transform_ns, data_type_ns):
+def _construct_transforms(root_gml, transform_ns, data_type_ns):
     transformations = {}
 
     if transform_ns is not None:
@@ -220,7 +313,7 @@ def construct_transforms(root_gml, transform_ns, data_type_ns):
     return transformations
 
 
-def construct_matrices(root_gml, transform_ns, data_type_ns):
+def _construct_matrices(root_gml, transform_ns, data_type_ns):
     comp_matrices = {}
 
     if transform_ns is not None:
@@ -505,7 +598,7 @@ def parse_matrix_element(
     return Matrix(matrix_id, matrix, detectors, fluorochomes)
 
 
-def add_matrix_to_gml(root, matrix, ns_map):
+def _add_matrix_to_gml(root, matrix, ns_map):
     xform_ml = etree.SubElement(root, "{%s}spectrumMatrix" % ns_map['transforms'])
     xform_ml.set('{%s}id' % ns_map['transforms'], matrix.id)
 
@@ -528,7 +621,7 @@ def add_matrix_to_gml(root, matrix, ns_map):
             coeff_ml.set('{%s}value' % ns_map['transforms'], str(val))
 
 
-def add_transform_to_gml(root, transform, ns_map):
+def _add_transform_to_gml(root, transform, ns_map):
     xform_ml = etree.SubElement(root, "{%s}transformation" % ns_map['transforms'])
     xform_ml.set('{%s}id' % ns_map['transforms'], transform.id)
 
@@ -568,7 +661,7 @@ def add_transform_to_gml(root, transform, ns_map):
         lin_ml.set('{%s}A' % ns_map['transforms'], str(transform.param_a))
 
 
-def add_gate_to_gml(root, gate, ns_map):
+def _add_gate_to_gml(root, gate, ns_map):
     if isinstance(gate, RectangleGate):
         gate_ml = etree.SubElement(root, "{%s}RectangleGate" % ns_map['gating'])
     elif isinstance(gate, PolygonGate):
@@ -614,7 +707,6 @@ def add_gate_to_gml(root, gate, ns_map):
             for val in row:
                 entry_ml = etree.SubElement(row_ml, '{%s}entry' % ns_map['gating'])
                 entry_ml.set('{%s}value' % ns_map['data-type'], str(val))
-
     elif isinstance(gate, QuadrantGate):
         gate_ml = etree.SubElement(root, "{%s}QuadrantGate" % ns_map['gating'])
 
@@ -636,7 +728,7 @@ def add_gate_to_gml(root, gate, ns_map):
                 
                 pos_ml.set('{%s}location' % ns_map['gating'], str(loc_coord))
     else:
-        raise(ValueError, "gate is not a valid GatingML 2.0 element")
+        raise ValueError("Gate %s is not a valid GatingML 2.0 element" % gate.id)
 
     gate_ml.set('{%s}id' % ns_map['gating'], gate.id)
 
@@ -682,28 +774,26 @@ def add_gate_to_gml(root, gate, ns_map):
     return gate_ml
 
 
-def add_gates_from_gate_dict(gating_strategy, gate_dict, ns_map, parent_ml):
+def _add_gates_from_gate_dict(gating_strategy, gate_dict, ns_map, parent_ml):
     # the gate_dict will have keys 'name' and 'children'. top-level 'name' value is 'root'
     for child in gate_dict['children']:
         gate_id = child['name']
         skip = False
-        try:
-            gate = gating_strategy.gates[gate_id]
-        except KeyError:
-            # may be in a Quadrant gate, the gs method 'get_gate_by_reference' will re-raise
-            # the KeyError if the gate_id is truly not found
-            gate = gating_strategy.get_gate_by_reference(gate_id)
+
+        gate = gating_strategy.get_gate(gate_id)
+        if isinstance(gate, Quadrant):
+            # single quadrants will be handled in the owning quadrant gate
             skip = True
 
         if not skip:
-            child_ml = add_gate_to_gml(parent_ml, gate, ns_map)
+            child_ml = _add_gate_to_gml(parent_ml, gate, ns_map)
 
             if gate_dict['name'] != 'root':
                 # this is a recursion, add the parent reference
                 child_ml.set('{%s}parent_id' % ns_map['gating'], gate_dict['name'])
 
         if 'children' in child:  # and not isinstance(gate, QuadrantGate):
-            add_gates_from_gate_dict(gating_strategy, child, ns_map, parent_ml)
+            _add_gates_from_gate_dict(gating_strategy, child, ns_map, parent_ml)
 
 
 def export_gatingml(gating_strategy, file_handle):
@@ -726,17 +816,17 @@ def export_gatingml(gating_strategy, file_handle):
 
     # process gating strategy transformations
     for xform_id, xform in gating_strategy.transformations.items():
-        add_transform_to_gml(root, xform, ns_map)
+        _add_transform_to_gml(root, xform, ns_map)
 
     # process gating strategy compensation matrices
     for matrix_id, matrix in gating_strategy.comp_matrices.items():
-        add_matrix_to_gml(root, matrix, ns_map)
+        _add_matrix_to_gml(root, matrix, ns_map)
 
     # get gate hierarchy as a dictionary
     gate_dict = gating_strategy.get_gate_hierarchy('dict')
 
     # recursively convert all gates to GatingML
-    add_gates_from_gate_dict(gating_strategy, gate_dict, ns_map, root)
+    _add_gates_from_gate_dict(gating_strategy, gate_dict, ns_map, root)
 
     et = etree.ElementTree(root)
 
@@ -744,7 +834,7 @@ def export_gatingml(gating_strategy, file_handle):
 
 
 def parse_wsp(workspace_file_or_path):
-    doc_type, root_xml, gating_ns, data_type_ns, transform_ns = get_xml_type(workspace_file_or_path)
+    doc_type, root_xml, gating_ns, data_type_ns, transform_ns = _get_xml_type(workspace_file_or_path)
 
     # first, find SampleList elements
     ns_map = root_xml.nsmap
@@ -766,10 +856,10 @@ def parse_wsp(workspace_file_or_path):
 
         # It appears there is only a single set of xforms per sample, one for each channel.
         # And, the xforms have no IDs. We'll extract it and give it IDs based on ???
-        sample_xform_lut = parse_wsp_transforms(transforms_el, transform_ns, data_type_ns)
+        sample_xform_lut = _parse_wsp_transforms(transforms_el, transform_ns, data_type_ns)
 
         # parse spilloverMatrix elements
-        sample_comp = parse_wsp_compensation(sample_el, transform_ns, data_type_ns)
+        sample_comp = _parse_wsp_compensation(sample_el, transform_ns, data_type_ns)
 
         # FlowJo WSP gates are nested so we'll have to do a recursive search from the root Sub-populations node
         sample_root_sub_pop_el = sample_node_el.find('Subpopulations', ns_map)
@@ -777,7 +867,7 @@ def parse_wsp(workspace_file_or_path):
         # FJ WSP gates are stored in non-transformed space. After parsing the XML the values need
         # to be converted to the compensated & transformed space. Also, the recurse_sub_populations
         # function replaces the non-human readable IDs in the XML with population names
-        sample_gates = recurse_wsp_sub_populations(
+        sample_gates = _recurse_wsp_sub_populations(
             sample_root_sub_pop_el,
             None,  # starting at root, so no parent ID
             gating_ns,
@@ -806,18 +896,27 @@ def parse_wsp(workspace_file_or_path):
                     )
 
                 wsp_dict[group][sample_name] = {
-                    'gates': [],
+                    'gates': {},
                     'transforms': list(sample_xform_lut.values()),
                     'compensation': matrix
                 }
 
-            gate = convert_wsp_gate(gate, sample_comp, sample_xform_lut)
-            wsp_dict[group][sample_name]['gates'].append(gate)
+            gate = _convert_wsp_gate(gate, sample_comp, sample_xform_lut)
+            # TODO: this will still overwrite re-used gate IDs on different branches
+            wsp_dict[group][sample_name]['gates'][gate.uid] = gate
+
+    # finally, convert 'gates' value to tree hierarchy
+    for group_id, group_dict in wsp_dict.items():
+        for sample_name, sample_dict in group_dict.items():
+            tree = _build_hierarchy_tree(sample_dict['gates'], use_uid=True)
+            for d in tree.descendants:
+                d.name = d.gate.id
+            sample_dict['gates'] = tree
 
     return wsp_dict
 
 
-def recurse_wsp_sub_populations(sub_pop_el, parent_id, gating_ns, data_type_ns):
+def _recurse_wsp_sub_populations(sub_pop_el, parent_id, gating_ns, data_type_ns):
     gates = []
     ns_map = sub_pop_el.nsmap
 
@@ -845,7 +944,10 @@ def recurse_wsp_sub_populations(sub_pop_el, parent_id, gating_ns, data_type_ns):
             data_type_ns
         )
 
-        # replace ID and parent ID with population names
+        # replace ID and parent ID with population names, but save the originals
+        # so we can re-create the correct hierarchy later.
+        g.uid = g.id
+        g.parent_uid = g.parent
         g.id = pop_name
         g.parent = parent_id
 
@@ -858,12 +960,12 @@ def recurse_wsp_sub_populations(sub_pop_el, parent_id, gating_ns, data_type_ns):
 
         sub_pop_els = pop_el.findall('Subpopulations', ns_map)
         for el in sub_pop_els:
-            gates.extend(recurse_wsp_sub_populations(el, pop_name, gating_ns, data_type_ns))
+            gates.extend(_recurse_wsp_sub_populations(el, pop_name, gating_ns, data_type_ns))
 
     return gates
 
 
-def parse_wsp_transforms(transforms_el, transform_ns, data_type_ns):
+def _parse_wsp_transforms(transforms_el, transform_ns, data_type_ns):
     # get all children and then determine the tag based on the xform type (linear, fasinh, etc.)
     xform_els = transforms_el.getchildren()
 
@@ -916,7 +1018,7 @@ def parse_wsp_transforms(transforms_el, transform_ns, data_type_ns):
     return xforms_lut
 
 
-def parse_wsp_compensation(sample_el, transform_ns, data_type_ns):
+def _parse_wsp_compensation(sample_el, transform_ns, data_type_ns):
     # find spilloverMatrix elements, not sure if there should be just a single matrix or multiple
     # going with a single one now since there do not appear to be comp references in the WSP gate elements
     matrix_els = sample_el.findall(
@@ -982,7 +1084,7 @@ def parse_wsp_compensation(sample_el, transform_ns, data_type_ns):
     return matrix_dict
 
 
-def convert_wsp_gate(wsp_gate, comp_matrix, xform_lut):
+def _convert_wsp_gate(wsp_gate, comp_matrix, xform_lut):
     new_dims = []
     xforms = []
 
@@ -1033,6 +1135,8 @@ def convert_wsp_gate(wsp_gate, comp_matrix, xform_lut):
                     v.coordinates[i] = xforms[i].apply(np.array([[float(c)]]))[0][0]
 
         gate = PolygonGate(wsp_gate.id, wsp_gate.parent, new_dims, vertices)
+        gate.uid = wsp_gate.uid
+        gate.parent_uid = wsp_gate.parent_uid
     elif isinstance(wsp_gate, GMLRectangleGate):
         gate = wsp_gate
         gate.dimensions = new_dims

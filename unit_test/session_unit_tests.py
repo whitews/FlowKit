@@ -43,7 +43,7 @@ class SessionTestCase(unittest.TestCase):
         fks.import_flowjo_workspace(wsp_path)
 
         self.assertIsInstance(
-            fks.get_gate_by_reference(
+            fks.get_gate(
                 'my_group',
                 'data_set_simple_line_100.fcs',
                 'poly1'),
@@ -61,7 +61,7 @@ class SessionTestCase(unittest.TestCase):
         fks.import_flowjo_workspace(wsp_path)
 
         self.assertIsInstance(
-            fks.get_gate_by_reference(
+            fks.get_gate(
                 'All Samples',
                 'data_set_simple_line_100.fcs',
                 'ellipse1'),
@@ -82,7 +82,7 @@ class SessionTestCase(unittest.TestCase):
 
         # FlowJo quadrant gates are not true quadrant gates, rather a collection of rectangle gates
         self.assertIsInstance(
-            fks.get_gate_by_reference(
+            fks.get_gate(
                 'All Samples',
                 'test_data_diamond_01.fcs',
                 'Q1: channel_A- , channel_B+'),

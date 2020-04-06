@@ -273,7 +273,7 @@ class QuadrantGate(Gate):
 
     def apply_parent_gate(self, sample, results, parent_results, gating_strategy):
         if self.parent is not None and parent_results is not None:
-            parent_gate = gating_strategy.get_gate_by_reference(self.parent)
+            parent_gate = gating_strategy.get_gate(self.parent)
             parent_id = self.parent
             parent_events = parent_gate.apply(sample)
 
@@ -393,7 +393,11 @@ class BooleanGate(Gate):
         all_gate_results = []
 
         for gate_ref_dict in self.gate_refs:
-            gate = gating_strategy.get_gate_by_reference(gate_ref_dict['ref'])
+            gate = gating_strategy.get_gate(gate_ref_dict['ref'])
+            if isinstance(gate, Quadrant):
+                # A single quadrant has no apply method, get it's full Quadrant gate
+                gate = gating_strategy.get_parent_gate(gate.id)
+
             gate_ref_results = gate.apply(sample, parent_results, gating_strategy)
 
             if isinstance(gate, QuadrantGate):

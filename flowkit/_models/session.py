@@ -124,7 +124,6 @@ class Session(object):
         self.sample_lut = {}
         self._results_lut = {}
         self._sample_group_lut = {}
-        self.report = None
 
         self.add_sample_group('default')
 
@@ -198,7 +197,9 @@ class Session(object):
                 gs = GatingStrategy()
 
                 # TODO: change keys to tuple of gate ID, parent ID so gates can be "reused" for different branches
-                gs.gates = {gate.id: gate for gate in data_dict['gates']}
+                for gate_node in data_dict['gates'].descendants:
+                    gs.add_gate(gate_node.gate)
+
                 matrix = data_dict['compensation']
                 if isinstance(matrix, Matrix):
                     gs.comp_matrices[matrix.id] = matrix
@@ -258,7 +259,7 @@ class Session(object):
     def get_gate_ids(self, sample_group):
         group = self._sample_group_lut[sample_group]
         template = group['template']
-        return list(template.gates.keys())
+        return template.get_gate_ids()
 
     # start pass through methods for GatingStrategy class
     def add_gate(self, gate, group_name='default'):
@@ -298,13 +299,13 @@ class Session(object):
     def get_parent_gate_id(self, group_name, gate_id):
         group = self._sample_group_lut[group_name]
         template = group['template']
-        gate = template.get_gate_by_reference(gate_id)
+        gate = template.get_gate(gate_id)
         return gate.parent
 
-    def get_gate_by_reference(self, group_name, sample_id, gate_id):
+    def get_gate(self, group_name, sample_id, gate_id):
         group = self._sample_group_lut[group_name]
         gating_strategy = group['samples'][sample_id]
-        gate = gating_strategy.get_gate_by_reference(gate_id)
+        gate = gating_strategy.get_gate(gate_id)
         return gate
 
     def get_gate_hierarchy(self, sample_group, output='ascii'):
@@ -587,7 +588,7 @@ class Session(object):
     ):
         group = self._sample_group_lut[sample_group]
         gating_strategy = group['samples'][sample_id]
-        gate = gating_strategy.get_gate_by_reference(gate_id)
+        gate = gating_strategy.get_gate(gate_id)
 
         # dim count determines if we need a histogram, scatter, or multi-scatter
         dim_count = len(gate.dimensions)

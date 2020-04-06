@@ -821,7 +821,7 @@ class GatingMLTestCase(unittest.TestCase):
 
         self.assertEqual(parent_id, 'ScaleRect1')
 
-        parent_gate = s.get_gate_by_reference(group_name, data1_sample.original_filename, parent_id)
+        parent_gate = s.get_gate(group_name, data1_sample.original_filename, parent_id)
 
         self.assertIsInstance(parent_gate, gates.RectangleGate)
 
@@ -837,9 +837,9 @@ class GatingMLTestCase(unittest.TestCase):
 
         self.assertEqual(parent_id, 'FL2P-FL4P')
 
-        parent_gate = s.get_gate_by_reference(group_name, data1_sample.original_filename, parent_id)
+        parent_gate = s.get_gate(group_name, data1_sample.original_filename, parent_id)
 
-        self.assertIsInstance(parent_gate, gates.QuadrantGate)
+        self.assertIsInstance(parent_gate, gates.Quadrant)
 
     @staticmethod
     def test_all_gates():

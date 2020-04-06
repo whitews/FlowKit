@@ -517,9 +517,7 @@ class GatingTestCase(unittest.TestCase):
         gs = fk.GatingStrategy()
 
         gs.add_gate(range1_gate)
-
         gs.add_gate(poly1_gate)
-
         gs.add_gate(ellipse1_gate)
 
         gate_refs = [
@@ -689,7 +687,6 @@ class GatingTestCase(unittest.TestCase):
 
         rect_gate = fk.gates.RectangleGate('Rectangle2', None, rect_dims)
         gs.add_gate(rect_gate)
-
         gs.add_gate(quad1_gate)
 
         gate1_refs = [
@@ -1127,7 +1124,6 @@ class GatingTestCase(unittest.TestCase):
 
         ellipse_gate = fk.gates.EllipsoidGate('Ellipse1', None, dims2, ell1_coords, ell1_cov_mat, ell1_dist_square)
         gs.add_gate(ellipse_gate)
-
         gs.add_gate(range1_gate)
 
         gate_refs = [
@@ -1286,9 +1282,9 @@ class GatingTestCase(unittest.TestCase):
         rect_gate2 = fk.gates.RectangleGate('ScalePar1', 'ScaleRect1', dims2)
         gs.add_gate(rect_gate2)
 
-        result = gs.gate_sample(data1_sample, rect_gate2.id)
-        parent_gate_id = gs.get_parent_gate_id(rect_gate2.id)
-        parent_gate_count = result.get_gate_count(parent_gate_id)
+        result = gs.gate_sample(data1_sample)
+        parent_gate = gs.get_parent_gate(rect_gate2.id)
+        parent_gate_count = result.get_gate_count(parent_gate.id)
         gate_count = result.get_gate_count(rect_gate2.id)
         gate_abs_pct = result.get_gate_absolute_percent(rect_gate2.id)
         gate_rel_pct = result.get_gate_relative_percent(rect_gate2.id)

@@ -29,7 +29,11 @@ class Gate(ABC):
 
     def apply_parent_gate(self, sample, results, parent_results, gating_strategy):
         if self.parent is not None:
-            parent_gate = gating_strategy.get_gate_by_reference(self.parent)
+            parent_gate = gating_strategy.get_gate(self.parent)
+            if isinstance(parent_gate, gates.Quadrant):
+                # Parent references a single quadrant, get the quadrant's full QuadrantGate
+                parent_gate = gating_strategy.get_parent_gate(parent_gate.id)
+
             parent_id = parent_gate.id
 
             if parent_results is not None:
