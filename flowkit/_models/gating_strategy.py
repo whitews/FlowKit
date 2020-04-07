@@ -1,7 +1,7 @@
 """
 GatingStrategy & GatingResults classes
 """
-
+import json
 import anytree
 from anytree.exporter import DotExporter
 import pandas as pd
@@ -160,10 +160,10 @@ class GatingStrategy(object):
         """
         return [node.name for node in self._gate_tree.descendants]
 
-    def get_gate_hierarchy(self, output='ascii'):
+    def get_gate_hierarchy(self, output='ascii', **kwargs):
         """
         Retrieve the hierarchy of gates in the gating strategy in several formats, including text,
-        dictionary, or JSON.
+        dictionary, or JSON. If output == 'json', extra keyword arguments are passed to json.dumps
 
         :param output: Determines format of hierarchy returned, either 'ascii',
             'dict', or 'JSON' (default is 'ascii')
@@ -178,8 +178,12 @@ class GatingStrategy(object):
 
             return "\n".join(lines)
         elif output == 'json':
-            exporter = anytree.exporter.JsonExporter()
-            gs_json = exporter.export(self._gate_tree)
+            dict_exporter = anytree.exporter.DictExporter(
+                attriter=lambda attrs: [(k, v) for k, v in attrs if k != 'gate']
+            )
+
+            gs_dict = dict_exporter.export(self._gate_tree)
+            gs_json = json.dumps(gs_dict, **kwargs)
 
             return gs_json
         elif output == 'dict':

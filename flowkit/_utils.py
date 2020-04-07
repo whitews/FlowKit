@@ -1,3 +1,6 @@
+"""
+Utility functions for FlowKit
+"""
 import re
 import os
 from pathlib import Path
@@ -10,7 +13,7 @@ from flowkit import utils_c, _plot_utils
 import flowutils
 
 
-def parse_multiline_matrix(matrix_text, fluoro_labels):
+def _parse_multiline_matrix(matrix_text, fluoro_labels):
     # first, we must find a valid header line and we will require that the matrix
     # follows on the next lines, ignoring any additional lines before or after
     # the header contains labels matching the PnN value(FCS text field)
@@ -57,7 +60,7 @@ def parse_multiline_matrix(matrix_text, fluoro_labels):
     return matrix_array, header
 
 
-def convert_matrix_text_to_array(matrix_text, fluoro_labels, fluoro_indices):
+def _convert_matrix_text_to_array(matrix_text, fluoro_labels, fluoro_indices):
     """
     Converts a CSV text string to a NumPy array
     :param matrix_text: CSV text string where header contains the fluoro labels
@@ -76,7 +79,7 @@ def convert_matrix_text_to_array(matrix_text, fluoro_labels, fluoro_indices):
         # probably a single-line CSV from FCS metadata
         matrix, header = flowutils.compensate.get_spill(matrix_text[0])
     else:
-        matrix, header = parse_multiline_matrix(matrix_text, fluoro_labels)
+        matrix, header = _parse_multiline_matrix(matrix_text, fluoro_labels)
 
     label_diff = set(fluoro_labels).symmetric_difference(header)
 
@@ -190,14 +193,14 @@ def parse_compensation_matrix(compensation, channel_labels, null_channels=None):
             # may be a CSV string
             matrix_text = compensation
 
-        matrix = convert_matrix_text_to_array(matrix_text, fluoro_labels, fluoro_indices)
+        matrix = _convert_matrix_text_to_array(matrix_text, fluoro_labels, fluoro_indices)
 
     elif isinstance(compensation, Path):
         fh = compensation.open('r')
         matrix_text = fh.read()
         fh.close()
 
-        matrix = convert_matrix_text_to_array(matrix_text, fluoro_labels, fluoro_indices)
+        matrix = _convert_matrix_text_to_array(matrix_text, fluoro_labels, fluoro_indices)
     elif isinstance(compensation, np.ndarray):
         matrix = compensation
     else:
@@ -212,7 +215,7 @@ def parse_compensation_matrix(compensation, channel_labels, null_channels=None):
     return matrix
 
 
-def rolling_window(a, window):
+def _rolling_window(a, window):
     shape = a.shape[:-1] + (a.shape[-1] - window + 1, window)
     strides = a.values.strides + (a.values.strides[-1],)
     return np.lib.stride_tricks.as_strided(a, shape=shape, strides=strides)
@@ -268,7 +271,7 @@ def filter_anomalous_events(
 
         # calculate piece-wise KS test, we'll test every roll / 5 interval, cause
         # doing a true rolling window takes way too long
-        strides = rolling_window(chan_events, roll)
+        strides = _rolling_window(chan_events, roll)
 
         ks_x = []
         ks_y = []
