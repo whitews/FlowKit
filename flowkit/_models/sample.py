@@ -797,7 +797,12 @@ class Sample(object):
         channel_index = self.get_channel_index(channel_label_or_number)
         channel_data = self.get_channel_data(channel_index, source=source, subsample=subsample)
 
-        p = _plot_utils.plot_histogram(channel_data, bins=bins, title=self.original_filename)
+        p = _plot_utils.plot_histogram(
+            channel_data,
+            x_label=self.pnn_labels[channel_index],
+            bins=bins,
+            title=self.original_filename
+        )
 
         return p
 
