@@ -283,6 +283,12 @@ class Session(object):
         for s_id, s_strategy in s_members.items():
             s_strategy.add_transform(copy.deepcopy(transform))
 
+    def get_transform(self, group_name, sample_id, transform_id):
+        group = self._sample_group_lut[group_name]
+        gating_strategy = group['samples'][sample_id]
+        xform = gating_strategy.get_transform(transform_id)
+        return xform
+
     def add_comp_matrix(self, matrix, group_name='default'):
         # TODO: GatingStrategy method add_comp_matrix accepts only Matrix instances, so this pass through does as well.
         #       Consider adding a pass through Session method to parse comp matrices for conveniently getting a
@@ -295,6 +301,12 @@ class Session(object):
         template.add_comp_matrix(copy.deepcopy(matrix))
         for s_id, s_strategy in s_members.items():
             s_strategy.add_comp_matrix(copy.deepcopy(matrix))
+
+    def get_comp_matrix(self, group_name, sample_id, matrix_id):
+        group = self._sample_group_lut[group_name]
+        gating_strategy = group['samples'][sample_id]
+        comp_mat = gating_strategy.get_comp_matrix(matrix_id)
+        return comp_mat
 
     def get_parent_gate_id(self, group_name, gate_id):
         group = self._sample_group_lut[group_name]
