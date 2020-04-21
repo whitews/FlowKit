@@ -96,6 +96,15 @@ class GatingStrategy(object):
 
         self.transformations[transform.id] = transform
 
+    def get_transform(self, transform_id):
+        """
+        Retrieve transform instance from gating strategy.
+
+        :param transform_id: String of a valid transform ID stored in the gating strategy
+        :return: Instance of a Transform sub-class
+        """
+        return self.transformations[transform_id]
+
     def add_comp_matrix(self, matrix):
         """
         Add a compensation matrix to the gating strategy, see `transforms` module. The matrix ID must be unique in the
@@ -112,6 +121,15 @@ class GatingStrategy(object):
             raise KeyError("Matrix ID '%s' is already defined" % matrix.id)
 
         self.comp_matrices[matrix.id] = matrix
+
+    def get_comp_matrix(self, matrix_id):
+        """
+        Retrieve Matrix instance from gating strategy.
+
+        :param matrix_id: String of a valid Matrix ID stored in the gating strategy
+        :return: Matrix instance
+        """
+        return self.comp_matrices[matrix_id]
 
     def get_gate(self, gate_id):
         """
