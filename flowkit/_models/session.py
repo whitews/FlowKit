@@ -697,6 +697,122 @@ class Session(object):
             renderers = _plot_utils.render_dividers(x_locations, y_locations)
             p.renderers.extend(renderers)
         else:
-            raise NotImplementedError("Plotting of %s gates is not supported in this version of FlowKit" % gate.__class__)
+            raise NotImplementedError(
+                "Plotting of %s gates is not supported in this version of FlowKit" % gate.__class__
+            )
+
+        return p
+
+    def plot_scatter(
+            self,
+            sample_id,
+            x_dim,
+            y_dim,
+            sample_group='default',
+            gate_id=None,
+            subsample=False,
+            color_density=True,
+            x_min=None,
+            x_max=None,
+            y_min=None,
+            y_max=None
+    ):
+        """
+        Returns an interactive scatter plot for the specified channel data.
+
+        :param sample_id: The sample ID for the FCS sample to plot
+        :param x_dim:  Dimension instance to use for the x-axis data
+        :param y_dim: Dimension instance to use for the y-axis data
+        :param sample_group: The sample group containing the sample ID (and, optionally the gate ID)
+        :param gate_id: Gate ID to filter events (only events within the given gate will be plotted)
+        :param subsample: Whether to use all events for plotting or just the
+            sub-sampled events. Default is False (all events). Plotting
+            sub-sampled events can be much faster.
+        :param color_density: Whether to color the events by density, similar
+            to a heat map. Default is True.
+        :param x_min: Lower bound of x-axis. If None, channel's min value will
+            be used with some padding to keep events off the edge of the plot.
+        :param x_max: Upper bound of x-axis. If None, channel's max value will
+            be used with some padding to keep events off the edge of the plot.
+        :param y_min: Lower bound of y-axis. If None, channel's min value will
+            be used with some padding to keep events off the edge of the plot.
+        :param y_max: Upper bound of y-axis. If None, channel's max value will
+            be used with some padding to keep events off the edge of the plot.
+        :return: A Bokeh Figure object containing the interactive scatter plot.
+        """
+        sample = self.get_sample(sample_id)
+        group = self._sample_group_lut[sample_group]
+        gating_strategy = group['samples'][sample_id]
+
+        x_index = sample.get_channel_index(x_dim.label)
+        y_index = sample.get_channel_index(y_dim.label)
+
+        x_comp_ref = x_dim.compensation_ref
+        x_xform_ref = x_dim.transformation_ref
+
+        y_comp_ref = y_dim.compensation_ref
+        y_xform_ref = y_dim.transformation_ref
+
+        if x_comp_ref is not None and x_comp_ref != 'uncompensated':
+            x_comp = gating_strategy.get_comp_matrix(x_dim.compensation_ref)
+            comp_events = x_comp.apply(sample)
+            x = comp_events[:, x_index]
+        else:
+            # not doing sub-sample here, will do later with bool AND
+            x = sample.get_channel_data(x_index, source='raw', subsample=False)
+
+        if y_comp_ref is not None and x_comp_ref != 'uncompensated':
+            # this is likely unnecessary as the x & y comp should be the same,
+            # but requires more conditionals to cover
+            y_comp = gating_strategy.get_comp_matrix(x_dim.compensation_ref)
+            comp_events = y_comp.apply(sample)
+            y = comp_events[:, y_index]
+        else:
+            # not doing sub-sample here, will do later with bool AND
+            y = sample.get_channel_data(y_index, source='raw', subsample=False)
+
+        if x_xform_ref is not None:
+            x_xform = gating_strategy.get_transform(x_xform_ref)
+            x = x_xform.apply(x.reshape(-1, 1))[:, 0]
+        if y_xform_ref is not None:
+            y_xform = gating_strategy.get_transform(y_xform_ref)
+            y = y_xform.apply(y.reshape(-1, 1))[:, 0]
+
+        if gate_id is not None:
+            gate_results = gating_strategy.gate_sample(sample, gate_id)
+            is_gate_event = gate_results.get_gate_indices(gate_id)
+            if subsample:
+                is_subsample = np.zeros(sample.event_count, dtype=np.bool)
+                is_subsample[sample.subsample_indices] = True
+            else:
+                is_subsample = np.ones(sample.event_count, dtype=np.bool)
+
+            idx_to_plot = np.logical_and(is_gate_event, is_subsample)
+            x = x[idx_to_plot]
+            y = y[idx_to_plot]
+
+        dim_labels = []
+
+        if sample.pns_labels[x_index] != '':
+            dim_labels.append('%s (%s)' % (sample.pns_labels[x_index], sample.pnn_labels[x_index]))
+        else:
+            dim_labels.append(sample.pnn_labels[x_index])
+
+        if sample.pns_labels[y_index] != '':
+            dim_labels.append('%s (%s)' % (sample.pns_labels[y_index], sample.pnn_labels[y_index]))
+        else:
+            dim_labels.append(sample.pnn_labels[y_index])
+
+        p = _plot_utils.plot_scatter(
+            x,
+            y,
+            dim_labels,
+            title=sample.original_filename,
+            x_min=x_min,
+            x_max=x_max,
+            y_min=y_min,
+            y_max=y_max,
+            color_density=color_density
+        )
 
         return p
