@@ -239,7 +239,7 @@ def plot_histogram(x, x_label='x', bins=None, title=None):
 
     hist, edges = np.histogram(x, density=False, bins=bins)
 
-    tools = "crosshair,pan,zoom_in,zoom_out,box_zoom,undo,redo,reset,save,"
+    tools = "crosshair,hover,pan,zoom_in,zoom_out,box_zoom,undo,redo,reset,save,"
 
     p = figure(title=title, tools=tools)
     p.title.align = 'center'
@@ -302,7 +302,7 @@ def plot_scatter(
         "#%02x%02x%02x" % (int(c[0] * 255), int(c[1] * 255), int(c[2] * 255)) for c in colors_array
     ]
 
-    tools = "crosshair,pan,zoom_in,zoom_out,box_zoom,undo,redo,reset,save,"
+    tools = "crosshair,hover,pan,zoom_in,zoom_out,box_zoom,undo,redo,reset,save,"
     p = figure(
         tools=tools,
         x_range=(x_min, x_max),
