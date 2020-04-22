@@ -19,7 +19,7 @@ class Matrix(object):
         """
         Create a Sample instance
 
-        :param matrix_id: Text string used to identify the matrix
+        :param matrix_id: Text string used to identify the matrix (cannot be 'uncompensated' or 'fcs')
         :param spill_data_or_file: matrix data array, can be either:
                 - a file path or file handle to a CSV/TSF file
                 - a pathlib Path object to a CSV/TSF file
@@ -34,6 +34,13 @@ class Matrix(object):
             truly no fluorochromes used targeting those detectors and the channels
             do not contribute to compensation.
         """
+        if matrix_id == 'uncompensated' or matrix_id == 'fcs':
+            raise ValueError(
+                "Matrix IDs 'uncompensated' and 'fcs' are reserved compensation references " +
+                "used in Dimension instances to specify that channel data should either be " +
+                "uncompensated or compensated using the spill value from a Sample's metadata"
+            )
+
         if isinstance(spill_data_or_file, np.ndarray):
             spill = spill_data_or_file
         else:
