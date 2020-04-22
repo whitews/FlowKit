@@ -28,3 +28,23 @@ class PlotTestCase(unittest.TestCase):
                 pass
 
             self.assertIsInstance(p, Figure)
+
+    def test_plot_gated_scatter(self):
+        fks = fk.Session(fcs_path)
+        fks.add_sample_group('my_group', gml_path)
+
+        group_name = 'my_group'
+        sample_name = 'B07'
+        fks.assign_sample(sample_name, group_name)
+        x_dim = fk.Dimension('FL2-H', compensation_ref='MySpill', transformation_ref='Logicle_10000_0.5_4.5_0')
+        y_dim = fk.Dimension('FL3-H', compensation_ref='MySpill', transformation_ref='Logicle_10000_0.5_4.5_0')
+
+        p = fks.plot_scatter(
+            sample_name,
+            x_dim,
+            y_dim,
+            sample_group=group_name,
+            gate_id='ScaleRect1'
+        )
+
+        self.assertIsInstance(p, Figure)
