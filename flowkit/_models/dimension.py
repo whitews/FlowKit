@@ -2,14 +2,14 @@ class Dimension(object):
     def __init__(
             self,
             label,
-            compensation_ref,
+            compensation_ref='uncompensated',
             transformation_ref=None,
             range_min=None,
             range_max=None
     ):
-        # a compensation reference is required, although the value can be
-        # the string 'uncompensated' for non-compensated dimensions, or 'FCS'
-        # for using the embedded spill in the FCS file. Otherwise it is a
+        # a compensation reference is required, with the default value being
+        # the string 'uncompensated' for non-compensated dimensions. Use 'FCS'
+        # for specifying the embedded spill in the FCS file. Otherwise, it is a
         # reference to a Matrix in the GatingStrategy
         self.compensation_ref = compensation_ref
 
