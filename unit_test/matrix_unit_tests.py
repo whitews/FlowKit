@@ -1,5 +1,6 @@
 import unittest
 import numpy as np
+import flowkit as fk
 # noinspection PyProtectedMember
 from flowkit import _utils
 
@@ -36,6 +37,19 @@ fcs_spill_header = [
     'G560-A'
 ]
 
+csv_8c_comp_file_path = 'examples/8_color_data_set/den_comp.csv'
+detectors_8c = [
+    'TNFa FITC FLR-A',
+    'CD8 PerCP-Cy55 FLR-A',
+    'IL2 BV421 FLR-A',
+    'Aqua Amine FLR-A',
+    'IFNg APC FLR-A',
+    'CD3 APC-H7 FLR-A',
+    'CD107a PE FLR-A',
+    'CD4 PE-Cy7 FLR-A'
+]
+fluoros_8c = ['', '', '', '', '', '', '', '']
+
 
 class MatrixTestCase(unittest.TestCase):
     """Tests related to compensation matrices and the Matrix class"""
@@ -43,3 +57,13 @@ class MatrixTestCase(unittest.TestCase):
         matrix_array = _utils.parse_compensation_matrix(fcs_spill, fcs_spill_header)
 
         self.assertIsInstance(matrix_array, np.ndarray)
+
+    def test_parse_csv_file(self):
+        comp_mat = fk.Matrix(
+            'my_spill',
+            csv_8c_comp_file_path,
+            detectors_8c,
+            fluoros_8c
+        )
+
+        self.assertIsInstance(comp_mat, fk.Matrix)
