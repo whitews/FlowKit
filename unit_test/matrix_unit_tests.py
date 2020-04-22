@@ -65,3 +65,6 @@ class MatrixTestCase(unittest.TestCase):
         )
 
         self.assertIsInstance(comp_mat, fk.Matrix)
+
+    def test_reserved_matrix_id_uncompensated(self):
+        self.assertRaises(ValueError, fk.Matrix, 'uncompensated', fcs_spill, fcs_spill_header)
