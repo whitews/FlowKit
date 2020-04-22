@@ -6,7 +6,7 @@ import pandas as pd
 
 sys.path.append(os.path.abspath('..'))
 
-from flowkit import Session, Sample, Matrix, Dimension, gates
+from flowkit import Session, Sample, Matrix, Dimension, gates, transforms
 from .prog_gating_unit_tests import data1_sample, poly1_gate, poly1_vertices, comp_matrix_01, asinh_xform1
 
 fcs_file_paths = [
@@ -117,6 +117,20 @@ class SessionTestCase(unittest.TestCase):
         groups = fks.get_sample_groups()
 
         self.assertListEqual(groups, groups_truth)
+
+    def test_get_comp_matrix(self):
+        fks = Session(fcs_samples=data1_sample)
+        fks.add_comp_matrix(comp_matrix_01)
+        comp_mat = fks.get_comp_matrix('default', 'B07', 'MySpill')
+
+        self.assertIsInstance(comp_mat, Matrix)
+
+    def test_get_transform(self):
+        fks = Session(fcs_samples=data1_sample)
+        fks.add_transform(asinh_xform1)
+        comp_mat = fks.get_transform('default', 'B07', 'AsinH_10000_4_1')
+
+        self.assertIsInstance(comp_mat, transforms.AsinhTransform)
 
     @staticmethod
     def test_add_poly1_gate():
