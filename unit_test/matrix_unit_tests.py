@@ -48,7 +48,6 @@ detectors_8c = [
     'CD107a PE FLR-A',
     'CD4 PE-Cy7 FLR-A'
 ]
-fluoros_8c = ['', '', '', '', '', '', '', '']
 
 
 class MatrixTestCase(unittest.TestCase):
@@ -62,8 +61,7 @@ class MatrixTestCase(unittest.TestCase):
         comp_mat = fk.Matrix(
             'my_spill',
             csv_8c_comp_file_path,
-            detectors_8c,
-            fluoros_8c
+            detectors_8c
         )
 
         self.assertIsInstance(comp_mat, fk.Matrix)
