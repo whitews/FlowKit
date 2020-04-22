@@ -13,7 +13,7 @@ class Matrix(object):
             matrix_id,
             spill_data_or_file,
             detectors,
-            fluorochromes,
+            fluorochromes=None,
             null_channels=None
     ):
         """
@@ -49,6 +49,9 @@ class Matrix(object):
         self.detectors = detectors
         # Note: fluorochromes attribute is required for compatibility with GatingML exports,
         #       as the GatingML 2.0 requires both the set of detectors and fluorochromes.
+        if fluorochromes is None:
+            fluorochromes = ['' for i in detectors]
+
         self.fluorochomes = fluorochromes
 
     def __repr__(self):
@@ -58,6 +61,11 @@ class Matrix(object):
         )
 
     def apply(self, sample):
+        """
+        Apply compensation matrix to given Sample instance.
+        :param sample: Sample instance with matching set of detectors
+        :return: NumPy array of compensated events
+        """
         indices = [
             sample.get_channel_index(d) for d in self.detectors
         ]
