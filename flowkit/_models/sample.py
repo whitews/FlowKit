@@ -320,7 +320,7 @@ class Sample(object):
 
         self.subsample_indices = shuffled_indices[:self._subsample_count]
 
-    def apply_compensation(self, compensation, comp_id='fcs'):
+    def apply_compensation(self, compensation, comp_id='custom_spill'):
         """
         Applies given compensation matrix to Sample events. If any
         transformation has been applied, those events will be deleted.
