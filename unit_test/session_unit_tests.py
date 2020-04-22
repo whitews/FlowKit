@@ -7,8 +7,7 @@ import pandas as pd
 sys.path.append(os.path.abspath('..'))
 
 from flowkit import Session, Sample, Matrix, Dimension, gates
-from .prog_gating_unit_tests import data1_sample, poly1_gate, poly1_vertices, spill01_data, \
-    spill01_fluoros, spill01_detectors, asinh_xform1
+from .prog_gating_unit_tests import data1_sample, poly1_gate, poly1_vertices, comp_matrix_01, asinh_xform1
 
 fcs_file_paths = [
     "examples/100715.fcs",
@@ -135,8 +134,7 @@ class SessionTestCase(unittest.TestCase):
     def test_add_matrix_poly4_gate():
         fks = Session(fcs_samples=data1_sample)
 
-        comp_matrix = Matrix('MySpill', spill01_data, spill01_detectors, spill01_fluoros)
-        fks.add_comp_matrix(comp_matrix)
+        fks.add_comp_matrix(comp_matrix_01)
 
         dim1 = Dimension('PE', compensation_ref='MySpill')
         dim2 = Dimension('PerCP', compensation_ref='MySpill')

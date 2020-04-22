@@ -76,6 +76,7 @@ spill01_data = np.array(
         [0.09, 0.01, 1]
     ]
 )
+comp_matrix_01 = fk.Matrix('MySpill', spill01_data, spill01_detectors, spill01_fluoros)
 
 asinh_xform1 = fk.transforms.AsinhTransform(
     'AsinH_10000_4_1',
@@ -348,33 +349,33 @@ class GatingTestCase(unittest.TestCase):
 
         divs = [div1, div2, div3]
 
-        quad_1 = fk.gates.Quadrant(
+        q2_quad_1 = fk.gates.Quadrant(
             quadrant_id='FSCD-FL1P',
             divider_refs=['FSC', 'FL1'],
             divider_ranges=[(28.0654, 70.02725), (6.43567, None)]
         )
-        quad_2 = fk.gates.Quadrant(
+        q2_quad_2 = fk.gates.Quadrant(
             quadrant_id='FSCD-SSCN-FL1N',
             divider_refs=['FSC', 'SSC', 'FL1'],
             divider_ranges=[(28.0654, 70.02725), (None, 17.75), (None, 6.43567)]
         )
-        quad_3 = fk.gates.Quadrant(
+        q2_quad_3 = fk.gates.Quadrant(
             quadrant_id='FSCN-SSCN',
             divider_refs=['FSC', 'SSC'],
             divider_ranges=[(None, 28.0654), (None, 17.75)]
         )
-        quad_4 = fk.gates.Quadrant(
+        q2_quad_4 = fk.gates.Quadrant(
             quadrant_id='FSCN-SSCP-FL1P',
             divider_refs=['FSC', 'SSC', 'FL1'],
             divider_ranges=[(None, 28.0654), (17.75, None), (6.43567, None)]
         )
-        quad_5 = fk.gates.Quadrant(
+        q2_quad_5 = fk.gates.Quadrant(
             quadrant_id='FSCP-SSCN-FL1N',
             divider_refs=['FSC', 'SSC', 'FL1'],
             divider_ranges=[(70.02725, None), (None, 17.75), (None, 6.43567)]
         )
 
-        quadrants_q2 = [quad_1, quad_2, quad_3, quad_4, quad_5]
+        quadrants_q2 = [q2_quad_1, q2_quad_2, q2_quad_3, q2_quad_4, q2_quad_5]
 
         quad_gate = fk.gates.QuadrantGate('Quadrant2', None, divs, quadrants_q2)
         gs.add_gate(quad_gate)
@@ -714,8 +715,7 @@ class GatingTestCase(unittest.TestCase):
     def test_add_matrix_poly4_gate():
         gs = fk.GatingStrategy()
 
-        comp_matrix = fk.Matrix('MySpill', spill01_data, spill01_detectors, spill01_fluoros)
-        gs.add_comp_matrix(comp_matrix)
+        gs.add_comp_matrix(comp_matrix_01)
 
         dim1 = fk.Dimension('PE', compensation_ref='MySpill')
         dim2 = fk.Dimension('PerCP', compensation_ref='MySpill')
@@ -735,8 +735,7 @@ class GatingTestCase(unittest.TestCase):
     def test_add_matrix_rect3_gate():
         gs = fk.GatingStrategy()
 
-        comp_matrix = fk.Matrix('MySpill', spill01_data, spill01_detectors, spill01_fluoros)
-        gs.add_comp_matrix(comp_matrix)
+        gs.add_comp_matrix(comp_matrix_01)
 
         dim1 = fk.Dimension('FITC', compensation_ref='MySpill', range_min=5, range_max=70)
         dim2 = fk.Dimension('PE', compensation_ref='MySpill', range_min=9, range_max=208)
@@ -756,8 +755,7 @@ class GatingTestCase(unittest.TestCase):
     def test_add_matrix_rect4_gate():
         gs = fk.GatingStrategy()
 
-        comp_matrix = fk.Matrix('MySpill', spill01_data, spill01_detectors, spill01_fluoros)
-        gs.add_comp_matrix(comp_matrix)
+        gs.add_comp_matrix(comp_matrix_01)
 
         dim1 = fk.Dimension('PerCP', compensation_ref='MySpill', range_min=7, range_max=90)
         dim2 = fk.Dimension('FSC-H', compensation_ref='uncompensated', range_min=10, range_max=133)
@@ -777,8 +775,7 @@ class GatingTestCase(unittest.TestCase):
     def test_add_matrix_rect5_gate():
         gs = fk.GatingStrategy()
 
-        comp_matrix = fk.Matrix('MySpill', spill01_data, spill01_detectors, spill01_fluoros)
-        gs.add_comp_matrix(comp_matrix)
+        gs.add_comp_matrix(comp_matrix_01)
 
         dim1 = fk.Dimension('PerCP', compensation_ref='MySpill', range_min=7, range_max=90)
         dim2 = fk.Dimension('FSC-H', compensation_ref='uncompensated', range_min=10)
@@ -917,8 +914,7 @@ class GatingTestCase(unittest.TestCase):
     def test_add_matrix_transform_asinh_range1c_gate():
         gs = fk.GatingStrategy()
 
-        comp_matrix = fk.Matrix('MySpill', spill01_data, spill01_detectors, spill01_fluoros)
-        gs.add_comp_matrix(comp_matrix)
+        gs.add_comp_matrix(comp_matrix_01)
 
         gs.add_transform(asinh_xform1)
 
@@ -939,8 +935,7 @@ class GatingTestCase(unittest.TestCase):
     def test_add_matrix_transform_hyperlog_range2c_gate():
         gs = fk.GatingStrategy()
 
-        comp_matrix = fk.Matrix('MySpill', spill01_data, spill01_detectors, spill01_fluoros)
-        gs.add_comp_matrix(comp_matrix)
+        gs.add_comp_matrix(comp_matrix_01)
 
         gs.add_transform(hyperlog_xform1)
 
@@ -961,8 +956,7 @@ class GatingTestCase(unittest.TestCase):
     def test_add_matrix_transform_linear_range3c_gate():
         gs = fk.GatingStrategy()
 
-        comp_matrix = fk.Matrix('MySpill', spill01_data, spill01_detectors, spill01_fluoros)
-        gs.add_comp_matrix(comp_matrix)
+        gs.add_comp_matrix(comp_matrix_01)
 
         gs.add_transform(linear_xform1)
 
@@ -983,8 +977,7 @@ class GatingTestCase(unittest.TestCase):
     def test_add_matrix_transform_logicle_range4c_gate():
         gs = fk.GatingStrategy()
 
-        comp_matrix = fk.Matrix('MySpill', spill01_data, spill01_detectors, spill01_fluoros)
-        gs.add_comp_matrix(comp_matrix)
+        gs.add_comp_matrix(comp_matrix_01)
 
         gs.add_transform(logicle_xform1)
 
@@ -1005,8 +998,7 @@ class GatingTestCase(unittest.TestCase):
     def test_add_matrix_transform_logicle_range5c_gate():
         gs = fk.GatingStrategy()
 
-        comp_matrix = fk.Matrix('MySpill', spill01_data, spill01_detectors, spill01_fluoros)
-        gs.add_comp_matrix(comp_matrix)
+        gs.add_comp_matrix(comp_matrix_01)
 
         gs.add_transform(logicle_xform3)
 
@@ -1027,8 +1019,7 @@ class GatingTestCase(unittest.TestCase):
     def test_add_matrix_transform_asinh_range6c_gate():
         gs = fk.GatingStrategy()
 
-        comp_matrix = fk.Matrix('MySpill', spill01_data, spill01_detectors, spill01_fluoros)
-        gs.add_comp_matrix(comp_matrix)
+        gs.add_comp_matrix(comp_matrix_01)
 
         gs.add_transform(asinh_xform1)
 
@@ -1049,8 +1040,7 @@ class GatingTestCase(unittest.TestCase):
     def test_add_matrix_transform_hyperlog_range7c_gate():
         gs = fk.GatingStrategy()
 
-        comp_matrix = fk.Matrix('MySpill', spill01_data, spill01_detectors, spill01_fluoros)
-        gs.add_comp_matrix(comp_matrix)
+        gs.add_comp_matrix(comp_matrix_01)
 
         gs.add_transform(hyperlog_xform1)
 
@@ -1071,8 +1061,7 @@ class GatingTestCase(unittest.TestCase):
     def test_add_matrix_transform_logicle_range8c_gate():
         gs = fk.GatingStrategy()
 
-        comp_matrix = fk.Matrix('MySpill', spill01_data, spill01_detectors, spill01_fluoros)
-        gs.add_comp_matrix(comp_matrix)
+        gs.add_comp_matrix(comp_matrix_01)
 
         gs.add_transform(logicle_xform3)
 
@@ -1093,8 +1082,7 @@ class GatingTestCase(unittest.TestCase):
     def test_add_matrix_transform_logicle_rect1_gate():
         gs = fk.GatingStrategy()
 
-        comp_matrix = fk.Matrix('MySpill', spill01_data, spill01_detectors, spill01_fluoros)
-        gs.add_comp_matrix(comp_matrix)
+        gs.add_comp_matrix(comp_matrix_01)
 
         gs.add_transform(logicle_xform1)
 
@@ -1180,8 +1168,7 @@ class GatingTestCase(unittest.TestCase):
     def test_add_parent_rect1_rect_par1_gate():
         gs = fk.GatingStrategy()
 
-        comp_matrix = fk.Matrix('MySpill', spill01_data, spill01_detectors, spill01_fluoros)
-        gs.add_comp_matrix(comp_matrix)
+        gs.add_comp_matrix(comp_matrix_01)
 
         gs.add_transform(logicle_xform1)
         gs.add_transform(hyperlog_xform1)
@@ -1253,16 +1240,14 @@ class GatingTestCase(unittest.TestCase):
 
     def test_add_duplicate_matrix_id(self):
         gs = fk.GatingStrategy()
-        comp_matrix = fk.Matrix('MySpill', spill01_data, spill01_detectors, spill01_fluoros)
-        gs.add_comp_matrix(comp_matrix)
+        gs.add_comp_matrix(comp_matrix_01)
 
-        self.assertRaises(KeyError, gs.add_comp_matrix, comp_matrix)
+        self.assertRaises(KeyError, gs.add_comp_matrix, comp_matrix_01)
 
     def test_absolute_percent(self):
         gs = fk.GatingStrategy()
 
-        comp_matrix = fk.Matrix('MySpill', spill01_data, spill01_detectors, spill01_fluoros)
-        gs.add_comp_matrix(comp_matrix)
+        gs.add_comp_matrix(comp_matrix_01)
 
         gs.add_transform(logicle_xform1)
         gs.add_transform(hyperlog_xform1)
