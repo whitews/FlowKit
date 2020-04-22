@@ -22,6 +22,10 @@ def _parse_multiline_matrix(matrix_text, fluoro_labels):
     header = None
     header_line_index = None
     for i, line in enumerate(matrix_text):
+        # header may begin with a '#' and some white space
+        match = re.search('^#\\s*', line)
+        if match is not None:
+            line = line[match.end():]
         line_values = re.split('[\t,]', line)
 
         label_diff = set(fluoro_labels).symmetric_difference(line_values)
