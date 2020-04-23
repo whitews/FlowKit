@@ -18,21 +18,27 @@ import warnings
 
 try:
     import multiprocessing as mp
-    multi_proc = False
+    multi_proc = True
 except ImportError:
     mp = None
     multi_proc = False
 
 
 def get_samples_from_paths(sample_paths):
-    if multi_proc:
-        if len(sample_paths) < mp.cpu_count():
-            proc_count = len(sample_paths)
+    sample_count = len(sample_paths)
+    if multi_proc and sample_count > 1:
+        if sample_count < mp.cpu_count():
+            proc_count = sample_count
         else:
             proc_count = mp.cpu_count() - 1  # leave a CPU free just to be nice
 
-        pool = mp.Pool(processes=proc_count)
-        samples = pool.map(Sample, sample_paths)
+        try:
+            pool = mp.Pool(processes=proc_count)
+            samples = pool.map(Sample, sample_paths)
+        except Exception as e:
+            pool.close()
+            raise e
+        pool.close()
     else:
         samples = []
         for path in sample_paths:
@@ -89,15 +95,21 @@ def gate_samples(gating_strategies, samples, verbose):
     # TODO: Looks like multiprocessing can fail for very large workloads (lots of gates), maybe due
     #       to running out of memory. Will investigate further, but for now maybe provide an option
     #       for turning off multiprocessing so end user can avoid this issue if it occurs.
-    if multi_proc:
-        if len(samples) < mp.cpu_count():
-            proc_count = len(samples)
+    sample_count = len(samples)
+    if multi_proc and sample_count > 1:
+        if samples < mp.cpu_count():
+            proc_count = sample_count
         else:
             proc_count = mp.cpu_count() - 1  # leave a CPU free just to be nice
 
-        pool = mp.Pool(processes=proc_count)
-        data = [(gating_strategies[i], sample, verbose) for i, sample in enumerate(samples)]
-        all_results = pool.map(gate_sample, data)
+        try:
+            pool = mp.Pool(processes=proc_count)
+            data = [(gating_strategies[i], sample, verbose) for i, sample in enumerate(samples)]
+            all_results = pool.map(gate_sample, data)
+        except Exception as e:
+            pool.close()
+            raise e
+        pool.close()
     else:
         all_results = []
         for i, sample in enumerate(samples):
