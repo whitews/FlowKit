@@ -131,19 +131,45 @@ class GatingStrategy(object):
         """
         return self.comp_matrices[matrix_id]
 
-    def get_gate(self, gate_id):
+    def get_gate(self, gate_id, branches=None):
         """
         Retrieve a gate instance from its gate ID. reference gates in their parent gating
         strategy.
 
         :param gate_id: text string of a gate ID
+        :param branches: list of gate IDs for unique set of branch ancestors. Required if gate_id is ambiguous
         :return: Subclass of a Gate object
         :raises KeyError: if gate ID is not found in gating strategy
         """
         # It's not safe to just look at the gates dictionary as
         # QuadrantGate IDs cannot be parents themselves, only their component
         # Quadrant IDs can be parents.
-        node = anytree.find_by_attr(self._gate_tree, gate_id)
+        node_matches = anytree.findall_by_attr(self._gate_tree, gate_id)
+        node_match_count = len(node_matches)
+
+        if node_match_count == 1:
+            node = node_matches[0]
+        elif node_match_count > 1:
+            # need to match on branches
+            if branches is None:
+                raise ValueError(
+                    "Found multiple gates with ID %s. Provide list of parent branches to disambiguate." % gate_id
+                )
+
+            branch_matches = []
+            for n in node_matches:
+                ancestor_matches = [a.name for a in n.ancestors if a.name in branches]
+                if ancestor_matches == branches:
+                    branch_matches.append(n)
+
+            if len(branch_matches) == 1:
+                node = branch_matches[0]
+            elif len(branch_matches) > 1:
+                raise ValueError("Found multiple gates with ID %s matching list of parent branches" % gate_id)
+            else:
+                node = None
+        else:
+            node = None
 
         if node is None:
             # may be in a Quadrant gate

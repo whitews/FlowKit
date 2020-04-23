@@ -314,10 +314,10 @@ class Session(object):
         gate = template.get_gate(gate_id)
         return gate.parent
 
-    def get_gate(self, group_name, sample_id, gate_id):
+    def get_gate(self, group_name, sample_id, gate_id, branches=None):
         group = self._sample_group_lut[group_name]
         gating_strategy = group['samples'][sample_id]
-        gate = gating_strategy.get_gate(gate_id)
+        gate = gating_strategy.get_gate(gate_id, branches)
         return gate
 
     def get_gate_hierarchy(self, sample_group, output='ascii'):
