@@ -592,6 +592,7 @@ class Session(object):
             sample_group,
             sample_id,
             gate_id,
+            branches=None,
             x_min=None,
             x_max=None,
             y_min=None,
@@ -600,7 +601,7 @@ class Session(object):
     ):
         group = self._sample_group_lut[sample_group]
         gating_strategy = group['samples'][sample_id]
-        gate = gating_strategy.get_gate(gate_id)
+        gate = gating_strategy.get_gate(gate_id, branches)
 
         # dim count determines if we need a histogram, scatter, or multi-scatter
         dim_count = len(gate.dimensions)
@@ -653,6 +654,8 @@ class Session(object):
                 dim_labels.append(sample_to_plot.pnn_labels[y_index])
 
         plot_title = "%s - %s - %s" % (sample_id, sample_group, gate_id)
+        if branches is not None:
+            plot_title += " [" + ", ".join(branches) + "]"
 
         if gate_type == 'scatter':
             y = events[idx_to_plot, dim_idx[1]]
