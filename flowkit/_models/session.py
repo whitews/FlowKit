@@ -97,7 +97,7 @@ def gate_samples(gating_strategies, samples, verbose):
     #       for turning off multiprocessing so end user can avoid this issue if it occurs.
     sample_count = len(samples)
     if multi_proc and sample_count > 1:
-        if samples < mp.cpu_count():
+        if sample_count < mp.cpu_count():
             proc_count = sample_count
         else:
             proc_count = mp.cpu_count() - 1  # leave a CPU free just to be nice
