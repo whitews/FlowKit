@@ -448,6 +448,9 @@ class Session(object):
         gating_result = self._results_lut[sample_group]['samples'][sample_id]
         return copy.deepcopy(gating_result)
 
+    def get_group_report(self, sample_group):
+        return self._results_lut[sample_group]['report']
+
     def get_gate_indices(self, sample_group, sample_id, gate_id):
         gating_result = self._results_lut[sample_group]['samples'][sample_id]
         return gating_result.get_gate_indices(gate_id)
