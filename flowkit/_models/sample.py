@@ -29,7 +29,7 @@ class Sample(object):
         - a pathlib Path object
         - a FlowIO FlowData object
         - a NumPy array of FCS event data (must provide channel_labels)
-        - a Pandas DataFrame containing FCS event data (channel labels as headers)
+        - a Pandas DataFrame containing FCS event data (channel labels as column labels)
 
     :param channel_labels: A list of strings or a list of tuples to use for the channel
         labels. Required if fcs_path_or_data is a NumPy array
@@ -72,6 +72,15 @@ class Sample(object):
             flowio.create_fcs(
                 fcs_path_or_data.flatten().tolist(),
                 channel_names=channel_labels,
+                file_handle=tmp_file
+            )
+
+            flow_data = flowio.FlowData(tmp_file)
+        elif isinstance(fcs_path_or_data, pd.DataFrame):
+            tmp_file = TemporaryFile()
+            flowio.create_fcs(
+                fcs_path_or_data.values.flatten().tolist(),
+                channel_names=fcs_path_or_data.columns,
                 file_handle=tmp_file
             )
 
