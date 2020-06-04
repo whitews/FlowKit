@@ -9,7 +9,8 @@ import pandas as pd
 from scipy import stats
 from matplotlib import pyplot
 # noinspection PyUnresolvedReferences, PyProtectedMember
-from flowkit import utils_c, _plot_utils
+from flowkit import utils_c
+from flowkit._utils import plot_utils
 import flowutils
 
 
@@ -314,7 +315,7 @@ def filter_anomalous_events(
             fig = pyplot.figure(figsize=(16, 12))
             ax = fig.add_subplot(4, 1, 1)
 
-            _plot_utils.plot_channel(chan_events, " - ".join([str(i + 1), label]), ax, xform=False)
+            plot_utils.plot_channel(chan_events, " - ".join([str(i + 1), label]), ax, xform=False)
 
             ax = fig.add_subplot(4, 1, 2)
             ax.set_title(

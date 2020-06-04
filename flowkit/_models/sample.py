@@ -11,7 +11,8 @@ import numpy as np
 import pandas as pd
 from flowkit._models.transforms import transforms
 from flowkit._models.transforms.matrix import Matrix
-from .. import _utils, _plot_utils
+from .._utils import utils
+from .._utils import plot_utils
 import matplotlib.pyplot as plt
 import seaborn
 from bokeh.layouts import gridplot
@@ -266,7 +267,7 @@ class Sample(object):
         for idx in eval_indices:
             eval_labels.append(self.pnn_labels[idx])
 
-        anomalous_idx = _utils.filter_anomalous_events(
+        anomalous_idx = utils.filter_anomalous_events(
             xform_events[:, eval_indices],
             eval_labels,
             rng=rng,
@@ -604,8 +605,8 @@ class Sample(object):
         x = self.get_channel_data(x_index, source=source, subsample=subsample)
         y = self.get_channel_data(y_index, source=source, subsample=subsample)
 
-        x_min, x_max = _plot_utils.calculate_extent(x, d_min=x_min, d_max=x_max, pad=0.02)
-        y_min, y_max = _plot_utils.calculate_extent(y, d_min=y_min, d_max=y_max, pad=0.02)
+        x_min, x_max = plot_utils.calculate_extent(x, d_min=x_min, d_max=x_max, pad=0.02)
+        y_min, y_max = plot_utils.calculate_extent(y, d_min=y_min, d_max=y_max, pad=0.02)
 
         fig, ax = plt.subplots(figsize=fig_size)
         ax.set_title(self.original_filename)
@@ -619,7 +620,7 @@ class Sample(object):
             seaborn.scatterplot(
                 x,
                 y,
-                palette=_plot_utils.new_jet,
+                palette=plot_utils.new_jet,
                 legend=False,
                 s=5,
                 linewidth=0,
@@ -631,7 +632,7 @@ class Sample(object):
                 x,
                 y,
                 bw='scott',
-                cmap=_plot_utils.new_jet,
+                cmap=plot_utils.new_jet,
                 linewidths=2,
                 alpha=1
             )
@@ -700,7 +701,7 @@ class Sample(object):
         else:
             dim_labels.append(self.pnn_labels[y_index])
 
-        p = _plot_utils.plot_scatter(
+        p = plot_utils.plot_scatter(
             x,
             y,
             dim_labels,
@@ -806,7 +807,7 @@ class Sample(object):
         channel_index = self.get_channel_index(channel_label_or_number)
         channel_data = self.get_channel_data(channel_index, source=source, subsample=subsample)
 
-        p = _plot_utils.plot_histogram(
+        p = plot_utils.plot_histogram(
             channel_data,
             x_label=self.pnn_labels[channel_index],
             bins=bins,

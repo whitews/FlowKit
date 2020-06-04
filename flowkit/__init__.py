@@ -6,8 +6,8 @@ from ._models.gating_strategy import GatingStrategy
 from ._models.session import Session
 from ._models.dimension import Dimension, RatioDimension, QuadrantDivider
 from ._models.vertex import Vertex
-from ._xml_utils import parse_gating_xml, export_gatingml
-from ._plot_utils import plot_channel
+from ._utils.xml_utils import parse_gating_xml, export_gatingml
+from ._utils.plot_utils import plot_channel
 
 __all__ = [
     'Sample',

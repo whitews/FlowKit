@@ -1,6 +1,6 @@
 import numpy as np
 import flowutils
-from ... import _utils
+from ..._utils import utils
 
 
 class Matrix(object):
@@ -44,7 +44,7 @@ class Matrix(object):
         if isinstance(spill_data_or_file, np.ndarray):
             spill = spill_data_or_file
         else:
-            spill = _utils.parse_compensation_matrix(
+            spill = utils.parse_compensation_matrix(
                 spill_data_or_file,
                 detectors,
                 null_channels=null_channels

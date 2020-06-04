@@ -13,7 +13,8 @@ from MulticoreTSNE import MulticoreTSNE
 import seaborn
 from matplotlib import cm
 import matplotlib.pyplot as plt
-from flowkit import Sample, GatingStrategy, Matrix, gates, _xml_utils, _plot_utils
+from flowkit import Sample, GatingStrategy, Matrix, gates
+from .._utils import plot_utils, xml_utils
 import warnings
 
 try:
@@ -160,7 +161,7 @@ class Session(object):
             gating_strategy = gating_strategy
         elif isinstance(gating_strategy, str) or isinstance(gating_strategy, io.IOBase):
             # assume a path to an XML file representing either a GatingML document or FlowJo workspace
-            gating_strategy = _xml_utils.parse_gating_xml(gating_strategy)
+            gating_strategy = xml_utils.parse_gating_xml(gating_strategy)
         elif gating_strategy is None:
             gating_strategy = GatingStrategy()
         else:
@@ -198,7 +199,7 @@ class Session(object):
         :param workspace_file_or_path: WSP workspace file as a file name/path, file object, or file-like object
         :return: None
         """
-        wsp_sample_groups = _xml_utils.parse_wsp(workspace_file_or_path)
+        wsp_sample_groups = xml_utils.parse_wsp(workspace_file_or_path)
         for group_name, sample_data in wsp_sample_groups.items():
             for sample, data_dict in sample_data.items():
                 if sample not in self.sample_lut:
@@ -366,7 +367,7 @@ class Session(object):
             gating_strategy = group['samples'][sample_id]
         else:
             gating_strategy = group['template']
-        _xml_utils.export_gatingml(gating_strategy, file_handle)
+        xml_utils.export_gatingml(gating_strategy, file_handle)
 
     def get_sample(self, sample_id):
         return self.sample_lut[sample_id]
@@ -593,8 +594,8 @@ class Session(object):
 
                 # determine padding to keep min/max events off the edge,
                 # but only if user didn't specify the limits
-                x_min, x_max = _plot_utils.calculate_extent(x, d_min=x_min, d_max=x_max, pad=0.02)
-                y_min, y_max = _plot_utils.calculate_extent(y, d_min=y_min, d_max=y_max, pad=0.02)
+                x_min, x_max = plot_utils.calculate_extent(x, d_min=x_min, d_max=x_max, pad=0.02)
+                y_min, y_max = plot_utils.calculate_extent(y, d_min=y_min, d_max=y_max, pad=0.02)
 
                 z = s_results['events'][:, i]
                 z_sort = np.argsort(z)
@@ -720,7 +721,7 @@ class Session(object):
         if gate_type == 'scatter':
             y = events[idx_to_plot, dim_idx[1]]
 
-            p = _plot_utils.plot_scatter(
+            p = plot_utils.plot_scatter(
                 x,
                 y,
                 dim_labels,
@@ -732,15 +733,15 @@ class Session(object):
                 color_density=color_density
             )
         elif gate_type == 'hist':
-            p = _plot_utils.plot_histogram(x, dim_labels[0], title=plot_title)
+            p = plot_utils.plot_histogram(x, dim_labels[0], title=plot_title)
         else:
             raise NotImplementedError("Only histograms and scatter plots are supported in this version of FlowKit")
 
         if isinstance(gate, gates.PolygonGate):
-            source, glyph = _plot_utils.render_polygon(gate.vertices)
+            source, glyph = plot_utils.render_polygon(gate.vertices)
             p.add_glyph(source, glyph)
         elif isinstance(gate, gates.EllipsoidGate):
-            ellipse = _plot_utils.calculate_ellipse(
+            ellipse = plot_utils.calculate_ellipse(
                 gate.coordinates[0],
                 gate.coordinates[1],
                 gate.covariance_matrix,
@@ -752,12 +753,12 @@ class Session(object):
             # are options. So, if any of the dim min/max values are missing it is essentially a set of ranges.
 
             if None in dim_min or None in dim_max or dim_count == 1:
-                renderers = _plot_utils.render_ranges(dim_min, dim_max)
+                renderers = plot_utils.render_ranges(dim_min, dim_max)
 
                 p.renderers.extend(renderers)
             else:
                 # a true rectangle
-                rect = _plot_utils.render_rectangle(dim_min, dim_max)
+                rect = plot_utils.render_rectangle(dim_min, dim_max)
                 p.add_glyph(rect)
         elif isinstance(gate, gates.QuadrantGate):
             x_locations = []
@@ -769,7 +770,7 @@ class Session(object):
                 elif div.dimension_ref == y_pnn_label and y_pnn_label is not None:
                     y_locations.extend(div.values)
 
-            renderers = _plot_utils.render_dividers(x_locations, y_locations)
+            renderers = plot_utils.render_dividers(x_locations, y_locations)
             p.renderers.extend(renderers)
         else:
             raise NotImplementedError(
@@ -878,7 +879,7 @@ class Session(object):
         else:
             dim_labels.append(sample.pnn_labels[y_index])
 
-        p = _plot_utils.plot_scatter(
+        p = plot_utils.plot_scatter(
             x,
             y,
             dim_labels,

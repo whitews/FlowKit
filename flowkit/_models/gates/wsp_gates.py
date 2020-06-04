@@ -1,6 +1,6 @@
 import numpy as np
 from flowkit._models import gates
-from flowkit import _xml_utils, _utils
+from ..._utils import utils, xml_utils
 
 
 class WSPEllipsoidGate(gates.EllipsoidGate):
@@ -19,7 +19,7 @@ class WSPEllipsoidGate(gates.EllipsoidGate):
             gating_namespace,
             data_type_namespace
     ):
-        gate_id, parent_id, dimensions = _xml_utils.parse_gate_element(
+        gate_id, parent_id, dimensions = xml_utils.parse_gate_element(
             gate_element,
             gating_namespace,
             data_type_namespace
@@ -62,7 +62,7 @@ class WSPEllipsoidGate(gates.EllipsoidGate):
             coordinates = []
 
             for coord_el in coord_els:
-                value = _xml_utils.find_attribute_value(coord_el, data_type_namespace, 'value')
+                value = xml_utils.find_attribute_value(coord_el, data_type_namespace, 'value')
                 if value is None:
                     raise ValueError(
                         'A coordinate must have only 1 value (line %d)' % coord_el.sourceline
@@ -99,7 +99,7 @@ class WSPEllipsoidGate(gates.EllipsoidGate):
             coordinates = []
 
             for coord_el in coord_els:
-                value = _xml_utils.find_attribute_value(coord_el, data_type_namespace, 'value')
+                value = xml_utils.find_attribute_value(coord_el, data_type_namespace, 'value')
                 if value is None:
                     raise ValueError(
                         'A coordinate must have only 1 value (line %d)' % coord_el.sourceline
@@ -117,8 +117,8 @@ class WSPEllipsoidGate(gates.EllipsoidGate):
         cos, sin = np.cos(theta_rad), np.sin(theta_rad)
         r = np.array(((cos, -sin), (sin, cos)))
 
-        rv1 = _utils.rotate_point_around_point(edge_vertices[0], r, center)
-        rv3 = _utils.rotate_point_around_point(edge_vertices[2], r, center)
+        rv1 = utils.rotate_point_around_point(edge_vertices[0], r, center)
+        rv3 = utils.rotate_point_around_point(edge_vertices[2], r, center)
 
         # (((x - cx) ** 2) / a ** 2) + (((y - cy) ** 2) / b ** 2) = 1
         # let:
