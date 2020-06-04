@@ -36,6 +36,7 @@ def get_samples_from_paths(sample_paths):
             pool = mp.Pool(processes=proc_count)
             samples = pool.map(Sample, sample_paths)
         except Exception as e:
+            # noinspection PyUnboundLocalVariable
             pool.close()
             raise e
         pool.close()
@@ -107,6 +108,7 @@ def gate_samples(gating_strategies, samples, verbose):
             data = [(gating_strategies[i], sample, verbose) for i, sample in enumerate(samples)]
             all_results = pool.map(gate_sample, data)
         except Exception as e:
+            # noinspection PyUnboundLocalVariable
             pool.close()
             raise e
         pool.close()
@@ -145,7 +147,7 @@ class Session(object):
         """
         Create a new sample group to the session. The group name must be unique to the session.
 
-        :param group_name: an instance of the Matrix class
+        :param group_name: a text string representing the sample group
         :param gating_strategy: a gating strategy instance to use for the group template. If None, then a new, blank
             gating strategy will be created.
         :return: None
@@ -224,11 +226,9 @@ class Session(object):
 
     def add_samples(self, samples):
         """
-        Adds FCS samples to the session.
+        Adds FCS samples to the session. All added samples will be added to the 'default' sample group.
 
-        :param samples: an instance of the Matrix class
-        :param gating_strategy: a gating strategy instance to use for the group template. If None, then a new, blank
-            gating strategy will be created.
+        :param samples: a list of Sample instances
         :return: None
         """
         new_samples = load_samples(samples)
@@ -246,6 +246,13 @@ class Session(object):
             self.assign_sample(s.original_filename, 'default')
 
     def assign_sample(self, sample_id, group_name):
+        """
+        Assigns a sample ID to a sample group. Samples can belong to more than one sample group.
+
+        :param sample_id: Sample ID to assign to the specified sample group
+        :param group_name: name of sample group to which the sample will be assigned
+        :return: None
+        """
         group = self._sample_group_lut[group_name]
         if sample_id in group['samples']:
             warnings.warn("Sample %s is already assigned to the group %s...nothing changed" % (sample_id, group_name))
@@ -254,12 +261,25 @@ class Session(object):
         group['samples'][sample_id] = copy.deepcopy(template)
 
     def get_sample_ids(self):
+        """
+        Retrieve the list of Sample IDs that have been loaded or referenced in the Session
+        :return: list of Sample ID strings
+        """
         return list(self.sample_lut.keys())
 
     def get_sample_groups(self):
+        """
+        Retrieve the list of sample group labels defined in the Session
+        :return: list of sample group ID strings
+        """
         return list(self._sample_group_lut.keys())
 
     def get_group_samples(self, sample_group):
+        """
+        Retrieve the list of Sample instances belonging to the specified sample group
+        :param sample_group:
+        :return: list of Sample instances
+        """
         sample_ids = self._sample_group_lut[sample_group]['samples'].keys()
 
         samples = []
@@ -269,6 +289,10 @@ class Session(object):
         return samples
 
     def get_gate_ids(self, sample_group):
+        """
+        Retrieve the list of gate IDs defined in the specified sample group
+        :return: list of gate ID strings
+        """
         group = self._sample_group_lut[sample_group]
         template = group['template']
         return template.get_gate_ids()
@@ -614,6 +638,27 @@ class Session(object):
             y_max=None,
             color_density=True
     ):
+        """
+        Returns an interactive plot for the specified gate. The type of plot is determined by the number of
+         dimensions used to define the gate: single dimension gates will be histograms, 2-D gates will be returned
+         as a scatter plot.
+
+        :param sample_group: The sample group containing the sample ID (and, optionally the gate ID)
+        :param sample_id: The sample ID for the FCS sample to plot
+        :param gate_id: Gate ID to filter events (only events within the given gate will be plotted)
+        :param branches: list of gate IDs for unique set of branch ancestors. Required if gate_id is ambiguous
+        :param x_min: Lower bound of x-axis. If None, channel's min value will
+            be used with some padding to keep events off the edge of the plot.
+        :param x_max: Upper bound of x-axis. If None, channel's max value will
+            be used with some padding to keep events off the edge of the plot.
+        :param y_min: Lower bound of y-axis. If None, channel's min value will
+            be used with some padding to keep events off the edge of the plot.
+        :param y_max: Upper bound of y-axis. If None, channel's max value will
+            be used with some padding to keep events off the edge of the plot.
+        :param color_density: Whether to color the events by density, similar
+            to a heat map. Default is True.
+        :return: A Bokeh Figure object containing the interactive scatter plot.
+        """
         group = self._sample_group_lut[sample_group]
         gating_strategy = group['samples'][sample_id]
         gate = gating_strategy.get_gate(gate_id, branches)
