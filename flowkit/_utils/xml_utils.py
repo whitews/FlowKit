@@ -946,8 +946,13 @@ def _recurse_wsp_sub_populations(sub_pop_el, parent_id, gating_ns, data_type_ns)
 
         # replace ID and parent ID with population names, but save the originals
         # so we can re-create the correct hierarchy later.
-        g.uid = g.id
-        g.parent_uid = g.parent
+        # NOTE: Some wsp files have the ID as an attribute of the GatingML-style sub-element,
+        #       though it isn't always the case. However, it seems the ID is reliably included
+        #       in the parent "Gate" element, saved here in the 'gate_el' variable.
+        #       Likewise for parent_id
+        gate_id = find_attribute_value(gate_el, gating_ns, 'id')
+        g.uid = gate_id
+        g.parent_uid = find_attribute_value(gate_el, gating_ns, 'parent_id')
         g.id = pop_name
         g.parent = parent_id
 
