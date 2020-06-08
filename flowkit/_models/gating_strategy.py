@@ -47,7 +47,7 @@ class GatingStrategy(object):
         if parent_id is None:
             parent_id = 'root'
 
-        # TODO: check for uniqueness of gate ID + branch tuple combo
+        # TODO: check for uniqueness of gate ID + gate path combo
         matched_nodes = anytree.findall(
             self._gate_tree,
             filter_=lambda g_node:
@@ -67,7 +67,7 @@ class GatingStrategy(object):
                 # TODO: could be in a quadrant gate
                 raise ValueError("Parent gate %s does not exist in the gating strategy" % parent_id)
             elif len(matching_nodes) > 1:
-                raise ValueError("Multiple gates exist matching parent ID %s, specify branch" % parent_id)
+                raise ValueError("Multiple gates exist matching parent ID %s, specify full gate path" % parent_id)
 
             parent_node = matching_nodes[0]
 
@@ -131,13 +131,13 @@ class GatingStrategy(object):
         """
         return self.comp_matrices[matrix_id]
 
-    def get_gate(self, gate_id, branches=None):
+    def get_gate(self, gate_id, gate_path=None):
         """
         Retrieve a gate instance from its gate ID. reference gates in their parent gating
         strategy.
 
         :param gate_id: text string of a gate ID
-        :param branches: list of gate IDs for unique set of branch ancestors. Required if gate_id is ambiguous
+        :param gate_path: complete list of gate IDs for unique set of gate ancestors. Required if gate_id is ambiguous
         :return: Subclass of a Gate object
         :raises KeyError: if gate ID is not found in gating strategy
         """
@@ -150,25 +150,25 @@ class GatingStrategy(object):
         if node_match_count == 1:
             node = node_matches[0]
         elif node_match_count > 1:
-            # need to match on branches
-            if branches is None:
+            # need to match on full gate path
+            if gate_path is None:
                 raise ValueError(
-                    "Found multiple gates with ID %s. Provide list of parent branches to disambiguate." % gate_id
+                    "Found multiple gates with ID %s. Provide full 'gate_path' to disambiguate." % gate_id
                 )
 
-            branch_matches = []
-            branch_length = len(branches)
+            gate_matches = []
+            gate_path_length = len(gate_path)
             for n in node_matches:
-                if len(n.ancestors) != branch_length:
+                if len(n.ancestors) != gate_path_length:
                     continue
-                ancestor_matches = [a.name for a in n.ancestors if a.name in branches]
-                if ancestor_matches == branches:
-                    branch_matches.append(n)
+                ancestor_matches = [a.name for a in n.ancestors if a.name in gate_path]
+                if ancestor_matches == gate_path:
+                    gate_matches.append(n)
 
-            if len(branch_matches) == 1:
-                node = branch_matches[0]
-            elif len(branch_matches) > 1:
-                raise ValueError("Found multiple gates with ID %s matching list of parent branches" % gate_id)
+            if len(gate_matches) == 1:
+                node = gate_matches[0]
+            elif len(gate_matches) > 1:
+                raise ValueError("Report as bug: Found multiple gates with ID %s and given gate path." % gate_id)
             else:
                 node = None
         else:
@@ -434,7 +434,8 @@ class GatingResults(object):
         """
         gate_paths = self._gate_lut[gate_id]['paths']
         if len(gate_paths) > 1:
-            raise ValueError("Gate ID %s is ambiguous, specify a specific branch")
+            # TODO: implement gate_path argument
+            raise ValueError("Gate ID %s is ambiguous, specify the full gate path")
 
         gate_path = gate_paths[0]
 
