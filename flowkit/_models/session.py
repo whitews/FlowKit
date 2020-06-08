@@ -11,6 +11,7 @@ from sklearn.preprocessing import StandardScaler
 import statsmodels.api as sm
 from MulticoreTSNE import MulticoreTSNE
 import seaborn
+from bokeh.models import Title
 from matplotlib import cm
 import matplotlib.pyplot as plt
 from flowkit import Sample, GatingStrategy, Matrix, gates
@@ -714,10 +715,6 @@ class Session(object):
             else:
                 dim_labels.append(sample_to_plot.pnn_labels[y_index])
 
-        plot_title = "%s - %s - %s" % (sample_id, sample_group, gate_id)
-        if gate_path is not None:
-            plot_title += " [" + ", ".join(gate_path) + "]"
-
         if gate_type == 'scatter':
             y = events[idx_to_plot, dim_idx[1]]
 
@@ -725,7 +722,6 @@ class Session(object):
                 x,
                 y,
                 dim_labels,
-                title=plot_title,
                 x_min=x_min,
                 x_max=x_max,
                 y_min=y_min,
@@ -733,7 +729,7 @@ class Session(object):
                 color_density=color_density
             )
         elif gate_type == 'hist':
-            p = plot_utils.plot_histogram(x, dim_labels[0], title=plot_title)
+            p = plot_utils.plot_histogram(x, dim_labels[0])
         else:
             raise NotImplementedError("Only histograms and scatter plots are supported in this version of FlowKit")
 
@@ -776,6 +772,26 @@ class Session(object):
             raise NotImplementedError(
                 "Plotting of %s gates is not supported in this version of FlowKit" % gate.__class__
             )
+
+        if gate_path is not None:
+            full_gate_path = gate_path[1:]  # omit 'root'
+            full_gate_path.append(gate_id)
+            sub_title = ' > '.join(full_gate_path)
+            p.add_layout(
+                Title(text=sub_title, text_font_style="italic", text_font_size="1em", align='center'),
+                'above'
+            )
+        else:
+            p.add_layout(
+                Title(text=gate_id, text_font_style="italic", text_font_size="1em", align='center'),
+                'above'
+            )
+
+        plot_title = "%s (%s)" % (sample_id, sample_group)
+        p.add_layout(
+            Title(text=plot_title, text_font_size="1.1em", align='center'),
+            'above'
+        )
 
         return p
 
@@ -883,12 +899,13 @@ class Session(object):
             x,
             y,
             dim_labels,
-            title=sample.original_filename,
             x_min=x_min,
             x_max=x_max,
             y_min=y_min,
             y_max=y_max,
             color_density=color_density
         )
+
+        p.title = Title(text=sample.original_filename, align='center')
 
         return p

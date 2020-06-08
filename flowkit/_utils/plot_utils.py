@@ -241,7 +241,7 @@ def plot_histogram(x, x_label='x', bins=None, title=None):
 
     tools = "crosshair,hover,pan,zoom_in,zoom_out,box_zoom,undo,redo,reset,save,"
 
-    p = figure(title=title, tools=tools)
+    p = figure(tools=tools)
     p.title.align = 'center'
     p.quad(
         top=hist,
@@ -262,7 +262,6 @@ def plot_scatter(
         x,
         y,
         dim_labels=None,
-        title=None,
         x_min=None,
         x_max=None,
         y_min=None,
@@ -306,10 +305,8 @@ def plot_scatter(
     p = figure(
         tools=tools,
         x_range=(x_min, x_max),
-        y_range=(y_min, y_max),
-        title=title
+        y_range=(y_min, y_max)
     )
-    p.title.align = 'center'
 
     p.xaxis.axis_label = dim_labels[0]
     p.yaxis.axis_label = dim_labels[1]

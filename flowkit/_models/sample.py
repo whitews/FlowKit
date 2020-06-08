@@ -16,6 +16,7 @@ from .._utils import plot_utils
 import matplotlib.pyplot as plt
 import seaborn
 from bokeh.layouts import gridplot
+from bokeh.models import Title
 import warnings
 
 
@@ -705,13 +706,14 @@ class Sample(object):
             x,
             y,
             dim_labels,
-            title=self.original_filename,
             x_min=x_min,
             x_max=x_max,
             y_min=y_min,
             y_max=y_max,
             color_density=color_density
         )
+
+        p.title = Title(text=self.original_filename, align='center')
 
         return p
 
@@ -810,9 +812,10 @@ class Sample(object):
         p = plot_utils.plot_histogram(
             channel_data,
             x_label=self.pnn_labels[channel_index],
-            bins=bins,
-            title=self.original_filename
+            bins=bins
         )
+
+        p.title = Title(text=self.original_filename, align='center')
 
         return p
 
