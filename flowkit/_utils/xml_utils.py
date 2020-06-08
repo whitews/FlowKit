@@ -10,7 +10,7 @@ from flowkit._resources import gml_schema
 from flowkit._models.dimension import Dimension, RatioDimension, QuadrantDivider
 from flowkit._models.vertex import Vertex
 from flowkit._models.gating_strategy import GatingStrategy
-from flowkit._models.transforms import transforms, gml_transforms
+from flowkit._models.transforms import transforms, gml_transforms, wsp_transforms
 from flowkit._models.transforms.matrix import Matrix
 from flowkit._models.gates.gml_gates import \
     GMLBooleanGate, \
@@ -997,8 +997,13 @@ def _parse_wsp_transforms(transforms_el, transform_ns, data_type_ns):
                 param_a=float(min_range)
             )
         elif xform_type == 'log':
-            # TODO: implement log transform
-            pass
+            offset = find_attribute_value(xform_el, transform_ns, 'offset')
+            decades = find_attribute_value(xform_el, transform_ns, 'decades')
+            xforms_lut[param_name] = wsp_transforms.WSPLogTransform(
+                param_name,
+                offset=float(offset),
+                decades=float(decades)
+            )
         elif xform_type == 'logicle':
             # logicle transform has 4 parameters: T, W, M, and A
             # these are attributes of the 'logicle' element
