@@ -157,7 +157,10 @@ class GatingStrategy(object):
                 )
 
             branch_matches = []
+            branch_length = len(branches)
             for n in node_matches:
+                if len(n.ancestors) != branch_length:
+                    continue
                 ancestor_matches = [a.name for a in n.ancestors if a.name in branches]
                 if ancestor_matches == branches:
                     branch_matches.append(n)
