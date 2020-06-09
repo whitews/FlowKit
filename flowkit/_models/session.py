@@ -777,6 +777,10 @@ class Session(object):
             full_gate_path = gate_path[1:]  # omit 'root'
             full_gate_path.append(gate_id)
             sub_title = ' > '.join(full_gate_path)
+
+            # truncate beginning of long gate paths
+            if len(sub_title) > 72:
+                sub_title = '...' + sub_title[-69:]
             p.add_layout(
                 Title(text=sub_title, text_font_style="italic", text_font_size="1em", align='center'),
                 'above'
