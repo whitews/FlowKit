@@ -1,5 +1,6 @@
 import unittest
 import numpy as np
+import pandas as pd
 import flowkit as fk
 # noinspection PyProtectedMember
 from flowkit._utils import utils
@@ -48,6 +49,16 @@ detectors_8c = [
     'CD107a PE FLR-A',
     'CD4 PE-Cy7 FLR-A'
 ]
+fluorochromes_8c = [
+    'TNFa',
+    'CD8',
+    'IL2',
+    'Aqua Amine',
+    'IFNg',
+    'CD3',
+    'CD107a',
+    'CD4'
+]
 
 
 class MatrixTestCase(unittest.TestCase):
@@ -65,6 +76,23 @@ class MatrixTestCase(unittest.TestCase):
         )
 
         self.assertIsInstance(comp_mat, fk.Matrix)
+
+    def test_matrix_as_dataframe(self):
+        comp_mat = fk.Matrix(
+            'my_spill',
+            csv_8c_comp_file_path,
+            detectors_8c,
+            fluorochromes=fluorochromes_8c
+        )
+
+        # test with detectors as labels
+        comp_df_detectors = comp_mat.as_dataframe()
+
+        # test with fluorochromes as labels
+        comp_df_fluorochromes = comp_mat.as_dataframe(fluoro_labels=True)
+
+        self.assertIsInstance(comp_df_detectors, pd.DataFrame)
+        self.assertIsInstance(comp_df_fluorochromes, pd.DataFrame)
 
     def test_reserved_matrix_id_uncompensated(self):
         self.assertRaises(ValueError, fk.Matrix, 'uncompensated', fcs_spill, fcs_spill_header)
