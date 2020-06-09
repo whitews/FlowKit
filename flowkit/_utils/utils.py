@@ -8,10 +8,10 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 from matplotlib import pyplot
-# noinspection PyUnresolvedReferences, PyProtectedMember
-from flowkit import utils_c
-from flowkit._utils import plot_utils
 import flowutils
+# noinspection PyUnresolvedReferences, PyProtectedMember
+from .. import utils_c
+from .._utils import plot_utils
 
 
 def _parse_multiline_matrix(matrix_text, fluoro_labels):

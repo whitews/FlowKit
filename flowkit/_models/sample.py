@@ -9,15 +9,15 @@ import io
 from tempfile import TemporaryFile
 import numpy as np
 import pandas as pd
-from flowkit._models.transforms import transforms
-from flowkit._models.transforms.matrix import Matrix
-from .._utils import utils
-from .._utils import plot_utils
 import matplotlib.pyplot as plt
 import seaborn
 from bokeh.layouts import gridplot
 from bokeh.models import Title
 import warnings
+from .._models.transforms import transforms
+from .._models.transforms.matrix import Matrix
+from .._utils import utils
+from .._utils import plot_utils
 
 
 class Sample(object):

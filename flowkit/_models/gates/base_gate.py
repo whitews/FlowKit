@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import numpy as np
-from flowkit import Matrix
-from flowkit._models import gates, dimension
+from ..transforms.matrix import Matrix
+from .. import gates, dimension
 
 
 class Gate(ABC):

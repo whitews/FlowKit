@@ -1,4 +1,7 @@
-from flowkit._models import gates
+"""
+Module for GatingML gate classes
+"""
+from .. import gates
 from ..._utils import xml_utils
 
 

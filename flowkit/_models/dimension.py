@@ -1,7 +1,6 @@
 """
 Dimension class
 """
-import flowkit as fk
 
 
 class Dimension(object):

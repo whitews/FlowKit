@@ -6,20 +6,20 @@ import numpy as np
 from lxml import etree
 import anytree
 import re
-from flowkit._resources import gml_schema
-from flowkit._models.dimension import Dimension, RatioDimension, QuadrantDivider
-from flowkit._models.vertex import Vertex
-from flowkit._models.gating_strategy import GatingStrategy
-from flowkit._models.transforms import transforms, gml_transforms, wsp_transforms
-from flowkit._models.transforms.matrix import Matrix
-from flowkit._models.gates.gml_gates import \
+from .._resources import gml_schema
+from .._models.dimension import Dimension, RatioDimension, QuadrantDivider
+from .._models.vertex import Vertex
+from .._models.gating_strategy import GatingStrategy
+from .._models.transforms import transforms, gml_transforms, wsp_transforms
+from .._models.transforms.matrix import Matrix
+from .._models.gates.gml_gates import \
     GMLBooleanGate, \
     GMLEllipsoidGate, \
     GMLQuadrantGate, \
     GMLPolygonGate, \
     GMLRectangleGate
-from flowkit._models.gates.wsp_gates import WSPEllipsoidGate
-from flowkit._models.gates.gates import \
+from .._models.gates.wsp_gates import WSPEllipsoidGate
+from .._models.gates.gates import \
     BooleanGate, \
     EllipsoidGate, \
     Quadrant, \

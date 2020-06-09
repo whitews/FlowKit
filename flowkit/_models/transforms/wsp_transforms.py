@@ -2,7 +2,7 @@
 Transform classes compatible with FlowJo 10
 """
 import numpy as np
-from.base_transform import Transform
+from .base_transform import Transform
 
 
 class WSPLogTransform(Transform):
@@ -31,6 +31,12 @@ class WSPLogTransform(Transform):
         )
 
     def apply(self, events):
+        """
+        Apply transform to given events.
+
+        :param events: NumPy array of FCS event data
+        :return: NumPy array of transformed events
+        """
         new_events = np.copy(events)
         new_events[new_events < self.offset] = self.offset
         new_events = 1. / self.decades * (np.log10(new_events) - np.log10(self.offset))

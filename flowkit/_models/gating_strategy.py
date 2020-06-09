@@ -5,9 +5,9 @@ import json
 import anytree
 from anytree.exporter import DotExporter
 import pandas as pd
-from flowkit import Matrix
-from flowkit import gates as fk_gates
-from flowkit import transforms as fk_transforms
+from .._models import gates as fk_gates
+from .._models.transforms.base_transform import Transform
+from .._models.transforms.matrix import Matrix
 
 
 class GatingStrategy(object):
@@ -88,7 +88,7 @@ class GatingStrategy(object):
         :param transform: instance from a sub-class of the Transform class
         :return: None
         """
-        if not isinstance(transform, fk_transforms.Transform):
+        if not isinstance(transform, Transform):
             raise ValueError("transform must be a sub-class of the Transform class")
 
         if transform.id in self.transformations:

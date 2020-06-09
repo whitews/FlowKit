@@ -1,5 +1,5 @@
 import numpy as np
-from flowkit._models import gates
+from .. import gates
 from ..._utils import utils, xml_utils
 
 
