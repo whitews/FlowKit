@@ -10,7 +10,7 @@ from scipy import stats
 from matplotlib import pyplot
 import flowutils
 # noinspection PyUnresolvedReferences, PyProtectedMember
-from .. import utils_c
+from .. import _utils_c as utils_c
 from .._utils import plot_utils
 
 

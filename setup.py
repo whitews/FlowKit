@@ -6,7 +6,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 utils_extension = Extension(
-    'flowkit.utils_c',
+    'flowkit._utils_c',
     sources=[
         'flowkit/utils_c_ext/_utils.c',
         'flowkit/utils_c_ext/utils.c'
