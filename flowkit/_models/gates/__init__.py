@@ -1,5 +1,12 @@
 """ gates module """
 
-from .gates import *
+from ._gates import RectangleGate, PolygonGate, EllipsoidGate, Quadrant, QuadrantGate, BooleanGate
 
-__all__ = ['gates']
+__all__ = [
+    'RectangleGate',
+    'PolygonGate',
+    'EllipsoidGate',
+    'Quadrant',
+    'QuadrantGate',
+    'BooleanGate'
+]

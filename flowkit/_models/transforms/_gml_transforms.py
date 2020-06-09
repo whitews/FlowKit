@@ -1,5 +1,5 @@
 from ..._utils import xml_utils
-from .transforms import \
+from ._transforms import \
     RatioTransform, \
     LinearTransform, \
     LogTransform, \

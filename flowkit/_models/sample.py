@@ -14,8 +14,8 @@ import seaborn
 from bokeh.layouts import gridplot
 from bokeh.models import Title
 import warnings
-from .._models.transforms import transforms
-from .._models.transforms.matrix import Matrix
+from .._models.transforms import _transforms
+from .._models.transforms._matrix import Matrix
 from .._utils import utils
 from .._utils import plot_utils
 
@@ -247,7 +247,7 @@ class Sample(object):
         """
         rng = np.random.RandomState(seed=random_seed)
 
-        logicle_xform = transforms.LogicleTransform(
+        logicle_xform = _transforms.LogicleTransform(
             'my_xform',
             param_t=262144,
             param_w=1.0,

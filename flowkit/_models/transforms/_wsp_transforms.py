@@ -2,7 +2,7 @@
 Transform classes compatible with FlowJo 10
 """
 import numpy as np
-from .base_transform import Transform
+from ._base_transform import Transform
 
 
 class WSPLogTransform(Transform):

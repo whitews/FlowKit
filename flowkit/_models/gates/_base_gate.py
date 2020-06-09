@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 import numpy as np
-from ..transforms.matrix import Matrix
+from ..transforms._matrix import Matrix
 from .. import gates, dimension
 
 

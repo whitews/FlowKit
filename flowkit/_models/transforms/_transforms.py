@@ -1,6 +1,6 @@
 import numpy as np
 import flowutils
-from .base_transform import Transform
+from ._base_transform import Transform
 
 
 class RatioTransform(Transform):

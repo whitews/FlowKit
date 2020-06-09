@@ -10,16 +10,16 @@ from .._resources import gml_schema
 from .._models.dimension import Dimension, RatioDimension, QuadrantDivider
 from .._models.vertex import Vertex
 from .._models.gating_strategy import GatingStrategy
-from .._models.transforms import transforms, gml_transforms, wsp_transforms
-from .._models.transforms.matrix import Matrix
-from .._models.gates.gml_gates import \
+from .._models.transforms import _transforms, _gml_transforms, _wsp_transforms
+from .._models.transforms._matrix import Matrix
+from .._models.gates._gml_gates import \
     GMLBooleanGate, \
     GMLEllipsoidGate, \
     GMLQuadrantGate, \
     GMLPolygonGate, \
     GMLRectangleGate
-from .._models.gates.wsp_gates import WSPEllipsoidGate
-from .._models.gates.gates import \
+from .._models.gates._wsp_gates import WSPEllipsoidGate
+from .._models.gates._gates import \
     BooleanGate, \
     EllipsoidGate, \
     Quadrant, \
@@ -246,7 +246,7 @@ def _construct_transforms(root_gml, transform_ns, data_type_ns):
             )
 
             if len(fratio_els) > 0:
-                xform = gml_transforms.RatioGMLTransform(
+                xform = _gml_transforms.RatioGMLTransform(
                     xform_el,
                     transform_ns,
                     data_type_ns
@@ -258,7 +258,7 @@ def _construct_transforms(root_gml, transform_ns, data_type_ns):
             )
 
             if len(flog_els) > 0:
-                xform = gml_transforms.LogGMLTransform(
+                xform = _gml_transforms.LogGMLTransform(
                     xform_el,
                     transform_ns
                 )
@@ -269,7 +269,7 @@ def _construct_transforms(root_gml, transform_ns, data_type_ns):
             )
 
             if len(fasinh_els) > 0:
-                xform = gml_transforms.AsinhGMLTransform(
+                xform = _gml_transforms.AsinhGMLTransform(
                     xform_el,
                     transform_ns
                 )
@@ -280,7 +280,7 @@ def _construct_transforms(root_gml, transform_ns, data_type_ns):
             )
 
             if len(hyperlog_els) > 0:
-                xform = gml_transforms.HyperlogGMLTransform(
+                xform = _gml_transforms.HyperlogGMLTransform(
                     xform_el,
                     transform_ns
                 )
@@ -291,7 +291,7 @@ def _construct_transforms(root_gml, transform_ns, data_type_ns):
             )
 
             if len(flin_els) > 0:
-                xform = gml_transforms.LinearGMLTransform(
+                xform = _gml_transforms.LinearGMLTransform(
                     xform_el,
                     transform_ns
                 )
@@ -302,7 +302,7 @@ def _construct_transforms(root_gml, transform_ns, data_type_ns):
             )
 
             if len(logicle_els) > 0:
-                xform = gml_transforms.LogicleGMLTransform(
+                xform = _gml_transforms.LogicleGMLTransform(
                     xform_el,
                     transform_ns
                 )
@@ -625,7 +625,7 @@ def _add_transform_to_gml(root, transform, ns_map):
     xform_ml = etree.SubElement(root, "{%s}transformation" % ns_map['transforms'])
     xform_ml.set('{%s}id' % ns_map['transforms'], transform.id)
 
-    if isinstance(transform, transforms.RatioTransform):
+    if isinstance(transform, _transforms.RatioTransform):
         ratio_ml = etree.SubElement(xform_ml, "{%s}fratio" % ns_map['transforms'])
         ratio_ml.set('{%s}A' % ns_map['transforms'], str(transform.param_a))
         ratio_ml.set('{%s}B' % ns_map['transforms'], str(transform.param_b))
@@ -634,28 +634,28 @@ def _add_transform_to_gml(root, transform, ns_map):
         for dim in transform.dimensions:
             fcs_dim_ml = etree.SubElement(ratio_ml, '{%s}fcs-dimension' % ns_map['data-type'])
             fcs_dim_ml.set('{%s}name' % ns_map['data-type'], dim)
-    elif isinstance(transform, transforms.LogTransform):
+    elif isinstance(transform, _transforms.LogTransform):
         log_ml = etree.SubElement(xform_ml, "{%s}flog" % ns_map['transforms'])
         log_ml.set('{%s}T' % ns_map['transforms'], str(transform.param_t))
         log_ml.set('{%s}M' % ns_map['transforms'], str(transform.param_m))
-    elif isinstance(transform, transforms.AsinhTransform):
+    elif isinstance(transform, _transforms.AsinhTransform):
         asinh_ml = etree.SubElement(xform_ml, "{%s}fasinh" % ns_map['transforms'])
         asinh_ml.set('{%s}T' % ns_map['transforms'], str(transform.param_t))
         asinh_ml.set('{%s}M' % ns_map['transforms'], str(transform.param_m))
         asinh_ml.set('{%s}A' % ns_map['transforms'], str(transform.param_a))
-    elif isinstance(transform, transforms.LogicleTransform):
+    elif isinstance(transform, _transforms.LogicleTransform):
         logicle_ml = etree.SubElement(xform_ml, "{%s}logicle" % ns_map['transforms'])
         logicle_ml.set('{%s}T' % ns_map['transforms'], str(transform.param_t))
         logicle_ml.set('{%s}W' % ns_map['transforms'], str(transform.param_w))
         logicle_ml.set('{%s}M' % ns_map['transforms'], str(transform.param_m))
         logicle_ml.set('{%s}A' % ns_map['transforms'], str(transform.param_a))
-    elif isinstance(transform, transforms.HyperlogTransform):
+    elif isinstance(transform, _transforms.HyperlogTransform):
         hlog_ml = etree.SubElement(xform_ml, "{%s}hyperlog" % ns_map['transforms'])
         hlog_ml.set('{%s}T' % ns_map['transforms'], str(transform.param_t))
         hlog_ml.set('{%s}W' % ns_map['transforms'], str(transform.param_w))
         hlog_ml.set('{%s}M' % ns_map['transforms'], str(transform.param_m))
         hlog_ml.set('{%s}A' % ns_map['transforms'], str(transform.param_a))
-    elif isinstance(transform, transforms.LinearTransform):
+    elif isinstance(transform, _transforms.LinearTransform):
         lin_ml = etree.SubElement(xform_ml, "{%s}flin" % ns_map['transforms'])
         lin_ml.set('{%s}T' % ns_map['transforms'], str(transform.param_t))
         lin_ml.set('{%s}A' % ns_map['transforms'], str(transform.param_a))
@@ -991,7 +991,7 @@ def _parse_wsp_transforms(transforms_el, transform_ns, data_type_ns):
         if xform_type == 'linear':
             min_range = find_attribute_value(xform_el, transform_ns, 'minRange')
             max_range = find_attribute_value(xform_el, transform_ns, 'maxRange')
-            xforms_lut[param_name] = transforms.LinearTransform(
+            xforms_lut[param_name] = _transforms.LinearTransform(
                 param_name,
                 param_t=float(max_range),
                 param_a=float(min_range)
@@ -999,7 +999,7 @@ def _parse_wsp_transforms(transforms_el, transform_ns, data_type_ns):
         elif xform_type == 'log':
             offset = find_attribute_value(xform_el, transform_ns, 'offset')
             decades = find_attribute_value(xform_el, transform_ns, 'decades')
-            xforms_lut[param_name] = wsp_transforms.WSPLogTransform(
+            xforms_lut[param_name] = _wsp_transforms.WSPLogTransform(
                 param_name,
                 offset=float(offset),
                 decades=float(decades)
@@ -1011,7 +1011,7 @@ def _parse_wsp_transforms(transforms_el, transform_ns, data_type_ns):
             param_w = find_attribute_value(xform_el, transform_ns, 'W')
             param_m = find_attribute_value(xform_el, transform_ns, 'M')
             param_a = find_attribute_value(xform_el, transform_ns, 'A')
-            xforms_lut[param_name] = transforms.LogicleTransform(
+            xforms_lut[param_name] = _transforms.LogicleTransform(
                 param_name,
                 param_t=float(param_t),
                 param_w=float(param_w),

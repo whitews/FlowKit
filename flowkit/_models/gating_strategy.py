@@ -5,9 +5,12 @@ import json
 import anytree
 from anytree.exporter import DotExporter
 import pandas as pd
+from .._models.gates._base_gate import Gate
 from .._models import gates as fk_gates
-from .._models.transforms.base_transform import Transform
-from .._models.transforms.matrix import Matrix
+# noinspection PyProtectedMember
+from .._models.transforms._base_transform import Transform
+# noinspection PyProtectedMember
+from .._models.transforms._matrix import Matrix
 
 
 class GatingStrategy(object):
@@ -40,7 +43,7 @@ class GatingStrategy(object):
         :return: None
         """
 
-        if not isinstance(gate, fk_gates.Gate):
+        if not isinstance(gate, Gate):
             raise ValueError("gate must be a sub-class of the Gate class")
 
         parent_id = gate.parent

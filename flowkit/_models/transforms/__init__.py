@@ -1,12 +1,12 @@
 """ transforms module """
-from .transforms import \
+from ._transforms import \
     LinearTransform, \
     LogTransform, \
     RatioTransform, \
     HyperlogTransform, \
     LogicleTransform, \
     AsinhTransform
-from .wsp_transforms import WSPLogTransform
+from ._wsp_transforms import WSPLogTransform
 
 __all__ = [
     'LinearTransform',

@@ -16,7 +16,7 @@ from matplotlib import cm
 import matplotlib.pyplot as plt
 from .._models.sample import Sample
 from .._models.gating_strategy import GatingStrategy
-from .._models.transforms.matrix import Matrix
+from .._models.transforms._matrix import Matrix
 from .._models import gates
 from .._utils import plot_utils, xml_utils
 import warnings

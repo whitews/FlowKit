@@ -1,5 +1,5 @@
 import numpy as np
-from .base_gate import Gate
+from ._base_gate import Gate
 from ..._utils import utils
 
 
