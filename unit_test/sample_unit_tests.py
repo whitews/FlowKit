@@ -1,3 +1,6 @@
+"""
+Unit tests for Sample class
+"""
 import unittest
 import sys
 import os
@@ -87,23 +90,6 @@ class LoadSampleTestCase(unittest.TestCase):
         )
 
         self.assertIsNotNone(sample._comp_events)
-
-    def test_transform_sample_asinh(self):
-        xform = transforms.AsinhTransform('asinh', param_t=10000, param_m=4.5, param_a=0)
-        data1_sample.apply_transform(xform)
-
-        self.assertIsInstance(data1_sample._transformed_events, np.ndarray)
-
-    def test_transform_sample_logical(self):
-        data1_sample.apply_transform(xform_logicle)
-
-        self.assertIsInstance(data1_sample._transformed_events, np.ndarray)
-
-    def test_transform_sample_hyperlog(self):
-        xform = transforms.HyperlogTransform('hyper', param_t=10000, param_w=0.5, param_m=4.5, param_a=0)
-        data1_sample.apply_transform(xform)
-
-        self.assertIsInstance(data1_sample._transformed_events, np.ndarray)
 
     @staticmethod
     def test_get_channel_index_by_channel_number_int():
@@ -280,7 +266,3 @@ class LoadSampleTestCase(unittest.TestCase):
         self.assertEqual(common_idx.shape[0], 0)
 
         self.assertGreater(sample.anomalous_indices.shape[0], 0)
-
-
-if __name__ == '__main__':
-    unittest.main()

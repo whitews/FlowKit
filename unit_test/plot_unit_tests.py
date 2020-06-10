@@ -1,3 +1,6 @@
+"""
+Unit tests for plotting functions
+"""
 import unittest
 from bokeh.plotting.figure import Figure
 import flowkit as fk
@@ -25,7 +28,7 @@ class PlotTestCase(unittest.TestCase):
             try:
                 p = fks.plot_gate('my_group', sample_name, gate_id)
             except NotImplementedError:
-                pass
+                continue
 
             self.assertIsInstance(p, Figure)
 
