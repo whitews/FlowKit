@@ -178,7 +178,7 @@ class Session(object):
             'samples': {}
         }
 
-    def import_flowjo_workspace(self, workspace_file_or_path):
+    def import_flowjo_workspace(self, workspace_file_or_path, ignore_missing_files=False):
         """
         Imports a FlowJo workspace (version 10+) into the Session. Each sample group in the workspace will
         be a sample group in the FlowKit session. Referenced samples in the workspace will be imported as
@@ -201,6 +201,8 @@ class Session(object):
             - range
 
         :param workspace_file_or_path: WSP workspace file as a file name/path, file object, or file-like object
+        :param ignore_missing_files: Controls whether UserWarning messages are issued for FCS files found in the
+            workspace that have not yet been loaded in the Session. Default is False, displaying warnings.
         :return: None
         """
         wsp_sample_groups = xml_utils.parse_wsp(workspace_file_or_path)
@@ -208,10 +210,11 @@ class Session(object):
             for sample, data_dict in sample_data.items():
                 if sample not in self.sample_lut:
                     self.sample_lut[sample] = None
-                    msg = "Sample %s has not been added to the session. \n" % sample
-                    msg += "A GatingStrategy was loaded for this sample ID, but the file needs to be added " \
-                           "to the Session prior to running the analyze_samples method."
-                    warnings.warn(msg)
+                    if not ignore_missing_files:
+                        msg = "Sample %s has not been added to the session. \n" % sample
+                        msg += "A GatingStrategy was loaded for this sample ID, but the file needs to be added " \
+                               "to the Session prior to running the analyze_samples method."
+                        warnings.warn(msg)
 
                 gs = GatingStrategy()
 
