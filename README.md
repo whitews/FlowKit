@@ -117,10 +117,10 @@ Click on the links below to a few Jupyter notebooks that demonstrate basic usage
 * [General Overview](https://github.com/whitews/FlowKit/blob/master/examples/flowkit-tutorial.ipynb)
 * [Applying Transforms to a Sample](https://github.com/whitews/FlowKit/blob/master/examples/sample_transforms.ipynb)
 * [Compensating Spillover in a Sample](https://github.com/whitews/FlowKit/blob/master/examples/sample_compensation.ipynb)
-* [Importing a FlowJo 10 WSP file & replicating analysis in FlowKit](https://github.com/whitews/FlowKit/blob/develop/examples/flowkit-session-replicate-flowjo-wsp-example.ipynb)
+* [Importing a FlowJo 10 WSP file & replicating analysis in FlowKit](https://github.com/whitews/FlowKit/blob/master/examples/flowkit-session-replicate-flowjo-wsp-example.ipynb)
 
 ## Contributing
 
 Want to get involved in the development of FlowKit? 
 
-[Read our CONTRIBUTING guidelines](https://github.com/whitews/FlowKit/blob/develop/.github/CONTRIBUTING.md)
+[Read our CONTRIBUTING guidelines](https://github.com/whitews/FlowKit/blob/master/CONTRIBUTING.md)
