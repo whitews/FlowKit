@@ -8,6 +8,11 @@
 [![Coverage](https://codecov.io/gh/whitews/FlowKit/branch/develop/graph/badge.svg)](https://codecov.io/gh/whitews/flowkit)
 [![Documentation Status](https://readthedocs.org/projects/flowkit/badge/?version=latest)](https://flowkit.readthedocs.io/en/latest/?badge=latest)
 
+* [Overview](#overview)
+* [Requirements](#requirements)
+* [Installation](#installation)
+* [Usage](#usage)
+* [Contributing](#contributing)
 
 ## Overview
 
@@ -29,7 +34,7 @@ FlowKit is an intuitive Python toolkit for flow cytometry analysis and visualiza
     * NumPy array
     * GatingML 2.0 spectrumMatrix XML element
   * Automatically create a compensation matrix from a set of compensation bead files
-* Tranformation of FCS events in a variety of transforms used in the flow community:
+* Transformation of FCS events in a variety of transforms used in the flow community:
   * Logicle
   * Inverse hyperbolic sine (arcsinh)
   * Hyperlog
@@ -42,7 +47,7 @@ FlowKit is an intuitive Python toolkit for flow cytometry analysis and visualiza
     * Export gating strategies as a valid GatingML XML document
   * Limited support for importing FlowJo 10 workspace files. Workspace files are currently limited to the following features:
     * Linear, logarithmic, and logicle transforms
-    * Polygon and rectangle gates
+    * Polygon, rectangle, and quadrant gates
   * Programmatically create gating strategies including polygon, rectangle, range, ellipsoid, quadrant, and boolean gates
   * Easily retrieve gating results from a gating strategy as a Pandas DataFrame. Results include:
     * FCS sample ID
@@ -66,7 +71,7 @@ FlowKit supports Python version 3.6 or above. All dependencies are installable
 via pip, and are listed below.
 
 ***Note: FlowKit and FlowUtils use C extensions for significant performance 
-improvements relating to various tranformations. If using `gcc`, version 5 or 
+improvements relating to various transformations. If using `gcc`, version 5 or 
 above is required for correct Logicle and Hyperlog transformations.***
 
 Required Python dependencies:
@@ -113,3 +118,9 @@ Click on the links below to a few Jupyter notebooks that demonstrate basic usage
 * [Applying Transforms to a Sample](https://github.com/whitews/FlowKit/blob/master/examples/sample_transforms.ipynb)
 * [Compensating Spillover in a Sample](https://github.com/whitews/FlowKit/blob/master/examples/sample_compensation.ipynb)
 * [Importing a FlowJo 10 WSP file & replicating analysis in FlowKit](https://github.com/whitews/FlowKit/blob/develop/examples/flowkit-session-replicate-flowjo-wsp-example.ipynb)
+
+## Contributing
+
+Want to get involved in the development of FlowKit? 
+
+[Read our CONTRIBUTING guidelines](https://github.com/whitews/FlowKit/blob/develop/.github/CONTRIBUTING.md)

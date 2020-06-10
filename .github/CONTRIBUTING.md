@@ -2,7 +2,7 @@
 
 Thank you for taking the time to contribute!
 
-* [I want to help!](#want-to-help)
+* [I want to help!](#i-want-to-help)
 * [Suggesting a feature](#suggesting-a-feature)
 * [Filing a bug report](#filing-a-bug-report)
 * [Submitting a pull request](#submitting-a-pull-request)
@@ -13,11 +13,23 @@ If you want to get involved in the development of FlowKit, the best way
 to start is to review the current documentation. Documentation includes
 the examples and tutorials, as well as the Python docstrings to make 
 sure they correspond to the current function/method signatures. If you 
-find a mistake or want to make an addition, submit a pull request with 
-the correction/addition. 
+find a mistake or want to make an addition, 
+[submit a pull request](#submitting-a-pull-request) with the 
+correction/addition. 
 
-submit a pull 
-request addressing a current bug or adding a new feature. 
+Beyond documentation, the most accessible path to start contributing to 
+FlowKit is to peruse the many TODO comments in the codebase. We use the 
+[PEP 350](https://www.python.org/dev/peps/pep-0350/) code tags to mark 
+items that need addressing. Often times, the issues marked TODO are
+relatively straight-forward compared to the 
+[GitHub issues](https://github.com/whitews/FlowKit/issues) assigned to 
+upcoming milestones. For example, a TODO item might mark code that should
+be moved to a more appropriate class or module; or, a function/method 
+that needs updating to support an additional keyword option. 
+
+If you are considering contributing code, please submit an issue letting 
+us know. Due to the complexity of flow cytometry analysis, we can likely
+provide some valuable context prior to tackling an issue.
 
 ## Suggesting a feature
 
@@ -71,17 +83,26 @@ be able to accept your code, but there is a lot to be learned from
 trying anyway and if you are new to GitHub, we are willing to guide you 
 on that journey.
 
-When contributing a new example or making a change to a library please 
+When contributing a new example or making a change to the code, please 
 keep your code style consistent with ours. We try to stick to the PEP-8 
 guidelines for Python (https://www.python.org/dev/peps/pep-0008/).
+
+Finally, make sure all the tests pass before submitting your pull request!
+No submitted code will be reviewed if there are failing tests. The 
+complete test suite is run using the `run_tests.py` script found at the
+root level of the repository. For code changes that result in a failing 
+test that you cannot solve, submit or reply to an issue with a 
+description of the problem. If you create a new function or method, 
+please write new tests with coverage for all new code. 
 
 #### Do
 
 * Do use PEP-8 style guidelines
-* Do comment your code where necessary
+* Do verify that all tests pass
+* Do write new tests for new functions/methods
+* Do comment your code where necessary or appropriate
 * Do submit only a single example/feature per pull-request
 * Do include a description of what your example is expected to do
-* Do add details of your example to examples/README.md if it exists
 
 #### Do not
 
@@ -101,7 +122,7 @@ The ideal example should:
 
 * demonstrate one idea, technique or API as concisely as possible in a 
 single Python script
-* *just work* when you run it. Although sometimes configuration is 
+* *just work* when you run it. Although, sometimes configuration is 
 necessary
 * be well commented and attempt to teach the user how and why it works
 * document any required configuration, dependencies, etc
