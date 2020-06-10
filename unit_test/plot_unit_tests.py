@@ -10,7 +10,39 @@ gml_path = 'examples/gate_ref/gml/gml_all_gates.xml'
 
 
 class PlotTestCase(unittest.TestCase):
-    """Tests for Session class"""
+    """
+    Tests for plot functions/methods
+
+    NOTE: Due to the difficulty of introspecting figures and images at a
+          pixel-level, this TestCase only tests that plots are returned
+          from plotting functions.
+    """
+
+    def test_plot_sample_histogram(self):
+        sample = fk.Sample(fcs_path)
+        xform_logicle = fk.transforms.LogicleTransform('logicle', param_t=10000, param_w=0.5, param_m=4.5, param_a=0)
+        sample.apply_transform(xform_logicle)
+
+        p = sample.plot_histogram(
+            'FL2-H',
+            source='xform'
+        )
+
+        self.assertIsInstance(p, Figure)
+
+    def test_plot_sample_scatter(self):
+        sample = fk.Sample(fcs_path)
+        xform_logicle = fk.transforms.LogicleTransform('logicle', param_t=10000, param_w=0.5, param_m=4.5, param_a=0)
+        sample.apply_transform(xform_logicle)
+
+        p = sample.plot_scatter(
+            'FL1-H',
+            'FL2-H',
+            source='xform'
+        )
+
+        self.assertIsInstance(p, Figure)
+
     def test_plot_gates(self):
         fks = fk.Session(fcs_path)
         fks.add_sample_group('my_group', gml_path)
