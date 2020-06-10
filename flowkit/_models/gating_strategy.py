@@ -429,19 +429,25 @@ class GatingResults(object):
         self.report = df.set_index(['sample', 'gate_id']).sort_index().sort_values('level')
         self.report.sort_index(inplace=True)
 
-    def get_gate_indices(self, gate_id):
+    def get_gate_indices(self, gate_id, gate_path=None):
         """
-        Retrieve a boolean array indicating gate membership for the gating results sample
+        Retrieve a boolean array indicating gate membership for the events in the GatingResults sample.
+        Note, the same gate ID may be found in multiple gate paths, i.e. the gate ID can be ambiguous.
+        In this case, specify the full gate path to retrieve gate indices.
 
         :param gate_id: text string of a gate ID
+        :param gate_path: A list of ancestor gate IDs for the given gate ID. Alternatively, a string path delimited
+            by forward slashes can also be given, e.g. ('/root/singlets/lymph/live')
         :return: NumPy boolean array (length of sample event count)
         """
         gate_paths = self._gate_lut[gate_id]['paths']
         if len(gate_paths) > 1:
-            # TODO: implement gate_path argument
-            raise ValueError("Gate ID %s is ambiguous, specify the full gate path")
-
-        gate_path = gate_paths[0]
+            if gate_path is None:
+                raise ValueError("Gate ID %s is ambiguous, specify the full gate path")
+            elif isinstance(gate_path, list):
+                gate_path = "/".join(gate_path)
+        else:
+            gate_path = gate_paths[0]
 
         gate_series = self.report.loc[(self.sample_id, gate_id)]
         if isinstance(gate_series, pd.DataFrame):

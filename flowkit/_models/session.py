@@ -495,9 +495,9 @@ class Session(object):
     def get_group_report(self, sample_group):
         return self._results_lut[sample_group]['report']
 
-    def get_gate_indices(self, sample_group, sample_id, gate_id):
+    def get_gate_indices(self, sample_group, sample_id, gate_id, gate_path=None):
         gating_result = self._results_lut[sample_group]['samples'][sample_id]
-        return gating_result.get_gate_indices(gate_id)
+        return gating_result.get_gate_indices(gate_id, gate_path=gate_path)
 
     def calculate_tsne(
             self,

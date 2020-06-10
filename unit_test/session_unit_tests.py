@@ -190,3 +190,20 @@ class SessionTestCase(unittest.TestCase):
         comp = fks.calculate_compensation_from_beads(bead_dir)
 
         self.assertIsInstance(comp, Matrix)
+
+    def test_get_ambiguous_gate_objects(self):
+        wsp_path = "examples/8_color_data_set/8_color_ICS.wsp"
+        fcs_path = "examples/8_color_data_set/fcs_files/101_DEN084Y5_15_E01_008_clean.fcs"
+        sample_id = '101_DEN084Y5_15_E01_008_clean.fcs'
+        sample_grp = 'DEN'
+        gate_id = 'TNFa+'
+        gate_path = ['root', 'Time', 'Singlets', 'aAmine-', 'CD3+', 'CD4+']
+
+        fks = Session(fcs_samples=fcs_path)
+        fks.import_flowjo_workspace(wsp_path, ignore_missing_files=True)
+
+        fks.analyze_samples(sample_grp)
+        gate_indices = fks.get_gate_indices(sample_grp, sample_id, gate_id, gate_path=gate_path)
+
+        self.assertIsInstance(gate_indices, np.ndarray)
+        self.assertEqual(np.sum(gate_indices), 21)
