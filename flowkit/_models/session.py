@@ -282,13 +282,21 @@ class Session(object):
         """
         return list(self._sample_group_lut.keys())
 
+    def get_group_sample_ids(self, sample_group):
+        """
+        Retrieve the list of Sample IDs belonging to the specified sample group
+        :param sample_group: a text string representing the sample group
+        :return: list of Sample IDs
+        """
+        return self._sample_group_lut[sample_group]['samples'].keys()
+
     def get_group_samples(self, sample_group):
         """
         Retrieve the list of Sample instances belonging to the specified sample group
-        :param sample_group:
+        :param sample_group: a text string representing the sample group
         :return: list of Sample instances
         """
-        sample_ids = self._sample_group_lut[sample_group]['samples'].keys()
+        sample_ids = self.get_group_sample_ids(sample_group)
 
         samples = []
         for s_id in sample_ids:
@@ -299,6 +307,7 @@ class Session(object):
     def get_gate_ids(self, sample_group):
         """
         Retrieve the list of gate IDs defined in the specified sample group
+        :param sample_group: a text string representing the sample group
         :return: list of gate ID strings
         """
         group = self._sample_group_lut[sample_group]
@@ -377,6 +386,11 @@ class Session(object):
         xml_utils.export_gatingml(gating_strategy, file_handle)
 
     def get_sample(self, sample_id):
+        """
+        Retrieve a Sample instance from the Session
+        :param sample_id: a text string representing the sample
+        :return: Sample instance
+        """
         return self.sample_lut[sample_id]
 
     @staticmethod
