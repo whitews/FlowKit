@@ -11,14 +11,15 @@ from flowio.create_fcs import create_fcs
 
 
 line_color = "#1F77B4"
+line_color_contrast = "#00aa00"
 line_width = 3
 fill_color = 'lime'
-fill_alpha = 0.05
+fill_alpha = 0.08
 
 
 def generate_custom_colormap(cmap_sample_indices, base_cmap):
     x = np.linspace(0, np.pi, base_cmap.N)
-    new_lum = (np.sin(x) * 0.75) + .1
+    new_lum = (np.sin(x) * 0.75) + .25
 
     new_color_list = []
 
@@ -26,9 +27,9 @@ def generate_custom_colormap(cmap_sample_indices, base_cmap):
         (r, g, b, a) = base_cmap(i)
         (h, s, v) = colorsys.rgb_to_hsv(r, g, b)
 
-        mod_v = (v * ((196 - abs(i - 196)) / 196) + new_lum[i]) / 2
+        mod_v = (v * ((196 - abs(i - 196)) / 196) + new_lum[i]) / 2.
 
-        new_r, new_g, new_b = colorsys.hsv_to_rgb(h, s, mod_v)
+        new_r, new_g, new_b = colorsys.hsv_to_rgb(h, 1., mod_v)
         (_, new_l, _) = colorsys.rgb_to_hls(new_r, new_g, new_b)
 
         new_color_list.append((new_r, new_g, new_b))
@@ -120,7 +121,8 @@ def render_polygon(vertices):
         y='y',
         fill_color=fill_color,
         fill_alpha=fill_alpha,
-        line_width=line_width
+        line_width=line_width,
+        line_color=line_color_contrast
     )
 
     return source, poly
