@@ -474,7 +474,17 @@ class Session(object):
 
         return Matrix(matrix_id, np.array(comp_values), detectors, fluorochromes)
 
-    def analyze_samples(self, sample_group='default', verbose=False):
+    def analyze_samples(self, sample_group='default', sample_id=None, verbose=False):
+        """
+        Process gates for samples in a sample group. After running, results can be
+        retrieved using the `get_gating_results`, `get_group_report`, and  `get_gate_indices`,
+        methods.
+
+        :param sample_group: a text string representing the sample group
+        :param sample_id: optional sample ID, if specified only this sample will be processed
+        :param verbose: if True, print a line for every gate processed (default is False)
+        :return: None
+        """
         # Don't save just the DataFrame report, save the entire
         # GatingResults objects for each sample, since we'll need the gate
         # indices for each sample.
@@ -482,6 +492,15 @@ class Session(object):
         if len(samples) == 0:
             warnings.warn("No samples have been assigned to sample group %s" % sample_group)
             return
+
+        if sample_id is not None:
+            sample_ids = self.get_group_sample_ids(sample_group)
+            if sample_id not in sample_ids:
+                warnings.warn("%s is not assigned to sample group %s" % (sample_id, sample_group))
+                return
+
+            samples = [self.get_sample(sample_id)]
+
         gating_strategies = []
         samples_to_run = []
         for s in samples:

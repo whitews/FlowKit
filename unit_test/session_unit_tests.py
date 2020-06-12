@@ -67,7 +67,7 @@ class SessionTestCase(unittest.TestCase):
             gates.EllipsoidGate
         )
 
-        fks.analyze_samples('All Samples')
+        fks.analyze_samples(sample_group='All Samples')
         results = fks.get_gating_results('All Samples', 'data_set_simple_line_100.fcs')
         gate_count = results.get_gate_count('ellipse1')
         self.assertEqual(gate_count, 48)
@@ -88,7 +88,7 @@ class SessionTestCase(unittest.TestCase):
             gates.RectangleGate
         )
 
-        fks.analyze_samples('All Samples')
+        fks.analyze_samples(sample_group='All Samples')
         results = fks.get_gating_results('All Samples', 'test_data_diamond_01.fcs')
 
         gate_count_q1 = results.get_gate_count('Q1: channel_A- , channel_B+')
@@ -207,3 +207,20 @@ class SessionTestCase(unittest.TestCase):
 
         self.assertIsInstance(gate_indices, np.ndarray)
         self.assertEqual(np.sum(gate_indices), 21)
+
+    def test_analyze_single_sample(self):
+        wsp_path = "examples/8_color_data_set/8_color_ICS_simple.wsp"
+        fcs_path = "examples/8_color_data_set/fcs_files"
+        sample_id = '101_DEN084Y5_15_E01_008_clean.fcs'
+        sample_grp = 'DEN'
+
+        fks = Session(fcs_samples=fcs_path)
+        fks.import_flowjo_workspace(wsp_path, ignore_missing_files=True)
+
+        sample_ids = fks.get_group_sample_ids(sample_grp)
+        self.assertEqual(len(sample_ids), 3)
+
+        fks.analyze_samples(sample_grp, sample_id=sample_id)
+        report = fks.get_group_report(sample_grp)
+
+        self.assertEqual(report.index.get_level_values('sample').nunique(), 1)
