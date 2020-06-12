@@ -426,9 +426,11 @@ class GatingResults(object):
         )
         df['level'] = df.gate_path.map(len)
 
+        # ???: sorting by non-index column will result in Pandas PerformanceWarning
+        #   when looking up rows using .loc. The hit in this case is minimal and we
+        #   really want the DataFrame sorted by 'level' for better readability.
+        #   Maybe consider not setting a MultiIndex for this?
         self.report = df.set_index(['sample', 'gate_id']).sort_index().sort_values('level')
-        self.report.sort_index(inplace=True)
-        self.report.sort_values('level', inplace=True)
 
     def get_gate_indices(self, gate_id, gate_path=None):
         """
