@@ -428,6 +428,7 @@ class GatingResults(object):
 
         self.report = df.set_index(['sample', 'gate_id']).sort_index().sort_values('level')
         self.report.sort_index(inplace=True)
+        self.report.sort_values('level', inplace=True)
 
     def get_gate_indices(self, gate_id, gate_path=None):
         """
