@@ -160,7 +160,7 @@ class LoadSampleTestCase(unittest.TestCase):
 
     def test_get_events_as_data_frame_xform(self):
         data1_sample.apply_transform(xform_logicle)
-        df = data1_sample.get_events_as_data_frame(source='xform')
+        df = data1_sample.as_dataframe(source='xform')
 
         self.assertIsInstance(df, pd.DataFrame)
         np.testing.assert_equal(df.values, data1_sample.get_transformed_events())
@@ -174,22 +174,42 @@ class LoadSampleTestCase(unittest.TestCase):
             compensation=comp_file_path
         )
 
-        df = sample.get_events_as_data_frame(source='comp')
+        df = sample.as_dataframe(source='comp')
 
         self.assertIsInstance(df, pd.DataFrame)
         np.testing.assert_equal(df.values, sample.get_comp_events())
 
     def test_get_events_as_data_frame_raw(self):
-        df = data1_sample.get_events_as_data_frame(source='raw')
+        df = data1_sample.as_dataframe(source='raw')
 
         self.assertIsInstance(df, pd.DataFrame)
         np.testing.assert_equal(df.values, data1_sample.get_raw_events())
 
     def test_get_events_as_data_frame_orig(self):
-        df = data1_sample.get_events_as_data_frame(source='orig')
+        df = data1_sample.as_dataframe(source='orig')
 
         self.assertIsInstance(df, pd.DataFrame)
         np.testing.assert_equal(df.values, data1_sample.get_orig_events())
+
+    def test_get_events_as_data_frame_column_order(self):
+        orig_col_order = ['FSC-H', 'SSC-H', 'FL1-H', 'FL2-H', 'FL3-H', 'FL2-A', 'FL4-H', 'Time']
+        new_col_order = ['FSC-H', 'SSC-H', 'FL1-H', 'FL2-H', 'FL2-A', 'FL3-H', 'FL4-H', 'Time']
+        col_to_check = 'FL2-A'
+
+        df = data1_sample.as_dataframe(source='raw')
+        df_reorder = data1_sample.as_dataframe(source='raw', col_order=new_col_order)
+
+        self.assertListEqual(list(df.columns.get_level_values(0)), orig_col_order)
+        self.assertListEqual(list(df_reorder.columns.get_level_values(0)), new_col_order)
+
+        np.testing.assert_equal(df[col_to_check].values, df_reorder[col_to_check])
+
+    def test_get_events_as_data_frame_new_column_names(self):
+        new_cols = ['FSC-H', 'SSC-H', 'FLR1-H', 'FLR2-H', 'FLR3-H', 'FLR2-A', 'FLR4-H', 'Time']
+
+        df = data1_sample.as_dataframe(source='raw', col_names=new_cols)
+
+        self.assertListEqual(list(df.columns), new_cols)
 
     def test_create_fcs(self):
         fcs_file_path = "examples/test_comp_example.fcs"

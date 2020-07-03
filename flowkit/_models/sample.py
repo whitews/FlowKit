@@ -449,7 +449,7 @@ class Sample(object):
         else:
             return self._transformed_events
 
-    def get_events_as_data_frame(self, source='xform', subsample=False):
+    def as_dataframe(self, source='xform', subsample=False, col_order=None, col_names=None):
         """
         Returns a Pandas DataFrame of event data
 
@@ -457,6 +457,10 @@ class Sample(object):
             or transformed events will be returned
         :param subsample: Whether to return all events or just the sub-sampled
             events. Default is False (all events)
+        :param col_order: list of PnN labels. Determines the order of columns
+            in the output DataFrame. If None, the column order will match the FCS file.
+        :param col_names: list of new column labels. If None (default), the DataFrame
+            columns will be a MultiIndex of the PnN / PnS labels.
         :return: Pandas DataFrame of event data
         """
         if source == 'xform':
@@ -472,6 +476,12 @@ class Sample(object):
 
         multi_cols = pd.MultiIndex.from_arrays([self.pnn_labels, self.pns_labels], names=['pnn', 'pns'])
         events_df = pd.DataFrame(data=events, columns=multi_cols)
+
+        if col_order is not None:
+            events_df = events_df[col_order]
+
+        if col_names is not None:
+            events_df.columns = col_names
 
         return events_df
 
