@@ -13,7 +13,7 @@ install:
   - pip install codecov
   - python setup.py build_ext --inplace
 script:
-  - coverage run --source flowkit run_tests.py
+  - coverage run --source flowkit --omit="flowkit/tests/*" run_tests.py
 
 after_success:
   - codecov
