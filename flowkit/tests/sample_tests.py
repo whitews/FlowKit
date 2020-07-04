@@ -18,7 +18,7 @@ data1_sample = Sample(data1_fcs_path)
 xform_logicle = transforms.LogicleTransform('logicle', param_t=10000, param_w=0.5, param_m=4.5, param_a=0)
 
 
-class LoadSampleTestCase(unittest.TestCase):
+class SampleTestCase(unittest.TestCase):
     """Tests for loading FCS files as Sample objects"""
     def test_load_from_fcs_file_path(self):
         """Test creating Sample object from an FCS file path"""
