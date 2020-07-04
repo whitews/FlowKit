@@ -8,7 +8,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-sys.path.append(os.path.abspath('..'))
+sys.path.append(os.path.abspath('../..'))
 
 from flowkit import Sample, transforms
 

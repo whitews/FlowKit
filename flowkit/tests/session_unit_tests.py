@@ -4,7 +4,7 @@ import os
 import numpy as np
 import pandas as pd
 
-sys.path.append(os.path.abspath('..'))
+sys.path.append(os.path.abspath('../..'))
 
 from flowkit import Session, Sample, Matrix, Dimension, gates, transforms
 from .prog_gating_unit_tests import data1_sample, poly1_gate, poly1_vertices, comp_matrix_01, asinh_xform1

@@ -6,7 +6,7 @@ import re
 import numpy as np
 import pandas as pd
 
-sys.path.append(os.path.abspath('..'))
+sys.path.append(os.path.abspath('../..'))
 
 from flowkit import Sample, Session, gates, parse_gating_xml
 
