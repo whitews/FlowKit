@@ -37,7 +37,7 @@ if on_rtd:
 
 setup(
     name='FlowKit',
-    version='0.4.1b',
+    version='0.5.0',
     packages=find_packages(),
     package_data={'': ['*.xsd']},
     include_package_data=True,
