@@ -1,7 +1,9 @@
 import unittest
 import numpy as np
+import pandas as pd
+import flowkit as fk
 # noinspection PyProtectedMember
-from flowkit import _utils
+from flowkit._utils import utils
 
 fcs_spill = '13,B515-A,R780-A,R710-A,R660-A,V800-A,V655-A,V585-A,V450-A,G780-A,G710-A,G660-A,G610-A,G560-A,'\
     '1,0,0,0.00008841570561316703,0.0002494559842740046,0.0006451591561972469,0.007198401782797728,0,0,'\
@@ -36,10 +38,61 @@ fcs_spill_header = [
     'G560-A'
 ]
 
+csv_8c_comp_file_path = 'examples/8_color_data_set/den_comp.csv'
+detectors_8c = [
+    'TNFa FITC FLR-A',
+    'CD8 PerCP-Cy55 FLR-A',
+    'IL2 BV421 FLR-A',
+    'Aqua Amine FLR-A',
+    'IFNg APC FLR-A',
+    'CD3 APC-H7 FLR-A',
+    'CD107a PE FLR-A',
+    'CD4 PE-Cy7 FLR-A'
+]
+fluorochromes_8c = [
+    'TNFa',
+    'CD8',
+    'IL2',
+    'Aqua Amine',
+    'IFNg',
+    'CD3',
+    'CD107a',
+    'CD4'
+]
+
 
 class MatrixTestCase(unittest.TestCase):
     """Tests related to compensation matrices and the Matrix class"""
     def test_parse_fcs_spill_value(self):
-        matrix_array = _utils.parse_compensation_matrix(fcs_spill, fcs_spill_header)
+        matrix_array = utils.parse_compensation_matrix(fcs_spill, fcs_spill_header)
 
         self.assertIsInstance(matrix_array, np.ndarray)
+
+    def test_parse_csv_file(self):
+        comp_mat = fk.Matrix(
+            'my_spill',
+            csv_8c_comp_file_path,
+            detectors_8c
+        )
+
+        self.assertIsInstance(comp_mat, fk.Matrix)
+
+    def test_matrix_as_dataframe(self):
+        comp_mat = fk.Matrix(
+            'my_spill',
+            csv_8c_comp_file_path,
+            detectors_8c,
+            fluorochromes=fluorochromes_8c
+        )
+
+        # test with detectors as labels
+        comp_df_detectors = comp_mat.as_dataframe()
+
+        # test with fluorochromes as labels
+        comp_df_fluorochromes = comp_mat.as_dataframe(fluoro_labels=True)
+
+        self.assertIsInstance(comp_df_detectors, pd.DataFrame)
+        self.assertIsInstance(comp_df_fluorochromes, pd.DataFrame)
+
+    def test_reserved_matrix_id_uncompensated(self):
+        self.assertRaises(ValueError, fk.Matrix, 'uncompensated', fcs_spill, fcs_spill_header)

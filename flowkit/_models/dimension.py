@@ -1,22 +1,41 @@
+"""
+Dimension class
+"""
+
+
 class Dimension(object):
+    """
+    Represents a single dimension of an array of FCS data.
+
+    :param label: A string identifying the dimension, typically matching the PnN label of a channel in an FCS sample
+    :param compensation_ref: A string referencing the ID of a Matrix instance
+    :param transformation_ref: A string referencing the ID of an instance of a Transform sub-class
+    :param range_min: For use in defining the boundaries of a RectangleGate. A float defining the minimum boundary
+        for the dimension. If None, the minimum is unbounded.
+    :param range_max: For use in defining the boundaries of a RectangleGate. A float defining the maximum boundary
+        for the dimension. If None, the maximum is unbounded.
+    """
     def __init__(
             self,
             label,
-            compensation_ref,
+            compensation_ref='uncompensated',
             transformation_ref=None,
             range_min=None,
             range_max=None
     ):
-        # a compensation reference is required, although the value can be
-        # the string 'uncompensated' for non-compensated dimensions, or 'FCS'
-        # for using the embedded spill in the FCS file. Otherwise it is a
+        # a compensation reference is required, with the default value being
+        # the string 'uncompensated' for non-compensated dimensions. Use 'FCS'
+        # for specifying the embedded spill in the FCS file. Otherwise, it is a
         # reference to a Matrix in the GatingStrategy
         self.compensation_ref = compensation_ref
 
         # label is required
         self.label = label
 
-        # transformation is optional
+        # transformation is optional, but if present must be a string
+        if transformation_ref is not None and not isinstance(transformation_ref, str):
+            raise ValueError("Transformation reference must be a text string or None")
+
         self.transformation_ref = transformation_ref
 
         if range_min is not None:

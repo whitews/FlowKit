@@ -1,7 +1,10 @@
+"""
+Unit tests for string representations
+"""
 import unittest
 import flowkit as fk
-from .prog_gating_unit_tests import spill01_data, spill01_detectors, spill01_fluoros, \
-    logicle_xform1, hyperlog_xform1, poly1_gate
+from .prog_gating_unit_tests import comp_matrix_01, logicle_xform1, hyperlog_xform1, poly1_gate
+
 data1_fcs_path = 'examples/gate_ref/data1.fcs'
 data1_sample = fk.Sample(data1_fcs_path)
 
@@ -37,11 +40,23 @@ class StringReprTestCase(unittest.TestCase):
 
         self.assertEqual(repr(quad1_div1), quad_div_string)
 
+    def test_wsp_log_xform_repr(self):
+        xform = fk.transforms.WSPLogTransform('wsp_log', offset=0.5, decades=4.5)
+        xform_string = "WSPLogTransform(wsp_log, offset: 0.5, decades: 4.5)"
+
+        self.assertEqual(repr(xform), xform_string)
+
+    def test_sample_repr(self):
+        fcs_file_path = "examples/gate_ref/data1.fcs"
+        sample = fk.Sample(fcs_path_or_data=fcs_file_path)
+        sample_string = "Sample(v2.0, B07, 8 channels, 13367 events)"
+
+        self.assertEqual(repr(sample), sample_string)
+
     def test_gating_strategy_repr(self):
         gs = fk.GatingStrategy()
 
-        comp_matrix = fk.Matrix('MySpill', spill01_data, spill01_detectors, spill01_fluoros)
-        gs.add_comp_matrix(comp_matrix)
+        gs.add_comp_matrix(comp_matrix_01)
 
         gs.add_transform(logicle_xform1)
         gs.add_transform(hyperlog_xform1)

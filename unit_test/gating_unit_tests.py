@@ -8,7 +8,7 @@ import pandas as pd
 
 sys.path.append(os.path.abspath('..'))
 
-from flowkit import Sample, Session, gates
+from flowkit import Sample, Session, gates, parse_gating_xml
 
 data1_fcs_path = 'examples/gate_ref/data1.fcs'
 data1_sample = Sample(data1_fcs_path)
@@ -821,7 +821,7 @@ class GatingMLTestCase(unittest.TestCase):
 
         self.assertEqual(parent_id, 'ScaleRect1')
 
-        parent_gate = s.get_gate_by_reference(group_name, data1_sample.original_filename, parent_id)
+        parent_gate = s.get_gate(group_name, data1_sample.original_filename, parent_id)
 
         self.assertIsInstance(parent_gate, gates.RectangleGate)
 
@@ -837,9 +837,20 @@ class GatingMLTestCase(unittest.TestCase):
 
         self.assertEqual(parent_id, 'FL2P-FL4P')
 
-        parent_gate = s.get_gate_by_reference(group_name, data1_sample.original_filename, parent_id)
+        parent_gate = s.get_gate(group_name, data1_sample.original_filename, parent_id)
 
-        self.assertIsInstance(parent_gate, gates.QuadrantGate)
+        self.assertIsInstance(parent_gate, gates.Quadrant)
+
+    def test_gate_gating_hierarchy(self):
+        gml_path = 'examples/gate_ref/gml/gml_all_gates.xml'
+        gs = parse_gating_xml(gml_path)
+        gs_ascii = gs.get_gate_hierarchy('ascii')
+        gs_json = gs.get_gate_hierarchy('json')
+        gs_dict = gs.get_gate_hierarchy('dict')
+
+        self.assertIsInstance(gs_ascii, str)
+        self.assertIsInstance(gs_json, str)
+        self.assertIsInstance(gs_dict, dict)
 
     @staticmethod
     def test_all_gates():

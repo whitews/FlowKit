@@ -1,3 +1,7 @@
+"""
+Sample class
+"""
+
 import flowio
 import os
 from pathlib import Path
@@ -5,19 +9,45 @@ import io
 from tempfile import TemporaryFile
 import numpy as np
 import pandas as pd
-from flowkit._models.transforms import transforms
-from flowkit._models.transforms.matrix import Matrix
-from .. import _utils, _plot_utils
 import matplotlib.pyplot as plt
 import seaborn
 from bokeh.layouts import gridplot
+from bokeh.models import Title
 import warnings
+from .._models.transforms import _transforms
+from .._models.transforms._matrix import Matrix
+from .._utils import utils
+from .._utils import plot_utils
 
 
 class Sample(object):
     """
     Represents a single FCS sample from an FCS file, NumPy array or Pandas
     DataFrame.
+
+    :param fcs_path_or_data: FCS data, can be either:
+
+        - a file path or file handle to an FCS file
+        - a pathlib Path object
+        - a FlowIO FlowData object
+        - a NumPy array of FCS event data (must provide channel_labels)
+        - a Pandas DataFrame containing FCS event data (channel labels as column labels)
+
+    :param channel_labels: A list of strings or a list of tuples to use for the channel
+        labels. Required if fcs_path_or_data is a NumPy array
+
+    :param compensation: Compensation matrix, which can be a:
+
+        - Matrix instance
+        - NumPy array
+        - CSV file path
+        - pathlib Path object to a CSV or TSV file
+        - string of CSV text
+
+    :param null_channel_list: List of PnN labels for channels that were collected
+        but do not contain useful data. Note, this should only be used if there were
+        truly no fluorochromes used targeting those detectors and the channels
+        do not contribute to compensation.
     """
     def __init__(
             self,
@@ -28,23 +58,6 @@ class Sample(object):
     ):
         """
         Create a Sample instance
-
-        :param fcs_path_or_data: FCS data, can be either:
-                - a file path or file handle to an FCS file
-                - a pathlib Path object
-                - a FlowIO FlowData object
-                - a NumPy array of FCS event data (must provide channel_labels)
-                - a Pandas DataFrame containing FCS event data (channel labels as headers)
-        :param channel_labels: A list of strings or a list of tuples to use for the channel
-            labels. Required if fcs_path_or_data is a NumPy array
-        :param compensation: Compensation matrix. Can be either:
-                - a text string in CSV or TSV format
-                - a string path to a CSV or TSV file
-                - a pathlib Path object to a CSV or TSV file
-        :param null_channel_list: List of PnN labels for channels that were collected
-            but do not contain useful data. Note, this should only be used if there were
-            truly no fluorochromes used targeting those detectors and the channels
-            do not contribute to compensation.
         """
         # inspect our fcs_path_or_data argument
         if isinstance(fcs_path_or_data, str):
@@ -61,6 +74,15 @@ class Sample(object):
             flowio.create_fcs(
                 fcs_path_or_data.flatten().tolist(),
                 channel_names=channel_labels,
+                file_handle=tmp_file
+            )
+
+            flow_data = flowio.FlowData(tmp_file)
+        elif isinstance(fcs_path_or_data, pd.DataFrame):
+            tmp_file = TemporaryFile()
+            flowio.create_fcs(
+                fcs_path_or_data.values.flatten().tolist(),
+                channel_names=fcs_path_or_data.columns,
                 file_handle=tmp_file
             )
 
@@ -84,6 +106,7 @@ class Sample(object):
         channel_lin_log = []
         channel_range = []
         self.metadata = flow_data.text
+        time_index = None
 
         for n in sorted([int(k) for k in self.channels.keys()]):
             chan_label = self.channels[str(n)]['PnN']
@@ -111,6 +134,8 @@ class Sample(object):
 
             if chan_label.lower()[:4] not in ['fsc-', 'ssc-', 'time']:
                 self.fluoro_indices.append(n - 1)
+            elif chan_label.lower() == 'time':
+                time_index = n - 1
 
             if 'PnS' in self.channels[str(n)]:
                 self.pns_labels.append(self.channels[str(n)]['PnS'])
@@ -121,11 +146,15 @@ class Sample(object):
 
         # Raw events need to be scaled according to channel gain, as well
         # as corrected for proper lin/log display
-        # These are the only pre-processing we will do on raw events
+        # This is the only pre-processing we will do on raw events
         raw_events = np.reshape(
             np.array(flow_data.events, dtype=np.float),
             (-1, flow_data.channel_count)
         )
+
+        if 'timestep' in self.metadata and time_index is not None:
+            time_step = float(self.metadata['timestep'])
+            raw_events[:, time_index] = raw_events[:, time_index] * time_step
 
         # But first, we'll save the unprocessed events
         self._orig_events = raw_events.copy()
@@ -176,6 +205,8 @@ class Sample(object):
     def filter_negative_scatter(self, reapply_subsample=True):
         """
         Determines indices of negative scatter events, optionally re-subsample the Sample events afterward
+
+        :param reapply_subsample: Whether to re-subsample the Sample events after filtering. Default is True
         """
         scatter_indices = []
         for i, p in enumerate(self.pnn_labels):
@@ -216,7 +247,7 @@ class Sample(object):
         """
         rng = np.random.RandomState(seed=random_seed)
 
-        logicle_xform = transforms.LogicleTransform(
+        logicle_xform = _transforms.LogicleTransform(
             'my_xform',
             param_t=262144,
             param_w=1.0,
@@ -237,7 +268,7 @@ class Sample(object):
         for idx in eval_indices:
             eval_labels.append(self.pnn_labels[idx])
 
-        anomalous_idx = _utils.filter_anomalous_events(
+        anomalous_idx = utils.filter_anomalous_events(
             xform_events[:, eval_indices],
             eval_labels,
             rng=rng,
@@ -300,7 +331,7 @@ class Sample(object):
 
         self.subsample_indices = shuffled_indices[:self._subsample_count]
 
-    def apply_compensation(self, compensation, comp_id='fcs'):
+    def apply_compensation(self, compensation, comp_id='custom_spill'):
         """
         Applies given compensation matrix to Sample events. If any
         transformation has been applied, those events will be deleted.
@@ -308,6 +339,7 @@ class Sample(object):
         `get_comp_events`.
 
         :param compensation: Compensation matrix, which can be a:
+
                 - Matrix instance
                 - NumPy array
                 - CSV file path
@@ -417,7 +449,20 @@ class Sample(object):
         else:
             return self._transformed_events
 
-    def get_events_as_data_frame(self, source='xform', subsample=False):
+    def as_dataframe(self, source='xform', subsample=False, col_order=None, col_names=None):
+        """
+        Returns a Pandas DataFrame of event data
+
+        :param source: 'raw', 'comp', 'xform' for whether the raw, compensated
+            or transformed events will be returned
+        :param subsample: Whether to return all events or just the sub-sampled
+            events. Default is False (all events)
+        :param col_order: list of PnN labels. Determines the order of columns
+            in the output DataFrame. If None, the column order will match the FCS file.
+        :param col_names: list of new column labels. If None (default), the DataFrame
+            columns will be a MultiIndex of the PnN / PnS labels.
+        :return: Pandas DataFrame of event data
+        """
         if source == 'xform':
             events = self.get_transformed_events(subsample=subsample)
         elif source == 'comp':
@@ -431,6 +476,12 @@ class Sample(object):
 
         multi_cols = pd.MultiIndex.from_arrays([self.pnn_labels, self.pns_labels], names=['pnn', 'pns'])
         events_df = pd.DataFrame(data=events, columns=multi_cols)
+
+        if col_order is not None:
+            events_df = events_df[col_order]
+
+        if col_names is not None:
+            events_df.columns = col_names
 
         return events_df
 
@@ -460,6 +511,8 @@ class Sample(object):
         if isinstance(channel_label_or_number, str):
             index = self.get_channel_number_by_label(channel_label_or_number) - 1
         elif isinstance(channel_label_or_number, int):
+            if channel_label_or_number < 1:
+                raise ValueError("Channel numbers are indexed at 1, got %d" % channel_label_or_number)
             index = channel_label_or_number - 1
         else:
             raise ValueError("x_label_or_number must be a label string or channel number")
@@ -506,6 +559,12 @@ class Sample(object):
         return transformed_events
 
     def apply_transform(self, transform):
+        """
+        Applies given transform to Sample events, and overwrites the `transform` attribute.
+
+        :param transform: an instance of one of the various Transform sub-classes in the transforms module
+        """
+
         self._transformed_events = self._transform(transform)
         self.transform = transform
 
@@ -557,8 +616,8 @@ class Sample(object):
         x = self.get_channel_data(x_index, source=source, subsample=subsample)
         y = self.get_channel_data(y_index, source=source, subsample=subsample)
 
-        x_min, x_max = _plot_utils.calculate_extent(x, d_min=x_min, d_max=x_max, pad=0.02)
-        y_min, y_max = _plot_utils.calculate_extent(y, d_min=y_min, d_max=y_max, pad=0.02)
+        x_min, x_max = plot_utils.calculate_extent(x, d_min=x_min, d_max=x_max, pad=0.02)
+        y_min, y_max = plot_utils.calculate_extent(y, d_min=y_min, d_max=y_max, pad=0.02)
 
         fig, ax = plt.subplots(figsize=fig_size)
         ax.set_title(self.original_filename)
@@ -572,7 +631,7 @@ class Sample(object):
             seaborn.scatterplot(
                 x,
                 y,
-                palette=_plot_utils.new_jet,
+                palette=plot_utils.new_jet,
                 legend=False,
                 s=5,
                 linewidth=0,
@@ -584,7 +643,7 @@ class Sample(object):
                 x,
                 y,
                 bw='scott',
-                cmap=_plot_utils.new_jet,
+                cmap=plot_utils.new_jet,
                 linewidths=2,
                 alpha=1
             )
@@ -631,7 +690,8 @@ class Sample(object):
         if source == 'xform' and self._transformed_events is None:
             raise AttributeError(
                 "Transformed events were requested but do not exist.\n"
-                "Have you called a transform method?"
+                "Have you called a transform method? \n"
+                "Or, maybe you meant to plot the non-transformed events? If so, use the source='raw' option."
             )
 
         x_index = self.get_channel_index(x_label_or_number)
@@ -652,17 +712,18 @@ class Sample(object):
         else:
             dim_labels.append(self.pnn_labels[y_index])
 
-        p = _plot_utils.plot_scatter(
+        p = plot_utils.plot_scatter(
             x,
             y,
             dim_labels,
-            title=self.original_filename,
             x_min=x_min,
             x_max=x_max,
             y_min=y_min,
             y_max=y_max,
             color_density=color_density
         )
+
+        p.title = Title(text=self.original_filename, align='center')
 
         return p
 
@@ -758,7 +819,13 @@ class Sample(object):
         channel_index = self.get_channel_index(channel_label_or_number)
         channel_data = self.get_channel_data(channel_index, source=source, subsample=subsample)
 
-        p = _plot_utils.plot_histogram(channel_data, bins=bins, title=self.original_filename)
+        p = plot_utils.plot_histogram(
+            channel_data,
+            x_label=self.pnn_labels[channel_index],
+            bins=bins
+        )
+
+        p.title = Title(text=self.original_filename, align='center')
 
         return p
 

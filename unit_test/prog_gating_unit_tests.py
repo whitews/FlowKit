@@ -21,179 +21,33 @@ poly1_dim2 = fk.Dimension('FL3-H', compensation_ref='FCS')
 poly1_dims1 = [poly1_dim1, poly1_dim2]
 poly1_gate = fk.gates.PolygonGate('Polygon1', None, poly1_dims1, poly1_vertices)
 
-quadrants_q1 = {
-    'FL2P-FL4P': [
-        {
-            'divider': 'FL2',
-            'dimension': 'FL2-H',
-            'location': 15.0,
-            'min': 12.14748,
-            'max': None
-        },
-        {
-            'divider': 'FL4',
-            'dimension': 'FL4-H',
-            'location': 15.0,
-            'min': 14.22417,
-            'max': None
-        }
-    ],
-    'FL2N-FL4P': [
-        {
-            'divider': 'FL2',
-            'dimension': 'FL2-H',
-            'location': 5.0,
-            'min': None,
-            'max': 12.14748
-        },
-        {
-            'divider': 'FL4',
-            'dimension': 'FL4-H',
-            'location': 15.0,
-            'min': 14.22417,
-            'max': None
-        }
-    ],
-    'FL2N-FL4N': [
-        {
-            'divider': 'FL2',
-            'dimension': 'FL2-H',
-            'location': 5.0,
-            'min': None,
-            'max': 12.14748
-        },
-        {
-            'divider': 'FL4',
-            'dimension': 'FL4-H',
-            'location': 5.0,
-            'min': None,
-            'max': 14.22417
-        }
-    ],
-    'FL2P-FL4N': [
-        {
-            'divider': 'FL2',
-            'dimension': 'FL2-H',
-            'location': 15.0,
-            'min': 12.14748,
-            'max': None
-        },
-        {
-            'divider': 'FL4',
-            'dimension': 'FL4-H',
-            'location': 5.0,
-            'min': None,
-            'max': 14.22417
-        }
-    ]
-}
 quad1_div1 = fk.QuadrantDivider('FL2', 'FL2-H', 'FCS', [12.14748])
 quad1_div2 = fk.QuadrantDivider('FL4', 'FL4-H', 'FCS', [14.22417])
 quad1_divs = [quad1_div1, quad1_div2]
-quad1_gate = fk.gates.QuadrantGate('Quadrant1', None, quad1_divs, quadrants_q1)
 
-quadrants_q2 = {
-    'FSCD-FL1P': [
-        {
-            'dimension': 'FSC-H',
-            'divider': 'FSC',
-            'location': 30.0,
-            'max': 70.02725,
-            'min': 28.0654},
-        {
-            'dimension': 'FL1-H',
-            'divider': 'FL1',
-            'location': 10.0,
-            'max': None,
-            'min': 6.43567
-        }
-    ],
-    'FSCD-SSCN-FL1N': [
-        {
-            'dimension': 'FSC-H',
-            'divider': 'FSC',
-            'location': 30.0,
-            'max': 70.02725,
-            'min': 28.0654
-        },
-        {
-            'dimension': 'SSC-H',
-            'divider': 'SSC',
-            'location': 10.0,
-            'max': 17.75,
-            'min': None
-        },
-        {
-            'dimension': 'FL1-H',
-            'divider': 'FL1',
-            'location': 5.0,
-            'max': 6.43567,
-            'min': None
-        }
-    ],
-    'FSCN-SSCN': [
-        {
-            'dimension': 'FSC-H',
-            'divider': 'FSC',
-            'location': 10.0,
-            'max': 28.0654,
-            'min': None
-        },
-        {
-            'dimension': 'SSC-H',
-            'divider': 'SSC',
-            'location': 10.0,
-            'max': 17.75,
-            'min': None
-        }
-    ],
-    'FSCN-SSCP-FL1P': [
-        {
-            'dimension': 'FSC-H',
-            'divider': 'FSC',
-            'location': 10.0,
-            'max': 28.0654,
-            'min': None
-        },
-        {
-            'dimension': 'SSC-H',
-            'divider': 'SSC',
-            'location': 20.0,
-            'max': None,
-            'min': 17.75
-        },
-        {
-            'dimension': 'FL1-H',
-            'divider': 'FL1',
-            'location': 15.0,
-            'max': None,
-            'min': 6.43567
-        }
-    ],
-    'FSCP-SSCN-FL1N': [
-        {
-            'dimension': 'FSC-H',
-            'divider': 'FSC',
-            'location': 80.0,
-            'max': None,
-            'min': 70.02725
-        },
-        {
-            'dimension': 'SSC-H',
-            'divider': 'SSC',
-            'location': 10.0,
-            'max': 17.75,
-            'min': None
-        },
-        {
-            'dimension': 'FL1-H',
-            'divider': 'FL1',
-            'location': 5.0,
-            'max': 6.43567,
-            'min': None
-        }
-    ]
-}
+quad_1 = fk.gates.Quadrant(
+    quadrant_id='FL2P-FL4P',
+    divider_refs=['FL2', 'FL4'],
+    divider_ranges=[(12.14748, None), (14.22417, None)]
+)
+quad_2 = fk.gates.Quadrant(
+    quadrant_id='FL2N-FL4P',
+    divider_refs=['FL2', 'FL4'],
+    divider_ranges=[(None, 12.14748), (14.22417, None)]
+)
+quad_3 = fk.gates.Quadrant(
+    quadrant_id='FL2N-FL4N',
+    divider_refs=['FL2', 'FL4'],
+    divider_ranges=[(None, 12.14748), (None, 14.22417)]
+)
+quad_4 = fk.gates.Quadrant(
+    quadrant_id='FL2P-FL4N',
+    divider_refs=['FL2', 'FL4'],
+    divider_ranges=[(12.14748, None), (None, 14.22417)]
+)
+quadrants_q1 = [quad_1, quad_2, quad_3, quad_4]
+
+quad1_gate = fk.gates.QuadrantGate('Quadrant1', None, quad1_divs, quadrants_q1)
 
 range1_dim1 = fk.Dimension('FSC-H', compensation_ref='uncompensated', range_min=100)
 range1_dims = [range1_dim1]
@@ -222,6 +76,7 @@ spill01_data = np.array(
         [0.09, 0.01, 1]
     ]
 )
+comp_matrix_01 = fk.Matrix('MySpill', spill01_data, spill01_detectors, spill01_fluoros)
 
 asinh_xform1 = fk.transforms.AsinhTransform(
     'AsinH_10000_4_1',
@@ -494,6 +349,34 @@ class GatingTestCase(unittest.TestCase):
 
         divs = [div1, div2, div3]
 
+        q2_quad_1 = fk.gates.Quadrant(
+            quadrant_id='FSCD-FL1P',
+            divider_refs=['FSC', 'FL1'],
+            divider_ranges=[(28.0654, 70.02725), (6.43567, None)]
+        )
+        q2_quad_2 = fk.gates.Quadrant(
+            quadrant_id='FSCD-SSCN-FL1N',
+            divider_refs=['FSC', 'SSC', 'FL1'],
+            divider_ranges=[(28.0654, 70.02725), (None, 17.75), (None, 6.43567)]
+        )
+        q2_quad_3 = fk.gates.Quadrant(
+            quadrant_id='FSCN-SSCN',
+            divider_refs=['FSC', 'SSC'],
+            divider_ranges=[(None, 28.0654), (None, 17.75)]
+        )
+        q2_quad_4 = fk.gates.Quadrant(
+            quadrant_id='FSCN-SSCP-FL1P',
+            divider_refs=['FSC', 'SSC', 'FL1'],
+            divider_ranges=[(None, 28.0654), (17.75, None), (6.43567, None)]
+        )
+        q2_quad_5 = fk.gates.Quadrant(
+            quadrant_id='FSCP-SSCN-FL1N',
+            divider_refs=['FSC', 'SSC', 'FL1'],
+            divider_ranges=[(70.02725, None), (None, 17.75), (None, 6.43567)]
+        )
+
+        quadrants_q2 = [q2_quad_1, q2_quad_2, q2_quad_3, q2_quad_4, q2_quad_5]
+
         quad_gate = fk.gates.QuadrantGate('Quadrant2', None, divs, quadrants_q2)
         gs.add_gate(quad_gate)
 
@@ -635,9 +518,7 @@ class GatingTestCase(unittest.TestCase):
         gs = fk.GatingStrategy()
 
         gs.add_gate(range1_gate)
-
         gs.add_gate(poly1_gate)
-
         gs.add_gate(ellipse1_gate)
 
         gate_refs = [
@@ -807,7 +688,6 @@ class GatingTestCase(unittest.TestCase):
 
         rect_gate = fk.gates.RectangleGate('Rectangle2', None, rect_dims)
         gs.add_gate(rect_gate)
-
         gs.add_gate(quad1_gate)
 
         gate1_refs = [
@@ -835,8 +715,7 @@ class GatingTestCase(unittest.TestCase):
     def test_add_matrix_poly4_gate():
         gs = fk.GatingStrategy()
 
-        comp_matrix = fk.Matrix('MySpill', spill01_data, spill01_detectors, spill01_fluoros)
-        gs.add_comp_matrix(comp_matrix)
+        gs.add_comp_matrix(comp_matrix_01)
 
         dim1 = fk.Dimension('PE', compensation_ref='MySpill')
         dim2 = fk.Dimension('PerCP', compensation_ref='MySpill')
@@ -856,8 +735,7 @@ class GatingTestCase(unittest.TestCase):
     def test_add_matrix_rect3_gate():
         gs = fk.GatingStrategy()
 
-        comp_matrix = fk.Matrix('MySpill', spill01_data, spill01_detectors, spill01_fluoros)
-        gs.add_comp_matrix(comp_matrix)
+        gs.add_comp_matrix(comp_matrix_01)
 
         dim1 = fk.Dimension('FITC', compensation_ref='MySpill', range_min=5, range_max=70)
         dim2 = fk.Dimension('PE', compensation_ref='MySpill', range_min=9, range_max=208)
@@ -877,8 +755,7 @@ class GatingTestCase(unittest.TestCase):
     def test_add_matrix_rect4_gate():
         gs = fk.GatingStrategy()
 
-        comp_matrix = fk.Matrix('MySpill', spill01_data, spill01_detectors, spill01_fluoros)
-        gs.add_comp_matrix(comp_matrix)
+        gs.add_comp_matrix(comp_matrix_01)
 
         dim1 = fk.Dimension('PerCP', compensation_ref='MySpill', range_min=7, range_max=90)
         dim2 = fk.Dimension('FSC-H', compensation_ref='uncompensated', range_min=10, range_max=133)
@@ -898,8 +775,7 @@ class GatingTestCase(unittest.TestCase):
     def test_add_matrix_rect5_gate():
         gs = fk.GatingStrategy()
 
-        comp_matrix = fk.Matrix('MySpill', spill01_data, spill01_detectors, spill01_fluoros)
-        gs.add_comp_matrix(comp_matrix)
+        gs.add_comp_matrix(comp_matrix_01)
 
         dim1 = fk.Dimension('PerCP', compensation_ref='MySpill', range_min=7, range_max=90)
         dim2 = fk.Dimension('FSC-H', compensation_ref='uncompensated', range_min=10)
@@ -1038,8 +914,7 @@ class GatingTestCase(unittest.TestCase):
     def test_add_matrix_transform_asinh_range1c_gate():
         gs = fk.GatingStrategy()
 
-        comp_matrix = fk.Matrix('MySpill', spill01_data, spill01_detectors, spill01_fluoros)
-        gs.add_comp_matrix(comp_matrix)
+        gs.add_comp_matrix(comp_matrix_01)
 
         gs.add_transform(asinh_xform1)
 
@@ -1060,8 +935,7 @@ class GatingTestCase(unittest.TestCase):
     def test_add_matrix_transform_hyperlog_range2c_gate():
         gs = fk.GatingStrategy()
 
-        comp_matrix = fk.Matrix('MySpill', spill01_data, spill01_detectors, spill01_fluoros)
-        gs.add_comp_matrix(comp_matrix)
+        gs.add_comp_matrix(comp_matrix_01)
 
         gs.add_transform(hyperlog_xform1)
 
@@ -1082,8 +956,7 @@ class GatingTestCase(unittest.TestCase):
     def test_add_matrix_transform_linear_range3c_gate():
         gs = fk.GatingStrategy()
 
-        comp_matrix = fk.Matrix('MySpill', spill01_data, spill01_detectors, spill01_fluoros)
-        gs.add_comp_matrix(comp_matrix)
+        gs.add_comp_matrix(comp_matrix_01)
 
         gs.add_transform(linear_xform1)
 
@@ -1104,8 +977,7 @@ class GatingTestCase(unittest.TestCase):
     def test_add_matrix_transform_logicle_range4c_gate():
         gs = fk.GatingStrategy()
 
-        comp_matrix = fk.Matrix('MySpill', spill01_data, spill01_detectors, spill01_fluoros)
-        gs.add_comp_matrix(comp_matrix)
+        gs.add_comp_matrix(comp_matrix_01)
 
         gs.add_transform(logicle_xform1)
 
@@ -1126,8 +998,7 @@ class GatingTestCase(unittest.TestCase):
     def test_add_matrix_transform_logicle_range5c_gate():
         gs = fk.GatingStrategy()
 
-        comp_matrix = fk.Matrix('MySpill', spill01_data, spill01_detectors, spill01_fluoros)
-        gs.add_comp_matrix(comp_matrix)
+        gs.add_comp_matrix(comp_matrix_01)
 
         gs.add_transform(logicle_xform3)
 
@@ -1148,8 +1019,7 @@ class GatingTestCase(unittest.TestCase):
     def test_add_matrix_transform_asinh_range6c_gate():
         gs = fk.GatingStrategy()
 
-        comp_matrix = fk.Matrix('MySpill', spill01_data, spill01_detectors, spill01_fluoros)
-        gs.add_comp_matrix(comp_matrix)
+        gs.add_comp_matrix(comp_matrix_01)
 
         gs.add_transform(asinh_xform1)
 
@@ -1170,8 +1040,7 @@ class GatingTestCase(unittest.TestCase):
     def test_add_matrix_transform_hyperlog_range7c_gate():
         gs = fk.GatingStrategy()
 
-        comp_matrix = fk.Matrix('MySpill', spill01_data, spill01_detectors, spill01_fluoros)
-        gs.add_comp_matrix(comp_matrix)
+        gs.add_comp_matrix(comp_matrix_01)
 
         gs.add_transform(hyperlog_xform1)
 
@@ -1192,8 +1061,7 @@ class GatingTestCase(unittest.TestCase):
     def test_add_matrix_transform_logicle_range8c_gate():
         gs = fk.GatingStrategy()
 
-        comp_matrix = fk.Matrix('MySpill', spill01_data, spill01_detectors, spill01_fluoros)
-        gs.add_comp_matrix(comp_matrix)
+        gs.add_comp_matrix(comp_matrix_01)
 
         gs.add_transform(logicle_xform3)
 
@@ -1214,8 +1082,7 @@ class GatingTestCase(unittest.TestCase):
     def test_add_matrix_transform_logicle_rect1_gate():
         gs = fk.GatingStrategy()
 
-        comp_matrix = fk.Matrix('MySpill', spill01_data, spill01_detectors, spill01_fluoros)
-        gs.add_comp_matrix(comp_matrix)
+        gs.add_comp_matrix(comp_matrix_01)
 
         gs.add_transform(logicle_xform1)
 
@@ -1245,7 +1112,6 @@ class GatingTestCase(unittest.TestCase):
 
         ellipse_gate = fk.gates.EllipsoidGate('Ellipse1', None, dims2, ell1_coords, ell1_cov_mat, ell1_dist_square)
         gs.add_gate(ellipse_gate)
-
         gs.add_gate(range1_gate)
 
         gate_refs = [
@@ -1302,8 +1168,7 @@ class GatingTestCase(unittest.TestCase):
     def test_add_parent_rect1_rect_par1_gate():
         gs = fk.GatingStrategy()
 
-        comp_matrix = fk.Matrix('MySpill', spill01_data, spill01_detectors, spill01_fluoros)
-        gs.add_comp_matrix(comp_matrix)
+        gs.add_comp_matrix(comp_matrix_01)
 
         gs.add_transform(logicle_xform1)
         gs.add_transform(hyperlog_xform1)
@@ -1375,16 +1240,14 @@ class GatingTestCase(unittest.TestCase):
 
     def test_add_duplicate_matrix_id(self):
         gs = fk.GatingStrategy()
-        comp_matrix = fk.Matrix('MySpill', spill01_data, spill01_detectors, spill01_fluoros)
-        gs.add_comp_matrix(comp_matrix)
+        gs.add_comp_matrix(comp_matrix_01)
 
-        self.assertRaises(KeyError, gs.add_comp_matrix, comp_matrix)
+        self.assertRaises(KeyError, gs.add_comp_matrix, comp_matrix_01)
 
     def test_absolute_percent(self):
         gs = fk.GatingStrategy()
 
-        comp_matrix = fk.Matrix('MySpill', spill01_data, spill01_detectors, spill01_fluoros)
-        gs.add_comp_matrix(comp_matrix)
+        gs.add_comp_matrix(comp_matrix_01)
 
         gs.add_transform(logicle_xform1)
         gs.add_transform(hyperlog_xform1)
@@ -1404,9 +1267,9 @@ class GatingTestCase(unittest.TestCase):
         rect_gate2 = fk.gates.RectangleGate('ScalePar1', 'ScaleRect1', dims2)
         gs.add_gate(rect_gate2)
 
-        result = gs.gate_sample(data1_sample, rect_gate2.id)
-        parent_gate_id = gs.get_parent_gate_id(rect_gate2.id)
-        parent_gate_count = result.get_gate_count(parent_gate_id)
+        result = gs.gate_sample(data1_sample)
+        parent_gate = gs.get_parent_gate(rect_gate2.id)
+        parent_gate_count = result.get_gate_count(parent_gate.id)
         gate_count = result.get_gate_count(rect_gate2.id)
         gate_abs_pct = result.get_gate_absolute_percent(rect_gate2.id)
         gate_rel_pct = result.get_gate_relative_percent(rect_gate2.id)

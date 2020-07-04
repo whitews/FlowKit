@@ -71,11 +71,11 @@ static struct PyModuleDef utilsdef = {
 #endif
 
 #if PY_MAJOR_VERSION >= 3
-PyMODINIT_FUNC PyInit_utils_c(void) {
+PyMODINIT_FUNC PyInit__utils_c(void) {
     PyObject *m = PyModule_Create(&utilsdef);
 #else
 PyMODINIT_FUNC initutils_c(void) {
-    PyObject *m = Py_InitModule3("utils_c", module_methods, NULL);
+    PyObject *m = Py_InitModule3("_utils_c", module_methods, NULL);
 #endif
 
     if (m == NULL) {

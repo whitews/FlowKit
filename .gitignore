@@ -31,3 +31,4 @@ wheels/
 # Jupyter Notebook
 .ipynb_checkpoints
 *.ipynb
+/docs/_build/*

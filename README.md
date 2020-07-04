@@ -1,4 +1,4 @@
-# <img alt="FlowKit" src="flowkit/_resources/flowkit.png" />
+# <img alt="FlowKit" src="docs/_static/flowkit.png" />
 
 [![PyPI license](https://img.shields.io/pypi/l/flowkit.svg?colorB=dodgerblue)](https://pypi.python.org/pypi/flowkit/)
 [![PyPI pyversions](https://img.shields.io/pypi/pyversions/flowkit.svg)](https://pypi.python.org/pypi/flowkit/)
@@ -6,9 +6,17 @@
 
 [![Build Status](https://travis-ci.com/whitews/FlowKit.svg?branch=master)](https://travis-ci.com/whitews/FlowKit)
 [![Coverage](https://codecov.io/gh/whitews/FlowKit/branch/develop/graph/badge.svg)](https://codecov.io/gh/whitews/flowkit)
+[![Documentation Status](https://readthedocs.org/projects/flowkit/badge/?version=latest)](https://flowkit.readthedocs.io/en/latest/?badge=latest)
+
+* [Overview](#overview)
+* [Requirements](#requirements)
+* [Installation](#installation)
+* [Usage](#usage)
+* [Contributing](#contributing)
+
 ## Overview
 
-FlowKit is an intuitive Python toolkit for flow cytometry analysis and visualization, including GatingML 2.0 support. Features include:
+FlowKit is an intuitive Python toolkit for flow cytometry analysis and visualization, with full support for the [GatingML 2.0 standard](http://flowcyt.sourceforge.net/gating/latest.pdf) and limited support for FlowJo 10 workspace files. Features include:
 
 * Reading Flow Cytometry Standard data (FCS files), including FCS versions:
   * 2.0
@@ -26,7 +34,7 @@ FlowKit is an intuitive Python toolkit for flow cytometry analysis and visualiza
     * NumPy array
     * GatingML 2.0 spectrumMatrix XML element
   * Automatically create a compensation matrix from a set of compensation bead files
-* Tranformation of FCS events in a variety of transforms used in the flow community:
+* Transformation of FCS events in a variety of transforms used in the flow community:
   * Logicle
   * Inverse hyperbolic sine (arcsinh)
   * Hyperlog
@@ -39,9 +47,9 @@ FlowKit is an intuitive Python toolkit for flow cytometry analysis and visualiza
     * Export gating strategies as a valid GatingML XML document
   * Limited support for importing FlowJo 10 workspace files. Workspace files are currently limited to the following features:
     * Linear, logarithmic, and logicle transforms
-    * Polygon gates
+    * Polygon, rectangle, and quadrant gates
   * Programmatically create gating strategies including polygon, rectangle, range, ellipsoid, quadrant, and boolean gates
-  * Easily retrieve gating results from a gating strategies as a Pandas DataFrame. Results include:
+  * Easily retrieve gating results from a gating strategy as a Pandas DataFrame. Results include:
     * FCS sample ID
     * Gate name
     * Absolute event count
@@ -49,7 +57,7 @@ FlowKit is an intuitive Python toolkit for flow cytometry analysis and visualiza
     * Absolute percentage
 * Optional, automatic filtering of negative scatter events and/or anomalous events
 * Visualizing FCS event data:
-  * Histogram of single channel data with a Gaussian kernel density estimate curve
+  * Histogram of single channel data
   * Contour density plot of two channels
   * Interactive scatter plot of two channels
   * Interactive scatter plot matrix of any combination of channels
@@ -63,7 +71,7 @@ FlowKit supports Python version 3.6 or above. All dependencies are installable
 via pip, and are listed below.
 
 ***Note: FlowKit and FlowUtils use C extensions for significant performance 
-improvements relating to various tranformations. If using `gcc`, version 5 or 
+improvements relating to various transformations. If using `gcc`, version 5 or 
 above is required for correct Logicle and Hyperlog transformations.***
 
 Required Python dependencies:
@@ -86,7 +94,13 @@ Required Python dependencies:
 
 ### From PyPI
 
-`pip install flowkit`
+FlowKit is available via the `pip` command. However, NumPy must be installed prior in order to
+compile the C extensions.
+
+```
+pip install numpy
+pip install flowkit
+```
 
 ### From source
 
@@ -102,3 +116,11 @@ Click on the links below to a few Jupyter notebooks that demonstrate basic usage
 
 * [General Overview](https://github.com/whitews/FlowKit/blob/master/examples/flowkit-tutorial.ipynb)
 * [Applying Transforms to a Sample](https://github.com/whitews/FlowKit/blob/master/examples/sample_transforms.ipynb)
+* [Compensating Spillover in a Sample](https://github.com/whitews/FlowKit/blob/master/examples/sample_compensation.ipynb)
+* [Importing a FlowJo 10 WSP file & replicating analysis in FlowKit](https://github.com/whitews/FlowKit/blob/master/examples/flowkit-session-replicate-flowjo-wsp-example.ipynb)
+
+## Contributing
+
+Want to get involved in the development of FlowKit? 
+
+[Read our CONTRIBUTING guidelines](https://github.com/whitews/FlowKit/blob/master/CONTRIBUTING.md)

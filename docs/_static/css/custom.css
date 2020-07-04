@@ -1,0 +1,8 @@
+div.body li {
+    line-height: 1.5em;
+}
+
+dl.method {
+    margin-top: 27px;
+    margin-left: 17px;
+}

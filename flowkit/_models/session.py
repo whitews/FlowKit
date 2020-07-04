@@ -1,37 +1,50 @@
+"""
+Session class
+"""
 import io
 import os
 import copy
 from glob import glob
 import numpy as np
 import pandas as pd
-from scipy.stats import gaussian_kde
 from sklearn.preprocessing import StandardScaler
 import statsmodels.api as sm
 from MulticoreTSNE import MulticoreTSNE
 import seaborn
+from bokeh.models import Title
 from matplotlib import cm
 import matplotlib.pyplot as plt
-from flowio.create_fcs import create_fcs
-from flowkit import Sample, GatingStrategy, Matrix, gates, _xml_utils, _plot_utils
+from .._models.sample import Sample
+from .._models.gating_strategy import GatingStrategy
+from .._models.transforms._matrix import Matrix
+from .._models import gates
+from .._utils import plot_utils, xml_utils
 import warnings
 
 try:
     import multiprocessing as mp
-    multi_proc = False
+    multi_proc = True
 except ImportError:
     mp = None
     multi_proc = False
 
 
 def get_samples_from_paths(sample_paths):
-    if multi_proc:
-        if len(sample_paths) < mp.cpu_count():
-            proc_count = len(sample_paths)
+    sample_count = len(sample_paths)
+    if multi_proc and sample_count > 1:
+        if sample_count < mp.cpu_count():
+            proc_count = sample_count
         else:
             proc_count = mp.cpu_count() - 1  # leave a CPU free just to be nice
 
-        pool = mp.Pool(processes=proc_count)
-        samples = pool.map(Sample, sample_paths)
+        try:
+            pool = mp.Pool(processes=proc_count)
+            samples = pool.map(Sample, sample_paths)
+        except Exception as e:
+            # noinspection PyUnboundLocalVariable
+            pool.close()
+            raise e
+        pool.close()
     else:
         samples = []
         for path in sample_paths:
@@ -88,15 +101,22 @@ def gate_samples(gating_strategies, samples, verbose):
     # TODO: Looks like multiprocessing can fail for very large workloads (lots of gates), maybe due
     #       to running out of memory. Will investigate further, but for now maybe provide an option
     #       for turning off multiprocessing so end user can avoid this issue if it occurs.
-    if multi_proc:
-        if len(samples) < mp.cpu_count():
-            proc_count = len(samples)
+    sample_count = len(samples)
+    if multi_proc and sample_count > 1:
+        if sample_count < mp.cpu_count():
+            proc_count = sample_count
         else:
             proc_count = mp.cpu_count() - 1  # leave a CPU free just to be nice
 
-        pool = mp.Pool(processes=proc_count)
-        data = [(gating_strategies[i], sample, verbose) for i, sample in enumerate(samples)]
-        all_results = pool.map(gate_sample, data)
+        try:
+            pool = mp.Pool(processes=proc_count)
+            data = [(gating_strategies[i], sample, verbose) for i, sample in enumerate(samples)]
+            all_results = pool.map(gate_sample, data)
+        except Exception as e:
+            # noinspection PyUnboundLocalVariable
+            pool.close()
+            raise e
+        pool.close()
     else:
         all_results = []
         for i, sample in enumerate(samples):
@@ -107,18 +127,36 @@ def gate_samples(gating_strategies, samples, verbose):
 
 
 class Session(object):
+    """
+    The Session class is intended as the main interface in FlowKit for complex flow cytometry analysis.
+    A Session represents a collection of gating strategies and FCS samples. FCS samples are added and assigned to sample
+    groups, and each sample group has a single gating strategy template. The gates in a template can be customized
+    per sample.
+
+    :param fcs_samples: a list of either file paths or Sample instances
+    :param subsample_count: Number of events to use as a sub-sample. If the number of
+        events in the Sample is less than the requested sub-sample count, then the
+        maximum number of available events is used for the sub-sample.
+    """
     def __init__(self, fcs_samples=None, subsample_count=10000):
         self.subsample_count = subsample_count
         self.sample_lut = {}
         self._results_lut = {}
         self._sample_group_lut = {}
-        self.report = None
 
         self.add_sample_group('default')
 
         self.add_samples(fcs_samples)
 
     def add_sample_group(self, group_name, gating_strategy=None):
+        """
+        Create a new sample group to the session. The group name must be unique to the session.
+
+        :param group_name: a text string representing the sample group
+        :param gating_strategy: a gating strategy instance to use for the group template. If None, then a new, blank
+            gating strategy will be created.
+        :return: None
+        """
         if group_name in self._sample_group_lut:
             warnings.warn("A sample group with this name already exists...skipping")
             return
@@ -127,7 +165,7 @@ class Session(object):
             gating_strategy = gating_strategy
         elif isinstance(gating_strategy, str) or isinstance(gating_strategy, io.IOBase):
             # assume a path to an XML file representing either a GatingML document or FlowJo workspace
-            gating_strategy = _xml_utils.parse_gating_xml(gating_strategy)
+            gating_strategy = xml_utils.parse_gating_xml(gating_strategy)
         elif gating_strategy is None:
             gating_strategy = GatingStrategy()
         else:
@@ -140,20 +178,50 @@ class Session(object):
             'samples': {}
         }
 
-    def import_flowjo_workspace(self, workspace_file_or_path):
-        wsp_sample_groups = _xml_utils.parse_wsp(workspace_file_or_path)
+    def import_flowjo_workspace(self, workspace_file_or_path, ignore_missing_files=False):
+        """
+        Imports a FlowJo workspace (version 10+) into the Session. Each sample group in the workspace will
+        be a sample group in the FlowKit session. Referenced samples in the workspace will be imported as
+        references in the session. Ideally, these samples should have already been loaded into the session,
+        and a warning will be issued for each sample reference that has not yet been loaded.
+        Support for FlowJo workspaces is limited to the following
+        features:
+
+          - Transformations:
+
+            - linear
+            - log
+            - logicle
+          - Gates:
+
+            - rectangle
+            - polygon
+            - ellipse
+            - quadrant
+            - range
+
+        :param workspace_file_or_path: WSP workspace file as a file name/path, file object, or file-like object
+        :param ignore_missing_files: Controls whether UserWarning messages are issued for FCS files found in the
+            workspace that have not yet been loaded in the Session. Default is False, displaying warnings.
+        :return: None
+        """
+        wsp_sample_groups = xml_utils.parse_wsp(workspace_file_or_path)
         for group_name, sample_data in wsp_sample_groups.items():
             for sample, data_dict in sample_data.items():
                 if sample not in self.sample_lut:
                     self.sample_lut[sample] = None
-                    msg = "Sample %s has not been added to the session. \n" % sample
-                    msg += "A GatingStrategy was loaded for this sample ID, but the file needs to be added " \
-                           "to the Session prior to running the analyze_samples method."
-                    warnings.warn(msg)
+                    if not ignore_missing_files:
+                        msg = "Sample %s has not been added to the session. \n" % sample
+                        msg += "A GatingStrategy was loaded for this sample ID, but the file needs to be added " \
+                               "to the Session prior to running the analyze_samples method."
+                        warnings.warn(msg)
 
                 gs = GatingStrategy()
 
-                gs.gates = {gate.id: gate for gate in data_dict['gates']}
+                # TODO: change keys to tuple of gate ID, parent ID so gates can be "reused" for different branches
+                for gate_node in data_dict['gates'].descendants:
+                    gs.add_gate(gate_node.gate)
+
                 matrix = data_dict['compensation']
                 if isinstance(matrix, Matrix):
                     gs.comp_matrices[matrix.id] = matrix
@@ -165,6 +233,12 @@ class Session(object):
                 self._sample_group_lut[group_name]['samples'][sample] = gs
 
     def add_samples(self, samples):
+        """
+        Adds FCS samples to the session. All added samples will be added to the 'default' sample group.
+
+        :param samples: a list of Sample instances
+        :return: None
+        """
         new_samples = load_samples(samples)
         for s in new_samples:
             s.subsample_events(self.subsample_count)
@@ -180,6 +254,13 @@ class Session(object):
             self.assign_sample(s.original_filename, 'default')
 
     def assign_sample(self, sample_id, group_name):
+        """
+        Assigns a sample ID to a sample group. Samples can belong to more than one sample group.
+
+        :param sample_id: Sample ID to assign to the specified sample group
+        :param group_name: name of sample group to which the sample will be assigned
+        :return: None
+        """
         group = self._sample_group_lut[group_name]
         if sample_id in group['samples']:
             warnings.warn("Sample %s is already assigned to the group %s...nothing changed" % (sample_id, group_name))
@@ -188,13 +269,34 @@ class Session(object):
         group['samples'][sample_id] = copy.deepcopy(template)
 
     def get_sample_ids(self):
+        """
+        Retrieve the list of Sample IDs that have been loaded or referenced in the Session
+        :return: list of Sample ID strings
+        """
         return list(self.sample_lut.keys())
 
     def get_sample_groups(self):
+        """
+        Retrieve the list of sample group labels defined in the Session
+        :return: list of sample group ID strings
+        """
         return list(self._sample_group_lut.keys())
 
+    def get_group_sample_ids(self, sample_group):
+        """
+        Retrieve the list of Sample IDs belonging to the specified sample group
+        :param sample_group: a text string representing the sample group
+        :return: list of Sample IDs
+        """
+        return self._sample_group_lut[sample_group]['samples'].keys()
+
     def get_group_samples(self, sample_group):
-        sample_ids = self._sample_group_lut[sample_group]['samples'].keys()
+        """
+        Retrieve the list of Sample instances belonging to the specified sample group
+        :param sample_group: a text string representing the sample group
+        :return: list of Sample instances
+        """
+        sample_ids = self.get_group_sample_ids(sample_group)
 
         samples = []
         for s_id in sample_ids:
@@ -203,9 +305,14 @@ class Session(object):
         return samples
 
     def get_gate_ids(self, sample_group):
+        """
+        Retrieve the list of gate IDs defined in the specified sample group
+        :param sample_group: a text string representing the sample group
+        :return: list of gate ID strings
+        """
         group = self._sample_group_lut[sample_group]
         template = group['template']
-        return list(template.gates.keys())
+        return template.get_gate_ids()
 
     # start pass through methods for GatingStrategy class
     def add_gate(self, gate, group_name='default'):
@@ -229,6 +336,12 @@ class Session(object):
         for s_id, s_strategy in s_members.items():
             s_strategy.add_transform(copy.deepcopy(transform))
 
+    def get_transform(self, group_name, sample_id, transform_id):
+        group = self._sample_group_lut[group_name]
+        gating_strategy = group['samples'][sample_id]
+        xform = gating_strategy.get_transform(transform_id)
+        return xform
+
     def add_comp_matrix(self, matrix, group_name='default'):
         # TODO: GatingStrategy method add_comp_matrix accepts only Matrix instances, so this pass through does as well.
         #       Consider adding a pass through Session method to parse comp matrices for conveniently getting a
@@ -242,16 +355,22 @@ class Session(object):
         for s_id, s_strategy in s_members.items():
             s_strategy.add_comp_matrix(copy.deepcopy(matrix))
 
+    def get_comp_matrix(self, group_name, sample_id, matrix_id):
+        group = self._sample_group_lut[group_name]
+        gating_strategy = group['samples'][sample_id]
+        comp_mat = gating_strategy.get_comp_matrix(matrix_id)
+        return comp_mat
+
     def get_parent_gate_id(self, group_name, gate_id):
         group = self._sample_group_lut[group_name]
         template = group['template']
-        gate = template.get_gate_by_reference(gate_id)
+        gate = template.get_gate(gate_id)
         return gate.parent
 
-    def get_gate_by_reference(self, group_name, sample_id, gate_id):
+    def get_gate(self, group_name, sample_id, gate_id, gate_path=None):
         group = self._sample_group_lut[group_name]
         gating_strategy = group['samples'][sample_id]
-        gate = gating_strategy.get_gate_by_reference(gate_id)
+        gate = gating_strategy.get_gate(gate_id, gate_path=gate_path)
         return gate
 
     def get_gate_hierarchy(self, sample_group, output='ascii'):
@@ -264,9 +383,14 @@ class Session(object):
             gating_strategy = group['samples'][sample_id]
         else:
             gating_strategy = group['template']
-        _xml_utils.export_gatingml(gating_strategy, file_handle)
+        xml_utils.export_gatingml(gating_strategy, file_handle)
 
     def get_sample(self, sample_id):
+        """
+        Retrieve a Sample instance from the Session
+        :param sample_id: a text string representing the sample
+        :return: Sample instance
+        """
         return self.sample_lut[sample_id]
 
     @staticmethod
@@ -350,7 +474,17 @@ class Session(object):
 
         return Matrix(matrix_id, np.array(comp_values), detectors, fluorochromes)
 
-    def analyze_samples(self, sample_group='default', verbose=False):
+    def analyze_samples(self, sample_group='default', sample_id=None, verbose=False):
+        """
+        Process gates for samples in a sample group. After running, results can be
+        retrieved using the `get_gating_results`, `get_group_report`, and  `get_gate_indices`,
+        methods.
+
+        :param sample_group: a text string representing the sample group
+        :param sample_id: optional sample ID, if specified only this sample will be processed
+        :param verbose: if True, print a line for every gate processed (default is False)
+        :return: None
+        """
         # Don't save just the DataFrame report, save the entire
         # GatingResults objects for each sample, since we'll need the gate
         # indices for each sample.
@@ -358,6 +492,15 @@ class Session(object):
         if len(samples) == 0:
             warnings.warn("No samples have been assigned to sample group %s" % sample_group)
             return
+
+        if sample_id is not None:
+            sample_ids = self.get_group_sample_ids(sample_group)
+            if sample_id not in sample_ids:
+                warnings.warn("%s is not assigned to sample group %s" % (sample_id, sample_group))
+                return
+
+            samples = [self.get_sample(sample_id)]
+
         gating_strategies = []
         samples_to_run = []
         for s in samples:
@@ -382,9 +525,12 @@ class Session(object):
         gating_result = self._results_lut[sample_group]['samples'][sample_id]
         return copy.deepcopy(gating_result)
 
-    def get_gate_indices(self, sample_group, sample_id, gate_id):
+    def get_group_report(self, sample_group):
+        return self._results_lut[sample_group]['report']
+
+    def get_gate_indices(self, sample_group, sample_id, gate_id, gate_path=None):
         gating_result = self._results_lut[sample_group]['samples'][sample_id]
-        return gating_result.get_gate_indices(gate_id)
+        return gating_result.get_gate_indices(gate_id, gate_path=gate_path)
 
     def calculate_tsne(
             self,
@@ -397,16 +543,19 @@ class Session(object):
     ):
         """
         Performs dimensional reduction using the TSNE algorithm
+
         :param sample_group: The sample group on which to run TSNE
         :param n_dims: Number of dimensions to which the source data is reduced
         :param ignore_scatter: If True, the scatter channels are excluded
         :param scale_scatter: If True, the scatter channel data is scaled to be
-            in the same range as the fluorescent channel data. If
-            ignore_scatter is True, this option has no effect.
+          in the same range as the fluorescent channel data. If
+          ignore_scatter is True, this option has no effect.
         :param transform: A Transform instance to apply to events
         :param subsample: Whether to sub-sample events from FCS files (default: True)
+
         :return: Dictionary of TSNE results where the keys are the FCS sample
-            IDs and the values are the TSNE data for events with n_dims
+          IDs and the values are the TSNE data for events with n_dims
+
         """
         tsne_events = None
         sample_events_lut = {}
@@ -485,8 +634,8 @@ class Session(object):
 
                 # determine padding to keep min/max events off the edge,
                 # but only if user didn't specify the limits
-                x_min, x_max = _plot_utils.calculate_extent(x, d_min=x_min, d_max=x_max, pad=0.02)
-                y_min, y_max = _plot_utils.calculate_extent(y, d_min=y_min, d_max=y_max, pad=0.02)
+                x_min, x_max = plot_utils.calculate_extent(x, d_min=x_min, d_max=x_max, pad=0.02)
+                y_min, y_max = plot_utils.calculate_extent(y, d_min=y_min, d_max=y_max, pad=0.02)
 
                 z = s_results['events'][:, i]
                 z_sort = np.argsort(z)
@@ -518,102 +667,42 @@ class Session(object):
                 file_name += ".png"
                 plt.savefig(file_name)
 
-    @staticmethod
-    def plot_tsne_difference(
-            tsne_results1,
-            tsne_results2,
-            x_min=None,
-            x_max=None,
-            y_min=None,
-            y_max=None,
-            fig_size=(16, 16),
-            export_fcs=False,
-            export_cnt=20000,
-            fcs_export_dir=None
-    ):
-        # fit an array of size [Ndim, Nsamples]
-        kde1 = gaussian_kde(
-            np.vstack(
-                [
-                    tsne_results1[:, 0],
-                    tsne_results1[:, 1]
-                ]
-            )
-        )
-        kde2 = gaussian_kde(
-            np.vstack(
-                [
-                    tsne_results2[:, 0],
-                    tsne_results2[:, 1]
-                ]
-            )
-        )
-
-        # evaluate on a regular grid
-        x_grid = np.linspace(x_min, x_max, 250)
-        y_grid = np.linspace(y_min, y_max, 250)
-        x_grid, y_grid = np.meshgrid(x_grid, y_grid)
-        xy_grid = np.vstack([x_grid.ravel(), y_grid.ravel()])
-
-        z1 = kde1.evaluate(xy_grid)
-        z2 = kde2.evaluate(xy_grid)
-
-        z = z2 - z1
-
-        if export_fcs:
-            z_g2 = z.copy()
-            z_g2[z_g2 < 0] = 0
-            z_g1 = z.copy()
-            z_g1[z_g1 > 0] = 0
-            z_g1 = np.abs(z_g1)
-
-            z_g2_norm = [float(i) / sum(z_g2) for i in z_g2]
-            z_g1_norm = [float(i) / sum(z_g1) for i in z_g1]
-
-            cdf = np.cumsum(z_g2_norm)
-            cdf = cdf / cdf[-1]
-            values = np.random.rand(export_cnt)
-            value_bins = np.searchsorted(cdf, values)
-            new_g2_events = np.array([xy_grid[:, i] for i in value_bins])
-
-            cdf = np.cumsum(z_g1_norm)
-            cdf = cdf / cdf[-1]
-            values = np.random.rand(export_cnt)
-            value_bins = np.searchsorted(cdf, values)
-            new_g1_events = np.array([xy_grid[:, i] for i in value_bins])
-
-            pnn_labels = ['tsne_0', 'tsne_1']
-
-            fh = open(os.path.join(fcs_export_dir, "tsne_group_1.fcs"), 'wb')
-            create_fcs(new_g1_events.flatten(), pnn_labels, fh)
-            fh.close()
-
-            fh = open(os.path.join(fcs_export_dir, "tsne_group_2.fcs"), 'wb')
-            create_fcs(new_g2_events.flatten(), pnn_labels, fh)
-            fh.close()
-
-        # Plot the result as an image
-        _, _ = plt.subplots(figsize=fig_size)
-        plt.imshow(z.reshape(x_grid.shape),
-                   origin='lower', aspect='auto',
-                   extent=[x_min, x_max, y_min, y_max],
-                   cmap='bwr')
-        plt.show()
-
     def plot_gate(
             self,
             sample_group,
             sample_id,
             gate_id,
+            gate_path=None,
             x_min=None,
             x_max=None,
             y_min=None,
             y_max=None,
             color_density=True
     ):
+        """
+        Returns an interactive plot for the specified gate. The type of plot is determined by the number of
+         dimensions used to define the gate: single dimension gates will be histograms, 2-D gates will be returned
+         as a scatter plot.
+
+        :param sample_group: The sample group containing the sample ID (and, optionally the gate ID)
+        :param sample_id: The sample ID for the FCS sample to plot
+        :param gate_id: Gate ID to filter events (only events within the given gate will be plotted)
+        :param gate_path: list of gate IDs for full set of gate ancestors. Required if gate_id is ambiguous
+        :param x_min: Lower bound of x-axis. If None, channel's min value will
+            be used with some padding to keep events off the edge of the plot.
+        :param x_max: Upper bound of x-axis. If None, channel's max value will
+            be used with some padding to keep events off the edge of the plot.
+        :param y_min: Lower bound of y-axis. If None, channel's min value will
+            be used with some padding to keep events off the edge of the plot.
+        :param y_max: Upper bound of y-axis. If None, channel's max value will
+            be used with some padding to keep events off the edge of the plot.
+        :param color_density: Whether to color the events by density, similar
+            to a heat map. Default is True.
+        :return: A Bokeh Figure object containing the interactive scatter plot.
+        """
         group = self._sample_group_lut[sample_group]
         gating_strategy = group['samples'][sample_id]
-        gate = gating_strategy.get_gate_by_reference(gate_id)
+        gate = gating_strategy.get_gate(gate_id, gate_path)
 
         # dim count determines if we need a histogram, scatter, or multi-scatter
         dim_count = len(gate.dimensions)
@@ -629,38 +718,49 @@ class Session(object):
             sample_to_plot,
             copy.deepcopy(gating_strategy)
         )
+
+        # get parent gate results to display only those events
+        if gate.parent is not None:
+            parent_results = gating_strategy.gate_sample(sample_to_plot, gate.parent)
+            is_parent_event = parent_results.get_gate_indices(gate.parent)
+            is_subsample = np.zeros(sample_to_plot.event_count, dtype=np.bool)
+            is_subsample[sample_to_plot.subsample_indices] = True
+            idx_to_plot = np.logical_and(is_parent_event, is_subsample)
+        else:
+            idx_to_plot = sample_to_plot.subsample_indices
+
         if len(new_dims) > 0:
             raise NotImplementedError("Plotting of RatioDimensions is not yet supported.")
-        if isinstance(gate, gates.QuadrantGate):
-            raise NotImplementedError("Plotting of quadrant gates is not supported in this version of FlowKit")
-        x = events[sample_to_plot.subsample_indices, dim_idx[0]]
+
+        x = events[idx_to_plot, dim_idx[0]]
 
         dim_labels = []
 
         x_index = dim_idx[0]
+        x_pnn_label = sample_to_plot.pnn_labels[x_index]
+        y_pnn_label = None
+
         if sample_to_plot.pns_labels[x_index] != '':
-            dim_labels.append('%s (%s)' % (sample_to_plot.pns_labels[x_index], sample_to_plot.pnn_labels[x_index]))
+            dim_labels.append('%s (%s)' % (sample_to_plot.pns_labels[x_index], x_pnn_label))
         else:
             dim_labels.append(sample_to_plot.pnn_labels[x_index])
 
         if len(dim_idx) > 1:
             y_index = dim_idx[1]
+            y_pnn_label = sample_to_plot.pnn_labels[y_index]
 
             if sample_to_plot.pns_labels[y_index] != '':
-                dim_labels.append('%s (%s)' % (sample_to_plot.pns_labels[y_index], sample_to_plot.pnn_labels[y_index]))
+                dim_labels.append('%s (%s)' % (sample_to_plot.pns_labels[y_index], y_pnn_label))
             else:
                 dim_labels.append(sample_to_plot.pnn_labels[y_index])
 
-        plot_title = "%s - %s - %s" % (sample_id, sample_group, gate_id)
-
         if gate_type == 'scatter':
-            y = events[sample_to_plot.subsample_indices, dim_idx[1]]
+            y = events[idx_to_plot, dim_idx[1]]
 
-            p = _plot_utils.plot_scatter(
+            p = plot_utils.plot_scatter(
                 x,
                 y,
                 dim_labels,
-                title=plot_title,
                 x_min=x_min,
                 x_max=x_max,
                 y_min=y_min,
@@ -668,15 +768,15 @@ class Session(object):
                 color_density=color_density
             )
         elif gate_type == 'hist':
-            p = _plot_utils.plot_histogram(x, dim_labels[0], title=plot_title)
+            p = plot_utils.plot_histogram(x, dim_labels[0])
         else:
             raise NotImplementedError("Only histograms and scatter plots are supported in this version of FlowKit")
 
         if isinstance(gate, gates.PolygonGate):
-            source, glyph = _plot_utils.render_polygon(gate.vertices)
+            source, glyph = plot_utils.render_polygon(gate.vertices)
             p.add_glyph(source, glyph)
         elif isinstance(gate, gates.EllipsoidGate):
-            ellipse = _plot_utils.calculate_ellipse(
+            ellipse = plot_utils.calculate_ellipse(
                 gate.coordinates[0],
                 gate.coordinates[1],
                 gate.covariance_matrix,
@@ -688,14 +788,167 @@ class Session(object):
             # are options. So, if any of the dim min/max values are missing it is essentially a set of ranges.
 
             if None in dim_min or None in dim_max or dim_count == 1:
-                renderers = _plot_utils.render_ranges(dim_min, dim_max)
+                renderers = plot_utils.render_ranges(dim_min, dim_max)
 
                 p.renderers.extend(renderers)
             else:
                 # a true rectangle
-                rect = _plot_utils.render_rectangle(dim_min, dim_max)
+                rect = plot_utils.render_rectangle(dim_min, dim_max)
                 p.add_glyph(rect)
+        elif isinstance(gate, gates.QuadrantGate):
+            x_locations = []
+            y_locations = []
+
+            for div in gate.dimensions:
+                if div.dimension_ref == x_pnn_label:
+                    x_locations.extend(div.values)
+                elif div.dimension_ref == y_pnn_label and y_pnn_label is not None:
+                    y_locations.extend(div.values)
+
+            renderers = plot_utils.render_dividers(x_locations, y_locations)
+            p.renderers.extend(renderers)
         else:
-            raise NotImplementedError("Only polygon and rectangle gates are supported in this version of FlowKit")
+            raise NotImplementedError(
+                "Plotting of %s gates is not supported in this version of FlowKit" % gate.__class__
+            )
+
+        if gate_path is not None:
+            full_gate_path = gate_path[1:]  # omit 'root'
+            full_gate_path.append(gate_id)
+            sub_title = ' > '.join(full_gate_path)
+
+            # truncate beginning of long gate paths
+            if len(sub_title) > 72:
+                sub_title = '...' + sub_title[-69:]
+            p.add_layout(
+                Title(text=sub_title, text_font_style="italic", text_font_size="1em", align='center'),
+                'above'
+            )
+        else:
+            p.add_layout(
+                Title(text=gate_id, text_font_style="italic", text_font_size="1em", align='center'),
+                'above'
+            )
+
+        plot_title = "%s (%s)" % (sample_id, sample_group)
+        p.add_layout(
+            Title(text=plot_title, text_font_size="1.1em", align='center'),
+            'above'
+        )
+
+        return p
+
+    def plot_scatter(
+            self,
+            sample_id,
+            x_dim,
+            y_dim,
+            sample_group='default',
+            gate_id=None,
+            subsample=False,
+            color_density=True,
+            x_min=None,
+            x_max=None,
+            y_min=None,
+            y_max=None
+    ):
+        """
+        Returns an interactive scatter plot for the specified channel data.
+
+        :param sample_id: The sample ID for the FCS sample to plot
+        :param x_dim:  Dimension instance to use for the x-axis data
+        :param y_dim: Dimension instance to use for the y-axis data
+        :param sample_group: The sample group containing the sample ID (and, optionally the gate ID)
+        :param gate_id: Gate ID to filter events (only events within the given gate will be plotted)
+        :param subsample: Whether to use all events for plotting or just the
+            sub-sampled events. Default is False (all events). Plotting
+            sub-sampled events can be much faster.
+        :param color_density: Whether to color the events by density, similar
+            to a heat map. Default is True.
+        :param x_min: Lower bound of x-axis. If None, channel's min value will
+            be used with some padding to keep events off the edge of the plot.
+        :param x_max: Upper bound of x-axis. If None, channel's max value will
+            be used with some padding to keep events off the edge of the plot.
+        :param y_min: Lower bound of y-axis. If None, channel's min value will
+            be used with some padding to keep events off the edge of the plot.
+        :param y_max: Upper bound of y-axis. If None, channel's max value will
+            be used with some padding to keep events off the edge of the plot.
+        :return: A Bokeh Figure object containing the interactive scatter plot.
+        """
+        sample = self.get_sample(sample_id)
+        group = self._sample_group_lut[sample_group]
+        gating_strategy = group['samples'][sample_id]
+
+        x_index = sample.get_channel_index(x_dim.label)
+        y_index = sample.get_channel_index(y_dim.label)
+
+        x_comp_ref = x_dim.compensation_ref
+        x_xform_ref = x_dim.transformation_ref
+
+        y_comp_ref = y_dim.compensation_ref
+        y_xform_ref = y_dim.transformation_ref
+
+        if x_comp_ref is not None and x_comp_ref != 'uncompensated':
+            x_comp = gating_strategy.get_comp_matrix(x_dim.compensation_ref)
+            comp_events = x_comp.apply(sample)
+            x = comp_events[:, x_index]
+        else:
+            # not doing sub-sample here, will do later with bool AND
+            x = sample.get_channel_data(x_index, source='raw', subsample=False)
+
+        if y_comp_ref is not None and x_comp_ref != 'uncompensated':
+            # this is likely unnecessary as the x & y comp should be the same,
+            # but requires more conditionals to cover
+            y_comp = gating_strategy.get_comp_matrix(x_dim.compensation_ref)
+            comp_events = y_comp.apply(sample)
+            y = comp_events[:, y_index]
+        else:
+            # not doing sub-sample here, will do later with bool AND
+            y = sample.get_channel_data(y_index, source='raw', subsample=False)
+
+        if x_xform_ref is not None:
+            x_xform = gating_strategy.get_transform(x_xform_ref)
+            x = x_xform.apply(x.reshape(-1, 1))[:, 0]
+        if y_xform_ref is not None:
+            y_xform = gating_strategy.get_transform(y_xform_ref)
+            y = y_xform.apply(y.reshape(-1, 1))[:, 0]
+
+        if gate_id is not None:
+            gate_results = gating_strategy.gate_sample(sample, gate_id)
+            is_gate_event = gate_results.get_gate_indices(gate_id)
+            if subsample:
+                is_subsample = np.zeros(sample.event_count, dtype=np.bool)
+                is_subsample[sample.subsample_indices] = True
+            else:
+                is_subsample = np.ones(sample.event_count, dtype=np.bool)
+
+            idx_to_plot = np.logical_and(is_gate_event, is_subsample)
+            x = x[idx_to_plot]
+            y = y[idx_to_plot]
+
+        dim_labels = []
+
+        if sample.pns_labels[x_index] != '':
+            dim_labels.append('%s (%s)' % (sample.pns_labels[x_index], sample.pnn_labels[x_index]))
+        else:
+            dim_labels.append(sample.pnn_labels[x_index])
+
+        if sample.pns_labels[y_index] != '':
+            dim_labels.append('%s (%s)' % (sample.pns_labels[y_index], sample.pnn_labels[y_index]))
+        else:
+            dim_labels.append(sample.pnn_labels[y_index])
+
+        p = plot_utils.plot_scatter(
+            x,
+            y,
+            dim_labels,
+            x_min=x_min,
+            x_max=x_max,
+            y_min=y_min,
+            y_max=y_max,
+            color_density=color_density
+        )
+
+        p.title = Title(text=sample.original_filename, align='center')
 
         return p
