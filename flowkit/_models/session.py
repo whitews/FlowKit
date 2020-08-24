@@ -7,13 +7,8 @@ import copy
 from glob import glob
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import StandardScaler
 import statsmodels.api as sm
-from MulticoreTSNE import MulticoreTSNE
-import seaborn
 from bokeh.models import Title
-from matplotlib import cm
-import matplotlib.pyplot as plt
 from .._models.sample import Sample
 from .._models.gating_strategy import GatingStrategy
 from .._models.transforms._matrix import Matrix
@@ -531,141 +526,6 @@ class Session(object):
     def get_gate_indices(self, sample_group, sample_id, gate_id, gate_path=None):
         gating_result = self._results_lut[sample_group]['samples'][sample_id]
         return gating_result.get_gate_indices(gate_id, gate_path=gate_path)
-
-    def calculate_tsne(
-            self,
-            sample_group,
-            n_dims=2,
-            ignore_scatter=True,
-            scale_scatter=True,
-            transform=None,
-            subsample=True
-    ):
-        """
-        Performs dimensional reduction using the TSNE algorithm
-
-        :param sample_group: The sample group on which to run TSNE
-        :param n_dims: Number of dimensions to which the source data is reduced
-        :param ignore_scatter: If True, the scatter channels are excluded
-        :param scale_scatter: If True, the scatter channel data is scaled to be
-          in the same range as the fluorescent channel data. If
-          ignore_scatter is True, this option has no effect.
-        :param transform: A Transform instance to apply to events
-        :param subsample: Whether to sub-sample events from FCS files (default: True)
-
-        :return: Dictionary of TSNE results where the keys are the FCS sample
-          IDs and the values are the TSNE data for events with n_dims
-
-        """
-        tsne_events = None
-        sample_events_lut = {}
-        samples = self.get_group_samples(sample_group)
-
-        for s in samples:
-            # Determine channels to include for TSNE analysis
-            if ignore_scatter:
-                tsne_indices = s.fluoro_indices
-            else:
-                # need to get all channel indices except time
-                tsne_indices = list(range(len(samples[0].channels)))
-                tsne_indices.remove(s.get_channel_index('Time'))
-
-                # TODO: implement scale_scatter option
-                if scale_scatter:
-                    pass
-
-            s_events = s.get_raw_events(subsample=subsample)
-
-            if transform is not None:
-                fluoro_indices = s.fluoro_indices
-                xform_events = transform.apply(s_events[:, fluoro_indices])
-                s_events[:, fluoro_indices] = xform_events
-
-            s_events = s_events[:, tsne_indices]
-
-            # Concatenate events for all samples, keeping track of the indices
-            # belonging to each sample
-            if tsne_events is None:
-                sample_events_lut[s.original_filename] = {
-                    'start': 0,
-                    'end': len(s_events),
-                    'channel_indices': tsne_indices,
-                    'events': s_events
-                }
-                tsne_events = s_events
-            else:
-                sample_events_lut[s.original_filename] = {
-                    'start': len(tsne_events),
-                    'end': len(tsne_events) + len(s_events),
-                    'channel_indices': tsne_indices,
-                    'events': s_events
-                }
-                tsne_events = np.vstack([tsne_events, s_events])
-
-        # Scale data & run TSNE
-        tsne_events = StandardScaler().fit(tsne_events).transform(tsne_events)
-        tsne_results = MulticoreTSNE(n_components=n_dims, n_jobs=8).fit_transform(tsne_events)
-
-        # Split TSNE results back into individual samples as a dictionary
-        for k, v in sample_events_lut.items():
-            v['tsne_results'] = tsne_results[v['start']:v['end'], :]
-
-        # Return split results
-        return sample_events_lut
-
-    def plot_tsne(
-            self,
-            tsne_results,
-            x_min=None,
-            x_max=None,
-            y_min=None,
-            y_max=None,
-            fig_size=(8, 8)
-    ):
-        for s_id, s_results in tsne_results.items():
-            sample = self.get_sample(s_id)
-            tsne_events = s_results['tsne_results']
-
-            for i, chan_idx in enumerate(s_results['channel_indices']):
-                labels = sample.channels[str(chan_idx + 1)]
-
-                x = tsne_events[:, 0]
-                y = tsne_events[:, 1]
-
-                # determine padding to keep min/max events off the edge,
-                # but only if user didn't specify the limits
-                x_min, x_max = plot_utils.calculate_extent(x, d_min=x_min, d_max=x_max, pad=0.02)
-                y_min, y_max = plot_utils.calculate_extent(y, d_min=y_min, d_max=y_max, pad=0.02)
-
-                z = s_results['events'][:, i]
-                z_sort = np.argsort(z)
-                z = z[z_sort]
-                x = x[z_sort]
-                y = y[z_sort]
-
-                fig, ax = plt.subplots(figsize=fig_size)
-                ax.set_title(" - ".join([s_id, labels['PnN'], labels['PnS']]))
-
-                ax.set_xlim([x_min, x_max])
-                ax.set_ylim([y_min, y_max])
-
-                seaborn.scatterplot(
-                    x,
-                    y,
-                    hue=z,
-                    palette=cm.get_cmap('rainbow'),
-                    legend=False,
-                    s=11,
-                    linewidth=0,
-                    alpha=0.7
-                )
-
-                file_name = s_id
-                file_name = file_name.replace(".fcs", "")
-                file_name = "_".join([file_name, labels['PnN'], labels['PnS']])
-                file_name = file_name.replace("/", "_")
-                file_name += ".png"
-                plt.savefig(file_name)
 
     def plot_gate(
             self,
