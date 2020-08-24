@@ -1018,10 +1018,24 @@ def _parse_wsp_transforms(transforms_el, transform_ns, data_type_ns):
                 param_m=float(param_m),
                 param_a=float(param_a)
             )
+        elif xform_type == 'biex':
+            # biex transform has 5 parameters, but only 2 are really used
+            # these are attributes of the 'biex' element
+            param_neg = find_attribute_value(xform_el, transform_ns, 'neg')
+            param_width = find_attribute_value(xform_el, transform_ns, 'width')
+            # These next 3 exist but are not used.
+            # param_length = find_attribute_value(xform_el, transform_ns, 'length')
+            # param_maxRange = find_attribute_value(xform_el, transform_ns, 'maxRange')
+            # param_pos = find_attribute_value(xform_el, transform_ns, 'pos')
+            xforms_lut[param_name] = _wsp_transforms.WSPBiexTransform(
+                param_name,
+                negative=float(param_neg),
+                width=float(param_width)
+            )
         else:
-            error_msg = "FlowJo transform type %s is undocumented and not supported in FlowKit. " % xform_type
+            error_msg = "FlowJo transform type '%s' is undocumented and not supported in FlowKit. " % xform_type
             error_msg += "Please edit the workspace in FlowJo and save all channel transformations as either " \
-                "linear, log, or logicle"
+                "linear, log, biex, or logicle"
 
             raise ValueError(error_msg)
 
