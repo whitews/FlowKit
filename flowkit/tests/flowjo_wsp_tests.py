@@ -3,7 +3,7 @@ Tests for FlowJo 10 workspace files
 """
 import unittest
 import numpy as np
-from flowkit import Session, gates
+from flowkit import Dimension, Session, gates, transforms
 
 
 class FlowJoWSPTestCase(unittest.TestCase):
@@ -72,6 +72,65 @@ class FlowJoWSPTestCase(unittest.TestCase):
         self.assertEqual(gate_count_q2, 50596)
         self.assertEqual(gate_count_q3, 50330)
         self.assertEqual(gate_count_q4, 49403)
+
+    def test_wsp_biex_transform(self):
+        wsp_path = "examples/simple_diamond_example/test_data_diamond_biex_rect.wsp"
+        fcs_path = "examples/simple_diamond_example/test_data_diamond_01.fcs"
+
+        fks = Session(fcs_samples=fcs_path)
+        fks.import_flowjo_workspace(wsp_path)
+
+        self.assertIsInstance(
+            fks.get_gate(
+                'All Samples',
+                'test_data_diamond_01.fcs',
+                'upper_right'),
+            gates.RectangleGate
+        )
+
+        fks.analyze_samples(sample_group='All Samples')
+        results = fks.get_gating_results('All Samples', 'test_data_diamond_01.fcs')
+        gate_count = results.get_gate_count('upper_right')
+        self.assertEqual(gate_count, 50605)
+
+    def test_wsp_biex_transform_use_nearest(self):
+        fcs_path = "examples/simple_diamond_example/test_data_diamond_01.fcs"
+
+        fks = Session(fcs_samples=fcs_path)
+
+        # use values near the targets of negative=0 and width=-10
+        biex_xform = transforms.WSPBiexTransform('biex', negative=0.01, width=-11, use_nearest=True)
+
+        dim_a = Dimension(
+            'channel_A',
+            transformation_ref='biex',
+            range_min=3421.8373651136317,
+            range_max=3806.9298572317216
+        )
+        dim_b = Dimension(
+            'channel_B',
+            transformation_ref='biex',
+            range_min=3432.2067760424816,
+            range_max=3975.4784238105294
+        )
+
+        rect_gate = gates.RectangleGate('upper_right', None, [dim_a, dim_b])
+
+        fks.add_transform(biex_xform)
+        fks.add_gate(rect_gate)
+
+        self.assertIsInstance(
+            fks.get_gate(
+                'default',
+                'test_data_diamond_01.fcs',
+                'upper_right'),
+            gates.RectangleGate
+        )
+
+        fks.analyze_samples(sample_group='default')
+        results = fks.get_gating_results('default', 'test_data_diamond_01.fcs')
+        gate_count = results.get_gate_count('upper_right')
+        self.assertEqual(gate_count, 50605)
 
     def test_get_sample_groups(self):
         wsp_path = "examples/simple_line_example/simple_poly_and_rect.wsp"
