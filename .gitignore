@@ -5,6 +5,8 @@ scratch/*
 *.html
 *.xml
 *.fcs
+*.csv
+*.xlsx
 
 ### macOS template
 # General
