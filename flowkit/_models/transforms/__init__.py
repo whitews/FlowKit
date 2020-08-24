@@ -6,7 +6,7 @@ from ._transforms import \
     HyperlogTransform, \
     LogicleTransform, \
     AsinhTransform
-from ._wsp_transforms import WSPLogTransform
+from ._wsp_transforms import WSPLogTransform, WSPBiexTransform
 
 __all__ = [
     'LinearTransform',
@@ -15,6 +15,6 @@ __all__ = [
     'HyperlogTransform',
     'LogicleTransform',
     'AsinhTransform',
-    'WSPLogTransform'
+    'WSPLogTransform',
+    'WSPBiexTransform'
 ]
-
