@@ -1,6 +1,5 @@
 numpy>=1.13
 statsmodels
-MulticoreTSNE>=0.1
 scikit-learn>=0.21
 flowio>=0.9.5
 flowutils>=0.7.1

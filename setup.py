@@ -1,4 +1,3 @@
-import os
 from setuptools import setup, find_packages, Extension
 import numpy as np
 
@@ -19,7 +18,6 @@ reqs = [
     'flowio',
     'flowutils',
     'matplotlib',
-    'multicoretsne',
     'scipy',
     'sklearn',
     'statsmodels',
@@ -30,10 +28,6 @@ reqs = [
     'bokeh',
     'anytree'
 ]
-
-on_rtd = os.environ.get('READTHEDOCS') == 'True'
-if on_rtd:
-    reqs.remove('multicoretnse')
 
 setup(
     name='FlowKit',
