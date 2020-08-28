@@ -883,6 +883,7 @@ class Sample(object):
 
         ext = os.path.splitext(filename)[-1]
 
+        # TODO: support exporting to HDF5 format, but as optional dependency/import
         if ext == '.csv':
             np.savetxt(
                 output_path,
