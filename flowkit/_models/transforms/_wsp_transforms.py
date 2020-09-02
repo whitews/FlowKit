@@ -111,7 +111,9 @@ class WSPBiexTransform(Transform):
             raise ValueError(
                 "The parameter value combination negative=%f, width=$f is unsupported % self.negative, self.width"
             )
-        self._lut_func = interpolate.interp1d(x, y, kind='linear')
+
+        # create interpolation function with any values outside the range set to the min / max of LUT
+        self._lut_func = interpolate.interp1d(x, y, kind='linear', bounds_error=False, fill_value=(y.min(), y.max()))
 
     def __repr__(self):
         return (
