@@ -13,7 +13,7 @@ from .._models.sample import Sample
 from .._models.gating_strategy import GatingStrategy
 from .._models.transforms._matrix import Matrix
 from .._models import gates
-from .._utils import plot_utils, xml_utils
+from .._utils import plot_utils, xml_utils, wsp_utils
 import warnings
 
 try:
@@ -200,7 +200,7 @@ class Session(object):
             workspace that have not yet been loaded in the Session. Default is False, displaying warnings.
         :return: None
         """
-        wsp_sample_groups = xml_utils.parse_wsp(workspace_file_or_path)
+        wsp_sample_groups = wsp_utils.parse_wsp(workspace_file_or_path)
         for group_name, sample_data in wsp_sample_groups.items():
             for sample, data_dict in sample_data.items():
                 if sample not in self.sample_lut:
@@ -424,13 +424,13 @@ class Session(object):
             if bs.fluoro_indices != fluoro_indices:
                 raise ValueError("All bead samples must have the same channel labels")
 
-            for chan_idx, lut in bead_lut.items():
+            for channel_idx, lut in bead_lut.items():
                 # file names typically don't have the "-A", "-H', or "-W" sub-strings
                 pnn_label = lut['pnn_label'].replace("-A", "")
 
                 if pnn_label in bs.original_filename:
                     lut['bead_index'] = i
-                    lut['pns_label'] = bs.pns_labels[chan_idx]
+                    lut['pns_label'] = bs.pns_labels[channel_idx]
 
         return bead_lut
 
@@ -444,21 +444,21 @@ class Session(object):
         detectors = []
         fluorochromes = []
         comp_values = []
-        for chan_idx in sorted(bead_lut.keys()):
-            detectors.append(bead_lut[chan_idx]['pnn_label'])
-            fluorochromes.append(bead_lut[chan_idx]['pns_label'])
-            bead_idx = bead_lut[chan_idx]['bead_index']
+        for channel_idx in sorted(bead_lut.keys()):
+            detectors.append(bead_lut[channel_idx]['pnn_label'])
+            fluorochromes.append(bead_lut[channel_idx]['pns_label'])
+            bead_idx = bead_lut[channel_idx]['bead_index']
 
-            x = bead_samples[bead_idx].get_raw_events()[:, chan_idx]
+            x = bead_samples[bead_idx].get_raw_events()[:, channel_idx]
             good_events = x < (2 ** 18) - 1
             x = x[good_events]
 
             comp_row_values = []
-            for chan_idx2 in sorted(bead_lut.keys()):
-                if chan_idx == chan_idx2:
+            for channel_idx2 in sorted(bead_lut.keys()):
+                if channel_idx == channel_idx2:
                     comp_row_values.append(1.0)
                 else:
-                    y = bead_samples[bead_idx].get_raw_events()[:, chan_idx2]
+                    y = bead_samples[bead_idx].get_raw_events()[:, channel_idx2]
                     y = y[good_events]
                     rlm_res = sm.RLM(y, x).fit()
 

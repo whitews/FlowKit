@@ -7,6 +7,7 @@ from ._models.session import Session
 from ._models.dimension import Dimension, RatioDimension, QuadrantDivider
 from ._models.vertex import Vertex
 from ._utils.xml_utils import parse_gating_xml, export_gatingml
+from ._utils.wsp_utils import parse_wsp
 from ._utils.plot_utils import plot_channel, calculate_extent
 
 __all__ = [
@@ -22,6 +23,7 @@ __all__ = [
     'transforms',
     'parse_gating_xml',
     'export_gatingml',
+    'parse_wsp',
     'plot_channel',
     'calculate_extent'
 ]
