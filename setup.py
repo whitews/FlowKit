@@ -33,7 +33,7 @@ setup(
     name='FlowKit',
     version='0.5.1b',
     packages=find_packages(),
-    package_data={'': ['*.xsd']},
+    package_data={'': ['_resources/*.xsd', '_resources/flowjo_xforms/*.csv']},
     include_package_data=True,
     description='Flow Cytometry Toolkit',
     long_description=long_description,
