@@ -531,6 +531,8 @@ class Sample(object):
         :return: NumPy array of event data for the specified channel index
         """
         if subsample:
+            if not isinstance(self.subsample_indices, np.ndarray):
+                raise ValueError("Subsampling requested, but sample hasn't been sub-sampled: call `subsample_events`")
             idx = self.subsample_indices
         else:
             idx = np.arange(self.event_count)
