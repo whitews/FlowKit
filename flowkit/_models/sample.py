@@ -101,12 +101,13 @@ class Sample(object):
         self.pnn_labels = list()
         self.pns_labels = list()
         self.fluoro_indices = list()
+        self.scatter_indices = list()
+        self.time_index = None
 
         channel_gain = []
         channel_lin_log = []
         channel_range = []
         self.metadata = flow_data.text
-        time_index = None
 
         for n in sorted([int(k) for k in self.channels.keys()]):
             chan_label = self.channels[str(n)]['PnN']
@@ -134,8 +135,10 @@ class Sample(object):
 
             if chan_label.lower()[:4] not in ['fsc-', 'ssc-', 'time']:
                 self.fluoro_indices.append(n - 1)
+            elif chan_label.lower()[:4] in ['fsc-', 'ssc-']:
+                self.scatter_indices.append(n - 1)
             elif chan_label.lower() == 'time':
-                time_index = n - 1
+                self.time_index = n - 1
 
             if 'PnS' in self.channels[str(n)]:
                 self.pns_labels.append(self.channels[str(n)]['PnS'])
@@ -152,9 +155,9 @@ class Sample(object):
             (-1, flow_data.channel_count)
         )
 
-        if 'timestep' in self.metadata and time_index is not None:
+        if 'timestep' in self.metadata and self.time_index is not None:
             time_step = float(self.metadata['timestep'])
-            raw_events[:, time_index] = raw_events[:, time_index] * time_step
+            raw_events[:, self.time_index] = raw_events[:, self.time_index] * time_step
 
         # But first, we'll save the unprocessed events
         self._orig_events = raw_events.copy()
