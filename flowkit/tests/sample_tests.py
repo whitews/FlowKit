@@ -158,6 +158,40 @@ class SampleTestCase(unittest.TestCase):
 
         self.assertIsNone(xform_events)
 
+    @staticmethod
+    def test_get_transformed_events_exclude_scatter():
+        fcs_file_path = "examples/test_comp_example.fcs"
+        comp_file_path = Path("examples/comp_complete_example.csv")
+
+        sample = Sample(
+            fcs_path_or_data=fcs_file_path,
+            compensation=comp_file_path
+        )
+        sample.apply_transform(xform_logicle, include_scatter=False)
+
+        fsc_a_index = sample.get_channel_index('FSC-A')
+        data_fsc_a = sample.get_channel_data(fsc_a_index, source='xform')
+
+        np.testing.assert_equal(sample._raw_events[:, fsc_a_index], data_fsc_a)
+
+    def test_get_transformed_events_include_scatter(self):
+        fcs_file_path = "examples/test_comp_example.fcs"
+        comp_file_path = Path("examples/comp_complete_example.csv")
+
+        sample = Sample(
+            fcs_path_or_data=fcs_file_path,
+            compensation=comp_file_path
+        )
+        sample.apply_transform(xform_logicle, include_scatter=True)
+
+        fsc_a_index = sample.get_channel_index('FSC-A')
+        data_fsc_a_xform = sample.get_channel_data(fsc_a_index, source='xform')
+        data_fsc_a_raw = sample.get_channel_data(fsc_a_index, source='raw')
+
+        np.testing.assert_equal(sample._transformed_events[:, fsc_a_index], data_fsc_a_xform)
+        self.assertEqual(data_fsc_a_raw[0], 118103.25)
+        self.assertEqual(round(data_fsc_a_xform[0], 3), 1.238)
+
     def test_get_events_as_data_frame_xform(self):
         data1_sample.apply_transform(xform_logicle)
         df = data1_sample.as_dataframe(source='xform')
