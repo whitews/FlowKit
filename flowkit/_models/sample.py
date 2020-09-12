@@ -551,26 +551,34 @@ class Sample(object):
 
         return channel_data
 
-    def _transform(self, transform):
+    def _transform(self, transform, include_scatter=False):
         if self._comp_events is not None:
             transformed_events = self._comp_events.copy()
         else:
             transformed_events = self._raw_events.copy()
 
-        transformed_events[:, self.fluoro_indices] = transform.apply(
-            transformed_events[:, self.fluoro_indices]
+        if include_scatter:
+            transform_indices = self.scatter_indices + self.fluoro_indices
+        else:
+            transform_indices = self.fluoro_indices
+
+        transformed_events[:, transform_indices] = transform.apply(
+            transformed_events[:, transform_indices]
         )
 
         return transformed_events
 
-    def apply_transform(self, transform):
+    def apply_transform(self, transform, include_scatter=False):
         """
         Applies given transform to Sample events, and overwrites the `transform` attribute.
+        By default, only the fluorescent channels are transformed.
 
         :param transform: an instance of one of the various Transform sub-classes in the transforms module
+        :param include_scatter: Whether to transform the scatter channel in addition to the
+            fluorescent channels. Default is False.
         """
 
-        self._transformed_events = self._transform(transform)
+        self._transformed_events = self._transform(transform, include_scatter=include_scatter)
         self.transform = transform
 
     def plot_contour(
