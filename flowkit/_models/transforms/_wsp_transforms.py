@@ -109,7 +109,7 @@ class WSPBiexTransform(Transform):
             y, x = np.loadtxt(lut_file_path, delimiter=',', usecols=(0, 1), skiprows=1, unpack=True)
         except OSError:
             raise ValueError(
-                "The parameter value combination negative=%f, width=$f is unsupported % self.negative, self.width"
+                "The parameter value combination negative=%f, width=%f is unsupported" % (self.negative, self.width)
             )
 
         # create interpolation function with any values outside the range set to the min / max of LUT
