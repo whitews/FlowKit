@@ -226,7 +226,7 @@ def _rolling_window(a, window):
     return np.lib.stride_tricks.as_strided(a, shape=shape, strides=strides)
 
 
-# TODO: somehow save anomalous event data in Sample class, maybe in some new class AnomData?
+# TODO: somehow save anomalous event data in Sample class, maybe in some new class AnomalyData?
 def filter_anomalous_events(
         transformed_events,
         channel_labels,
@@ -250,9 +250,9 @@ def filter_anomalous_events(
         if label == 'Time':
             continue
 
-        chan_events = pd.Series(transformed_events[:, i])
+        channel_events = pd.Series(transformed_events[:, i])
 
-        rolling_mean = chan_events.rolling(
+        rolling_mean = channel_events.rolling(
             roll,
             min_periods=1,
             center=True
@@ -272,11 +272,11 @@ def filter_anomalous_events(
         for j in range(0, ref_set_count):
             ref_subsample_idx = rng.choice(int(event_count * 0.5), ref_size, replace=False)
             # noinspection PyUnresolvedReferences
-            ref_sets.append(chan_events[reference_indices.values[ref_subsample_idx]])
+            ref_sets.append(channel_events[reference_indices.values[ref_subsample_idx]])
 
         # calculate piece-wise KS test, we'll test every roll / 5 interval, cause
         # doing a true rolling window takes way too long
-        strides = _rolling_window(chan_events, roll)
+        strides = _rolling_window(channel_events, roll)
 
         ks_x = []
         ks_y = []
@@ -315,7 +315,7 @@ def filter_anomalous_events(
             fig = pyplot.figure(figsize=(16, 12))
             ax = fig.add_subplot(4, 1, 1)
 
-            plot_utils.plot_channel(chan_events, " - ".join([str(i + 1), label]), ax, xform=False)
+            plot_utils.plot_channel(channel_events, " - ".join([str(i + 1), label]), ax, xform=False)
 
             ax = fig.add_subplot(4, 1, 2)
             ax.set_title(
@@ -420,8 +420,8 @@ def points_in_polygon(poly_vertices, points):
 
 def rotate_point_around_point(point, cov_mat, center_point=(0, 0)):
     # rotates point around center_point
-    point_trans = np.array([point[0] - center_point[0], point[1] - center_point[1]])
-    point_rot = np.dot(point_trans, cov_mat)
-    point_untrans = point_rot + center_point
+    point_translated = np.array([point[0] - center_point[0], point[1] - center_point[1]])
+    point_rot = np.dot(point_translated, cov_mat)
+    point_untranslated = point_rot + center_point
 
-    return point_untrans
+    return point_untranslated
