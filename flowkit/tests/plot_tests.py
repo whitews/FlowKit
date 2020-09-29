@@ -99,7 +99,7 @@ class PlotTestCase(unittest.TestCase):
             sample_name,
             x_dim,
             y_dim,
-            sample_group=group_name,
+            group_name=group_name,
             gate_id='ScaleRect1'
         )
 

@@ -40,7 +40,7 @@ class FlowJoWSPTestCase(unittest.TestCase):
             gates.EllipsoidGate
         )
 
-        fks.analyze_samples(sample_group='All Samples')
+        fks.analyze_samples(group_name='All Samples')
         results = fks.get_gating_results('All Samples', 'data_set_simple_line_100.fcs')
         gate_count = results.get_gate_count('ellipse1')
         self.assertEqual(gate_count, 48)
@@ -61,7 +61,7 @@ class FlowJoWSPTestCase(unittest.TestCase):
             gates.RectangleGate
         )
 
-        fks.analyze_samples(sample_group='All Samples')
+        fks.analyze_samples(group_name='All Samples')
         results = fks.get_gating_results('All Samples', 'test_data_diamond_01.fcs')
 
         gate_count_q1 = results.get_gate_count('Q1: channel_A- , channel_B+')
@@ -88,7 +88,7 @@ class FlowJoWSPTestCase(unittest.TestCase):
             gates.RectangleGate
         )
 
-        fks.analyze_samples(sample_group='All Samples')
+        fks.analyze_samples(group_name='All Samples')
         results = fks.get_gating_results('All Samples', 'test_data_diamond_01.fcs')
         gate_count = results.get_gate_count('upper_right')
         self.assertEqual(gate_count, 50605)
@@ -127,7 +127,7 @@ class FlowJoWSPTestCase(unittest.TestCase):
             gates.RectangleGate
         )
 
-        fks.analyze_samples(sample_group='default')
+        fks.analyze_samples(group_name='default')
         results = fks.get_gating_results('default', 'test_data_diamond_01.fcs')
         gate_count = results.get_gate_count('upper_right')
         self.assertEqual(gate_count, 50605)

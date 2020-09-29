@@ -25,7 +25,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
         s.assign_sample(data1_sample.original_filename, group_name)
-        s.analyze_samples(sample_group=group_name)
+        s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
         result = s.get_gate_indices(group_name, data1_sample.original_filename, 'Range1')
@@ -42,7 +42,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
         s.assign_sample(data1_sample.original_filename, group_name)
-        s.analyze_samples(sample_group=group_name)
+        s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
         result = s.get_gate_indices(group_name, data1_sample.original_filename, 'Rectangle1')
@@ -59,7 +59,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
         s.assign_sample(data1_sample.original_filename, group_name)
-        s.analyze_samples(sample_group=group_name)
+        s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
         result = s.get_gate_indices(group_name, data1_sample.original_filename, 'Rectangle2')
@@ -76,7 +76,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
         s.assign_sample(data1_sample.original_filename, group_name)
-        s.analyze_samples(sample_group=group_name)
+        s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
         result = s.get_gate_indices(group_name, data1_sample.original_filename, 'Polygon1')
@@ -93,7 +93,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
         s.assign_sample(data1_sample.original_filename, group_name)
-        s.analyze_samples(sample_group=group_name)
+        s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
         result = s.get_gate_indices(group_name, data1_sample.original_filename, 'Polygon2')
@@ -110,7 +110,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
         s.assign_sample(data1_sample.original_filename, group_name)
-        s.analyze_samples(sample_group=group_name)
+        s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
         result = s.get_gate_indices(group_name, data1_sample.original_filename, 'Polygon3NS')
@@ -127,7 +127,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
         s.assign_sample(data1_sample.original_filename, group_name)
-        s.analyze_samples(sample_group=group_name)
+        s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
         result = s.get_gate_indices(group_name, data1_sample.original_filename, 'Ellipse1')
@@ -144,7 +144,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
         s.assign_sample(data1_sample.original_filename, group_name)
-        s.analyze_samples(sample_group=group_name)
+        s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
         result = s.get_gate_indices(group_name, data1_sample.original_filename, 'Ellipsoid3D')
@@ -161,7 +161,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
         s.assign_sample(data1_sample.original_filename, group_name)
-        s.analyze_samples(sample_group=group_name)
+        s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
         result = s.get_gate_indices(group_name, data1_sample.original_filename, 'Range2')
@@ -207,7 +207,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
         s.assign_sample(data1_sample.original_filename, group_name)
-        s.analyze_samples(sample_group=group_name)
+        s.analyze_samples(group_name=group_name)
 
         result = s.get_gating_results(group_name, data1_sample.original_filename)
 
@@ -232,7 +232,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
         s.assign_sample(data1_sample.original_filename, group_name)
-        s.analyze_samples(sample_group=group_name)
+        s.analyze_samples(group_name=group_name)
 
         truth1 = pd.read_csv(res1_path, header=None, squeeze=True, dtype='bool').values
         truth2 = pd.read_csv(res2_path, header=None, squeeze=True, dtype='bool').values
@@ -258,7 +258,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
         s.assign_sample(data1_sample.original_filename, group_name)
-        s.analyze_samples(sample_group=group_name)
+        s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
         result = s.get_gate_indices(group_name, data1_sample.original_filename, 'RatRange1')
@@ -275,7 +275,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
         s.assign_sample(data1_sample.original_filename, group_name)
-        s.analyze_samples(sample_group=group_name)
+        s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
         result = s.get_gate_indices(group_name, data1_sample.original_filename, 'RatRange2')
@@ -292,7 +292,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
         s.assign_sample(data1_sample.original_filename, group_name)
-        s.analyze_samples(sample_group=group_name)
+        s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
         result = s.get_gate_indices(group_name, data1_sample.original_filename, 'RatRange1a')
@@ -309,7 +309,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
         s.assign_sample(data1_sample.original_filename, group_name)
-        s.analyze_samples(sample_group=group_name)
+        s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
         result = s.get_gate_indices(group_name, data1_sample.original_filename, 'And1')
@@ -326,7 +326,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
         s.assign_sample(data1_sample.original_filename, group_name)
-        s.analyze_samples(sample_group=group_name)
+        s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
         result = s.get_gate_indices(group_name, data1_sample.original_filename, 'And2')
@@ -343,7 +343,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
         s.assign_sample(data1_sample.original_filename, group_name)
-        s.analyze_samples(sample_group=group_name)
+        s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
         result = s.get_gate_indices(group_name, data1_sample.original_filename, 'Or1')
@@ -360,7 +360,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
         s.assign_sample(data1_sample.original_filename, group_name)
-        s.analyze_samples(sample_group=group_name)
+        s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
         result = s.get_gate_indices(group_name, data1_sample.original_filename, 'And3')
@@ -377,7 +377,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
         s.assign_sample(data1_sample.original_filename, group_name)
-        s.analyze_samples(sample_group=group_name)
+        s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
         result = s.get_gate_indices(group_name, data1_sample.original_filename, 'Not1')
@@ -394,7 +394,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
         s.assign_sample(data1_sample.original_filename, group_name)
-        s.analyze_samples(sample_group=group_name)
+        s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
         result = s.get_gate_indices(group_name, data1_sample.original_filename, 'And4')
@@ -411,7 +411,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
         s.assign_sample(data1_sample.original_filename, group_name)
-        s.analyze_samples(sample_group=group_name)
+        s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
         result = s.get_gate_indices(group_name, data1_sample.original_filename, 'Or2')
@@ -428,7 +428,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
         s.assign_sample(data1_sample.original_filename, group_name)
-        s.analyze_samples(sample_group=group_name)
+        s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
         result = s.get_gate_indices(group_name, data1_sample.original_filename, 'Polygon4')
@@ -445,7 +445,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
         s.assign_sample(data1_sample.original_filename, group_name)
-        s.analyze_samples(sample_group=group_name)
+        s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
         result = s.get_gate_indices(group_name, data1_sample.original_filename, 'Rectangle3')
@@ -462,7 +462,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
         s.assign_sample(data1_sample.original_filename, group_name)
-        s.analyze_samples(sample_group=group_name)
+        s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
         result = s.get_gate_indices(group_name, data1_sample.original_filename, 'Rectangle4')
@@ -479,7 +479,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
         s.assign_sample(data1_sample.original_filename, group_name)
-        s.analyze_samples(sample_group=group_name)
+        s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
         result = s.get_gate_indices(group_name, data1_sample.original_filename, 'Rectangle5')
@@ -496,7 +496,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
         s.assign_sample(data1_sample.original_filename, group_name)
-        s.analyze_samples(sample_group=group_name)
+        s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
         result = s.get_gate_indices(group_name, data1_sample.original_filename, 'ScaleRange1')
@@ -513,7 +513,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
         s.assign_sample(data1_sample.original_filename, group_name)
-        s.analyze_samples(sample_group=group_name)
+        s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
         result = s.get_gate_indices(group_name, data1_sample.original_filename, 'ScaleRange2')
@@ -530,7 +530,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
         s.assign_sample(data1_sample.original_filename, group_name)
-        s.analyze_samples(sample_group=group_name)
+        s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
         result = s.get_gate_indices(group_name, data1_sample.original_filename, 'ScaleRange3')
@@ -547,7 +547,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
         s.assign_sample(data1_sample.original_filename, group_name)
-        s.analyze_samples(sample_group=group_name)
+        s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
         result = s.get_gate_indices(group_name, data1_sample.original_filename, 'ScaleRange4')
@@ -564,7 +564,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
         s.assign_sample(data1_sample.original_filename, group_name)
-        s.analyze_samples(sample_group=group_name)
+        s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
         result = s.get_gate_indices(group_name, data1_sample.original_filename, 'ScaleRange5')
@@ -581,7 +581,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
         s.assign_sample(data1_sample.original_filename, group_name)
-        s.analyze_samples(sample_group=group_name)
+        s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
         result = s.get_gate_indices(group_name, data1_sample.original_filename, 'ScaleRange6')
@@ -598,7 +598,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
         s.assign_sample(data1_sample.original_filename, group_name)
-        s.analyze_samples(sample_group=group_name)
+        s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
         result = s.get_gate_indices(group_name, data1_sample.original_filename, 'ScaleRange1c')
@@ -615,7 +615,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
         s.assign_sample(data1_sample.original_filename, group_name)
-        s.analyze_samples(sample_group=group_name)
+        s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
         result = s.get_gate_indices(group_name, data1_sample.original_filename, 'ScaleRange2c')
@@ -632,7 +632,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
         s.assign_sample(data1_sample.original_filename, group_name)
-        s.analyze_samples(sample_group=group_name)
+        s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
         result = s.get_gate_indices(group_name, data1_sample.original_filename, 'ScaleRange3c')
@@ -649,7 +649,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
         s.assign_sample(data1_sample.original_filename, group_name)
-        s.analyze_samples(sample_group=group_name)
+        s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
         result = s.get_gate_indices(group_name, data1_sample.original_filename, 'ScaleRange4c')
@@ -666,7 +666,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
         s.assign_sample(data1_sample.original_filename, group_name)
-        s.analyze_samples(sample_group=group_name)
+        s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
         result = s.get_gate_indices(group_name, data1_sample.original_filename, 'ScaleRange5c')
@@ -683,7 +683,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
         s.assign_sample(data1_sample.original_filename, group_name)
-        s.analyze_samples(sample_group=group_name)
+        s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
         result = s.get_gate_indices(group_name, data1_sample.original_filename, 'ScaleRange6c')
@@ -700,7 +700,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
         s.assign_sample(data1_sample.original_filename, group_name)
-        s.analyze_samples(sample_group=group_name)
+        s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
         result = s.get_gate_indices(group_name, data1_sample.original_filename, 'ScaleRange7c')
@@ -717,7 +717,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
         s.assign_sample(data1_sample.original_filename, group_name)
-        s.analyze_samples(sample_group=group_name)
+        s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
         result = s.get_gate_indices(group_name, data1_sample.original_filename, 'ScaleRange8c')
@@ -734,7 +734,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
         s.assign_sample(data1_sample.original_filename, group_name)
-        s.analyze_samples(sample_group=group_name)
+        s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
         result = s.get_gate_indices(group_name, data1_sample.original_filename, 'ScaleRect1')
@@ -751,7 +751,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
         s.assign_sample(data1_sample.original_filename, group_name)
-        s.analyze_samples(sample_group=group_name)
+        s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
         result = s.get_gate_indices(group_name, data1_sample.original_filename, 'ParAnd2')
@@ -768,7 +768,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
         s.assign_sample(data1_sample.original_filename, group_name)
-        s.analyze_samples(sample_group=group_name)
+        s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
         result = s.get_gate_indices(group_name, data1_sample.original_filename, 'ParAnd3')
@@ -785,7 +785,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
         s.assign_sample(data1_sample.original_filename, group_name)
-        s.analyze_samples(sample_group=group_name)
+        s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
         result = s.get_gate_indices(group_name, data1_sample.original_filename, 'ScalePar1')
@@ -802,7 +802,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
         s.assign_sample(data1_sample.original_filename, group_name)
-        s.analyze_samples(sample_group=group_name)
+        s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
         result = s.get_gate_indices(group_name, data1_sample.original_filename, 'ParRectangle1')
@@ -874,7 +874,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
         s.assign_sample(data1_sample.original_filename, group_name)
-        s.analyze_samples(sample_group=group_name)
+        s.analyze_samples(group_name=group_name)
         results = s.get_gating_results(group_name, data1_sample.original_filename)
 
         for row in results.report.itertuples():

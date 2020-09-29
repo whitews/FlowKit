@@ -91,7 +91,6 @@ def _gate_samples(gating_strategies, samples, verbose):
     return all_results
 
 
-# TODO: Make API consistent regarding sample_group vs group_name. Choose one convention or the other
 class Session(object):
     """
     The Session class is intended as the main interface in FlowKit for complex flow cytometry analysis.
@@ -257,22 +256,24 @@ class Session(object):
         """
         return list(self._sample_group_lut.keys())
 
-    def get_group_sample_ids(self, sample_group):
+    def get_group_sample_ids(self, group_name):
         """
-        Retrieve the list of Sample IDs belonging to the specified sample group
-        :param sample_group: a text string representing the sample group
+        Retrieve the list of Sample IDs belonging to the specified sample group.
+        
+        :param group_name: a text string representing the sample group
         :return: list of Sample IDs
         """
         # convert to list instead of dict_keys
-        return list(self._sample_group_lut[sample_group]['samples'].keys())
+        return list(self._sample_group_lut[group_name]['samples'].keys())
 
-    def get_group_samples(self, sample_group):
+    def get_group_samples(self, group_name):
         """
-        Retrieve the list of Sample instances belonging to the specified sample group
-        :param sample_group: a text string representing the sample group
+        Retrieve the list of Sample instances belonging to the specified sample group.
+
+        :param group_name: a text string representing the sample group
         :return: list of Sample instances
         """
-        sample_ids = self.get_group_sample_ids(sample_group)
+        sample_ids = self.get_group_sample_ids(group_name)
 
         samples = []
         for s_id in sample_ids:
@@ -408,8 +409,8 @@ class Session(object):
         gate = gating_strategy.get_gate(gate_id, gate_path=gate_path)
         return gate
 
-    def get_gate_hierarchy(self, sample_group, output='ascii'):
-        return self._sample_group_lut[sample_group]['template'].get_gate_hierarchy(output)
+    def get_gate_hierarchy(self, group_name, output='ascii'):
+        return self._sample_group_lut[group_name]['template'].get_gate_hierarchy(output)
     # end pass through methods for GatingStrategy
 
     def export_gml(self, file_handle, group_name, sample_id=None):
@@ -509,13 +510,13 @@ class Session(object):
 
         return Matrix(matrix_id, np.array(comp_values), detectors, fluorochromes)
 
-    def analyze_samples(self, sample_group='default', sample_id=None, verbose=False):
+    def analyze_samples(self, group_name='default', sample_id=None, verbose=False):
         """
         Process gates for samples in a sample group. After running, results can be
         retrieved using the `get_gating_results`, `get_group_report`, and  `get_gate_indices`,
         methods.
 
-        :param sample_group: a text string representing the sample group
+        :param group_name: a text string representing the sample group
         :param sample_id: optional sample ID, if specified only this sample will be processed
         :param verbose: if True, print a line for every gate processed (default is False)
         :return: None
@@ -523,15 +524,15 @@ class Session(object):
         # Don't save just the DataFrame report, save the entire
         # GatingResults objects for each sample, since we'll need the gate
         # indices for each sample.
-        samples = self.get_group_samples(sample_group)
+        samples = self.get_group_samples(group_name)
         if len(samples) == 0:
-            warnings.warn("No samples have been assigned to sample group %s" % sample_group)
+            warnings.warn("No samples have been assigned to sample group %s" % group_name)
             return
 
         if sample_id is not None:
-            sample_ids = self.get_group_sample_ids(sample_group)
+            sample_ids = self.get_group_sample_ids(group_name)
             if sample_id not in sample_ids:
-                warnings.warn("%s is not assigned to sample group %s" % (sample_id, sample_group))
+                warnings.warn("%s is not assigned to sample group %s" % (sample_id, group_name))
                 return
 
             samples = [self.get_sample(sample_id)]
@@ -542,34 +543,34 @@ class Session(object):
             if s is None:
                 # sample hasn't been added to Session
                 continue
-            gating_strategies.append(self._sample_group_lut[sample_group]['samples'][s.original_filename])
+            gating_strategies.append(self._sample_group_lut[group_name]['samples'][s.original_filename])
             samples_to_run.append(s)
 
         results = _gate_samples(gating_strategies, samples_to_run, verbose)
 
         all_reports = [res.report for res in results]
 
-        self._results_lut[sample_group] = {
+        self._results_lut[group_name] = {
             'report': pd.concat(all_reports),
             'samples': {}  # dict will have sample ID keys and results values
         }
         for r in results:
-            self._results_lut[sample_group]['samples'][r.sample_id] = r
+            self._results_lut[group_name]['samples'][r.sample_id] = r
 
-    def get_gating_results(self, sample_group, sample_id):
-        gating_result = self._results_lut[sample_group]['samples'][sample_id]
+    def get_gating_results(self, group_name, sample_id):
+        gating_result = self._results_lut[group_name]['samples'][sample_id]
         return copy.deepcopy(gating_result)
 
-    def get_group_report(self, sample_group):
-        return self._results_lut[sample_group]['report']
+    def get_group_report(self, group_name):
+        return self._results_lut[group_name]['report']
 
-    def get_gate_indices(self, sample_group, sample_id, gate_id, gate_path=None):
-        gating_result = self._results_lut[sample_group]['samples'][sample_id]
+    def get_gate_indices(self, group_name, sample_id, gate_id, gate_path=None):
+        gating_result = self._results_lut[group_name]['samples'][sample_id]
         return gating_result.get_gate_indices(gate_id, gate_path=gate_path)
 
     def plot_gate(
             self,
-            sample_group,
+            group_name,
             sample_id,
             gate_id,
             gate_path=None,
@@ -584,7 +585,7 @@ class Session(object):
          dimensions used to define the gate: single dimension gates will be histograms, 2-D gates will be returned
          as a scatter plot.
 
-        :param sample_group: The sample group containing the sample ID (and, optionally the gate ID)
+        :param group_name: The sample group containing the sample ID (and, optionally the gate ID)
         :param sample_id: The sample ID for the FCS sample to plot
         :param gate_id: Gate ID to filter events (only events within the given gate will be plotted)
         :param gate_path: list of gate IDs for full set of gate ancestors. Required if gate_id is ambiguous
@@ -600,7 +601,7 @@ class Session(object):
             to a heat map. Default is True.
         :return: A Bokeh Figure object containing the interactive scatter plot.
         """
-        group = self._sample_group_lut[sample_group]
+        group = self._sample_group_lut[group_name]
         gating_strategy = group['samples'][sample_id]
         gate = gating_strategy.get_gate(gate_id, gate_path)
 
@@ -730,7 +731,7 @@ class Session(object):
                 'above'
             )
 
-        plot_title = "%s (%s)" % (sample_id, sample_group)
+        plot_title = "%s (%s)" % (sample_id, group_name)
         p.add_layout(
             Title(text=plot_title, text_font_size="1.1em", align='center'),
             'above'
@@ -743,7 +744,7 @@ class Session(object):
             sample_id,
             x_dim,
             y_dim,
-            sample_group='default',
+            group_name='default',
             gate_id=None,
             subsample=False,
             color_density=True,
@@ -758,7 +759,7 @@ class Session(object):
         :param sample_id: The sample ID for the FCS sample to plot
         :param x_dim:  Dimension instance to use for the x-axis data
         :param y_dim: Dimension instance to use for the y-axis data
-        :param sample_group: The sample group containing the sample ID (and, optionally the gate ID)
+        :param group_name: The sample group containing the sample ID (and, optionally the gate ID)
         :param gate_id: Gate ID to filter events (only events within the given gate will be plotted)
         :param subsample: Whether to use all events for plotting or just the
             sub-sampled events. Default is False (all events). Plotting
@@ -776,7 +777,7 @@ class Session(object):
         :return: A Bokeh Figure object containing the interactive scatter plot.
         """
         sample = self.get_sample(sample_id)
-        group = self._sample_group_lut[sample_group]
+        group = self._sample_group_lut[group_name]
         gating_strategy = group['samples'][sample_id]
 
         x_index = sample.get_channel_index(x_dim.label)
