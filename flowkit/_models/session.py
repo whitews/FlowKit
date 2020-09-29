@@ -53,16 +53,16 @@ def load_samples(fcs_samples):
     return sample_list
 
 
-# gate_sample & gate_samples are multi-proc wrappers for GatingStrategy gate_sample method
+# _gate_sample & _gate_samples are multi-proc wrappers for GatingStrategy _gate_sample method
 # These are functions external to GatingStrategy as mp doesn't work well for class methods
-def gate_sample(data):
+def _gate_sample(data):
     gating_strategy = data[0]
     sample = data[1]
     verbose = data[2]
     return gating_strategy.gate_sample(sample, verbose=verbose)
 
 
-def gate_samples(gating_strategies, samples, verbose):
+def _gate_samples(gating_strategies, samples, verbose):
     # TODO: Looks like multiprocessing can fail for very large workloads (lots of gates), maybe due
     #       to running out of memory. Will investigate further, but for now maybe provide an option
     #       for turning off multiprocessing so end user can avoid this issue if it occurs.
@@ -76,7 +76,7 @@ def gate_samples(gating_strategies, samples, verbose):
         try:
             pool = mp.Pool(processes=proc_count)
             data = [(gating_strategies[i], sample, verbose) for i, sample in enumerate(samples)]
-            all_results = pool.map(gate_sample, data)
+            all_results = pool.map(_gate_sample, data)
         except Exception as e:
             # noinspection PyUnboundLocalVariable
             pool.close()
@@ -499,7 +499,7 @@ class Session(object):
             gating_strategies.append(self._sample_group_lut[sample_group]['samples'][s.original_filename])
             samples_to_run.append(s)
 
-        results = gate_samples(gating_strategies, samples_to_run, verbose)
+        results = _gate_samples(gating_strategies, samples_to_run, verbose)
 
         all_reports = [res.report for res in results]
 
