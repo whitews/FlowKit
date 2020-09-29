@@ -283,7 +283,8 @@ class Session(object):
         :param sample_group: a text string representing the sample group
         :return: list of Sample IDs
         """
-        return self._sample_group_lut[sample_group]['samples'].keys()
+        # convert to list instead of dict_keys
+        return list(self._sample_group_lut[sample_group]['samples'].keys())
 
     def get_group_samples(self, sample_group):
         """
