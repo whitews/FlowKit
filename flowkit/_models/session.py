@@ -9,43 +9,13 @@ import numpy as np
 import pandas as pd
 import statsmodels.api as sm
 from bokeh.models import Title
-from .._models.sample import Sample
+from .._models.sample import Sample, get_samples_from_paths
 from .._models.gating_strategy import GatingStrategy
 from .._models.transforms._matrix import Matrix
 from .._models import gates
+from .._utils.utils import multi_proc, mp
 from .._utils import plot_utils, xml_utils, wsp_utils
 import warnings
-
-try:
-    import multiprocessing as mp
-    multi_proc = True
-except ImportError:
-    mp = None
-    multi_proc = False
-
-
-def get_samples_from_paths(sample_paths):
-    sample_count = len(sample_paths)
-    if multi_proc and sample_count > 1:
-        if sample_count < mp.cpu_count():
-            proc_count = sample_count
-        else:
-            proc_count = mp.cpu_count() - 1  # leave a CPU free just to be nice
-
-        try:
-            pool = mp.Pool(processes=proc_count)
-            samples = pool.map(Sample, sample_paths)
-        except Exception as e:
-            # noinspection PyUnboundLocalVariable
-            pool.close()
-            raise e
-        pool.close()
-    else:
-        samples = []
-        for path in sample_paths:
-            samples.append(Sample(path))
-
-    return samples
 
 
 def load_samples(fcs_samples):
@@ -173,7 +143,12 @@ class Session(object):
             'samples': {}
         }
 
-    def import_flowjo_workspace(self, workspace_file_or_path, ignore_missing_files=False):
+    def import_flowjo_workspace(
+            self,
+            workspace_file_or_path,
+            ignore_missing_files=False,
+            ignore_transforms=False
+    ):
         """
         Imports a FlowJo workspace (version 10+) into the Session. Each sample group in the workspace will
         be a sample group in the FlowKit session. Referenced samples in the workspace will be imported as
@@ -198,6 +173,8 @@ class Session(object):
         :param workspace_file_or_path: WSP workspace file as a file name/path, file object, or file-like object
         :param ignore_missing_files: Controls whether UserWarning messages are issued for FCS files found in the
             workspace that have not yet been loaded in the Session. Default is False, displaying warnings.
+        :param ignore_transforms: Controls whether transformations are applied to the gate definitions within the
+            FlowJo workspace. Useful for extracting gate vertices in the un-transformed space. Default is False.
         :return: None
         """
         wsp_sample_groups = wsp_utils.parse_wsp(workspace_file_or_path)
@@ -350,6 +327,12 @@ class Session(object):
         template.add_comp_matrix(copy.deepcopy(matrix))
         for s_id, s_strategy in s_members.items():
             s_strategy.add_comp_matrix(copy.deepcopy(matrix))
+
+    def get_group_comp_matrices(self, group_name):
+        group = self._sample_group_lut[group_name]
+        gating_strategy = group['samples'][sample_id]
+        comp_mat = gating_strategy.get_comp_matrix(matrix_id)
+        return comp_mat
 
     def get_comp_matrix(self, group_name, sample_id, matrix_id):
         group = self._sample_group_lut[group_name]

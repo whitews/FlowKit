@@ -16,8 +16,43 @@ from bokeh.models import Title
 import warnings
 from .._models.transforms import _transforms
 from .._models.transforms._matrix import Matrix
-from .._utils import utils
 from .._utils import plot_utils
+from .._utils import sample_utils
+from .._utils.utils import multi_proc, mp
+
+
+# This function is included here in the Sample module
+# instead of sample_utils to avoid a circular import.
+# This function references the Sample class, but the
+# Sample class has methods that use sample_utils.
+def get_samples_from_paths(sample_paths):
+    """
+    Load multiple Sample instances from a list of file paths
+
+    :param sample_paths: list of file paths containing FCS files
+    :return: list of Sample instances
+    """
+    sample_count = len(sample_paths)
+    if multi_proc and sample_count > 1:
+        if sample_count < mp.cpu_count():
+            proc_count = sample_count
+        else:
+            proc_count = mp.cpu_count() - 1  # leave a CPU free just to be nice
+
+        try:
+            pool = mp.Pool(processes=proc_count)
+            samples = pool.map(Sample, sample_paths)
+        except Exception as e:
+            # noinspection PyUnboundLocalVariable
+            pool.close()
+            raise e
+        pool.close()
+    else:
+        samples = []
+        for path in sample_paths:
+            samples.append(Sample(path))
+
+    return samples
 
 
 class Sample(object):
@@ -281,7 +316,7 @@ class Sample(object):
         for idx in eval_indices:
             eval_labels.append(self.pnn_labels[idx])
 
-        anomalous_idx = utils.filter_anomalous_events(
+        anomalous_idx = sample_utils.filter_anomalous_events(
             xform_events[:, eval_indices],
             eval_labels,
             rng=rng,
