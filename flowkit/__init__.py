@@ -1,4 +1,4 @@
-from ._models.sample import Sample
+from ._models.sample import Sample, get_samples_from_paths
 from ._models.transforms._matrix import Matrix
 from ._models import transforms
 from ._models import gates
@@ -25,5 +25,6 @@ __all__ = [
     'export_gatingml',
     'parse_wsp',
     'plot_channel',
-    'calculate_extent'
+    'calculate_extent',
+    'get_samples_from_paths'
 ]
