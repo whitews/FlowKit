@@ -41,6 +41,20 @@ class SessionTestCase(unittest.TestCase):
 
         self.assertIsInstance(comp_mat, Matrix)
 
+    def test_get_comp_matrices(self):
+        wsp_path = "examples/8_color_data_set/8_color_ICS_simple.wsp"
+        fcs_path = "examples/8_color_data_set/fcs_files"
+        sample_grp = 'DEN'
+
+        fks = Session(fcs_samples=fcs_path)
+        fks.import_flowjo_workspace(wsp_path, ignore_missing_files=True)
+
+        comp_matrices = fks.get_group_comp_matrices(sample_grp)
+
+        self.assertEqual(len(comp_matrices), 3)
+        for cm in comp_matrices:
+            self.assertIsInstance(cm, Matrix)
+
     def test_get_transform(self):
         fks = Session(fcs_samples=data1_sample)
         fks.add_transform(asinh_xform1)
