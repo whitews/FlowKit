@@ -147,20 +147,30 @@ class Sample(object):
 
         self._flowjo_pnn_labels = [label.replace('/', '_') for label in self.pnn_labels]
 
-        # Raw events need to be scaled according to channel gain, as well
-        # as corrected for proper lin/log display
-        # This is the only pre-processing we will do on raw events
-        raw_events = np.reshape(
+        # Start processing the event data. First, we'll save the unprocessed events
+        self._orig_events = np.reshape(
             np.array(flow_data.events, dtype=np.float),
             (-1, flow_data.channel_count)
         )
 
+        # Event data must be scaled according to channel gain, as well
+        # as corrected for proper lin/log display, and the time channel
+        # scaled by the 'timestep' keyword value (if present).
+        # This is the only pre-processing we will do on raw events
+        raw_events = self._orig_events.copy()
+
+        # Note: The time channel is scaled by the timestep (if present),
+        # but should not be scaled by any gain value present in PnG.
+        # It seems common for cytometers to include a gain value for the
+        # time channel that matches the fluoro channels. Not sure why
+        # they do this but it makes no sense to have an amplifier gain
+        # on the time data. Here, we set any time gain to 1.0.
+        if self.time_index is not None:
+            channel_gain[self.time_index] = 1.0
+
         if 'timestep' in self.metadata and self.time_index is not None:
             time_step = float(self.metadata['timestep'])
             raw_events[:, self.time_index] = raw_events[:, self.time_index] * time_step
-
-        # But first, we'll save the unprocessed events
-        self._orig_events = raw_events.copy()
 
         for i, (decades, log0) in enumerate(channel_lin_log):
             if decades > 0:
