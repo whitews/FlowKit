@@ -409,6 +409,19 @@ class Session(object):
         gate = gating_strategy.get_gate(gate_id, gate_path=gate_path)
         return gate
 
+    def get_sample_gates(self, group_name, sample_id):
+        group = self._sample_group_lut[group_name]
+        gating_strategy = group['samples'][sample_id]
+        gate_tuples = gating_strategy.get_gate_ids()
+
+        gates = []
+
+        for gate_id, ancestors in gate_tuples:
+            gate = gating_strategy.get_gate(gate_id, gate_path=ancestors)
+            gates.append(gate)
+
+        return gates
+
     def get_gate_hierarchy(self, group_name, output='ascii'):
         return self._sample_group_lut[group_name]['template'].get_gate_hierarchy(output)
     # end pass through methods for GatingStrategy
