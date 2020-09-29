@@ -2,7 +2,8 @@
 Unit tests for plotting functions
 """
 import unittest
-from bokeh.plotting.figure import Figure
+from bokeh.plotting.figure import Figure as bk_Figure
+from matplotlib.pyplot import Figure as mpl_Figure
 import flowkit as fk
 
 fcs_path = 'examples/gate_ref/data1.fcs'
@@ -28,7 +29,27 @@ class PlotTestCase(unittest.TestCase):
             source='xform'
         )
 
-        self.assertIsInstance(p, Figure)
+        self.assertIsInstance(p, bk_Figure)
+
+    def test_plot_sample_contour(self):
+        sample = fk.Sample(fcs_path)
+        xform_logicle = fk.transforms.LogicleTransform('logicle', param_t=10000, param_w=0.5, param_m=4.5, param_a=0)
+        sample.apply_transform(xform_logicle)
+
+        p1 = sample.plot_contour(
+            'FL1-H',
+            'FL2-H',
+            source='xform'
+        )
+        p2 = sample.plot_contour(
+            'FL1-H',
+            'FL2-H',
+            source='xform',
+            plot_events=True,
+        )
+
+        self.assertIsInstance(p1, mpl_Figure)
+        self.assertIsInstance(p2, mpl_Figure)
 
     def test_plot_sample_scatter(self):
         sample = fk.Sample(fcs_path)
@@ -41,7 +62,7 @@ class PlotTestCase(unittest.TestCase):
             source='xform'
         )
 
-        self.assertIsInstance(p, Figure)
+        self.assertIsInstance(p, bk_Figure)
 
     def test_plot_gates(self):
         fks = fk.Session(fcs_path)
@@ -62,7 +83,7 @@ class PlotTestCase(unittest.TestCase):
             except NotImplementedError:
                 continue
 
-            self.assertIsInstance(p, Figure)
+            self.assertIsInstance(p, bk_Figure)
 
     def test_plot_gated_scatter(self):
         fks = fk.Session(fcs_path)
@@ -82,4 +103,4 @@ class PlotTestCase(unittest.TestCase):
             gate_id='ScaleRect1'
         )
 
-        self.assertIsInstance(p, Figure)
+        self.assertIsInstance(p, bk_Figure)
