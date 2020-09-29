@@ -23,7 +23,9 @@ class FlowJoWSPTestCase(unittest.TestCase):
         )
 
         gate_ids = {'rect1', 'poly1'}
-        self.assertSetEqual(set(fks.get_gate_ids('my_group')), gate_ids)
+        wsp_gates_tuple = fks.get_gate_ids('my_group')
+        wsp_gate_ids = set([g[0] for g in wsp_gates_tuple])
+        self.assertSetEqual(wsp_gate_ids, gate_ids)
 
     def test_load_wsp_single_ellipse(self):
         wsp_path = "examples/simple_line_example/single_ellipse_51_events.wsp"

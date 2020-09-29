@@ -205,10 +205,16 @@ class GatingStrategy(object):
 
     def get_gate_ids(self):
         """
-        Retrieve the list of gate IDs for the gating strategy
-        :return: list of gate ID strings
+        Retrieve the list of gate IDs (with ancestors) for the gating strategy
+        :return: list of tuples where the 1st item is the gate ID string and 2nd item is
+                 a list of ancestor gates
         """
-        return [node.name for node in self._gate_tree.descendants]
+        gates = []
+        for node in self._gate_tree.descendants:
+            ancestors = [a.name for a in node.ancestors]
+            gates.append((node.name, ancestors))
+
+        return gates
 
     def get_gate_hierarchy(self, output='ascii', **kwargs):
         """
