@@ -91,6 +91,7 @@ def gate_samples(gating_strategies, samples, verbose):
     return all_results
 
 
+# TODO: Make API consistent regarding sample_group vs group_name. Choose one convention or the other
 class Session(object):
     """
     The Session class is intended as the main interface in FlowKit for complex flow cytometry analysis.
@@ -277,13 +278,13 @@ class Session(object):
 
         return samples
 
-    def get_gate_ids(self, sample_group):
+    def get_gate_ids(self, group_name):
         """
         Retrieve the list of gate IDs defined in the specified sample group
-        :param sample_group: a text string representing the sample group
+        :param group_name: a text string representing the sample group
         :return: list of gate ID strings
         """
-        group = self._sample_group_lut[sample_group]
+        group = self._sample_group_lut[group_name]
         template = group['template']
         return template.get_gate_ids()
 
@@ -329,10 +330,19 @@ class Session(object):
             s_strategy.add_comp_matrix(copy.deepcopy(matrix))
 
     def get_group_comp_matrices(self, group_name):
+        """
+        Retrieve the list of compensation Matrix instances stored within the specified sample group
+        :param group_name: a text string representing the sample group
+        :return: list of Matrix instances
+        """
         group = self._sample_group_lut[group_name]
-        gating_strategy = group['samples'][sample_id]
-        comp_mat = gating_strategy.get_comp_matrix(matrix_id)
-        return comp_mat
+        comp_matrices = []
+
+        for sample_id in group['samples']:
+            gating_strategy = group['samples'][sample_id]
+            comp_matrices.extend(list(gating_strategy.comp_matrices.values()))
+
+        return comp_matrices
 
     def get_comp_matrix(self, group_name, sample_id, matrix_id):
         group = self._sample_group_lut[group_name]
