@@ -26,8 +26,9 @@ wsp_gate_constructor_lut = {
 
 
 def _parse_wsp_compensation(sample_el, transform_ns, data_type_ns):
-    # find spilloverMatrix elements, not sure if there should be just a single matrix or multiple
-    # going with a single one now since there do not appear to be comp references in the WSP gate elements
+    # Find spilloverMatrix elements, not sure if there should be just a
+    # single matrix or multiple. Going with a single one now since there
+    # do not appear to be comp references in the WSP gate elements.
     matrix_els = sample_el.findall(
         '%s:spilloverMatrix' % transform_ns,
         namespaces=sample_el.nsmap
@@ -163,7 +164,7 @@ def _parse_wsp_transforms(transforms_el, transform_ns, data_type_ns):
     return xforms_lut
 
 
-def _convert_wsp_gate(wsp_gate, comp_matrix, xform_lut):
+def _convert_wsp_gate(wsp_gate, comp_matrix, xform_lut, ignore_transforms=False):
     new_dims = []
     xforms = []
 
@@ -190,7 +191,7 @@ def _convert_wsp_gate(wsp_gate, comp_matrix, xform_lut):
         new_dim_min = None
         new_dim_max = None
 
-        if dim_label in xform_lut:
+        if dim_label in xform_lut and not ignore_transforms:
             xform = xform_lut[dim_label]
             xforms.append(xform)  # need these later for vertices, coordinates, etc.
             xform_id = xform.id
@@ -201,8 +202,19 @@ def _convert_wsp_gate(wsp_gate, comp_matrix, xform_lut):
                 new_dim_max = xform.apply(np.array([[float(dim.max)]]))
         else:
             xforms.append(None)
+            if dim.min is not None:
+                new_dim_min = float(dim.min)
 
-        new_dim = Dimension(dim_label, comp_ref, xform_id, range_min=new_dim_min, range_max=new_dim_max)
+            if dim.max is not None:
+                new_dim_max = float(dim.max)
+
+        new_dim = Dimension(
+            dim_label,
+            comp_ref,
+            xform_id,
+            range_min=new_dim_min,
+            range_max=new_dim_max
+        )
         new_dims.append(new_dim)
 
     if isinstance(wsp_gate, GMLPolygonGate):
@@ -222,7 +234,9 @@ def _convert_wsp_gate(wsp_gate, comp_matrix, xform_lut):
     elif isinstance(wsp_gate, WSPEllipsoidGate):
         gate = wsp_gate
     else:
-        raise NotImplemented("%s gates for FlowJo workspaces are not currently supported." % type(wsp_gate).__name__)
+        raise NotImplemented(
+            "%s gates for FlowJo workspaces are not currently supported." % type(wsp_gate).__name__
+        )
 
     return gate
 
@@ -284,7 +298,7 @@ def _recurse_wsp_sub_populations(sub_pop_el, parent_id, gating_ns, data_type_ns)
     return gates
 
 
-def parse_wsp(workspace_file_or_path):
+def parse_wsp(workspace_file_or_path, ignore_transforms=False):
     doc_type, root_xml, gating_ns, data_type_ns, transform_ns = _get_xml_type(workspace_file_or_path)
 
     # first, find SampleList elements
@@ -312,7 +326,8 @@ def parse_wsp(workspace_file_or_path):
         # parse spilloverMatrix elements
         sample_comp = _parse_wsp_compensation(sample_el, transform_ns, data_type_ns)
 
-        # FlowJo WSP gates are nested so we'll have to do a recursive search from the root Sub-populations node
+        # FlowJo WSP gates are nested so we'll have to do a recursive search from the root
+        # Sub-populations node
         sample_root_sub_pop_el = sample_node_el.find('Subpopulations', ns_map)
 
         # FJ WSP gates are stored in non-transformed space. After parsing the XML the values need
@@ -352,7 +367,7 @@ def parse_wsp(workspace_file_or_path):
                     'compensation': matrix
                 }
 
-            gate = _convert_wsp_gate(gate, sample_comp, sample_xform_lut)
+            gate = _convert_wsp_gate(gate, sample_comp, sample_xform_lut, ignore_transforms=ignore_transforms)
             # TODO: this will still overwrite re-used gate IDs on different branches
             wsp_dict[group][sample_name]['gates'][gate.uid] = gate
 

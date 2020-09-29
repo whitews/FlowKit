@@ -177,7 +177,7 @@ class Session(object):
             FlowJo workspace. Useful for extracting gate vertices in the un-transformed space. Default is False.
         :return: None
         """
-        wsp_sample_groups = wsp_utils.parse_wsp(workspace_file_or_path)
+        wsp_sample_groups = wsp_utils.parse_wsp(workspace_file_or_path, ignore_transforms=ignore_transforms)
         for group_name, sample_data in wsp_sample_groups.items():
             for sample, data_dict in sample_data.items():
                 if sample not in self.sample_lut:
