@@ -243,14 +243,16 @@ class Session(object):
 
     def get_sample_ids(self):
         """
-        Retrieve the list of Sample IDs that have been loaded or referenced in the Session
+        Retrieve the list of Sample IDs that have been loaded or referenced in the Session.
+
         :return: list of Sample ID strings
         """
         return list(self.sample_lut.keys())
 
     def get_sample_groups(self):
         """
-        Retrieve the list of sample group labels defined in the Session
+        Retrieve the list of sample group labels defined in the Session.
+
         :return: list of sample group ID strings
         """
         return list(self._sample_group_lut.keys())
@@ -290,6 +292,14 @@ class Session(object):
 
     # start pass through methods for GatingStrategy class
     def add_gate(self, gate, group_name='default'):
+        """
+        Add a Gate instance to a sample group in the session. Gates will be added to
+        the 'default' sample group by default.
+
+        :param gate: an instance of a Gate sub-class
+        :param group_name: a text string representing the sample group
+        :return: None
+        """
         # TODO: allow adding multiple gates at once, while still allowing a single gate. Check if list or Gate instance
         group = self._sample_group_lut[group_name]
         template = group['template']
@@ -301,6 +311,14 @@ class Session(object):
             s_strategy.add_gate(copy.deepcopy(gate))
 
     def add_transform(self, transform, group_name='default'):
+        """
+        Add a Transform instance to a sample group in the session. Transforms will be added to
+        the 'default' sample group by default.
+
+        :param transform: an instance of a Transform sub-class
+        :param group_name: a text string representing the sample group
+        :return: None
+        """
         group = self._sample_group_lut[group_name]
         template = group['template']
         s_members = group['samples']
@@ -311,12 +329,29 @@ class Session(object):
             s_strategy.add_transform(copy.deepcopy(transform))
 
     def get_transform(self, group_name, sample_id, transform_id):
+        """
+        Retrieve a Transform instance stored within the specified
+        sample group associated with the given sample ID & having the given transform ID.
+
+        :param group_name: a text string representing the sample group
+        :param sample_id: a text string representing a Sample instance
+        :param transform_id: a text string representing a Transform ID
+        :return: an instance of a Transform sub-class
+        """
         group = self._sample_group_lut[group_name]
         gating_strategy = group['samples'][sample_id]
         xform = gating_strategy.get_transform(transform_id)
         return xform
 
     def add_comp_matrix(self, matrix, group_name='default'):
+        """
+        Add a Matrix instance to a sample group in the session. Matrices will be added to
+        the 'default' sample group by default.
+
+        :param matrix: an instance of the Matrix class
+        :param group_name: a text string representing the sample group
+        :return: None
+        """
         # TODO: GatingStrategy method add_comp_matrix accepts only Matrix instances, so this pass through does as well.
         #       Consider adding a pass through Session method to parse comp matrices for conveniently getting a
         #       Matrix instance from a comp source (npy, CSV, str, etc.)
@@ -331,7 +366,9 @@ class Session(object):
 
     def get_group_comp_matrices(self, group_name):
         """
-        Retrieve the list of compensation Matrix instances stored within the specified sample group
+        Retrieve the list of compensation Matrix instances stored within the specified
+        sample group.
+
         :param group_name: a text string representing the sample group
         :return: list of Matrix instances
         """
@@ -345,6 +382,15 @@ class Session(object):
         return comp_matrices
 
     def get_comp_matrix(self, group_name, sample_id, matrix_id):
+        """
+        Retrieve a compensation Matrix instance stored within the specified
+        sample group associated with the given sample ID & having the given matrix ID.
+
+        :param group_name: a text string representing the sample group
+        :param sample_id: a text string representing a Sample instance
+        :param matrix_id: a text string representing a Matrix ID
+        :return: a Matrix instance
+        """
         group = self._sample_group_lut[group_name]
         gating_strategy = group['samples'][sample_id]
         comp_mat = gating_strategy.get_comp_matrix(matrix_id)
