@@ -8,6 +8,9 @@ from flowkit import Sample, transforms
 
 data1_fcs_path = 'examples/gate_ref/data1.fcs'
 data1_sample = Sample(data1_fcs_path)
+data1_raw_events = data1_sample.get_raw_events()
+
+test_data_range = np.linspace(0.0, 10.0, 101)
 
 
 class TransformsTestCase(unittest.TestCase):
@@ -17,6 +20,14 @@ class TransformsTestCase(unittest.TestCase):
         data1_sample.apply_transform(xform)
 
         self.assertIsInstance(data1_sample._transformed_events, np.ndarray)
+
+    @staticmethod
+    def test_inverse_asinh_transform():
+        xform = transforms.AsinhTransform('asinh', param_t=10000, param_m=4.5, param_a=0)
+        y = xform.apply(test_data_range)
+        x = xform.inverse(y)
+
+        np.testing.assert_array_almost_equal(test_data_range, x, decimal=10)
 
     def test_transform_sample_logical(self):
         xform = transforms.LogicleTransform('logicle', param_t=10000, param_w=0.5, param_m=4.5, param_a=0)
