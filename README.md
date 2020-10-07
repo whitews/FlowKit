@@ -88,7 +88,6 @@ Required Python dependencies:
 * bokeh >= 1.4
 * lxml >= 4.2
 * anytree >= 2.6
-* MulticoreTSNE >= 0.1
 
 ## Installation
 
