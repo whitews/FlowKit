@@ -1,9 +1,29 @@
+"""
+Basic Transform sub-classes
+"""
 import numpy as np
 import flowutils
 from ._base_transform import Transform
 
 
 class RatioTransform(Transform):
+    """
+    Parametrized ratio transformation, implemented as defined in the
+    GatingML 2.0 specification:
+
+    fratio(x, y, A, B, C) = A * ((x - B) / (y - C))
+
+    Note: The RatioTransform does not have an inverse method.
+
+    :param transform_id: A string identifying the transform
+    :param dim_labels: A list of length 2 specifying which dimension labels to
+        use for the ratio transformation. The 1st label indicates the dimension
+        to use for the numerator, the 2nd label will be the dimension used for
+        the denominator.
+    :param param_a: parameter for scaling the ratio transform
+    :param param_b: parameter for the numerator dimension offset
+    :param param_c: parameter for the denominator dimension offset
+    """
     def __init__(
             self,
             transform_id,
@@ -27,11 +47,18 @@ class RatioTransform(Transform):
         )
 
     def apply(self, sample):
-        # RatioTransform is a bit of an oddball in that it references
-        # 2 distinct channels of event data. Since the indices of those
-        # channels could vary across different FCS files, we need the Sample
-        # instance to introspect for the correct channels. All other Transform
-        # sub-classes take an events array as the argument to the apply method.
+        """
+        Apply RatioTransform to given 'raw' events in a Sample.
+
+        The RatioTransform is different from other transform types in that
+        it references 2 distinct channels of event data. Since the indices of those
+        channels could vary across different FCS files, we need the Sample
+        instance to introspect for the correct channels. All other Transform
+        sub-classes take an events array as the argument to the apply method.
+
+        :param sample: Sample instance from which event data should be extracted
+        :return: NumPy array of transformed events
+        """
         events = sample.get_raw_events()
 
         dim_x_idx = sample.pnn_labels.index(self.dimensions[0])
@@ -45,6 +72,16 @@ class RatioTransform(Transform):
 
 
 class LinearTransform(Transform):
+    """
+    Parametrized linear transformation, implemented as defined in the
+    GatingML 2.0 specification:
+
+    flin(x, T, A) = (x + A) / (T + A)
+
+    :param transform_id: A string identifying the transform
+    :param param_t: parameter for the top of the linear scale (e.g. 262144)
+    :param param_a: parameter for the offset, controls the bottom of the scale
+    """
     def __init__(
             self,
             transform_id,
@@ -63,12 +100,28 @@ class LinearTransform(Transform):
         )
 
     def apply(self, events):
+        """
+        Apply transform to given events.
+
+        :param events: NumPy array of FCS event data
+        :return: NumPy array of transformed events
+        """
         new_events = (events + self.param_a) / (self.param_t + self.param_a)
 
         return new_events
 
 
 class LogTransform(Transform):
+    """
+    Parametrized logarithmic transformation, implemented as defined in the
+    GatingML 2.0 specification:
+
+    flog(x, T, M) = (1 / M) * log_10(x / T) + 1
+
+    :param transform_id: A string identifying the transform
+    :param param_t: parameter for the top of the linear scale (e.g. 262144)
+    :param param_m: parameter for desired number of decades
+    """
     def __init__(
         self,
         transform_id,
@@ -87,12 +140,39 @@ class LogTransform(Transform):
         )
 
     def apply(self, events):
+        """
+        Apply transform to given events.
+
+        :param events: NumPy array of FCS event data
+        :return: NumPy array of transformed events
+        """
         new_events = (1. / self.param_m) * np.log10(events / self.param_t) + 1.
 
         return new_events
 
 
 class HyperlogTransform(Transform):
+    """
+    Hyperlog transformation, implemented as defined in the
+    GatingML 2.0 specification:
+
+    hyperlog(x, T, W, M, A) = root(EH(y, T, W, M, A) − x)
+
+    where EH is defined as:
+
+    EH(y, T, W, M, A) = ae^(by) + cy − f
+
+    The Hyperlog transformation was originally defined in the publication:
+
+    Bagwell CB. Hyperlog-a flexible log-like transform for negative, zero, and
+    positive valued data. Cytometry A., 2005:64(1):34–42.
+
+    :param transform_id: A string identifying the transform
+    :param param_t: parameter for the top of the linear scale (e.g. 262144)
+    :param param_m: parameter for desired number of decades
+    :param param_w: parameter for the approximate number of decades in the linear region
+    :param param_a: parameter for the additional number of negative decades
+    """
     def __init__(
         self,
         transform_id,
@@ -116,6 +196,12 @@ class HyperlogTransform(Transform):
         )
 
     def apply(self, events):
+        """
+        Apply transform to given events.
+
+        :param events: NumPy array of FCS event data
+        :return: NumPy array of transformed events
+        """
         return flowutils.transforms.hyperlog(
             events,
             range(events.shape[1]),
@@ -127,6 +213,28 @@ class HyperlogTransform(Transform):
 
 
 class LogicleTransform(Transform):
+    """
+    Logicle transformation, implemented as defined in the
+    GatingML 2.0 specification:
+
+    logicle(x, T, W, M, A) = root(B(y, T, W, M, A) − x)
+
+    where B is a modified bi-exponential function defined as:
+
+    B(y, T, W, M, A) = ae^(by) − ce^(−dy) − f
+
+    The Logicle transformation was originally defined in the publication:
+
+    Moore WA and Parks DR. Update for the logicle data scale including operational
+    code implementations. Cytometry A., 2012:81A(4):273–277.
+
+    :param transform_id: A string identifying the transform
+    :param param_t: parameter for the top of the linear scale (e.g. 262144)
+    :param param_m: parameter for the number of decades the true logarithmic scale
+        approaches at the high end of the scale
+    :param param_w: parameter for the approximate number of decades in the linear region
+    :param param_a: parameter for the additional number of negative decades
+    """
     def __init__(
         self,
         transform_id,
@@ -150,6 +258,12 @@ class LogicleTransform(Transform):
         )
 
     def apply(self, events):
+        """
+        Apply transform to given events.
+
+        :param events: NumPy array of FCS event data
+        :return: NumPy array of transformed events
+        """
         return flowutils.transforms.logicle(
             events,
             range(events.shape[1]),
@@ -161,6 +275,15 @@ class LogicleTransform(Transform):
 
 
 class AsinhTransform(Transform):
+    """
+    An implementation of the parametrized inverse hyperbolic sine function
+    as defined in the GatingML 2.0 specification.
+
+    :param transform_id: A string identifying the transform
+    :param param_t: parameter specifying the top of the scale, (e.g. 262144)
+    :param param_m: parameter for the number of decades
+    :param param_a: parameter for the number of additional negative decades
+    """
     def __init__(
         self,
         transform_id,
@@ -181,6 +304,12 @@ class AsinhTransform(Transform):
         )
 
     def apply(self, events):
+        """
+        Apply transform to given events.
+
+        :param events: NumPy array of FCS event data
+        :return: NumPy array of transformed events
+        """
         x_pre_scale = np.sinh(self.param_m * np.log(10)) / self.param_t
         x_transpose = self.param_a * np.log(10)
         x_divisor = (self.param_m + self.param_a) * np.log(10)
@@ -190,6 +319,12 @@ class AsinhTransform(Transform):
         return new_events
 
     def inverse(self, events):
+        """
+        Apply the inverse transform to given events.
+
+        :param events: NumPy array of FCS event data
+        :return: NumPy array of inversely transformed events
+        """
         x_pre_scale = np.sinh(self.param_m * np.log(10)) / self.param_t
         x_transpose = self.param_a * np.log(10)
         x_divisor = (self.param_m + self.param_a) * np.log(10)
