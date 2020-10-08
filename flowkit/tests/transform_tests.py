@@ -29,7 +29,7 @@ class TransformsTestCase(unittest.TestCase):
 
         np.testing.assert_array_almost_equal(test_data_range, x, decimal=10)
 
-    def test_transform_sample_logical(self):
+    def test_transform_sample_logicle(self):
         xform = transforms.LogicleTransform('logicle', param_t=10000, param_w=0.5, param_m=4.5, param_a=0)
         data1_sample.apply_transform(xform)
 
