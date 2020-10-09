@@ -1,9 +1,6 @@
 import unittest
-import numpy as np
 import pandas as pd
 import flowkit as fk
-# noinspection PyProtectedMember
-from flowkit._utils import utils
 
 fcs_spill = '13,B515-A,R780-A,R710-A,R660-A,V800-A,V655-A,V585-A,V450-A,G780-A,G710-A,G660-A,G610-A,G560-A,'\
     '1,0,0,0.00008841570561316703,0.0002494559842740046,0.0006451591561972469,0.007198401782797728,0,0,'\
@@ -63,11 +60,6 @@ fluorochromes_8c = [
 
 class MatrixTestCase(unittest.TestCase):
     """Tests related to compensation matrices and the Matrix class"""
-    def test_parse_fcs_spill_value(self):
-        matrix_array = utils.parse_compensation_matrix(fcs_spill, fcs_spill_header)
-
-        self.assertIsInstance(matrix_array, np.ndarray)
-
     def test_parse_csv_file(self):
         comp_mat = fk.Matrix(
             'my_spill',
