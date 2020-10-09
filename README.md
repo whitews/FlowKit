@@ -80,7 +80,6 @@ Required Python dependencies:
 * [flowutils](https://github.com/whitews/flowutils) >= 0.7.1
 * numpy >= 1.13
 * scipy >= 1.3
-* scikit-learn >= 0.21
 * statsmodels >= 0.8
 * pandas >= 0.22
 * matplotlib >= 3.0
