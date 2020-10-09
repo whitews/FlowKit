@@ -145,8 +145,8 @@ class Sample(object):
         self.metadata = flow_data.text
 
         for n in sorted([int(k) for k in self.channels.keys()]):
-            chan_label = self.channels[str(n)]['PnN']
-            self.pnn_labels.append(chan_label)
+            channel_label = self.channels[str(n)]['PnN']
+            self.pnn_labels.append(channel_label)
 
             if 'p%dg' % n in self.metadata:
                 channel_gain.append(float(self.metadata['p%dg' % n]))
@@ -168,11 +168,11 @@ class Sample(object):
             else:
                 channel_lin_log.append((0.0, 0.0))
 
-            if chan_label.lower()[:4] not in ['fsc-', 'ssc-', 'time']:
+            if channel_label.lower()[:4] not in ['fsc-', 'ssc-', 'time']:
                 self.fluoro_indices.append(n - 1)
-            elif chan_label.lower()[:4] in ['fsc-', 'ssc-']:
+            elif channel_label.lower()[:4] in ['fsc-', 'ssc-']:
                 self.scatter_indices.append(n - 1)
-            elif chan_label.lower() == 'time':
+            elif channel_label.lower() == 'time':
                 self.time_index = n - 1
 
             if 'PnS' in self.channels[str(n)]:
