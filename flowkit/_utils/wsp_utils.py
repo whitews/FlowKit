@@ -281,9 +281,6 @@ def _recurse_wsp_sub_populations(sub_pop_el, parent_id, gating_ns, data_type_ns)
         g.id = pop_name
         g.parent = parent_id
 
-        if g.id == 'TIME':
-            print('asdf')
-
         gates.append(
             {
                 'owning_group': owning_group,
