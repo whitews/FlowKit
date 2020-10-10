@@ -110,6 +110,19 @@ class LinearTransform(Transform):
 
         return new_events
 
+    def inverse(self, events):
+        """
+        Apply the inverse transform to given events.
+
+        :param events: NumPy array of FCS event data
+        :return: NumPy array of inversely transformed events
+        """
+        # y = (x + a) / (t + a)
+        # x = (y * (t + a)) - a
+        new_events = (events * (self.param_t + self.param_a)) - self.param_a
+
+        return new_events
+
 
 class LogTransform(Transform):
     """
