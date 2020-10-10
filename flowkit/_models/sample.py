@@ -597,6 +597,14 @@ class Sample(object):
         return channel_data
 
     def _transform(self, transform, include_scatter=False):
+        if isinstance(transform, _transforms.RatioTransform):
+            raise NotImplementedError(
+                "RatioTransform cannot be applied to a Sample instance directly.\n"
+                "To apply a RatioTransform, either:\n"
+                "    1) Provide the Sample instance to the transform `apply` method\n"
+                "    2) Use the RatioTransform as part of a GatingStrategy\n"
+            )
+
         if self._comp_events is not None:
             transformed_events = self._comp_events.copy()
         else:
