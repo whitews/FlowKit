@@ -273,6 +273,21 @@ class LogicleTransform(Transform):
             a=self.param_a
         )
 
+    def inverse(self, events):
+        """
+        Apply the inverse transform to given events.
+
+        :param events: NumPy array of FCS event data
+        :return: NumPy array of inversely transformed events
+        """
+        return flowutils.transforms.logicle_inverse(
+            events,
+            range(events.shape[1]),
+            t=self.param_t,
+            m=self.param_m,
+            w=self.param_w,
+            a=self.param_a
+        )
 
 class AsinhTransform(Transform):
     """
