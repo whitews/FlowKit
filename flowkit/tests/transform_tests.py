@@ -39,6 +39,21 @@ class TransformsTestCase(unittest.TestCase):
 
         self.assertIsInstance(data1_sample._transformed_events, np.ndarray)
 
+    def test_transform_ratio_raises_not_implemented(self):
+        ratio_dims = ['FL1-H', 'FL2-H']
+        xform = transforms.RatioTransform('ratio', ratio_dims, param_a=1.0, param_b=0.0, param_c=0.0)
+
+        self.assertRaises(NotImplementedError, data1_sample.apply_transform, xform)
+
+    def test_transform_ratio(self):
+        ratio_dims = ['FL1-H', 'FL2-H']
+        xform = transforms.RatioTransform('ratio', ratio_dims, param_a=1.0, param_b=0.0, param_c=0.0)
+
+        xform_events = xform.apply(data1_sample)
+
+        self.assertIsInstance(xform_events, np.ndarray)
+        self.assertTupleEqual(xform_events.shape, (13367,))
+
     @staticmethod
     def test_inverse_asinh_transform():
         xform = transforms.AsinhTransform('asinh', param_t=10000, param_m=4.5, param_a=0)
