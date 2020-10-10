@@ -77,7 +77,7 @@ above is required for correct Logicle and Hyperlog transformations.***
 Required Python dependencies:
 
 * [flowio](https://github.com/whitews/flowio) >= 0.9.7
-* [flowutils](https://github.com/whitews/flowutils) >= 0.7.1
+* [flowutils](https://github.com/whitews/flowutils) >= 0.8.0
 * numpy >= 1.13
 * scipy >= 1.3
 * statsmodels >= 0.8
