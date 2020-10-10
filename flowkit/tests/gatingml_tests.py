@@ -8,13 +8,24 @@ import pandas as pd
 
 sys.path.append(os.path.abspath('../..'))
 
-from flowkit import Sample, Session, gates, parse_gating_xml
+from flowkit import Sample, GatingStrategy, Session, gates, parse_gating_xml
 
 data1_fcs_path = 'examples/gate_ref/data1.fcs'
 data1_sample = Sample(data1_fcs_path)
 
 
 class GatingMLTestCase(unittest.TestCase):
+    def test_parse_gating_xml(self):
+        gml_path = 'examples/gate_ref/gml/gml_all_gates.xml'
+        gs = parse_gating_xml(gml_path)
+
+        self.assertIsInstance(gs, GatingStrategy)
+
+    def test_fail_parse_gating_xml(self):
+        gml_path = 'examples/simple_line_example/single_ellipse_51_events.wsp'
+
+        self.assertRaises(ValueError, parse_gating_xml, gml_path)
+
     @staticmethod
     def test_min_range_gate():
         gml_path = 'examples/gate_ref/gml/gml_range_gate.xml'
