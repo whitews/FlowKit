@@ -35,6 +35,14 @@ class TransformsTestCase(unittest.TestCase):
 
         self.assertIsInstance(data1_sample._transformed_events, np.ndarray)
 
+    @staticmethod
+    def test_inverse_logicle_transform():
+        xform = transforms.LogicleTransform('logicle', param_t=10000, param_w=0.5, param_m=4.5, param_a=0)
+        y = xform.apply(test_data_range.reshape(-1, 1))
+        x = xform.inverse(y)[:, 0]
+
+        np.testing.assert_array_almost_equal(test_data_range, x, decimal=10)
+
     def test_transform_sample_hyperlog(self):
         xform = transforms.HyperlogTransform('hyper', param_t=10000, param_w=0.5, param_m=4.5, param_a=0)
         data1_sample.apply_transform(xform)
