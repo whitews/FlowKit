@@ -208,7 +208,7 @@ class HyperlogTransform(Transform):
     def __repr__(self):
         return (
             f'{self.__class__.__name__}('
-            f'{self.id}, t: {self.param_t}, w: {self.param_w},'
+            f'{self.id}, t: {self.param_t}, w: {self.param_w}, '
             f'm: {self.param_m}, a: {self.param_a})'
         )
 
@@ -270,7 +270,7 @@ class LogicleTransform(Transform):
     def __repr__(self):
         return (
             f'{self.__class__.__name__}('
-            f'{self.id}, t: {self.param_t}, w: {self.param_w},'
+            f'{self.id}, t: {self.param_t}, w: {self.param_w}, '
             f'm: {self.param_m}, a: {self.param_a})'
         )
 
@@ -305,6 +305,7 @@ class LogicleTransform(Transform):
             w=self.param_w,
             a=self.param_a
         )
+
 
 class AsinhTransform(Transform):
     """
