@@ -46,7 +46,8 @@ class RatioTransform(Transform):
     def __repr__(self):
         return (
             f'{self.__class__.__name__}('
-            f't: {self.param_a}, w: {self.param_b}, c: {self.param_c})'
+            f'{self.id}, {self.dimensions[0]} / {self.dimensions[1]}, '
+            f'a: {self.param_a}, b: {self.param_b}, c: {self.param_c})'
         )
 
     def apply(self, sample):
