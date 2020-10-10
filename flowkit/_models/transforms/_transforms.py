@@ -34,6 +34,9 @@ class RatioTransform(Transform):
     ):
         Transform.__init__(self, transform_id)
 
+        if len(dim_labels) != 2:
+            raise ValueError("RatioTransform takes exactly 2 dimension labels but received %d" % len(dim_labels))
+
         self.dimensions = dim_labels
 
         self.param_a = param_a

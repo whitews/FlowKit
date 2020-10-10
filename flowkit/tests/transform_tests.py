@@ -45,6 +45,15 @@ class TransformsTestCase(unittest.TestCase):
 
         self.assertRaises(NotImplementedError, data1_sample.apply_transform, xform)
 
+    def test_transform_ratio_raises_bad_dim_labels(self):
+        ratio_dims = ['FL1-H', 'FL2-H', 'FL3-H']
+
+        self.assertRaises(
+            ValueError,
+            transforms.RatioTransform,
+            'ratio', ratio_dims, param_a=1.0, param_b=0.0, param_c=0.0
+        )
+
     def test_transform_ratio(self):
         ratio_dims = ['FL1-H', 'FL2-H']
         xform = transforms.RatioTransform('ratio', ratio_dims, param_a=1.0, param_b=0.0, param_c=0.0)
