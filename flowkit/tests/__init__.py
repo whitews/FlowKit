@@ -1,3 +1,6 @@
+"""
+FlowKit Test Suites
+"""
 import unittest
 
 from .sample_tests import SampleTestCase

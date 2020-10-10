@@ -40,6 +40,43 @@ class StringReprTestCase(unittest.TestCase):
 
         self.assertEqual(repr(quad1_div1), quad_div_string)
 
+    def test_linear_transform_repr(self):
+        xform = fk.transforms.LinearTransform('lin', param_t=10000.0, param_a=0.0)
+        xform_string = "LinearTransform(lin, t: 10000.0, a: 0.0)"
+
+        self.assertEqual(repr(xform), xform_string)
+
+    def test_log_transform_repr(self):
+        xform = fk.transforms.LogTransform('log', param_t=10000.0, param_m=4.5)
+        xform_string = "LogTransform(log, t: 10000.0, m: 4.5)"
+
+        self.assertEqual(repr(xform), xform_string)
+
+    def test_ratio_transform_repr(self):
+        ratio_dims = ['FL1-H', 'FL2-H']
+        xform = fk.transforms.RatioTransform('ratio', ratio_dims, param_a=1.0, param_b=0.0, param_c=0.0)
+        xform_string = "RatioTransform(ratio, FL1-H / FL2-H, a: 1.0, b: 0.0, c: 0.0)"
+
+        self.assertEqual(repr(xform), xform_string)
+
+    def test_hyperlog_transform_repr(self):
+        xform = fk.transforms.HyperlogTransform('hyperlog', param_t=10000.0, param_w=0.5, param_m=4.5, param_a=0.0)
+        xform_string = "HyperlogTransform(hyperlog, t: 10000.0, w: 0.5, m: 4.5, a: 0.0)"
+
+        self.assertEqual(repr(xform), xform_string)
+
+    def test_logicle_transform_repr(self):
+        xform = fk.transforms.LogicleTransform('logicle', param_t=10000.0, param_w=0.5, param_m=4.5, param_a=0.0)
+        xform_string = "LogicleTransform(logicle, t: 10000.0, w: 0.5, m: 4.5, a: 0.0)"
+
+        self.assertEqual(repr(xform), xform_string)
+
+    def test_asinh_transform_repr(self):
+        xform = fk.transforms.AsinhTransform('asinh', param_t=10000.0, param_m=4.5, param_a=0.0)
+        xform_string = "AsinhTransform(asinh, t: 10000.0, m: 4.5, a: 0.0)"
+
+        self.assertEqual(repr(xform), xform_string)
+
     def test_wsp_log_xform_repr(self):
         xform = fk.transforms.WSPLogTransform('wsp_log', offset=0.5, decades=4.5)
         xform_string = "WSPLogTransform(wsp_log, offset: 0.5, decades: 4.5)"
