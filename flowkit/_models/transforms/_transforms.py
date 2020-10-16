@@ -163,9 +163,26 @@ class LogTransform(Transform):
         :param events: NumPy array of FCS event data
         :return: NumPy array of transformed events
         """
-        new_events = (1. / self.param_m) * np.log10(events / self.param_t) + 1.
+        return flowutils.transforms.log(
+            events,
+            range(events.shape[1]),
+            t=self.param_t,
+            m=self.param_m
+        )
 
-        return new_events
+    def inverse(self, events):
+        """
+        Apply the inverse transform to given events.
+
+        :param events: NumPy array of FCS event data
+        :return: NumPy array of inversely transformed events
+        """
+        return flowutils.transforms.log_inverse(
+            events,
+            range(events.shape[1]),
+            t=self.param_t,
+            m=self.param_m
+        )
 
 
 class HyperlogTransform(Transform):
