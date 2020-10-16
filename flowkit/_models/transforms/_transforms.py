@@ -359,13 +359,13 @@ class AsinhTransform(Transform):
         :param events: NumPy array of FCS event data
         :return: NumPy array of transformed events
         """
-        x_pre_scale = np.sinh(self.param_m * np.log(10)) / self.param_t
-        x_transpose = self.param_a * np.log(10)
-        x_divisor = (self.param_m + self.param_a) * np.log(10)
-
-        new_events = (np.arcsinh(events * x_pre_scale) + x_transpose) / x_divisor
-
-        return new_events
+        return flowutils.transforms.asinh(
+            events,
+            range(events.shape[1]),
+            t=self.param_t,
+            m=self.param_m,
+            a=self.param_a
+        )
 
     def inverse(self, events):
         """
@@ -374,10 +374,10 @@ class AsinhTransform(Transform):
         :param events: NumPy array of FCS event data
         :return: NumPy array of inversely transformed events
         """
-        x_pre_scale = np.sinh(self.param_m * np.log(10)) / self.param_t
-        x_transpose = self.param_a * np.log(10)
-        x_divisor = (self.param_m + self.param_a) * np.log(10)
-
-        new_events = (np.sinh((events * x_divisor) - x_transpose)) / x_pre_scale
-
-        return new_events
+        return flowutils.transforms.asinh_inverse(
+            events,
+            range(events.shape[1]),
+            t=self.param_t,
+            m=self.param_m,
+            a=self.param_a
+        )
