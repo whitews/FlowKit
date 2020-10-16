@@ -63,7 +63,11 @@ class RectangleGate(Gate):
 
             if new_dim.transformation_ref is not None:
                 xform = gating_strategy.transformations[new_dim.transformation_ref]
-                xform_events = xform.apply(xform_events)
+
+                # transformed events in the new single dimension will be 1-D,
+                # but xform.apply wants to see 2-D arrays, so reshape & then
+                # extract the single column as 1-D.
+                xform_events = xform.apply(xform_events.reshape(-1, 1))[:, 0]
 
             if new_dim.min is not None:
                 results = np.bitwise_and(results, xform_events >= new_dim.min)
