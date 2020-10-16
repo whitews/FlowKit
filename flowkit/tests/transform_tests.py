@@ -67,6 +67,20 @@ class TransformsTestCase(unittest.TestCase):
         self.assertIsInstance(xform_events, np.ndarray)
         self.assertTupleEqual(xform_events.shape, (13367,))
 
+    def test_transform_sample_log(self):
+        xform = transforms.LogTransform('log', param_t=10000, param_m=4.5)
+        data1_sample.apply_transform(xform)
+
+        self.assertIsInstance(data1_sample._transformed_events, np.ndarray)
+
+    @staticmethod
+    def test_inverse_log_transform():
+        xform = transforms.LogTransform('log', param_t=10000, param_m=4.5)
+        y = xform.apply(test_data_range1.reshape(-1, 1))
+        x = xform.inverse(y)[:, 0]
+
+        np.testing.assert_array_almost_equal(test_data_range1, x, decimal=10)
+
     @staticmethod
     def test_inverse_asinh_transform():
         xform = transforms.AsinhTransform('asinh', param_t=10000, param_m=4.5, param_a=0)
