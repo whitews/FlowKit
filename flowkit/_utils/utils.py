@@ -20,6 +20,20 @@ def points_in_ellipsoid(
         ellipsoid_distance_square,
         points
 ):
+    """
+    Determines whether points in an array are inside an ellipsoid. Points on the
+    edge are considered inclusive. True ellipsoids in n-dimensions are supported.
+
+    :param ellipsoid_covariance_matrix: Covariance matrix for the ellipsoid shape (NxN array)
+    :param ellipsoid_means: center point of the ellipsoid for n-dimensions
+    :param ellipsoid_distance_square: square of the Mahalanobis distance, controlling
+        the size of the ellipsoid. The distance square parameter is conceptually
+        similar to the number of standard deviations representing the boundary
+        for an n-dimensional distribution of points.
+    :param points: Points to test for ellipsoid inclusion
+
+    :return: List of boolean values for each point. True is inside ellipsoid.
+    """
     # we only take points that have already been filtered by the correct
     # columns (i.e. those columns that are included in the ellipsoid
 
@@ -50,6 +64,7 @@ def points_in_polygon(poly_vertices, points):
 
     :param poly_vertices: Polygon vertices (NumPy array of 2-D points)
     :param points: Points to test for polygon inclusion
+
     :return: List of boolean values for each point. True is inside polygon.
     """
     wind_counts = utils_c.points_in_polygon(poly_vertices, len(poly_vertices), points, len(points))
@@ -57,7 +72,15 @@ def points_in_polygon(poly_vertices, points):
 
 
 def rotate_point_around_point(point, cov_mat, center_point=(0, 0)):
-    # rotates point around center_point
+    """
+    Rotates given point around center_point
+
+    :param point: Coordinates of point to rotate
+    :param cov_mat: Covariance matrix for the rotation
+    :param center_point: Coordinates of the reference rotation point. Default is the origin (0, 0)
+
+    :return: Rotated point coordinates
+    """
     point_translated = np.array([point[0] - center_point[0], point[1] - center_point[1]])
     point_rot = np.dot(point_translated, cov_mat)
     point_untranslated = point_rot + center_point
