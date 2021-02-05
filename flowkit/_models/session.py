@@ -192,7 +192,8 @@ class Session(object):
 
                 # TODO: change keys to tuple of gate ID, parent ID so gates can be "reused" for different branches
                 for gate_node in data_dict['gates'].descendants:
-                    gs.add_gate(gate_node.gate)
+                    gate_path = [pn.name for pn in gate_node.ancestors]
+                    gs.add_gate(gate_node.gate, gate_path=gate_path)
 
                 matrix = data_dict['compensation']
                 if isinstance(matrix, Matrix):
