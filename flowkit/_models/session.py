@@ -293,12 +293,14 @@ class Session(object):
         return template.get_gate_ids()
 
     # start pass through methods for GatingStrategy class
-    def add_gate(self, gate, group_name='default'):
+    def add_gate(self, gate, gate_path=None, group_name='default'):
         """
         Add a Gate instance to a sample group in the session. Gates will be added to
         the 'default' sample group by default.
 
         :param gate: an instance of a Gate sub-class
+        :param gate_path: complete list of gate IDs for unique set of gate ancestors.
+            Required if gate.id and gate.parent combination is ambiguous
         :param group_name: a text string representing the sample group
         :return: None
         """
@@ -308,9 +310,9 @@ class Session(object):
         s_members = group['samples']
 
         # first, add gate to template, then add a copy to each group sample gating strategy
-        template.add_gate(copy.deepcopy(gate))
+        template.add_gate(copy.deepcopy(gate), gate_path=gate_path)
         for s_id, s_strategy in s_members.items():
-            s_strategy.add_gate(copy.deepcopy(gate))
+            s_strategy.add_gate(copy.deepcopy(gate), gate_path=gate_path)
 
     def add_transform(self, transform, group_name='default'):
         """
