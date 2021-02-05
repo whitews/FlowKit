@@ -5,6 +5,7 @@ import json
 import anytree
 from anytree.exporter import DotExporter
 import pandas as pd
+# noinspection PyProtectedMember
 from .._models.gates._base_gate import Gate
 from .._models import gates as fk_gates
 # noinspection PyProtectedMember
