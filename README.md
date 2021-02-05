@@ -36,7 +36,8 @@ FlowKit is an intuitive Python toolkit for flow cytometry analysis and visualiza
   * Automatically create a compensation matrix from a set of compensation bead files
 * Transformation of FCS events in a variety of transforms used in the flow community:
   * Logicle
-  * Inverse hyperbolic sine (arcsinh)
+  * Inverse hyperbolic sine (ArcSinh)
+  * FlowJo Bi-exponential
   * Hyperlog
   * Logarithmic
   * Channel ratios
@@ -46,8 +47,8 @@ FlowKit is an intuitive Python toolkit for flow cytometry analysis and visualiza
     * Import GatingML XML documents as gating strategies
     * Export gating strategies as a valid GatingML XML document
   * Limited support for importing FlowJo 10 workspace files. Workspace files are currently limited to the following features:
-    * Linear, logarithmic, and logicle transforms
-    * Polygon, rectangle, and quadrant gates
+    * Linear, logarithmic, bi-exponential, and logicle transforms
+    * Polygon, rectangle, ellipse, and quadrant gates
   * Programmatically create gating strategies including polygon, rectangle, range, ellipsoid, quadrant, and boolean gates
   * Easily retrieve gating results from a gating strategy as a Pandas DataFrame. Results include:
     * FCS sample ID
@@ -103,8 +104,11 @@ pip install flowkit
 ### From source
 
 ```
+pip install numpy
+
 git clone https://github.com/whitews/flowkit
 cd flowkit
+
 python setup.py install
 ```
 
