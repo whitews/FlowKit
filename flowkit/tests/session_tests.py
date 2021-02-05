@@ -7,7 +7,7 @@ import pandas as pd
 sys.path.append(os.path.abspath('../..'))
 
 from flowkit import Session, Sample, Matrix, Dimension, gates, transforms
-from .prog_gating_tests import data1_sample, poly1_gate, poly1_vertices, comp_matrix_01, asinh_xform1
+from .gating_strategy_prog_gate_tests import data1_sample, poly1_gate, poly1_vertices, comp_matrix_01, asinh_xform1
 
 fcs_file_paths = [
     "examples/100715.fcs",

@@ -3,7 +3,7 @@ Unit tests for string representations
 """
 import unittest
 import flowkit as fk
-from .prog_gating_tests import comp_matrix_01, logicle_xform1, hyperlog_xform1, poly1_gate
+from .gating_strategy_prog_gate_tests import comp_matrix_01, logicle_xform1, hyperlog_xform1, poly1_gate
 
 data1_fcs_path = 'examples/gate_ref/data1.fcs'
 data1_sample = fk.Sample(data1_fcs_path)
