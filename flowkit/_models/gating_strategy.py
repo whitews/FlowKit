@@ -36,44 +36,83 @@ class GatingStrategy(object):
             f'{len(self.comp_matrices)} compensations)'
         )
 
-    def add_gate(self, gate):
+    def add_gate(self, gate, gate_path=None):
         """
-        Add a gate to the gating strategy, see `gates` module. The gate ID must be unique in the gating strategy.
+        Add a gate to the gating strategy, see `gates` module. The gate ID and gate path must be
+        unique in the gating strategy. A gate with a unique gate ID and parent can be added without
+        specifying a gate_path. However, if the gate's ID and parent combination already exists in
+        the gating strategy, a unique gate path must be provided.
 
         :param gate: instance from a sub-class of the Gate class
+        :param gate_path: complete list of gate IDs for unique set of gate ancestors.
+            Required if gate.id and gate.parent combination is ambiguous
+
         :return: None
         """
-
         if not isinstance(gate, Gate):
             raise ValueError("gate must be a sub-class of the Gate class")
 
         parent_id = gate.parent
         if parent_id is None:
+            # If no parent gate is specified, use root
             parent_id = 'root'
 
-        # TODO: check for uniqueness of gate ID + gate path combo
+        # Verify the gate parent matches the last item in the gate path (if given)
+        if gate_path is not None:
+            if parent_id != gate_path[-1]:
+                raise ValueError("The gate parent and the last item in gate path are different.")
+
+        # Find simple case of matching gate ID + parent where no gate_path is specified.
         matched_nodes = anytree.findall(
             self._gate_tree,
             filter_=lambda g_node:
                 g_node.name == gate.id and
                 g_node.parent.name == parent_id
         )
-        if len(matched_nodes) != 0:
-            raise KeyError("Gate ID '%s' is already defined" % gate.id)
+        match_count = len(matched_nodes)
 
-        parent_id = gate.parent
-        if parent_id is None:
+        if match_count != 0 and gate_path is None:
+            raise KeyError(
+                "A gate with ID '%s' and parent '%s' is already defined. " 
+                "You must specify a gate_path as a unique list of ancestors." % (gate.id, parent_id)
+            )
+
+        # Here we either have a unique gate ID + parent, or an ambiguous gate ID + parent with a gate path.
+        # It is still possible that the given gate_path already exists, we'll check that.
+        # We'll find the parent node from the ID, and if there are multiple parent matches then resort
+        # to using the given gate path.
+        if parent_id == 'root':
+            # Easiest case since a root parent is also the full path.
             parent_node = self._gate_tree
         else:
-            matching_nodes = anytree.search.findall_by_attr(self._gate_tree, parent_id)
+            # Find all nodes with the parent ID name. If there's only one, we've identified the correct parent.
+            # If there are none, the parent doesn't exist (or is a Quad gate).
+            # If there are >1, we have to compare the gate paths.
+            matching_parent_nodes = anytree.search.findall_by_attr(self._gate_tree, parent_id)
+            matched_parent_count = len(matching_parent_nodes)
+            match_idx = None
 
-            if len(matching_nodes) == 0:
+            if matched_parent_count == 0:
                 # TODO: could be in a quadrant gate
                 raise ValueError("Parent gate %s does not exist in the gating strategy" % parent_id)
-            elif len(matching_nodes) > 1:
-                raise ValueError("Multiple gates exist matching parent ID %s, specify full gate path" % parent_id)
+            elif matched_parent_count == 1:
+                # There's only one match for the parent, so we're done
+                match_idx = 0
+            elif matched_parent_count > 1:
+                for i, matched_parent_node in enumerate(matching_parent_nodes):
+                    matched_parent_ancestors = [pn.name for pn in matched_parent_node.path]
+                    if matched_parent_ancestors == gate_path:
+                        match_idx = i
+                        break
 
-            parent_node = matching_nodes[0]
+            # look up the parent node, then do one final check to make sure the new gate doesn't
+            # already exist as a child of the parent
+            parent_node = matching_parent_nodes[match_idx]
+            parent_child_nodes = anytree.search.findall_by_attr(parent_node, gate.id, maxlevel=1)
+            if len(parent_child_nodes) > 0:
+                raise ValueError(
+                    "A gate already exist matching gate ID %s and the specified gate path" % gate.id
+                )
 
         node = anytree.Node(gate.id, parent=parent_node, gate=gate)
 
