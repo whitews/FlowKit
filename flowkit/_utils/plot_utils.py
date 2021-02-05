@@ -11,13 +11,13 @@ from bokeh.models import Ellipse, Patch, Span, BoxAnnotation, Rect, ColumnDataSo
 
 
 line_color = "#1F77B4"
-line_color_contrast = "#00aa00"
+line_color_contrast = "#73D587"
 line_width = 3
 fill_color = 'lime'
 fill_alpha = 0.08
 
 
-def generate_custom_colormap(cmap_sample_indices, base_cmap):
+def _generate_custom_colormap(cmap_sample_indices, base_cmap):
     x = np.linspace(0, np.pi, base_cmap.N)
     new_lum = (np.sin(x) * 0.75) + .25
 
@@ -48,10 +48,10 @@ cm_sample = [
     163, 167, 171, 175, 179, 183, 187, 191, 195, 199, 215, 231, 239
 ]
 
-new_jet = generate_custom_colormap(cm_sample, cm.get_cmap('jet'))
+new_jet = _generate_custom_colormap(cm_sample, cm.get_cmap('jet'))
 
 
-def get_false_bounds(bool_array):
+def _get_false_bounds(bool_array):
     diff = np.diff(np.hstack((0, bool_array, 0)))
 
     start = np.where(diff == 1)
@@ -84,7 +84,7 @@ def plot_channel(chan_events, label, subplot_ax, xform=False, bad_events=None):
     )
 
     if bad_events is not None:
-        starts, ends = get_false_bounds(bad_events)
+        starts, ends = _get_false_bounds(bad_events)
 
         for i, s in enumerate(starts):
             subplot_ax.axvspan(
