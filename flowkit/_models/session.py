@@ -63,7 +63,7 @@ def _gate_sample(data):
 
 
 def _gate_samples(gating_strategies, samples, verbose):
-    # TODO: Looks like multiprocessing can fail for very large workloads (lots of gates), maybe due
+    # TODO: Multiprocessing can fail for very large workloads (lots of gates), maybe due
     #       to running out of memory. Will investigate further, but for now maybe provide an option
     #       for turning off multiprocessing so end user can avoid this issue if it occurs.
     sample_count = len(samples)
@@ -190,7 +190,6 @@ class Session(object):
 
                 gs = GatingStrategy()
 
-                # TODO: change keys to tuple of gate ID, parent ID so gates can be "reused" for different branches
                 for gate_node in data_dict['gates'].descendants:
                     gate_path = [pn.name for pn in gate_node.ancestors]
                     gs.add_gate(gate_node.gate, gate_path=gate_path)
@@ -356,9 +355,6 @@ class Session(object):
         :param group_name: a text string representing the sample group
         :return: None
         """
-        # TODO: GatingStrategy method add_comp_matrix accepts only Matrix instances, so this pass through does as well.
-        #       Consider adding a pass through Session method to parse comp matrices for conveniently getting a
-        #       Matrix instance from a comp source (npy, CSV, str, etc.)
         group = self._sample_group_lut[group_name]
         template = group['template']
         s_members = group['samples']
