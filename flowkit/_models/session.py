@@ -340,6 +340,23 @@ class Session(object):
         for s_id, s_strategy in s_members.items():
             s_strategy.add_transform(copy.deepcopy(transform))
 
+    def get_group_transforms(self, group_name):
+        """
+        Retrieve the list of Transform instances stored within the specified
+        sample group.
+
+        :param group_name: a text string representing the sample group
+        :return: list of Transform instances
+        """
+        group = self._sample_group_lut[group_name]
+        xforms = []
+
+        for sample_id in group['samples']:
+            gating_strategy = group['samples'][sample_id]
+            xforms.extend(list(gating_strategy.transformations.values()))
+
+        return xforms
+
     def get_transform(self, group_name, sample_id, transform_id):
         """
         Retrieve a Transform instance stored within the specified
