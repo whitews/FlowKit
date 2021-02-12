@@ -472,8 +472,18 @@ class Session(object):
 
         return sample_gates
 
-    def get_gate_hierarchy(self, group_name, output='ascii'):
-        return self._sample_group_lut[group_name]['template'].get_gate_hierarchy(output)
+    def get_gate_hierarchy(self, group_name, output='ascii', **kwargs):
+        """
+        Retrieve the hierarchy of gates in the sample group's gating strategy. Output is available
+        in several formats, including text, dictionary, or JSON. If output == 'json', extra
+        keyword arguments are passed to json.dumps
+
+        :param group_name: a text string representing the sample group
+        :param output: Determines format of hierarchy returned, either 'ascii',
+            'dict', or 'JSON' (default is 'ascii')
+        :return: gate hierarchy as a text string or a dictionary
+        """
+        return self._sample_group_lut[group_name]['template'].get_gate_hierarchy(output, **kwargs)
     # end pass through methods for GatingStrategy
 
     def export_gml(self, file_handle, group_name, sample_id=None):
