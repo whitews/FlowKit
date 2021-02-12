@@ -1,4 +1,5 @@
 from ._models.sample import Sample, get_samples_from_paths
+# noinspection PyProtectedMember
 from ._models.transforms._matrix import Matrix
 from ._models import transforms
 from ._models import gates

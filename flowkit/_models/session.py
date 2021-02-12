@@ -11,6 +11,7 @@ import statsmodels.api as sm
 from bokeh.models import Title
 from .._models.sample import Sample, get_samples_from_paths
 from .._models.gating_strategy import GatingStrategy
+# noinspection PyProtectedMember
 from .._models.transforms._matrix import Matrix
 from .._models import gates
 from .._utils.utils import multi_proc, mp
