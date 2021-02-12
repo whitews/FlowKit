@@ -192,7 +192,6 @@ class GatingStrategy(object):
         if node_match_count == 1:
             node = node_matches[0]
         elif node_match_count > 1:
-            # TODO: this conditional isn't covered in tests
             # need to match on full gate path
             if gate_path is None:
                 raise ValueError(

@@ -447,13 +447,13 @@ class Session(object):
         gating_strategy = group['samples'][sample_id]
         gate_tuples = gating_strategy.get_gate_ids()
 
-        gates = []
+        sample_gates = []
 
         for gate_id, ancestors in gate_tuples:
             gate = gating_strategy.get_gate(gate_id, gate_path=ancestors)
-            gates.append(gate)
+            sample_gates.append(gate)
 
-        return gates
+        return sample_gates
 
     def get_gate_hierarchy(self, group_name, output='ascii'):
         return self._sample_group_lut[group_name]['template'].get_gate_hierarchy(output)
