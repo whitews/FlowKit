@@ -176,8 +176,7 @@ class GatingStrategy(object):
 
     def get_gate(self, gate_id, gate_path=None):
         """
-        Retrieve a gate instance from its gate ID. reference gates in their parent gating
-        strategy.
+        Retrieve a gate instance by its gate ID.
 
         :param gate_id: text string of a gate ID
         :param gate_path: complete list of gate IDs for unique set of gate ancestors. Required if gate_id is ambiguous
