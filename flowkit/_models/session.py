@@ -19,6 +19,16 @@ import warnings
 
 
 def load_samples(fcs_samples):
+    """
+    Returns a list of Sample instances from a variety of input types (fcs_samples), such as file or
+        directory paths, a Sample instance, or lists of the previous types.
+
+    :param fcs_samples: str or list. If given a string, it can be a directory path or a file path.
+            If a directory, any .fcs files in the directory will be loaded. If a list, then it must
+            be a list of file paths or a list of Sample instances. Lists of mixed types are not
+            supported.
+    :return: list of Sample instances
+    """
     sample_list = []
 
     if isinstance(fcs_samples, list):
@@ -303,7 +313,6 @@ class Session(object):
         :param group_name: a text string representing the sample group
         :return: None
         """
-        # TODO: allow adding multiple gates at once, while still allowing a single gate. Check if list or Gate instance
         group = self._sample_group_lut[group_name]
         template = group['template']
         s_members = group['samples']
@@ -397,18 +406,43 @@ class Session(object):
         return comp_mat
 
     def get_parent_gate_id(self, group_name, gate_id):
+        """
+        Retrieve a parent gate instance by the child gate ID, sample group, and sample ID.
+
+        :param group_name: a text string representing the sample group
+        :param gate_id: text string of a gate ID
+        :return: Subclass of a Gate object
+        """
+        # TODO: this needs to handle getting default template gate or sample specific gate
         group = self._sample_group_lut[group_name]
         template = group['template']
         gate = template.get_gate(gate_id)
         return gate.parent
 
     def get_gate(self, group_name, sample_id, gate_id, gate_path=None):
+        """
+        Retrieve a gate instance by its group, sample, and gate ID.
+
+        :param group_name: a text string representing the sample group
+        :param sample_id: a text string representing a Sample instance
+        :param gate_id: text string of a gate ID
+        :param gate_path: complete list of gate IDs for unique set of gate ancestors. Required if gate_id is ambiguous
+        :return: Subclass of a Gate object
+        """
+        # TODO: this needs to handle getting default template gate or sample specific gate
         group = self._sample_group_lut[group_name]
         gating_strategy = group['samples'][sample_id]
         gate = gating_strategy.get_gate(gate_id, gate_path=gate_path)
         return gate
 
     def get_sample_gates(self, group_name, sample_id):
+        """
+        Retrieve all gates for a sample in a sample group.
+
+        :param group_name: a text string representing the sample group
+        :param sample_id: a text string representing a Sample instance
+        :return: list of Gate sub-class instances
+        """
         group = self._sample_group_lut[group_name]
         gating_strategy = group['samples'][sample_id]
         gate_tuples = gating_strategy.get_gate_ids()
