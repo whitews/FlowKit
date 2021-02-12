@@ -7,6 +7,10 @@ import pandas as pd
 sys.path.append(os.path.abspath('../..'))
 
 from flowkit import Session, Sample, Matrix, Dimension, gates, transforms
+# noinspection PyProtectedMember
+from flowkit._models.transforms._base_transform import Transform
+# noinspection PyProtectedMember
+from flowkit._models.gates._base_gate import Gate
 from .gating_strategy_prog_gate_tests import data1_sample, poly1_gate, poly1_vertices, comp_matrix_01, asinh_xform1
 
 fcs_file_paths = [
@@ -41,7 +45,7 @@ class SessionTestCase(unittest.TestCase):
 
         self.assertIsInstance(comp_mat, Matrix)
 
-    def test_get_comp_matrices(self):
+    def test_get_group_comp_matrices(self):
         wsp_path = "examples/8_color_data_set/8_color_ICS_simple.wsp"
         fcs_path = "examples/8_color_data_set/fcs_files"
         sample_grp = 'DEN'
@@ -61,6 +65,35 @@ class SessionTestCase(unittest.TestCase):
         comp_mat = fks.get_transform('default', 'B07', 'AsinH_10000_4_1')
 
         self.assertIsInstance(comp_mat, transforms.AsinhTransform)
+
+    def test_get_group_transforms(self):
+        wsp_path = "examples/8_color_data_set/8_color_ICS_simple.wsp"
+        fcs_path = "examples/8_color_data_set/fcs_files"
+        sample_grp = 'DEN'
+
+        fks = Session(fcs_samples=fcs_path)
+        fks.import_flowjo_workspace(wsp_path, ignore_missing_files=True)
+
+        xforms = fks.get_group_transforms(sample_grp)
+
+        self.assertEqual(len(xforms), 69)
+        for cm in xforms:
+            self.assertIsInstance(cm, Transform)
+
+    def test_get_sample_gates(self):
+        wsp_path = "examples/8_color_data_set/8_color_ICS_simple.wsp"
+        fcs_path = "examples/8_color_data_set/fcs_files"
+        sample_grp = 'DEN'
+        sample_id = '101_DEN084Y5_15_E01_008_clean.fcs'
+
+        fks = Session(fcs_samples=fcs_path)
+        fks.import_flowjo_workspace(wsp_path, ignore_missing_files=True)
+
+        sample_gates = fks.get_sample_gates(sample_grp, sample_id)
+
+        self.assertEqual(len(sample_gates), 4)
+        for cm in sample_gates:
+            self.assertIsInstance(cm, Gate)
 
     @staticmethod
     def test_add_poly1_gate():
