@@ -401,33 +401,12 @@ def parse_wsp(workspace_file_or_path, ignore_transforms=False):
 
 
 def _add_transform_to_wsp(parent_el, parameter_label, transform, ns_map):
-    if isinstance(transform, _transforms.LogTransform):
-        xform_el = etree.SubElement(parent_el, "{%s}flog" % ns_map['transforms'])
-        xform_el.set('{%s}T' % ns_map['transforms'], str(transform.param_t))
-        xform_el.set('{%s}M' % ns_map['transforms'], str(transform.param_m))
-    elif isinstance(transform, _transforms.AsinhTransform):
-        xform_el = etree.SubElement(parent_el, "{%s}fasinh" % ns_map['transforms'])
-        xform_el.set('{%s}T' % ns_map['transforms'], str(transform.param_t))
-        xform_el.set('{%s}M' % ns_map['transforms'], str(transform.param_m))
-        xform_el.set('{%s}A' % ns_map['transforms'], str(transform.param_a))
-    elif isinstance(transform, _transforms.LogicleTransform):
-        xform_el = etree.SubElement(parent_el, "{%s}logicle" % ns_map['transforms'])
-        xform_el.set('{%s}T' % ns_map['transforms'], str(transform.param_t))
-        xform_el.set('{%s}W' % ns_map['transforms'], str(transform.param_w))
-        xform_el.set('{%s}M' % ns_map['transforms'], str(transform.param_m))
-        xform_el.set('{%s}A' % ns_map['transforms'], str(transform.param_a))
-    elif isinstance(transform, _transforms.HyperlogTransform):
-        xform_el = etree.SubElement(parent_el, "{%s}hyperlog" % ns_map['transforms'])
-        xform_el.set('{%s}T' % ns_map['transforms'], str(transform.param_t))
-        xform_el.set('{%s}W' % ns_map['transforms'], str(transform.param_w))
-        xform_el.set('{%s}M' % ns_map['transforms'], str(transform.param_m))
-        xform_el.set('{%s}A' % ns_map['transforms'], str(transform.param_a))
-    elif isinstance(transform, _transforms.LinearTransform):
+    if isinstance(transform, _transforms.LinearTransform):
         xform_el = etree.SubElement(parent_el, "{%s}linear" % ns_map['transforms'])
         xform_el.set('{%s}minRange' % ns_map['transforms'], str(transform.param_a))
         xform_el.set('{%s}maxRange' % ns_map['transforms'], str(transform.param_t))
     else:
-        return
+        raise NotImplementedError("Transform type %s is not yet supported" % type(transform))
 
     param_el = etree.SubElement(xform_el, "{%s}parameter" % ns_map['data-type'])
     param_el.set('{%s}name' % ns_map['data-type'], str(parameter_label))
