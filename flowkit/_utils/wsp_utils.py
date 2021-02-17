@@ -6,7 +6,9 @@ import re
 import numpy as np
 from .xml_utils import find_attribute_value, _get_xml_type, _build_hierarchy_tree
 from .._models.dimension import Dimension
+# noinspection PyProtectedMember
 from .._models.transforms._matrix import Matrix
+# noinspection PyProtectedMember
 from .._models.transforms import _transforms, _wsp_transforms
 from .._models.gates._gates import PolygonGate
 from .._models.gates._gml_gates import \
@@ -14,6 +16,7 @@ from .._models.gates._gml_gates import \
     GMLQuadrantGate, \
     GMLPolygonGate, \
     GMLRectangleGate
+# noinspection PyProtectedMember
 from .._models.gates._wsp_gates import WSPEllipsoidGate
 
 wsp_gate_constructor_lut = {
