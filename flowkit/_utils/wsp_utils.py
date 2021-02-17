@@ -2,15 +2,20 @@
 Utility functions related to FlowJo Workspace files (.wsp)
 """
 import copy
+import datetime
 import re
 import numpy as np
+from lxml import etree
+from .sample_utils import FCS_STANDARD_KEYWORDS
 from .xml_utils import find_attribute_value, _get_xml_type, _build_hierarchy_tree
 from .._models.dimension import Dimension
 # noinspection PyProtectedMember
 from .._models.transforms._matrix import Matrix
 # noinspection PyProtectedMember
 from .._models.transforms import _transforms, _wsp_transforms
-from .._models.gates._gates import PolygonGate
+# noinspection PyProtectedMember
+from .._models.gates._gates import PolygonGate, RectangleGate
+# noinspection PyProtectedMember
 from .._models.gates._gml_gates import \
     GMLBooleanGate, \
     GMLQuadrantGate, \
@@ -393,3 +398,273 @@ def parse_wsp(workspace_file_or_path, ignore_transforms=False):
             sample_dict['gates'] = tree
 
     return wsp_dict
+
+
+def _add_transform_to_wsp(parent_el, parameter_label, transform, ns_map):
+    if isinstance(transform, _transforms.LogTransform):
+        xform_el = etree.SubElement(parent_el, "{%s}flog" % ns_map['transforms'])
+        xform_el.set('{%s}T' % ns_map['transforms'], str(transform.param_t))
+        xform_el.set('{%s}M' % ns_map['transforms'], str(transform.param_m))
+    elif isinstance(transform, _transforms.AsinhTransform):
+        xform_el = etree.SubElement(parent_el, "{%s}fasinh" % ns_map['transforms'])
+        xform_el.set('{%s}T' % ns_map['transforms'], str(transform.param_t))
+        xform_el.set('{%s}M' % ns_map['transforms'], str(transform.param_m))
+        xform_el.set('{%s}A' % ns_map['transforms'], str(transform.param_a))
+    elif isinstance(transform, _transforms.LogicleTransform):
+        xform_el = etree.SubElement(parent_el, "{%s}logicle" % ns_map['transforms'])
+        xform_el.set('{%s}T' % ns_map['transforms'], str(transform.param_t))
+        xform_el.set('{%s}W' % ns_map['transforms'], str(transform.param_w))
+        xform_el.set('{%s}M' % ns_map['transforms'], str(transform.param_m))
+        xform_el.set('{%s}A' % ns_map['transforms'], str(transform.param_a))
+    elif isinstance(transform, _transforms.HyperlogTransform):
+        xform_el = etree.SubElement(parent_el, "{%s}hyperlog" % ns_map['transforms'])
+        xform_el.set('{%s}T' % ns_map['transforms'], str(transform.param_t))
+        xform_el.set('{%s}W' % ns_map['transforms'], str(transform.param_w))
+        xform_el.set('{%s}M' % ns_map['transforms'], str(transform.param_m))
+        xform_el.set('{%s}A' % ns_map['transforms'], str(transform.param_a))
+    elif isinstance(transform, _transforms.LinearTransform):
+        xform_el = etree.SubElement(parent_el, "{%s}linear" % ns_map['transforms'])
+        xform_el.set('{%s}minRange' % ns_map['transforms'], str(transform.param_a))
+        xform_el.set('{%s}maxRange' % ns_map['transforms'], str(transform.param_t))
+    else:
+        return
+
+    param_el = etree.SubElement(xform_el, "{%s}parameter" % ns_map['data-type'])
+    param_el.set('{%s}name' % ns_map['data-type'], str(parameter_label))
+
+
+def _add_sample_keywords_to_wsp(parent_el, sample):
+    # setup some regex vars for detecting dynamic FCS standard keywords
+    # i.e. PnN, PnS, etc.
+    regex_pnx = re.compile(r"^p(\d+)[bdefglnoprst]$", re.IGNORECASE)
+
+    # start by adding special FlowJo keyword for the FCS version
+    kw_el = etree.SubElement(parent_el, "Keyword")
+    kw_el.set('name', "FJ_FCS_VERSION")
+    kw_el.set('value', str(sample.version))
+
+    for kw, val in sample.metadata.items():
+        fcs_kw = False
+        if kw in FCS_STANDARD_KEYWORDS:
+            fcs_kw = True
+        else:
+            match = regex_pnx.match(kw)
+            if match:
+                fcs_kw = True
+
+        kw_el = etree.SubElement(parent_el, "Keyword")
+        if fcs_kw:
+            kw_el.set('name', "$%s" % kw.upper())
+        else:
+            kw_el.set('name', kw.upper())
+
+        kw_el.set('value', val)
+
+
+def _add_polygon_gate(parent_el, gate, fj_gate_id, gating_strategy, ns_map):
+    gate_instance_el = etree.SubElement(parent_el, "{%s}PolygonGate" % ns_map['gating'])
+    gate_instance_el.set('quadID', '-1')
+    gate_instance_el.set('gateResolution', '256')
+    gate_instance_el.set('{%s}id' % ns_map['gating'], "ID%d" % fj_gate_id)
+
+    xform_refs = []
+    for dim in gate.dimensions:
+        dim_el = etree.SubElement(gate_instance_el, "{%s}dimension" % ns_map['gating'])
+        fcs_dim_el = etree.SubElement(dim_el, "{%s}fcs-dimension" % ns_map['data-type'])
+        fcs_dim_el.set("{%s}name" % ns_map['data-type'], dim.label)
+
+        xform_refs.append(dim.transformation_ref)
+
+    for vertex in gate.vertices:
+        vertex_el = etree.SubElement(gate_instance_el, "{%s}vertex" % ns_map['gating'])
+        for dim_idx, coord in enumerate(vertex.coordinates):
+            if xform_refs[dim_idx] is not None:
+                xform = gating_strategy.get_transform(xform_refs[dim_idx])
+                inv_coord = xform.inverse(coord)
+            else:
+                inv_coord = coord
+
+            coord_el = etree.SubElement(vertex_el, "{%s}coordinate" % ns_map['gating'])
+            coord_el.set("{%s}value" % ns_map['data-type'], str(inv_coord))
+
+
+def _add_rectangle_gate(parent_el, gate, fj_gate_id, gating_strategy, ns_map):
+    gate_instance_el = etree.SubElement(parent_el, "{%s}RectangleGate" % ns_map['gating'])
+    gate_instance_el.set('percentX', '0')
+    gate_instance_el.set('percentY', '0')
+    gate_instance_el.set('{%s}id' % ns_map['gating'], "ID%d" % fj_gate_id)
+
+    for dim in gate.dimensions:
+        dim_el = etree.SubElement(gate_instance_el, "{%s}dimension" % ns_map['gating'])
+        fcs_dim_el = etree.SubElement(dim_el, "{%s}fcs-dimension" % ns_map['data-type'])
+        fcs_dim_el.set("{%s}name" % ns_map['data-type'], dim.label)
+
+        xform_ref = dim.transformation_ref
+
+        if xform_ref is not None:
+            xform = gating_strategy.get_transform(xform_ref)
+            dim_min = xform.inverse(dim.min)
+            dim_max = xform.inverse(dim.max)
+        else:
+            dim_min = dim.min
+            dim_max = dim.max
+
+        dim_el.set('{%s}min' % ns_map['gating'], str(dim_min))
+        dim_el.set('{%s}max' % ns_map['gating'], str(dim_max))
+
+
+def _add_sample_node_to_wsp(parent_el, sample_name, sample_id, group_name, gating_strategy, ns_map):
+    sample_node_el = etree.SubElement(parent_el, "SampleNode")
+    sample_node_el.set('name', sample_name)
+    sample_node_el.set('annotation', "")
+    sample_node_el.set('owningGroup', "")
+    sample_node_el.set('sampleID', str(sample_id))
+
+    sub_pops_el = etree.SubElement(sample_node_el, "Subpopulations")
+
+    gate_fj_id = 1
+
+    for gate_id, gate_path in gating_strategy.get_gate_ids():
+        pop_el = etree.SubElement(sub_pops_el, "Population")
+        pop_el.set('name', gate_id)
+        pop_el.set('annotation', "")
+        pop_el.set('owningGroup', group_name)
+
+        gate = gating_strategy.get_gate(gate_id, gate_path)
+
+        # TODO: need to figure out how to generate and store the FlowJo gating IDs
+        gate_el = etree.SubElement(pop_el, 'Gate')
+        gate_el.set('{%s}id' % ns_map['gating'], "ID%d" % gate_fj_id)
+
+        if isinstance(gate, PolygonGate):
+            _add_polygon_gate(gate_el, gate, gate_fj_id, gating_strategy, ns_map)
+        elif isinstance(gate, RectangleGate):
+            _add_rectangle_gate(gate_el, gate, gate_fj_id, gating_strategy, ns_map)
+        else:
+            continue
+
+        gate_fj_id += 1
+
+
+def export_flowjo_wsp(gating_strategy, group_name, samples, file_handle):
+    """
+    Exports a FlowJo 10 workspace file (.wsp) from the given GatingStrategy instance
+    :param gating_strategy: A GatingStrategy instance
+    :param group_name: text string label for sample group
+    :param samples: list of Sample instances associated with the sample group
+    :param file_handle: File handle for exported FlowJo workspace file
+    :return: None
+    """
+    # < Workspace
+    # version = "20.0"
+    # modDate = "Thu Aug 20 12:19:04 EDT 2020"
+    # flowJoVersion = "10.6.2"
+    # curGroup = "All Samples"
+    # xmlns: xsi = "http://www.w3.org/2001/XMLSchema-instance"
+    # xmlns: gating = "http://www.isac-net.org/std/Gating-ML/v2.0/gating"
+    # xmlns: transforms = "http://www.isac-net.org/std/Gating-ML/v2.0/transformations"
+    # xmlns: data - type = "http://www.isac-net.org/std/Gating-ML/v2.0/datatypes"
+    ns_g = "http://www.isac-net.org/std/Gating-ML/v2.0/gating"
+    ns_dt = "http://www.isac-net.org/std/Gating-ML/v2.0/datatypes"
+    ns_xform = "http://www.isac-net.org/std/Gating-ML/v2.0/transformations"
+    ns_map = {
+        'gating': ns_g,
+        'data-type': ns_dt,
+        'transforms': ns_xform
+    }
+
+    now = datetime.datetime.now().astimezone()
+    mod_date = now.strftime('%a %b %d %H:%M:%S %Z %Y')
+
+    root = etree.Element('Workspace', nsmap=ns_map)
+    root.set('version', "20.0")
+    root.set('modDate', mod_date)
+    root.set('flowJoVersion', "10.6.2")
+    root.set('curGroup', "All Samples")
+
+    matrices_el = etree.SubElement(root, "Matrices")
+    groups_el = etree.SubElement(root, "Groups")
+    sample_list_el = etree.SubElement(root, "SampleList")
+
+    gate_ids = gating_strategy.get_gate_ids()
+    gates = []
+    dim_xform_lut = {}  # keys are dim label, value is a set of xform refs
+    for g_id, g_path in gate_ids:
+        gate = gating_strategy.get_gate(g_id, g_path)
+        gates.append(gate)
+
+        for dim in gate.dimensions:
+            if dim.label not in dim_xform_lut.keys():
+                dim_xform_lut[dim.label] = set()
+
+            dim_xform_lut[dim.label].add(dim.transformation_ref)
+
+    for dim in dim_xform_lut:
+        xform_refs = list(dim_xform_lut[dim])
+        if len(xform_refs) > 1:
+            raise ValueError(
+                "The given GatingStrategy is incompatible with FlowJo. "
+                "Multiple transformations are not allowed for the same parameter."
+                "Parameter %s has multiple transformation references." % dim
+            )
+
+        # After verifying there's only 1 transformation reference, set
+        # the value in the LUT to the single reference string
+        dim_xform_lut[dim] = xform_refs[0]
+
+    # Build SampleList branch
+    # The SampleList element contains a series of Sample elements.
+    # Each Sample element contains one of the following elements:
+    #     - DataSet
+    #     - Transformations
+    #     - Keywords
+    #     - SampleNode
+    # element.
+    curr_sample_id = 1  # each sample needs an ID, we'll start at 1 & increment
+    sample_id_lut = {}
+    for sample in samples:
+        sample_el = etree.SubElement(sample_list_el, "Sample")
+
+        # Start with DataSet sub-element. We don't have the exact
+        # file path to the FCS file, so we'll make a relative
+        # path using the Sample's original filename, hoping that
+        # FlowJo can re-connect the files using that name.
+        data_set_el = etree.SubElement(sample_el, "DataSet")
+        data_set_el.set('uri', sample.original_filename)
+        data_set_el.set('sampleID', str(curr_sample_id))
+
+        # Store sample ID and increment
+        sample_id_lut[sample.original_filename] = curr_sample_id
+        curr_sample_id += 1
+
+        # Transforms in FlowJo are organized differently than in GatingML
+        # or a FlowKit GatingStrategy. Instead of transforms being created
+        # and referenced by one or more parameters, FlowJo transforms contain
+        # the parameter as a child element. This means they cannot be created
+        # and re-used for multiple parameters and that the parameter label
+        # must be known prior to creating the transform. So, we must dig into
+        # the Dimensions of each gate in the entire hierarchy to find all the
+        # parameter labels and their reference FlowKit transform.
+        xforms_el = etree.SubElement(sample_el, "Transformations")
+        for dim, xform in dim_xform_lut.items():
+            if xform is None:
+                continue
+            _add_transform_to_wsp(xforms_el, dim, gating_strategy.get_transform(xform), ns_map)
+
+        # Add Keywords sub-element using the Sample metadata
+        keywords_el = etree.SubElement(sample_el, "Keywords")
+        _add_sample_keywords_to_wsp(keywords_el, sample)
+
+        # Finally, add the SampleNode where all the gates are defined
+        _add_sample_node_to_wsp(
+            sample_el,
+            sample.original_filename,
+            sample_id_lut[sample.original_filename],
+            group_name,
+            gating_strategy,
+            ns_map
+        )
+
+    et = etree.ElementTree(root)
+
+    et.write(file_handle, encoding="utf-8", xml_declaration=True, pretty_print=True)
