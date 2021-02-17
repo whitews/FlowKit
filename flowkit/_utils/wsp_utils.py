@@ -149,11 +149,14 @@ def _parse_wsp_transforms(transforms_el, transform_ns, data_type_ns):
             # param_length = find_attribute_value(xform_el, transform_ns, 'length')
             # param_maxRange = find_attribute_value(xform_el, transform_ns, 'maxRange')
             # param_pos = find_attribute_value(xform_el, transform_ns, 'pos')
-            xforms_lut[param_name] = _wsp_transforms.WSPBiexTransform(
-                param_name,
-                negative=float(param_neg),
-                width=float(param_width)
-            )
+            try:
+                xforms_lut[param_name] = _wsp_transforms.WSPBiexTransform(
+                    param_name,
+                    negative=float(param_neg),
+                    width=float(param_width)
+                )
+            except ValueError as e:
+                raise(ValueError("Channel %s" % param_name, e.args))
         else:
             error_msg = "FlowJo transform type '%s' is undocumented and not supported in FlowKit. " % xform_type
             error_msg += "Please edit the workspace in FlowJo and save all channel transformations as either " \
@@ -327,6 +330,9 @@ def parse_wsp(workspace_file_or_path, ignore_transforms=False):
         # Sub-populations node
         sample_root_sub_pop_el = sample_node_el.find('Subpopulations', ns_map)
 
+        if sample_root_sub_pop_el is None:
+            continue
+
         # FJ WSP gates are stored in non-transformed space. After parsing the XML the values need
         # to be converted to the compensated & transformed space. Also, the recurse_sub_populations
         # function replaces the non-human readable IDs in the XML with population names
@@ -371,7 +377,14 @@ def parse_wsp(workspace_file_or_path, ignore_transforms=False):
     # finally, convert 'gates' value to tree hierarchy
     for group_id, group_dict in wsp_dict.items():
         for sample_name, sample_dict in group_dict.items():
-            tree = _build_hierarchy_tree(sample_dict['gates'], use_uid=True)
+            try:
+                tree = _build_hierarchy_tree(sample_dict['gates'], use_uid=True)
+            except KeyError as ex:
+                err_msg = "The above exception occurred processing gates for %s. "\
+                          "This typically happens when the sample has a custom gate" \
+                          " that differs from the global sample group gate." % sample_name
+                raise KeyError(err_msg) from ex
+
             for d in tree.descendants:
                 d.name = d.gate.id
             sample_dict['gates'] = tree
