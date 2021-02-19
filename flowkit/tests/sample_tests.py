@@ -16,6 +16,8 @@ data1_fcs_path = 'examples/gate_ref/data1.fcs'
 data1_sample = Sample(data1_fcs_path)
 
 xform_logicle = transforms.LogicleTransform('logicle', param_t=10000, param_w=0.5, param_m=4.5, param_a=0)
+xform_biex1 = transforms.WSPBiexTransform('neg0', width=-100.0, negative=0.0)
+xform_biex2 = transforms.WSPBiexTransform('neg1', width=-100.0, negative=1.0)
 
 
 class SampleTestCase(unittest.TestCase):
@@ -245,6 +247,33 @@ class SampleTestCase(unittest.TestCase):
 
         self.assertListEqual(list(df.columns), new_cols)
 
+    @staticmethod
+    def test_fully_custom_transform():
+        sample1 = Sample(fcs_path_or_data=data1_fcs_path)
+        sample2 = Sample(fcs_path_or_data=data1_fcs_path)
+
+        custom_xforms = {
+            'FL1-H': xform_biex1,
+            'FL2-H': xform_biex1,
+            'FL3-H': xform_biex2,
+            'FL2-A': xform_biex1,
+            'FL4-H': xform_biex1
+        }
+
+        sample1.apply_transform(xform_biex1)
+        sample2.apply_transform(custom_xforms)
+
+        fl2_idx = sample1.get_channel_index('FL2-H')
+        fl3_idx = sample1.get_channel_index('FL3-H')
+
+        s1_fl2 = sample1.get_channel_data(fl2_idx, source='xform')
+        s2_fl2 = sample2.get_channel_data(fl2_idx, source='xform')
+        s1_fl3 = sample1.get_channel_data(fl3_idx, source='xform')
+        s2_fl3 = sample2.get_channel_data(fl3_idx, source='xform')
+
+        np.testing.assert_equal(s1_fl2, s2_fl2)
+        np.testing.assert_raises(AssertionError, np.testing.assert_equal, s1_fl3, s2_fl3)
+
     def test_create_fcs(self):
         fcs_file_path = "examples/test_comp_example.fcs"
         comp_file_path = Path("examples/comp_complete_example.csv")
@@ -296,11 +325,11 @@ class SampleTestCase(unittest.TestCase):
 
         # using the default seed, the 2 negative events are in the subsample
         common_idx = np.intersect1d(sample.subsample_indices, sample.negative_scatter_indices)
-        self.assertEqual(common_idx.shape[0], 2)
+        self.assertEqual(len(common_idx), 2)
 
         sample.filter_negative_scatter(reapply_subsample=True)
         common_idx = np.intersect1d(sample.subsample_indices, sample.negative_scatter_indices)
-        self.assertEqual(common_idx.shape[0], 0)
+        self.assertEqual(len(common_idx), 0)
 
         self.assertEqual(sample.negative_scatter_indices.shape[0], 2)
 
@@ -313,10 +342,10 @@ class SampleTestCase(unittest.TestCase):
 
         # using the default seed, the 2 negative events are in the subsample
         common_idx = np.intersect1d(sample.subsample_indices, sample.anomalous_indices)
-        self.assertGreater(common_idx.shape[0], 0)
+        self.assertGreater(len(common_idx), 0)
 
         sample.filter_anomalous_events(reapply_subsample=True)
         common_idx = np.intersect1d(sample.subsample_indices, sample.anomalous_indices)
-        self.assertEqual(common_idx.shape[0], 0)
+        self.assertEqual(len(common_idx), 0)
 
         self.assertGreater(sample.anomalous_indices.shape[0], 0)
