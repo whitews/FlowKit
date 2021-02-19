@@ -14,7 +14,9 @@ import seaborn
 from bokeh.layouts import gridplot
 from bokeh.models import Title
 import warnings
+# noinspection PyProtectedMember
 from .._models.transforms import _transforms
+# noinspection PyProtectedMember
 from .._models.transforms._matrix import Matrix
 from .._utils import plot_utils
 from .._utils import sample_utils
