@@ -612,23 +612,36 @@ class Sample(object):
         else:
             transformed_events = self._raw_events.copy()
 
-        if include_scatter:
-            transform_indices = self.scatter_indices + self.fluoro_indices
-        else:
-            transform_indices = self.fluoro_indices
+        if isinstance(transform, dict):
+            for pnn_label, param_xform in transform.items():
+                param_idx = self.get_channel_index(pnn_label)
 
-        transformed_events[:, transform_indices] = transform.apply(
-            transformed_events[:, transform_indices]
-        )
+                transformed_events[:, param_idx] = param_xform.apply(
+                    transformed_events[:, param_idx]
+                )
+        else:
+            if include_scatter:
+                transform_indices = self.scatter_indices + self.fluoro_indices
+            else:
+                transform_indices = self.fluoro_indices
+
+            transformed_events[:, transform_indices] = transform.apply(
+                transformed_events[:, transform_indices]
+            )
 
         return transformed_events
 
     def apply_transform(self, transform, include_scatter=False):
         """
         Applies given transform to Sample events, and overwrites the `transform` attribute.
-        By default, only the fluorescent channels are transformed.
+        By default, only the fluorescent channels are transformed. For fully customized transformations
+        per channel, the `transform` can be specified as a dictionary mapping PnN labels to an instance
+        of the Transform sub-class. If a dictionary of transforms is specified, the `include_scatter`
+        option is ignored and only the channels explicitly included in the transform dictionary will
+        be transformed.
 
-        :param transform: an instance of one of the various Transform sub-classes in the transforms module
+        :param transform: an instance of a Transform sub-class or a dictionary where the keys correspond
+            to the PnN labels and the value is an instance of a Transform sub-class.
         :param include_scatter: Whether to transform the scatter channel in addition to the
             fluorescent channels. Default is False.
         """
