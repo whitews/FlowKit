@@ -389,10 +389,10 @@ class GatingStrategy(object):
             # to make the dict key unique, make a string from the ancestors,
             # but also add the set of them as a set to avoid repeated & fragile
             # string splitting in the GatingResults class
-            gate_path_str = "/".join([a.name for a in item.ancestors])
-            results[g_id, gate_path_str] = gate.apply(sample, parent_results, self)
-
             gate_path_list = [a.name for a in item.ancestors]
+            gate_path_str = "/".join(gate_path_list)
+            results[g_id, gate_path_str] = gate.apply(sample, parent_results, self, gate_path_list)
+
             if isinstance(gate, fk_gates.QuadrantGate):
                 for quad_res in results[g_id, gate_path_str].values():
                     quad_res['gate_path'] = gate_path_list
