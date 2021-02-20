@@ -63,7 +63,7 @@ class SessionTestCase(unittest.TestCase):
     def test_get_transform(self):
         fks = Session(fcs_samples=data1_sample)
         fks.add_transform(asinh_xform1)
-        comp_mat = fks.get_transform('default', 'B07', 'AsinH_10000_4_1')
+        comp_mat = fks.get_transform('default', 'AsinH_10000_4_1')
 
         self.assertIsInstance(comp_mat, transforms.AsinhTransform)
 
