@@ -350,27 +350,23 @@ class Session(object):
         :return: list of Transform instances
         """
         group = self._sample_group_lut[group_name]
-        xforms = []
+        gating_strategy = group['template']
 
-        for sample_id in group['samples']:
-            gating_strategy = group['samples'][sample_id]
-            xforms.extend(list(gating_strategy.transformations.values()))
+        return list(gating_strategy.transformations.values())
 
-        return xforms
-
-    def get_transform(self, group_name, sample_id, transform_id):
+    def get_transform(self, group_name, transform_id):
         """
         Retrieve a Transform instance stored within the specified
         sample group associated with the given sample ID & having the given transform ID.
 
         :param group_name: a text string representing the sample group
-        :param sample_id: a text string representing a Sample instance
         :param transform_id: a text string representing a Transform ID
         :return: an instance of a Transform sub-class
         """
         group = self._sample_group_lut[group_name]
-        gating_strategy = group['samples'][sample_id]
+        gating_strategy = group['template']
         xform = gating_strategy.get_transform(transform_id)
+
         return xform
 
     def add_comp_matrix(self, matrix, group_name='default'):

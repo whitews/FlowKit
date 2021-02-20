@@ -77,7 +77,7 @@ class SessionTestCase(unittest.TestCase):
 
         xforms = fks.get_group_transforms(sample_grp)
 
-        self.assertEqual(len(xforms), 69)
+        self.assertEqual(len(xforms), 23)
         for cm in xforms:
             self.assertIsInstance(cm, Transform)
 
