@@ -58,6 +58,10 @@ class SampleTestCase(unittest.TestCase):
 
         self.assertIsInstance(sample, Sample)
 
+    def test_load_from_unsupported_object(self):
+        """Test Sample constructor raises ValueError loading an unsupported object"""
+        self.assertRaises(ValueError, Sample, object())
+
     def test_comp_matrix_from_csv(self):
         fcs_file_path = "examples/test_comp_example.fcs"
         comp_file_path = "examples/comp_complete_example.csv"
@@ -92,6 +96,16 @@ class SampleTestCase(unittest.TestCase):
         )
 
         self.assertIsNotNone(sample._comp_events)
+
+    def test_get_metadata(self):
+        """Test Sample method get_metadata"""
+        fcs_file_path = "examples/test_data_2d_01.fcs"
+
+        sample = Sample(fcs_path_or_data=fcs_file_path)
+        meta = sample.get_metadata()
+
+        self.assertEqual(len(meta), 20)
+        self.assertEqual(meta['p1n'], 'channel_A')
 
     @staticmethod
     def test_get_channel_index_by_channel_number_int():
@@ -141,6 +155,69 @@ class SampleTestCase(unittest.TestCase):
         data_idx_6 = sample.get_channel_data(6, source='xform')
 
         np.testing.assert_equal(sample._transformed_events[:, 6], data_idx_6)
+
+    def test_get_channel_data_subsample_fails(self):
+        self.assertRaises(
+            ValueError,
+            data1_sample.get_channel_data,
+            0,
+            source='raw',
+            subsample=True
+        )
+
+    def test_get_channel_data_subsample(self):
+        sample = Sample(data1_fcs_path)
+        sample.subsample_events(500)
+
+        data_idx_6 = sample.get_channel_data(6, source='raw', subsample=True)
+
+        self.assertEqual(len(data_idx_6), 500)
+
+    def test_get_subsampled_orig_events(self):
+        sample = Sample(data1_fcs_path)
+        sample.subsample_events(500)
+
+        events = sample.get_orig_events(subsample=True)
+
+        self.assertEqual(events.shape[0], 500)
+
+    def test_get_subsampled_raw_events(self):
+        sample = Sample(data1_fcs_path)
+        sample.subsample_events(500)
+
+        events = sample.get_raw_events(subsample=True)
+
+        self.assertEqual(events.shape[0], 500)
+
+    def test_get_subsampled_comp_events(self):
+        fcs_file_path = "examples/test_comp_example.fcs"
+        comp_file_path = Path("examples/comp_complete_example.csv")
+
+        sample = Sample(
+            fcs_path_or_data=fcs_file_path,
+            compensation=comp_file_path
+        )
+        sample.subsample_events(500)
+
+        events = sample.get_comp_events(subsample=True)
+
+        self.assertEqual(events.shape[0], 500)
+
+    def test_get_subsampled_xform_events(self):
+        fcs_file_path = "examples/test_comp_example.fcs"
+        comp_file_path = Path("examples/comp_complete_example.csv")
+
+        sample = Sample(
+            fcs_path_or_data=fcs_file_path,
+            compensation=comp_file_path
+        )
+        sample.apply_transform(xform_logicle)
+
+        sample.subsample_events(500)
+
+        events = sample.get_transformed_events(subsample=True)
+
+        self.assertEqual(events.shape[0], 500)
 
     def test_get_comp_events_if_no_comp(self):
         fcs_file_path = "examples/test_comp_example.fcs"
