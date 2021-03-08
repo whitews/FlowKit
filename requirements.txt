@@ -1,6 +1,6 @@
 numpy>=1.13
 statsmodels
-flowio==0.9.9
+flowio==0.9.10
 flowutils==0.9.1
 matplotlib>=3.1
 scipy>=1.3
