@@ -307,6 +307,20 @@ def _recurse_wsp_sub_populations(sub_pop_el, parent_id, gating_ns, data_type_ns)
 
 
 def parse_wsp(workspace_file_or_path, ignore_transforms=False):
+    """
+    Converts a FlowJo 10 workspace file (.wsp) into a nested Python dictionary with the following structure:
+
+        wsp_dict[group][sample_name] = {
+            'gates': {gate_id: gate_instance, ...},
+            'transforms': transforms_list,
+            'compensation': matrix
+        }
+
+    :param workspace_file_or_path: A FlowJo .wsp file or file path
+    :param ignore_transforms: Some FlowJo 10 transforms are incompatible with FlowKit. This boolean argument
+        allows parsing workspace files with unsupported transforms without raising errors. Default is False.
+    :return: dict
+    """
     doc_type, root_xml, gating_ns, data_type_ns, transform_ns = _get_xml_type(workspace_file_or_path)
 
     # first, find SampleList elements
