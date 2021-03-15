@@ -98,19 +98,42 @@ class WSPBiexTransform(Transform):
         self.width = width
 
         if use_nearest:
-            self.negative = min(BIEX_NEG_VALUES, key=lambda x: abs(x - negative))
-            self.width = min(BIEX_WIDTH_VALUES, key=lambda x: abs(x - width))
+            self.negative = min(BIEX_NEG_VALUES, key=lambda neg_x: abs(neg_x - negative))
 
-        lut_file_name = "tr_biex_l256_w%.6f_n%.6f_m4.418540_r262144.000029.csv" % (self.width, self.negative)
-        lut_file_path = os.path.join(resource_path, 'flowjo_xforms', lut_file_name)
+        if self.width not in BIEX_WIDTH_VALUES:
+            closest_width1 = min(BIEX_WIDTH_VALUES, key=lambda width_x: abs(width_x - width))
+            new_width_list = [w for w in BIEX_WIDTH_VALUES if w != closest_width1]
+            closest_width2 = min(new_width_list, key=lambda width_x2: abs(width_x2 - width))
 
-        # the LUT files have the transformed value in the 1st column
-        try:
-            y, x = np.loadtxt(lut_file_path, delimiter=',', usecols=(0, 1), skiprows=1, unpack=True)
-        except OSError:
-            raise ValueError(
-                "The parameter value combination negative=%f, width=%f is unsupported" % (self.negative, self.width)
-            )
+            lut_file_name1 = "tr_biex_l256_w%.6f_n%.6f_m4.418540_r262144.000029.csv" % (closest_width1, self.negative)
+            lut_file_path1 = os.path.join(resource_path, 'flowjo_xforms', lut_file_name1)
+
+            lut_file_name2 = "tr_biex_l256_w%.6f_n%.6f_m4.418540_r262144.000029.csv" % (closest_width2, self.negative)
+            lut_file_path2 = os.path.join(resource_path, 'flowjo_xforms', lut_file_name2)
+
+            y1, x1 = np.loadtxt(lut_file_path1, delimiter=',', usecols=(0, 1), skiprows=1, unpack=True)
+            y2, x2 = np.loadtxt(lut_file_path2, delimiter=',', usecols=(0, 1), skiprows=1, unpack=True)
+
+            # Now calculate the weights. We want higher weights for closer values,
+            # which can be calculated by just flipping the relative distances.
+            # since we want higher weights for closer values
+            diff_width = abs(closest_width1 - closest_width2)
+            weight1 = 1. - (abs(closest_width1 - width) / diff_width)
+            weight2 = 1. - (abs(closest_width2 - width) / diff_width)
+
+            x = np.average([x1, x2], weights=[weight1, weight2], axis=0)
+            y = y1
+        else:
+            lut_file_name = "tr_biex_l256_w%.6f_n%.6f_m4.418540_r262144.000029.csv" % (self.width, self.negative)
+            lut_file_path = os.path.join(resource_path, 'flowjo_xforms', lut_file_name)
+
+            # the LUT files have the transformed value in the 1st column
+            try:
+                y, x = np.loadtxt(lut_file_path, delimiter=',', usecols=(0, 1), skiprows=1, unpack=True)
+            except OSError:
+                raise ValueError(
+                    "The parameter value combination negative=%f, width=%f is unsupported" % (self.negative, self.width)
+                )
 
         # create interpolation function with any values outside the range set to the min / max of LUT
         self._lut_func = interpolate.interp1d(x, y, kind='linear', bounds_error=False, fill_value=(y.min(), y.max()))
