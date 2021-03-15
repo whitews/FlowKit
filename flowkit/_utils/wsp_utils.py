@@ -153,10 +153,26 @@ def _parse_wsp_transforms(transforms_el, transform_ns, data_type_ns):
             # these are attributes of the 'biex' element
             param_neg = find_attribute_value(xform_el, transform_ns, 'neg')
             param_width = find_attribute_value(xform_el, transform_ns, 'width')
-            # These next 3 exist but are not used.
-            # param_length = find_attribute_value(xform_el, transform_ns, 'length')
-            # param_maxRange = find_attribute_value(xform_el, transform_ns, 'maxRange')
-            # param_pos = find_attribute_value(xform_el, transform_ns, 'pos')
+
+            # These next 3 exist but are only used to verify a specific value. The LUT set FlowJo provided
+            # only includes the following values:
+            #     - length = 256
+            #     - maxRange = 262144
+            #     - pos ~= 4.42 (rounded to nearest hundredth)
+            param_length = find_attribute_value(xform_el, transform_ns, 'length')
+            param_max_range = find_attribute_value(xform_el, transform_ns, 'maxRange')
+            param_pos = find_attribute_value(xform_el, transform_ns, 'pos')
+            param_pos = round(float(param_pos), 2)
+
+            if param_length != '256':
+                raise ValueError("FlowJo biex 'length' parameter value of %s is not supported." % param_length)
+            if param_max_range != '262144':
+                raise ValueError("FlowJo biex 'maxRange' parameter value of %s is not supported." % param_max_range)
+            if param_pos != 4.42:
+                raise ValueError("FlowJo biex 'pos' parameter value of %f is not supported." % param_pos)
+
+            # We don't validate the 'width' parameter here, as we allow values not included in the LUT
+            # and perform a weighted interpolation between the closest 2 values.
             try:
                 xforms_lut[param_name] = _wsp_transforms.WSPBiexTransform(
                     param_name,
