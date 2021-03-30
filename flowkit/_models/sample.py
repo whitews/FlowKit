@@ -503,8 +503,9 @@ class Sample(object):
         """
         Returns a Pandas DataFrame of event data
 
-        :param source: 'raw', 'comp', 'xform' for whether the raw, compensated
-            or transformed events will be returned
+        :param source: 'orig', 'raw', 'comp', 'xform' for whether the original (no gain applied),
+            raw (orig + gain), compensated (raw + comp), or transformed (comp + xform) events will
+            be returned
         :param subsample: Whether to return all events or just the sub-sampled
             events. Default is False (all events)
         :param col_order: list of PnN labels. Determines the order of columns
@@ -522,7 +523,7 @@ class Sample(object):
         elif source == 'orig':
             events = self.get_orig_events(subsample=subsample)
         else:
-            raise ValueError("source must be one of 'raw', 'comp', or 'xform'")
+            raise ValueError("source must be one of 'orig', 'raw', 'comp', or 'xform'")
 
         multi_cols = pd.MultiIndex.from_arrays([self.pnn_labels, self.pns_labels], names=['pnn', 'pns'])
         events_df = pd.DataFrame(data=events, columns=multi_cols)
@@ -922,8 +923,9 @@ class Sample(object):
         Export Sample event data to either a new FCS file or a CSV file. Format determined by filename extension.
 
         :param filename: Text string to use for the exported file name.
-        :param source: 'raw', 'comp', 'xform' for whether the raw, compensated
-            or transformed events are used for exporting
+        :param source: 'orig', 'raw', 'comp', 'xform' for whether the original (no gain applied),
+            raw (orig + gain), compensated (raw + comp), or transformed (comp + xform) events  are
+            used for exporting
         :param exclude: Specifies whether to exclude events. Options are 'good', 'bad', or None.
             'bad' excludes neg. scatter or anomalous, 'good' will export the bad events.
             Default is None (exports all events)
@@ -960,7 +962,7 @@ class Sample(object):
         elif source == 'orig':
             events = self._orig_events[idx, :]
         else:
-            raise ValueError("source must be one of 'raw', 'comp', or 'xform'")
+            raise ValueError("source must be one of 'orig', 'raw', 'comp', or 'xform'")
 
         ext = os.path.splitext(filename)[-1]
 
