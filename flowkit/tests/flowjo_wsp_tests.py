@@ -98,6 +98,46 @@ class FlowJoWSPTestCase(unittest.TestCase):
         gate_count = results.get_gate_count('upper_right')
         self.assertEqual(gate_count, 50605)
 
+    def test_wsp_fasinh_transform(self):
+        wsp_path = "examples/simple_diamond_example/test_data_diamond_asinh_rect.wsp"
+        fcs_path = "examples/simple_diamond_example/test_data_diamond_01.fcs"
+
+        fks = Session(fcs_samples=fcs_path)
+        fks.import_flowjo_workspace(wsp_path)
+
+        self.assertIsInstance(
+            fks.get_gate(
+                'All Samples',
+                'test_data_diamond_01.fcs',
+                'upper_right'),
+            gates.RectangleGate
+        )
+
+        fks.analyze_samples(group_name='All Samples')
+        results = fks.get_gating_results('All Samples', 'test_data_diamond_01.fcs')
+        gate_count = results.get_gate_count('upper_right')
+        self.assertEqual(gate_count, 50559)
+
+    def test_wsp_fasinh_transform_v2(self):
+        wsp_path = "examples/simple_diamond_example/test_data_diamond_asinh_rect2.wsp"
+        fcs_path = "examples/simple_diamond_example/test_data_diamond_01.fcs"
+
+        fks = Session(fcs_samples=fcs_path)
+        fks.import_flowjo_workspace(wsp_path)
+
+        self.assertIsInstance(
+            fks.get_gate(
+                'All Samples',
+                'test_data_diamond_01.fcs',
+                'upper_right'),
+            gates.RectangleGate
+        )
+
+        fks.analyze_samples(group_name='All Samples')
+        results = fks.get_gating_results('All Samples', 'test_data_diamond_01.fcs')
+        gate_count = results.get_gate_count('upper_right')
+        self.assertEqual(gate_count, 50699)
+
     def test_wsp_biex_transform_width_interpolation(self):
         neg = 1.0
         width = -7.943282
