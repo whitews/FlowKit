@@ -181,10 +181,25 @@ def _parse_wsp_transforms(transforms_el, transform_ns, data_type_ns):
                 )
             except ValueError as e:
                 raise(ValueError("Channel %s" % param_name, e.args))
+        elif xform_type == 'fasinh':
+            # FlowJo's implementation of fasinh is slightly different from GML,
+            # and uses an additional 'length' scale factor. However, this scaling
+            # doesn't seem to affect the results and we can use the regular
+            # GML version of asinh. The xform_el also contains other
+            # unnecessary parameters: 'length', 'maxRange', and 'W'
+            param_t = find_attribute_value(xform_el, transform_ns, 'T')
+            param_a = find_attribute_value(xform_el, transform_ns, 'A')
+            param_m = find_attribute_value(xform_el, transform_ns, 'M')
+            xforms_lut[param_name] = _transforms.AsinhTransform(
+                param_name,
+                param_t=float(param_t),
+                param_m=float(param_m),
+                param_a=float(param_a)
+            )
         else:
             error_msg = "FlowJo transform type '%s' is undocumented and not supported in FlowKit. " % xform_type
             error_msg += "Please edit the workspace in FlowJo and save all channel transformations as either " \
-                "linear, log, biex, or logicle"
+                "linear, log, biex, logicle, or ArcSinh"
 
             raise ValueError(error_msg)
 
