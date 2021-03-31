@@ -2,8 +2,11 @@
 Tests for FlowJo 10 workspace files
 """
 import unittest
+import os
 import numpy as np
 from flowkit import Dimension, Session, gates, transforms
+# noinspection PyProtectedMember
+from flowkit._resources import resource_path
 
 
 class FlowJoWSPTestCase(unittest.TestCase):
@@ -95,44 +98,21 @@ class FlowJoWSPTestCase(unittest.TestCase):
         gate_count = results.get_gate_count('upper_right')
         self.assertEqual(gate_count, 50605)
 
-    def test_wsp_biex_transform_use_nearest(self):
-        fcs_path = "examples/simple_diamond_example/test_data_diamond_01.fcs"
+    def test_wsp_biex_transform_width_interpolation(self):
+        neg = 1.0
+        width = -7.943282
 
-        fks = Session(fcs_samples=fcs_path)
+        # this LUT exists for only the single negative value of 1.0
+        lut_file_name = "tr_biex_l256_w%.6f_n%.6f_m4.418540_r262144.000029.csv" % (width, neg)
+        lut_file_path = os.path.join(resource_path, 'flowjo_xforms', lut_file_name)
+        y, x = np.loadtxt(lut_file_path, delimiter=',', usecols=(0, 1), skiprows=1, unpack=True)
 
-        # use values near the targets of negative=0 and width=-10
-        biex_xform = transforms.WSPBiexTransform('biex', negative=0.01, width=-11, use_nearest=True)
+        biex_xform = transforms.WSPBiexTransform('biex', negative=neg, width=width)
 
-        dim_a = Dimension(
-            'channel_A',
-            transformation_ref='biex',
-            range_min=3421.8373651136317,
-            range_max=3806.9298572317216
-        )
-        dim_b = Dimension(
-            'channel_B',
-            transformation_ref='biex',
-            range_min=3432.2067760424816,
-            range_max=3975.4784238105294
-        )
+        test_y = biex_xform.apply(x)
 
-        rect_gate = gates.RectangleGate('upper_right', None, [dim_a, dim_b])
-
-        fks.add_transform(biex_xform)
-        fks.add_gate(rect_gate)
-
-        self.assertIsInstance(
-            fks.get_gate(
-                'default',
-                'test_data_diamond_01.fcs',
-                'upper_right'),
-            gates.RectangleGate
-        )
-
-        fks.analyze_samples(group_name='default')
-        results = fks.get_gating_results('default', 'test_data_diamond_01.fcs')
-        gate_count = results.get_gate_count('upper_right')
-        self.assertEqual(gate_count, 50605)
+        mean_pct_diff = 100. * np.mean(np.abs(test_y[1:] - y[1:]) / y[1:])
+        self.assertLess(mean_pct_diff, 1.0)
 
     def test_get_sample_groups(self):
         wsp_path = "examples/simple_line_example/simple_poly_and_rect.wsp"
