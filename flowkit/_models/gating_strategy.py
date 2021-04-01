@@ -339,19 +339,15 @@ class GatingStrategy(object):
 
     def gate_sample(self, sample, gate_id=None, verbose=False):
         """
-        Apply a gate to a sample, returning a dictionary where gate ID is the
-        key, and the value contains the event indices for events in the Sample
-        which are contained by the gate. If the gate has a parent gate, all
-        gates in the hierarchy above will be included in the results. If 'gate'
-        is None, then all gates will be evaluated.
+        Apply a gate to a sample, returning a GatingResults instance. If the gate
+        has a parent gate, all gates in the hierarchy above will be included in
+        the results. If 'gate_id' is None, then all gates will be evaluated.
 
         :param sample: an FCS Sample instance
         :param gate_id: A gate ID or list of gate IDs to evaluate on given
             Sample. If None, all gates will be evaluated
         :param verbose: If True, print a line for each gate processed
-        :return: Dictionary where keys are gate IDs, values are boolean arrays
-            of length matching the number sample events. Events in the gate are
-            True.
+        :return: GatingResults instance
         """
         # anytree tree allows us to iterate from the root down to the leaves
         # in an order that follows the hierarchy, thereby avoiding duplicate
