@@ -117,10 +117,20 @@ class Sample(object):
             flow_data = flowio.FlowData(tmp_file)
         elif isinstance(fcs_path_or_data, pd.DataFrame):
             tmp_file = TemporaryFile()
+
+            # Handle MultiIndex columns since that is what the as_dataframe method creates.
+            if fcs_path_or_data.columns.nlevels > 1:
+                pnn_labels = fcs_path_or_data.columns.get_level_values(0)
+                pns_labels = fcs_path_or_data.columns.get_level_values(1)
+            else:
+                pnn_labels = fcs_path_or_data.columns
+                pns_labels = None
+
             flowio.create_fcs(
                 fcs_path_or_data.values.flatten().tolist(),
-                channel_names=fcs_path_or_data.columns,
-                file_handle=tmp_file
+                channel_names=pnn_labels,
+                file_handle=tmp_file,
+                opt_channel_names=pns_labels
             )
 
             flow_data = flowio.FlowData(tmp_file)
