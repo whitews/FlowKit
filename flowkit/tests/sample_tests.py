@@ -58,6 +58,20 @@ class SampleTestCase(unittest.TestCase):
 
         self.assertIsInstance(sample, Sample)
 
+    def test_load_from_pandas_multi_index(self):
+        sample_orig = Sample("examples/100715.fcs")
+        pnn_orig = sample_orig.pnn_labels
+        pns_orig = sample_orig.pns_labels
+
+        df = sample_orig.as_dataframe(source='orig')
+
+        sample_new = Sample(df)
+        pnn_new = sample_new.pnn_labels
+        pns_new = sample_new.pns_labels
+
+        self.assertListEqual(pnn_orig, pnn_new)
+        self.assertListEqual(pns_orig, pns_new)
+
     def test_load_from_unsupported_object(self):
         """Test Sample constructor raises ValueError loading an unsupported object"""
         self.assertRaises(ValueError, Sample, object())
