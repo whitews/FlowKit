@@ -1,5 +1,9 @@
+"""
+Module for the Gate abstract base class
+"""
 from abc import ABC, abstractmethod
 import numpy as np
+# noinspection PyProtectedMember
 from ..transforms._matrix import Matrix
 from .. import gates, dimension
 
@@ -23,6 +27,12 @@ class Gate(ABC):
         self.gate_type = None
 
     def get_dimension(self, dim_id):
+        """
+        Retrieve the Dimension instance given the dimension ID
+
+        :param dim_id: Dimension ID
+        :return: Dimension instance
+        """
         for dim in self.dimensions:
             if dim_id == dim.id:
                 return dim
@@ -92,6 +102,7 @@ class Gate(ABC):
         else:
             comp_ref = list(dim_comp_refs)[0]
 
+        # noinspection PyProtectedMember
         events = gating_strategy._get_cached_compensation(
             sample,
             comp_ref
@@ -123,6 +134,7 @@ class Gate(ABC):
         if matrix is not None:
             events = matrix.apply(sample)
             # cache the comp events
+            # noinspection PyProtectedMember
             gating_strategy._cache_compensated_events(
                 sample,
                 comp_ref,
