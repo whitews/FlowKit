@@ -180,14 +180,16 @@ class WSPBiexTransform(Transform):
         self,
         transform_id,
         negative=0,
-        width=-10
+        width=-10,
+        positive=4.418540,
+        max_value=262144.000029
     ):
         Transform.__init__(self, transform_id)
 
         self.negative = negative
         self.width = width
 
-        x, y = generate_biex_lut(neg=self.negative, width_basis=self.width)
+        x, y = generate_biex_lut(neg=self.negative, width_basis=self.width, pos=positive, max_value=max_value)
 
         # create interpolation function with any values outside the range set to the min / max of LUT
         self._lut_func = interpolate.interp1d(
