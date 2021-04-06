@@ -377,7 +377,7 @@ class GatingStrategy(object):
                 continue
 
             if verbose:
-                print("%s: processing gate %s" % (sample, g_id))
+                print("%s: processing gate %s" % (sample.original_filename, g_id))
             if gate.parent is not None and gate.parent in results:
                 parent_results = results[gate.parent]
             else:
