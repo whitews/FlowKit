@@ -469,6 +469,32 @@ class Session(object):
 
         return sample_gates
 
+    def get_sample_comp_matrices(self, group_name, sample_id):
+        """
+        Retrieve all compensation matrices for a sample in a sample group.
+
+        :param group_name: a text string representing the sample group
+        :param sample_id: a text string representing a Sample instance
+        :return: list of Matrix instances
+        """
+        group = self._sample_group_lut[group_name]
+        gating_strategy = group['samples'][sample_id]
+
+        return list(gating_strategy.comp_matrices.values())
+
+    def get_sample_transforms(self, group_name, sample_id):
+        """
+        Retrieve all Transform instances for a sample in a sample group.
+
+        :param group_name: a text string representing the sample group
+        :param sample_id: a text string representing a Sample instance
+        :return: list of Transform sub-class instances
+        """
+        group = self._sample_group_lut[group_name]
+        gating_strategy = group['samples'][sample_id]
+
+        return list(gating_strategy.transformations.values())
+
     def get_gate_hierarchy(self, group_name, output='ascii', **kwargs):
         """
         Retrieve the hierarchy of gates in the sample group's gating strategy. Output is available
