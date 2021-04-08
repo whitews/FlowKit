@@ -671,6 +671,40 @@ class Session(object):
         gating_result = self._results_lut[group_name]['samples'][sample_id]
         return gating_result.get_gate_indices(gate_id, gate_path=gate_path)
 
+    def get_gate_events(self, group_name, sample_id, gate_id, gate_path=None, matrix=None, transform=None):
+        """
+        Retrieve a Pandas DataFrame containing only the events within the specified gate.
+        If an optional compensation matrix and/or a transform is provided, the returned
+        event data will be compensated or transformed. If both a compensation matrix and
+        a transform is provided the event data will be both compensated and transformed.
+
+        :param group_name: a text string representing the sample group
+        :param sample_id: a text string representing a Sample instance
+        :param gate_id: text string of a gate ID
+        :param gate_path: complete list of gate IDs for unique set of gate ancestors. Required if gate_id is ambiguous
+        :param matrix: an instance of the Matrix class
+        :param transform: an instance of a Transform sub-class
+        :return: Pandas DataFrame containing only the events within the specified gate
+        """
+        gate_idx = self.get_gate_indices(group_name, sample_id, gate_id, gate_path)
+        sample = self.get_sample(sample_id)
+        sample = copy.deepcopy(sample)
+
+        # default is 'raw' events
+        event_source = 'raw'
+
+        if matrix is not None:
+            sample.apply_compensation(matrix)
+            event_source = 'comp'
+        if transform is not None:
+            sample.apply_transform(transform)
+            event_source = 'xform'
+
+        events_df = sample.as_dataframe(source=event_source)
+        gated_event_data = events_df[gate_idx]
+
+        return gated_event_data
+
     def plot_gate(
             self,
             group_name,
