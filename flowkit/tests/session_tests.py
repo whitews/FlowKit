@@ -1,3 +1,6 @@
+"""
+Session Tests
+"""
 import unittest
 import sys
 import os
@@ -96,7 +99,7 @@ class SessionTestCase(unittest.TestCase):
         for cm in xforms:
             self.assertIsInstance(cm, Transform)
 
-    def test_get_group_transforms(self):
+    def test_get_sample_transforms(self):
         wsp_path = "examples/8_color_data_set/8_color_ICS_simple.wsp"
         fcs_path = "examples/8_color_data_set/fcs_files"
         sample_grp = 'DEN'
@@ -125,6 +128,38 @@ class SessionTestCase(unittest.TestCase):
         self.assertEqual(len(sample_gates), 4)
         for cm in sample_gates:
             self.assertIsInstance(cm, Gate)
+
+    def test_get_sample_gate_events(self):
+        wsp_path = "examples/8_color_data_set/8_color_ICS_simple.wsp"
+        fcs_path = "examples/8_color_data_set/fcs_files"
+        sample_grp = 'DEN'
+        sample_id = '101_DEN084Y5_15_E01_008_clean.fcs'
+        gate_id = 'CD3+'
+
+        fks = Session(fcs_samples=fcs_path)
+        fks.import_flowjo_workspace(wsp_path, ignore_missing_files=True)
+
+        fks.analyze_samples(sample_grp, sample_id)
+
+        sample_comp = fks.get_sample_comp_matrices(sample_grp, sample_id)[0]
+        sample_xform = transforms.LogicleTransform(
+            'my_logicle',
+            param_t=262144.0,
+            param_w=1.0,
+            param_m=4.418539922,
+            param_a=0.0
+        )
+
+        df_gated_events = fks.get_gate_events(
+            sample_grp,
+            sample_id,
+            gate_id,
+            matrix=sample_comp,
+            transform=sample_xform
+        )
+
+        self.assertIsInstance(df_gated_events, pd.DataFrame)
+        self.assertEqual(len(df_gated_events), 133670)
 
     @staticmethod
     def test_add_poly1_gate():
