@@ -46,6 +46,21 @@ class SessionTestCase(unittest.TestCase):
 
         self.assertIsInstance(comp_mat, Matrix)
 
+    def test_get_sample_comp_matrices(self):
+        wsp_path = "examples/8_color_data_set/8_color_ICS_simple.wsp"
+        fcs_path = "examples/8_color_data_set/fcs_files"
+        sample_grp = 'DEN'
+        sample_id = '101_DEN084Y5_15_E01_008_clean.fcs'
+
+        fks = Session(fcs_samples=fcs_path)
+        fks.import_flowjo_workspace(wsp_path, ignore_missing_files=True)
+
+        comp_matrices = fks.get_sample_comp_matrices(sample_grp, sample_id)
+
+        self.assertEqual(len(comp_matrices), 1)
+        for cm in comp_matrices:
+            self.assertIsInstance(cm, Matrix)
+
     def test_get_group_comp_matrices(self):
         wsp_path = "examples/8_color_data_set/8_color_ICS_simple.wsp"
         fcs_path = "examples/8_color_data_set/fcs_files"
@@ -76,6 +91,21 @@ class SessionTestCase(unittest.TestCase):
         fks.import_flowjo_workspace(wsp_path, ignore_missing_files=True)
 
         xforms = fks.get_group_transforms(sample_grp)
+
+        self.assertEqual(len(xforms), 23)
+        for cm in xforms:
+            self.assertIsInstance(cm, Transform)
+
+    def test_get_group_transforms(self):
+        wsp_path = "examples/8_color_data_set/8_color_ICS_simple.wsp"
+        fcs_path = "examples/8_color_data_set/fcs_files"
+        sample_grp = 'DEN'
+        sample_id = '101_DEN084Y5_15_E01_008_clean.fcs'
+
+        fks = Session(fcs_samples=fcs_path)
+        fks.import_flowjo_workspace(wsp_path, ignore_missing_files=True)
+
+        xforms = fks.get_sample_transforms(sample_grp, sample_id)
 
         self.assertEqual(len(xforms), 23)
         for cm in xforms:
