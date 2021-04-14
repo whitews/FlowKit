@@ -35,7 +35,7 @@ gate_constructor_lut = {
 }
 
 
-def _build_hierarchy_tree(gates_dict, use_uid=False):
+def _build_hierarchy_tree(gates_dict):
     nodes = {}
 
     root = anytree.Node('root')
@@ -44,10 +44,7 @@ def _build_hierarchy_tree(gates_dict, use_uid=False):
     for g_id, gate in gates_dict.items():
         if gate.parent is not None:
             # record the set of parents so we can find the leaves later
-            if use_uid:
-                parent_gates.add(gate.parent_uid)
-            else:
-                parent_gates.add(gate.parent)
+            parent_gates.add(gate.parent)
 
             # we'll get children nodes after
             continue
@@ -75,11 +72,8 @@ def _build_hierarchy_tree(gates_dict, use_uid=False):
         discard = []
         for gate_id in parent_gates:
             gate = gates_dict[gate_id]
+            parent_id = gate.parent
 
-            if use_uid:
-                parent_id = gate.parent_uid
-            else:
-                parent_id = gate.parent
             if parent_id in nodes or parent_id is None:
                 nodes[gate_id] = anytree.Node(
                     gate_id,
@@ -105,7 +99,7 @@ def _build_hierarchy_tree(gates_dict, use_uid=False):
 
         nodes[g_id] = anytree.Node(
             g_id,
-            parent=nodes[gate.parent_uid] if use_uid else nodes[gate.parent],
+            parent=nodes[gate.parent],
             gate=gate
         )
 
@@ -139,7 +133,9 @@ def parse_gating_xml(xml_file_or_path):
         gating_strategy.add_comp_matrix(c)
     for t_id, t in transformations.items():
         gating_strategy.add_transform(t)
+
     root = _build_hierarchy_tree(gates)
+
     for n in root.descendants:
         if isinstance(n.gate, Quadrant):
             continue
