@@ -59,8 +59,9 @@ class GatingStrategy(object):
 
         # Verify the gate parent matches the last item in the gate path (if given)
         if gate_path is not None:
-            if parent_id != gate_path[-1]:
-                raise ValueError("The gate parent and the last item in gate path are different.")
+            if len(gate_path) != 0:
+                if parent_id != gate_path[-1]:
+                    raise ValueError("The gate parent and the last item in gate path are different.")
 
         # Find simple case of matching gate ID + parent where no gate_path is specified.
         matched_nodes = anytree.findall(
