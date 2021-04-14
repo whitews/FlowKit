@@ -201,9 +201,8 @@ class Session(object):
 
                 gs = GatingStrategy()
 
-                for gate_node in data_dict['gates'].descendants:
-                    gate_path = [pn.name for pn in gate_node.ancestors]
-                    gs.add_gate(gate_node.gate, gate_path=gate_path)
+                for gate_dict in data_dict['gates']:
+                    gs.add_gate(gate_dict['gate'], gate_path=gate_dict['gate_path'])
 
                 matrix = data_dict['compensation']
                 if isinstance(matrix, Matrix):
