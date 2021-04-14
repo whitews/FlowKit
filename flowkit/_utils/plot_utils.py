@@ -270,8 +270,10 @@ def plot_scatter(
         y_max=None,
         color_density=True
 ):
-    x_min, x_max = calculate_extent(x, d_min=x_min, d_max=x_max, pad=0.02)
-    y_min, y_max = calculate_extent(y, d_min=y_min, d_max=y_max, pad=0.02)
+    if len(x) > 0:
+        x_min, x_max = calculate_extent(x, d_min=x_min, d_max=x_max, pad=0.02)
+    if len(y) > 0:
+        y_min, y_max = calculate_extent(y, d_min=y_min, d_max=y_max, pad=0.02)
 
     if y_max > x_max:
         radius_dimension = 'y'
