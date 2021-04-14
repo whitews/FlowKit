@@ -644,12 +644,28 @@ def _add_rectangle_gate(parent_el, gate, fj_gate_id, gating_strategy, ns_map):
         dim_el.set('{%s}max' % ns_map['gating'], str(dim_max))
 
 
+def _add_group_node_to_wsp(parent_el, group_name, sample_id_list):
+    group_node_el = etree.SubElement(parent_el, "GroupNode")
+    group_node_el.set('name', group_name)
+    group_node_el.set('annotation', "")
+    group_node_el.set('owningGroup', group_name)
+
+    group_el = etree.SubElement(group_node_el, "Group")
+    group_el.set('name', group_name)
+
+    sample_refs_el = etree.SubElement(group_el, "SampleRefs")
+
+    for sample_id in sample_id_list:
+        sample_ref_el = etree.SubElement(sample_refs_el, "SampleRef")
+        sample_ref_el.set('sampleID', sample_id)
+
+
 def _add_sample_node_to_wsp(parent_el, sample_name, sample_id, group_name, gating_strategy, ns_map):
     sample_node_el = etree.SubElement(parent_el, "SampleNode")
     sample_node_el.set('name', sample_name)
     sample_node_el.set('annotation', "")
     sample_node_el.set('owningGroup', "")
-    sample_node_el.set('sampleID', str(sample_id))
+    sample_node_el.set('sampleID', sample_id)
 
     sub_pops_el = etree.SubElement(sample_node_el, "Subpopulations")
 
@@ -659,7 +675,7 @@ def _add_sample_node_to_wsp(parent_el, sample_name, sample_id, group_name, gatin
         pop_el = etree.SubElement(sub_pops_el, "Population")
         pop_el.set('name', gate_id)
         pop_el.set('annotation', "")
-        pop_el.set('owningGroup', group_name)
+        pop_el.set('owningGroup', "")  # setting to empty string forces a custom sample gate
 
         gate = gating_strategy.get_gate(gate_id, gate_path)
 
@@ -717,6 +733,16 @@ def export_flowjo_wsp(gating_strategy, group_name, samples, file_handle):
     groups_el = etree.SubElement(root, "Groups")
     sample_list_el = etree.SubElement(root, "SampleList")
 
+    # create FJ sample ID LUT (used in various places)
+    curr_sample_id = 1  # each sample needs an ID, we'll start at 1 & increment
+    sample_id_lut = {}
+    for sample in samples:
+        # Store sample ID and increment
+        sample_id_lut[sample.original_filename] = str(curr_sample_id)
+        curr_sample_id += 1
+
+    _add_group_node_to_wsp(groups_el, group_name, sample_id_lut.values())
+
     gate_ids = gating_strategy.get_gate_ids()
     gates = []
     dim_xform_lut = {}  # keys are dim label, value is a set of xform refs
@@ -750,9 +776,9 @@ def export_flowjo_wsp(gating_strategy, group_name, samples, file_handle):
     #     - Transformations
     #     - Keywords
     #     - SampleNode
-    curr_sample_id = 1  # each sample needs an ID, we'll start at 1 & increment
-    sample_id_lut = {}
     for sample in samples:
+        sample_id = sample_id_lut[sample.original_filename]
+
         sample_el = etree.SubElement(sample_list_el, "Sample")
 
         # Start with DataSet sub-element. We don't have the exact
@@ -761,11 +787,7 @@ def export_flowjo_wsp(gating_strategy, group_name, samples, file_handle):
         # FlowJo can re-connect the files using that name.
         data_set_el = etree.SubElement(sample_el, "DataSet")
         data_set_el.set('uri', sample.original_filename)
-        data_set_el.set('sampleID', str(curr_sample_id))
-
-        # Store sample ID and increment
-        sample_id_lut[sample.original_filename] = curr_sample_id
-        curr_sample_id += 1
+        data_set_el.set('sampleID', sample_id)
 
         # Transforms in FlowJo are organized differently than in GatingML
         # or a FlowKit GatingStrategy. Instead of transforms being created
@@ -789,7 +811,7 @@ def export_flowjo_wsp(gating_strategy, group_name, samples, file_handle):
         _add_sample_node_to_wsp(
             sample_el,
             sample.original_filename,
-            sample_id_lut[sample.original_filename],
+            sample_id,
             group_name,
             gating_strategy,
             ns_map
