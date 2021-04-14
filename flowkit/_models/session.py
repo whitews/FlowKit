@@ -279,6 +279,7 @@ class Session(object):
     def get_group_samples(self, group_name):
         """
         Retrieve the list of Sample instances belonging to the specified sample group.
+        Only samples that have been loaded into the Session are returned.
 
         :param group_name: a text string representing the sample group
         :return: list of Sample instances
@@ -287,7 +288,11 @@ class Session(object):
 
         samples = []
         for s_id in sample_ids:
-            samples.append(self.sample_lut[s_id])
+            sample = self.sample_lut[s_id]
+
+            # don't return samples that haven't been loaded
+            if sample is not None:
+                samples.append(self.sample_lut[s_id])
 
         return samples
 
