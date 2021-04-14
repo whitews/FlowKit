@@ -162,7 +162,7 @@ class FlowJoWSPTestCase(unittest.TestCase):
         fks.import_flowjo_workspace(wsp_path)
 
         groups = fks.get_sample_groups()
-        groups_truth = ['default', 'my_group']
+        groups_truth = ['default', 'All Samples', 'my_group']
 
         self.assertListEqual(groups, groups_truth)
 
