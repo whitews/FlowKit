@@ -557,6 +557,13 @@ def _add_transform_to_wsp(parent_el, parameter_label, transform, ns_map):
         xform_el = etree.SubElement(parent_el, "{%s}linear" % ns_map['transforms'])
         xform_el.set('{%s}minRange' % ns_map['transforms'], str(transform.param_a))
         xform_el.set('{%s}maxRange' % ns_map['transforms'], str(transform.param_t))
+    elif isinstance(transform, _transforms.LogicleTransform):
+        xform_el = etree.SubElement(parent_el, "{%s}logicle" % ns_map['transforms'])
+        xform_el.set('{%s}length' % ns_map['transforms'], "256")
+        xform_el.set('{%s}T' % ns_map['transforms'], str(transform.param_t))
+        xform_el.set('{%s}A' % ns_map['transforms'], str(transform.param_a))
+        xform_el.set('{%s}W' % ns_map['transforms'], str(transform.param_w))
+        xform_el.set('{%s}M' % ns_map['transforms'], str(transform.param_m))
     else:
         raise NotImplementedError("Transform type %s is not yet supported" % type(transform))
 
@@ -611,7 +618,7 @@ def _add_polygon_gate(parent_el, gate, fj_gate_id, gating_strategy, ns_map):
         for dim_idx, coord in enumerate(vertex.coordinates):
             if xform_refs[dim_idx] is not None:
                 xform = gating_strategy.get_transform(xform_refs[dim_idx])
-                inv_coord = xform.inverse(coord)
+                inv_coord = xform.inverse(np.array([[coord]]))[0, 0]
             else:
                 inv_coord = coord
 
