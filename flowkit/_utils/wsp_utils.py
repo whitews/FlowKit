@@ -263,10 +263,10 @@ def _convert_wsp_gate(wsp_gate, comp_matrix, xform_lut, ignore_transforms=False)
 
         gate = PolygonGate(wsp_gate.id, wsp_gate.parent, new_dims, vertices)
     elif isinstance(wsp_gate, GMLRectangleGate):
-        gate = wsp_gate
+        gate = copy.deepcopy(wsp_gate)
         gate.dimensions = new_dims
     elif isinstance(wsp_gate, WSPEllipsoidGate):
-        gate = wsp_gate
+        gate = copy.deepcopy(wsp_gate)
     else:
         raise NotImplemented(
             "%s gates for FlowJo workspaces are not currently supported." % type(wsp_gate).__name__
