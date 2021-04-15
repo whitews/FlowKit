@@ -221,5 +221,18 @@ class GatingStrategyReusedGatesTestCase(unittest.TestCase):
             gate = self.gs.get_gate(gate_item[0], gate_item[1])
             self.assertEqual(gate.id, gate_item[0])
 
+    def test_get_child_gates(self):
+        parent_gate_id = 'Gate_A'
+        parent_gate_path = ['root']
+        child_gate_ids = ['Gate_B', 'Gate_C']
+        child_gates = self.gs.get_child_gates(parent_gate_id, parent_gate_path)
+
+        retrieved_gate_ids = []
+        for child_gate in child_gates:
+            self.assertIsInstance(child_gate, fk.gates._gates.Gate)
+            retrieved_gate_ids.append(child_gate.id)
+
+        self.assertListEqual(child_gate_ids, sorted(retrieved_gate_ids))
+
     def test_get_gate_fails_without_path(self):
         self.assertRaises(ValueError, self.gs.get_gate, 'ReusedParent')
