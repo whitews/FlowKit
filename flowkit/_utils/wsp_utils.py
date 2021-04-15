@@ -552,6 +552,38 @@ def parse_wsp(workspace_file_or_path, ignore_transforms=False):
     return wsp_dict
 
 
+def _add_matrix_to_wsp(parent_el, prefix, matrix, ns_map):
+    matrix_el = etree.SubElement(parent_el, "{%s}spilloverMatrix" % ns_map['transforms'])
+    matrix_el.set('spectral', "0")
+    matrix_el.set('prefix', prefix)
+    matrix_el.set('prefix', matrix.id)
+    matrix_el.set('version', "FlowJo-10.7.1")
+    # TODO: need to set id?
+    matrix_el.set('suffix', "")
+
+    params_el = etree.SubElement(matrix_el, "{%s}parameters" % ns_map['data-type'])
+
+    # add parameter labels & their prefix
+    for param_label in matrix.detectors:
+        param_el = etree.SubElement(params_el, "{%s}parameter" % ns_map['data-type'])
+        param_el.set('{%s}name' % ns_map['data-type'], param_label)
+        param_el.set('userProvidedCompInfix', "".join([prefix, param_label]))
+
+    # add the matrix array values
+    matrix_array = matrix.matrix
+    for i_row, param_label in enumerate(matrix.detectors):
+        spillover_el = etree.SubElement(matrix_el, "{%s}spillover" % ns_map['transforms'])
+        spillover_el.set('{%s}parameter' % ns_map['data-type'], param_label)
+        spillover_el.set('userProvidedCompInfix', "".join([prefix, param_label]))
+
+        for i_col, param_label2 in enumerate(matrix.detectors):
+            matrix_value = matrix_array[i_row, i_col]
+
+            coef_el = etree.SubElement(spillover_el, "{%s}coefficient" % ns_map['transforms'])
+            coef_el.set('{%s}parameter' % ns_map['data-type'], param_label2)
+            coef_el.set('{%s}value' % ns_map['transforms'], str(matrix_value))
+
+
 def _add_transform_to_wsp(parent_el, parameter_label, transform, ns_map):
     if isinstance(transform, _transforms.LinearTransform):
         xform_el = etree.SubElement(parent_el, "{%s}linear" % ns_map['transforms'])
@@ -739,6 +771,20 @@ def export_flowjo_wsp(gating_strategy, group_name, samples, file_handle):
     matrices_el = etree.SubElement(root, "Matrices")
     groups_el = etree.SubElement(root, "Groups")
     sample_list_el = etree.SubElement(root, "SampleList")
+
+    comp_prefix_counter = 0
+    comp_prefix_lut = {}
+    for matrix_id, matrix in gating_strategy.comp_matrices.items():
+        if comp_prefix_counter == 0:
+            comp_prefix = 'Comp-'
+        else:
+            comp_prefix = 'Comp%d-' % comp_prefix_counter
+
+        comp_prefix_lut[matrix_id] = comp_prefix
+
+        _add_matrix_to_wsp(matrices_el, comp_prefix, matrix, ns_map)
+
+        comp_prefix_counter += 1
 
     # create FJ sample ID LUT (used in various places)
     curr_sample_id = 1  # each sample needs an ID, we'll start at 1 & increment
