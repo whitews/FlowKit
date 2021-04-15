@@ -175,15 +175,7 @@ class GatingStrategy(object):
         """
         return self.comp_matrices[matrix_id]
 
-    def get_gate(self, gate_id, gate_path=None):
-        """
-        Retrieve a gate instance by its gate ID.
-
-        :param gate_id: text string of a gate ID
-        :param gate_path: complete list of gate IDs for unique set of gate ancestors. Required if gate_id is ambiguous
-        :return: Subclass of a Gate object
-        :raises KeyError: if gate ID is not found in gating strategy
-        """
+    def _get_gate_node(self, gate_id, gate_path=None):
         # It's not safe to just look at the gates dictionary as
         # QuadrantGate IDs cannot be parents themselves, only their component
         # Quadrant IDs can be parents.
@@ -227,21 +219,50 @@ class GatingStrategy(object):
         if node is None:
             raise ValueError("Gate ID %s was not found in gating strategy" % gate_id)
 
+        return node
+
+    def get_gate(self, gate_id, gate_path=None):
+        """
+        Retrieve a gate instance by its gate ID.
+
+        :param gate_id: text string of a gate ID
+        :param gate_path: complete list of gate IDs for unique set of gate ancestors. Required if gate_id is ambiguous
+        :return: Subclass of a Gate object
+        :raises KeyError: if gate ID is not found in gating strategy
+        """
+        node = self._get_gate_node(gate_id, gate_path)
+
         return node.gate
 
-    def get_parent_gate(self, gate_id):
+    def get_parent_gate(self, gate_id, gate_path=None):
         """
         Retrieve the gate ID for a parent gate of the given gate ID.
 
         :param gate_id: text string of a gate ID
-        :return: text string of the parent gate ID, None if given gate reference has no parent gate.
+        :param gate_path: complete list of gate IDs for unique set of gate ancestors. Required if gate_id is ambiguous
+        :return: Subclass of a Gate object
         """
-        n = anytree.find_by_attr(self._gate_tree, gate_id)
+        node = self._get_gate_node(gate_id, gate_path)
 
-        if n is None:
-            raise ValueError("Gate ID %s was not found in gating strategy" % gate_id)
+        return node.parent.gate
 
-        return n.parent.gate
+    def get_child_gates(self, gate_id, gate_path=None):
+        """
+        Retrieve list of child gate instances by their parent's gate ID.
+
+        :param gate_id: text string of a gate ID
+        :param gate_path: complete list of gate IDs for unique set of gate ancestors. Required if gate_id is ambiguous
+        :return: list of Gate instances
+        :raises KeyError: if gate ID is not found in gating strategy
+        """
+        node = self._get_gate_node(gate_id, gate_path)
+
+        child_gates = []
+
+        for n in node.children:
+            child_gates.append(n.gate)
+
+        return child_gates
 
     def get_gate_ids(self):
         """
