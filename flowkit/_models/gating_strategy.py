@@ -221,6 +221,22 @@ class GatingStrategy(object):
 
         return node
 
+    def get_root_gates(self):
+        """
+        Retrieve list of root-level gate instances.
+
+        :return: list of Gate instances
+        """
+        root = self._gate_tree.root
+        root_children = root.children
+
+        root_gates = []
+
+        for node in root_children:
+            root_gates.append(node.gate)
+
+        return root_gates
+
     def get_gate(self, gate_id, gate_path=None):
         """
         Retrieve a gate instance by its gate ID.
