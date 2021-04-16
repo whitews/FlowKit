@@ -631,11 +631,13 @@ def _add_sample_keywords_to_wsp(parent_el, sample):
         kw_el.set('value', val)
 
 
-def _add_polygon_gate(parent_el, gate, fj_gate_id, gating_strategy, ns_map):
+def _add_polygon_gate(parent_el, gate, fj_gate_id, fj_parent_gate_id, gating_strategy, ns_map):
     gate_instance_el = etree.SubElement(parent_el, "{%s}PolygonGate" % ns_map['gating'])
     gate_instance_el.set('quadID', '-1')
     gate_instance_el.set('gateResolution', '256')
-    gate_instance_el.set('{%s}id' % ns_map['gating'], "ID%d" % fj_gate_id)
+    gate_instance_el.set('{%s}id' % ns_map['gating'], "ID%s" % fj_gate_id)
+    if fj_parent_gate_id is not None:
+        gate_instance_el.set('{%s}parent_id' % ns_map['gating'], "ID%s" % fj_parent_gate_id)
 
     xform_refs = []
     for dim in gate.dimensions:
@@ -658,11 +660,13 @@ def _add_polygon_gate(parent_el, gate, fj_gate_id, gating_strategy, ns_map):
             coord_el.set("{%s}value" % ns_map['data-type'], str(inv_coord))
 
 
-def _add_rectangle_gate(parent_el, gate, fj_gate_id, gating_strategy, ns_map):
+def _add_rectangle_gate(parent_el, gate, fj_gate_id, fj_parent_gate_id, gating_strategy, ns_map):
     gate_instance_el = etree.SubElement(parent_el, "{%s}RectangleGate" % ns_map['gating'])
     gate_instance_el.set('percentX', '0')
     gate_instance_el.set('percentY', '0')
-    gate_instance_el.set('{%s}id' % ns_map['gating'], "ID%d" % fj_gate_id)
+    gate_instance_el.set('{%s}id' % ns_map['gating'], "ID%s" % fj_gate_id)
+    if fj_parent_gate_id is not None:
+        gate_instance_el.set('{%s}parent_id' % ns_map['gating'], "ID%s" % fj_parent_gate_id)
 
     for dim in gate.dimensions:
         dim_el = etree.SubElement(gate_instance_el, "{%s}dimension" % ns_map['gating'])
@@ -699,6 +703,60 @@ def _add_group_node_to_wsp(parent_el, group_name, sample_id_list):
         sample_ref_el.set('sampleID', sample_id)
 
 
+def _recurse_add_sub_populations(parent_el, gate_id, gate_path, gating_strategy, gate_fj_id_lut, ns_map):
+    # first, add given gate to parent XML element inside it's own Population element
+    pop_el = etree.SubElement(parent_el, "Population")
+    pop_el.set('name', gate_id)
+    pop_el.set('annotation', "")
+    pop_el.set('owningGroup', "")
+
+    # Lookup the gate's FJ ID
+    fj_id = gate_fj_id_lut[(gate_id, tuple(gate_path))]
+
+    # Determine if gate has a parent gate & lookup it's FJ ID
+    if len(gate_path) > 1:
+        # gate has a true parent gate
+        parent_gate_id = gate_path[-1]
+        parent_gate_path = gate_path[:-1]
+        parent_fj_id = gate_fj_id_lut[(parent_gate_id, tuple(parent_gate_path))]
+    else:
+        parent_fj_id = None
+
+    gate_el = etree.SubElement(pop_el, 'Gate')
+    gate_el.set('{%s}id' % ns_map['gating'], "ID%s" % fj_id)
+
+    if parent_fj_id is not None:
+        gate_el.set('{%s}parent_id' % ns_map['gating'], "ID%s" % parent_fj_id)
+
+    # Get the gate instance to determine the gate class
+    gate = gating_strategy.get_gate(gate_id, gate_path)
+
+    if isinstance(gate, PolygonGate):
+        _add_polygon_gate(gate_el, gate, fj_id, parent_fj_id, gating_strategy, ns_map)
+    elif isinstance(gate, RectangleGate):
+        _add_rectangle_gate(gate_el, gate, fj_id, parent_fj_id, gating_strategy, ns_map)
+    else:
+        raise NotImplementedError("Exporting %s gates is not yet implemented" % str(gate.__class__))
+
+    # If there are child gates, create a new Sub-pop element and recurse
+    child_gates = gating_strategy.get_child_gates(gate_id, gate_path)
+    if len(child_gates) > 0:
+        sub_pops_el = etree.SubElement(pop_el, "Subpopulations")
+
+        # child gate path will be the parent's gate path plus the parent ID
+        child_gate_path = copy.deepcopy(gate_path)
+        child_gate_path.append(gate_id)
+        for child_gate in child_gates:
+            _recurse_add_sub_populations(
+                sub_pops_el,
+                child_gate.id,
+                child_gate_path,
+                gating_strategy,
+                gate_fj_id_lut,
+                ns_map
+            )
+
+
 def _add_sample_node_to_wsp(parent_el, sample_name, sample_id, group_name, gating_strategy, ns_map):
     sample_node_el = etree.SubElement(parent_el, "SampleNode")
     sample_node_el.set('name', sample_name)
@@ -709,27 +767,15 @@ def _add_sample_node_to_wsp(parent_el, sample_name, sample_id, group_name, gatin
     sub_pops_el = etree.SubElement(sample_node_el, "Subpopulations")
 
     gate_fj_id = 1
-
+    gate_fj_id_lut = {}
     for gate_id, gate_path in gating_strategy.get_gate_ids():
-        pop_el = etree.SubElement(sub_pops_el, "Population")
-        pop_el.set('name', gate_id)
-        pop_el.set('annotation', "")
-        pop_el.set('owningGroup', "")  # setting to empty string forces a custom sample gate
-
-        gate = gating_strategy.get_gate(gate_id, gate_path)
-
-        # TODO: need to figure out how to generate and store the FlowJo gating IDs
-        gate_el = etree.SubElement(pop_el, 'Gate')
-        gate_el.set('{%s}id' % ns_map['gating'], "ID%d" % gate_fj_id)
-
-        if isinstance(gate, PolygonGate):
-            _add_polygon_gate(gate_el, gate, gate_fj_id, gating_strategy, ns_map)
-        elif isinstance(gate, RectangleGate):
-            _add_rectangle_gate(gate_el, gate, gate_fj_id, gating_strategy, ns_map)
-        else:
-            continue
-
+        gate_fj_id_lut[(gate_id, tuple(gate_path))] = str(sample_id) + str(gate_fj_id)
         gate_fj_id += 1
+
+    root_gates = gating_strategy.get_root_gates()
+
+    for gate in root_gates:
+        _recurse_add_sub_populations(sub_pops_el, gate.id, ['root'], gating_strategy, gate_fj_id_lut, ns_map)
 
 
 def export_flowjo_wsp(gating_strategy, group_name, samples, file_handle):
