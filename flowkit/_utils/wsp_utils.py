@@ -556,7 +556,7 @@ def _add_matrix_to_wsp(parent_el, prefix, matrix, ns_map):
     matrix_el = etree.SubElement(parent_el, "{%s}spilloverMatrix" % ns_map['transforms'])
     matrix_el.set('spectral', "0")
     matrix_el.set('prefix', prefix)
-    matrix_el.set('prefix', matrix.id)
+    matrix_el.set('name', matrix.id)
     matrix_el.set('version', "FlowJo-10.7.1")
     # TODO: need to set id?
     matrix_el.set('suffix', "")
