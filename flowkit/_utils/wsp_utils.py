@@ -631,7 +631,7 @@ def _add_sample_keywords_to_wsp(parent_el, sample):
         kw_el.set('value', val)
 
 
-def _add_polygon_gate(parent_el, gate, fj_gate_id, fj_parent_gate_id, gating_strategy, ns_map):
+def _add_polygon_gate(parent_el, gate, fj_gate_id, fj_parent_gate_id, gating_strategy, comp_prefix, ns_map):
     gate_instance_el = etree.SubElement(parent_el, "{%s}PolygonGate" % ns_map['gating'])
     gate_instance_el.set('quadID', '-1')
     gate_instance_el.set('gateResolution', '256')
@@ -641,9 +641,15 @@ def _add_polygon_gate(parent_el, gate, fj_gate_id, fj_parent_gate_id, gating_str
 
     xform_refs = []
     for dim in gate.dimensions:
+        # use comp prefix for label except for scatter and time channels
+        if dim.label[:4] in ['FSC-', 'SSC-', 'Time']:
+            dim_label = dim.label
+        else:
+            dim_label = comp_prefix + dim.label
+
         dim_el = etree.SubElement(gate_instance_el, "{%s}dimension" % ns_map['gating'])
         fcs_dim_el = etree.SubElement(dim_el, "{%s}fcs-dimension" % ns_map['data-type'])
-        fcs_dim_el.set("{%s}name" % ns_map['data-type'], dim.label)
+        fcs_dim_el.set("{%s}name" % ns_map['data-type'], dim_label)
 
         xform_refs.append(dim.transformation_ref)
 
@@ -660,7 +666,7 @@ def _add_polygon_gate(parent_el, gate, fj_gate_id, fj_parent_gate_id, gating_str
             coord_el.set("{%s}value" % ns_map['data-type'], str(inv_coord))
 
 
-def _add_rectangle_gate(parent_el, gate, fj_gate_id, fj_parent_gate_id, gating_strategy, ns_map):
+def _add_rectangle_gate(parent_el, gate, fj_gate_id, fj_parent_gate_id, gating_strategy, comp_prefix, ns_map):
     gate_instance_el = etree.SubElement(parent_el, "{%s}RectangleGate" % ns_map['gating'])
     gate_instance_el.set('percentX', '0')
     gate_instance_el.set('percentY', '0')
@@ -669,9 +675,15 @@ def _add_rectangle_gate(parent_el, gate, fj_gate_id, fj_parent_gate_id, gating_s
         gate_instance_el.set('{%s}parent_id' % ns_map['gating'], "ID%s" % fj_parent_gate_id)
 
     for dim in gate.dimensions:
+        # use comp prefix for label except for scatter and time channels
+        if dim.label[:4] in ['FSC-', 'SSC-', 'Time']:
+            dim_label = dim.label
+        else:
+            dim_label = comp_prefix + dim.label
+
         dim_el = etree.SubElement(gate_instance_el, "{%s}dimension" % ns_map['gating'])
         fcs_dim_el = etree.SubElement(dim_el, "{%s}fcs-dimension" % ns_map['data-type'])
-        fcs_dim_el.set("{%s}name" % ns_map['data-type'], dim.label)
+        fcs_dim_el.set("{%s}name" % ns_map['data-type'], dim_label)
 
         xform_ref = dim.transformation_ref
 
@@ -703,7 +715,7 @@ def _add_group_node_to_wsp(parent_el, group_name, sample_id_list):
         sample_ref_el.set('sampleID', sample_id)
 
 
-def _recurse_add_sub_populations(parent_el, gate_id, gate_path, gating_strategy, gate_fj_id_lut, ns_map):
+def _recurse_add_sub_populations(parent_el, gate_id, gate_path, gating_strategy, gate_fj_id_lut, comp_prefix, ns_map):
     # first, add given gate to parent XML element inside it's own Population element
     pop_el = etree.SubElement(parent_el, "Population")
     pop_el.set('name', gate_id)
@@ -732,9 +744,9 @@ def _recurse_add_sub_populations(parent_el, gate_id, gate_path, gating_strategy,
     gate = gating_strategy.get_gate(gate_id, gate_path)
 
     if isinstance(gate, PolygonGate):
-        _add_polygon_gate(gate_el, gate, fj_id, parent_fj_id, gating_strategy, ns_map)
+        _add_polygon_gate(gate_el, gate, fj_id, parent_fj_id, gating_strategy, comp_prefix, ns_map)
     elif isinstance(gate, RectangleGate):
-        _add_rectangle_gate(gate_el, gate, fj_id, parent_fj_id, gating_strategy, ns_map)
+        _add_rectangle_gate(gate_el, gate, fj_id, parent_fj_id, gating_strategy, comp_prefix, ns_map)
     else:
         raise NotImplementedError("Exporting %s gates is not yet implemented" % str(gate.__class__))
 
@@ -753,11 +765,12 @@ def _recurse_add_sub_populations(parent_el, gate_id, gate_path, gating_strategy,
                 child_gate_path,
                 gating_strategy,
                 gate_fj_id_lut,
+                comp_prefix,
                 ns_map
             )
 
 
-def _add_sample_node_to_wsp(parent_el, sample_name, sample_id, group_name, gating_strategy, ns_map):
+def _add_sample_node_to_wsp(parent_el, sample_name, sample_id, group_name, gating_strategy, comp_prefix_lut, ns_map):
     sample_node_el = etree.SubElement(parent_el, "SampleNode")
     sample_node_el.set('name', sample_name)
     sample_node_el.set('annotation', "")
@@ -774,8 +787,18 @@ def _add_sample_node_to_wsp(parent_el, sample_name, sample_id, group_name, gatin
 
     root_gates = gating_strategy.get_root_gates()
 
+    # need to find a matching compensation to add the correct comp prefix to parameter labels
+    comp_ids = gating_strategy.comp_matrices.keys()
+
+    # there really shouldn't be more than 1 compensation matrix and we only support 1 for now
+    comp_prefix = ''
+    for comp_id in comp_ids:
+        if comp_id in comp_prefix_lut:
+            comp_prefix = comp_prefix_lut[comp_id]
+            break
+
     for gate in root_gates:
-        _recurse_add_sub_populations(sub_pops_el, gate.id, ['root'], gating_strategy, gate_fj_id_lut, ns_map)
+        _recurse_add_sub_populations(sub_pops_el, gate.id, ['root'], gating_strategy, gate_fj_id_lut, comp_prefix, ns_map)
 
 
 def export_flowjo_wsp(group_gating_strategies, group_name, samples, file_handle):
@@ -907,7 +930,14 @@ def export_flowjo_wsp(group_gating_strategies, group_name, samples, file_handle)
         for dim, xform in dim_xform_lut.items():
             if xform is None:
                 continue
-            _add_transform_to_wsp(xforms_el, dim, gating_strategy.get_transform(xform), ns_map)
+            _add_transform_to_wsp(xforms_el, dim, sample_strat.get_transform(xform), ns_map)
+
+            # We also need to add comp-prefixed param transforms (excluding scatter and Time channels)
+            if dim[:4] in ['FSC-', 'SSC-', 'Time']:
+                continue
+
+            for comp_prefix in comp_prefix_lut.values():
+                _add_transform_to_wsp(xforms_el, comp_prefix + dim, sample_strat.get_transform(xform), ns_map)
 
         # Add Keywords sub-element using the Sample metadata
         keywords_el = etree.SubElement(sample_el, "Keywords")
@@ -919,7 +949,8 @@ def export_flowjo_wsp(group_gating_strategies, group_name, samples, file_handle)
             sample.original_filename,
             sample_id,
             group_name,
-            gating_strategy,
+            sample_strat,
+            comp_prefix_lut,
             ns_map
         )
 
