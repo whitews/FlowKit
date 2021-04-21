@@ -522,11 +522,10 @@ class Session(object):
         xml_utils.export_gatingml(gating_strategy, file_handle)
 
     def export_wsp(self, file_handle, group_name):
-        group = self._sample_group_lut[group_name]
-        gating_strategy = group['template']
+        group_gating_strategies = self._sample_group_lut[group_name]
         samples = self.get_group_samples(group_name)
 
-        wsp_utils.export_flowjo_wsp(gating_strategy, group_name, samples, file_handle)
+        wsp_utils.export_flowjo_wsp(group_gating_strategies, group_name, samples, file_handle)
 
     def get_sample(self, sample_id):
         """

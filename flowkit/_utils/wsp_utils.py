@@ -778,7 +778,7 @@ def _add_sample_node_to_wsp(parent_el, sample_name, sample_id, group_name, gatin
         _recurse_add_sub_populations(sub_pops_el, gate.id, ['root'], gating_strategy, gate_fj_id_lut, ns_map)
 
 
-def export_flowjo_wsp(gating_strategy, group_name, samples, file_handle):
+def export_flowjo_wsp(group_gating_strategies, group_name, samples, file_handle):
     """
     Exports a FlowJo 10 workspace file (.wsp) from the given GatingStrategy instance
     :param gating_strategy: A GatingStrategy instance
@@ -818,9 +818,13 @@ def export_flowjo_wsp(gating_strategy, group_name, samples, file_handle):
     groups_el = etree.SubElement(root, "Groups")
     sample_list_el = etree.SubElement(root, "SampleList")
 
+    template_strat = group_gating_strategies['template']
+    sample_strats = group_gating_strategies['samples']
+
+    # For now, we'll assume all the comps are in the template
     comp_prefix_counter = 0
     comp_prefix_lut = {}
-    for matrix_id, matrix in gating_strategy.comp_matrices.items():
+    for matrix_id, matrix in template_strat.comp_matrices.items():
         if comp_prefix_counter == 0:
             comp_prefix = 'Comp-'
         else:
@@ -842,11 +846,13 @@ def export_flowjo_wsp(gating_strategy, group_name, samples, file_handle):
 
     _add_group_node_to_wsp(groups_el, group_name, sample_id_lut.values())
 
-    gate_ids = gating_strategy.get_gate_ids()
+    gate_ids = template_strat.get_gate_ids()
     gates = []
     dim_xform_lut = {}  # keys are dim label, value is a set of xform refs
+
+    # Also assume the xforms for all samples are the sam
     for g_id, g_path in gate_ids:
-        gate = gating_strategy.get_gate(g_id, g_path)
+        gate = template_strat.get_gate(g_id, g_path)
         gates.append(gate)
 
         for dim in gate.dimensions:
@@ -877,6 +883,7 @@ def export_flowjo_wsp(gating_strategy, group_name, samples, file_handle):
     #     - SampleNode
     for sample in samples:
         sample_id = sample_id_lut[sample.original_filename]
+        sample_strat = sample_strats[sample.original_filename]
 
         sample_el = etree.SubElement(sample_list_el, "Sample")
 
