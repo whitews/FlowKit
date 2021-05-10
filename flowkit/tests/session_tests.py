@@ -223,7 +223,7 @@ class SessionTestCase(unittest.TestCase):
     def test_wsp_export_simple_poly50(self):
         wsp_path = "examples/simple_line_example/simple_poly_and_rect_v2_poly50.wsp"
         fcs_path = "examples/simple_line_example/data_set_simple_line_100.fcs"
-        sample_group = 'All Samples'
+        sample_group = 'my_group'
         sample_id = 'data_set_simple_line_100.fcs'
 
         fks = Session(fcs_path)
