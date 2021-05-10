@@ -82,7 +82,8 @@ class SampleTestCase(unittest.TestCase):
 
         sample = Sample(
             fcs_path_or_data=fcs_file_path,
-            compensation=comp_file_path
+            compensation=comp_file_path,
+            ignore_offset_error=True  # sample has off by 1 data offset
         )
 
         self.assertIsNotNone(sample._comp_events)
@@ -93,7 +94,8 @@ class SampleTestCase(unittest.TestCase):
 
         sample = Sample(
             fcs_path_or_data=fcs_file_path,
-            compensation=comp_file_path
+            compensation=comp_file_path,
+            ignore_offset_error=True  # sample has off by 1 data offset
         )
 
         sample.apply_compensation(None)
@@ -106,7 +108,8 @@ class SampleTestCase(unittest.TestCase):
 
         sample = Sample(
             fcs_path_or_data=fcs_file_path,
-            compensation=comp_file_path
+            compensation=comp_file_path,
+            ignore_offset_error=True  # sample has off by 1 data offset
         )
 
         self.assertIsNotNone(sample._comp_events)
@@ -148,7 +151,8 @@ class SampleTestCase(unittest.TestCase):
 
         sample = Sample(
             fcs_path_or_data=fcs_file_path,
-            compensation=comp_file_path
+            compensation=comp_file_path,
+            ignore_offset_error=True  # sample has off by 1 data offset
         )
 
         data_idx_6 = sample.get_channel_data(6, source='comp')
@@ -162,7 +166,8 @@ class SampleTestCase(unittest.TestCase):
 
         sample = Sample(
             fcs_path_or_data=fcs_file_path,
-            compensation=comp_file_path
+            compensation=comp_file_path,
+            ignore_offset_error=True  # sample has off by 1 data offset
         )
         sample.apply_transform(xform_logicle)
 
@@ -209,7 +214,8 @@ class SampleTestCase(unittest.TestCase):
 
         sample = Sample(
             fcs_path_or_data=fcs_file_path,
-            compensation=comp_file_path
+            compensation=comp_file_path,
+            ignore_offset_error=True  # sample has off by 1 data offset
         )
         sample.subsample_events(500)
 
@@ -223,7 +229,8 @@ class SampleTestCase(unittest.TestCase):
 
         sample = Sample(
             fcs_path_or_data=fcs_file_path,
-            compensation=comp_file_path
+            compensation=comp_file_path,
+            ignore_offset_error=True  # sample has off by 1 data offset
         )
         sample.apply_transform(xform_logicle)
 
@@ -236,7 +243,10 @@ class SampleTestCase(unittest.TestCase):
     def test_get_comp_events_if_no_comp(self):
         fcs_file_path = "examples/test_comp_example.fcs"
 
-        sample = Sample(fcs_path_or_data=fcs_file_path)
+        sample = Sample(
+            fcs_path_or_data=fcs_file_path,
+            ignore_offset_error=True  # sample has off by 1 data offset
+        )
 
         comp_events = sample.get_comp_events()
 
@@ -245,7 +255,10 @@ class SampleTestCase(unittest.TestCase):
     def test_get_transformed_events_if_no_xform(self):
         fcs_file_path = "examples/test_comp_example.fcs"
 
-        sample = Sample(fcs_path_or_data=fcs_file_path)
+        sample = Sample(
+            fcs_path_or_data=fcs_file_path,
+            ignore_offset_error=True  # sample has off by 1 data offset
+        )
 
         xform_events = sample.get_transformed_events()
 
@@ -258,7 +271,8 @@ class SampleTestCase(unittest.TestCase):
 
         sample = Sample(
             fcs_path_or_data=fcs_file_path,
-            compensation=comp_file_path
+            compensation=comp_file_path,
+            ignore_offset_error=True  # sample has off by 1 data offset
         )
         sample.apply_transform(xform_logicle, include_scatter=False)
 
@@ -273,7 +287,8 @@ class SampleTestCase(unittest.TestCase):
 
         sample = Sample(
             fcs_path_or_data=fcs_file_path,
-            compensation=comp_file_path
+            compensation=comp_file_path,
+            ignore_offset_error=True  # sample has off by 1 data offset
         )
         sample.apply_transform(xform_logicle, include_scatter=True)
 
@@ -298,7 +313,8 @@ class SampleTestCase(unittest.TestCase):
 
         sample = Sample(
             fcs_path_or_data=fcs_file_path,
-            compensation=comp_file_path
+            compensation=comp_file_path,
+            ignore_offset_error=True  # sample has off by 1 data offset
         )
 
         df = sample.as_dataframe(source='comp')
@@ -371,7 +387,8 @@ class SampleTestCase(unittest.TestCase):
 
         sample = Sample(
             fcs_path_or_data=fcs_file_path,
-            compensation=comp_file_path
+            compensation=comp_file_path,
+            ignore_offset_error=True  # sample has off by 1 data offset
         )
 
         sample.export("test_fcs_export.fcs", source='comp', directory="examples")
@@ -392,7 +409,8 @@ class SampleTestCase(unittest.TestCase):
 
         sample = Sample(
             fcs_path_or_data=fcs_file_path,
-            compensation=comp_file_path
+            compensation=comp_file_path,
+            ignore_offset_error=True  # sample has off by 1 data offset
         )
 
         sample.export("test_fcs_export.csv", source='comp', directory="examples")

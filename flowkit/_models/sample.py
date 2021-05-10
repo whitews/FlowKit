@@ -91,7 +91,8 @@ class Sample(object):
             fcs_path_or_data,
             channel_labels=None,
             compensation=None,
-            null_channel_list=None
+            null_channel_list=None,
+            ignore_offset_error=False
     ):
         """
         Create a Sample instance
@@ -99,11 +100,20 @@ class Sample(object):
         # inspect our fcs_path_or_data argument
         if isinstance(fcs_path_or_data, str):
             # if a string, we only handle file paths, so try creating a FlowData object
-            flow_data = flowio.FlowData(fcs_path_or_data)
+            flow_data = flowio.FlowData(
+                fcs_path_or_data,
+                ignore_offset_error=ignore_offset_error
+            )
         elif isinstance(fcs_path_or_data, io.IOBase):
-            flow_data = flowio.FlowData(fcs_path_or_data)
+            flow_data = flowio.FlowData(
+                fcs_path_or_data,
+                ignore_offset_error=ignore_offset_error
+            )
         elif isinstance(fcs_path_or_data, Path):
-            flow_data = flowio.FlowData(fcs_path_or_data.open('rb'))
+            flow_data = flowio.FlowData(
+                fcs_path_or_data.open('rb'),
+                ignore_offset_error=ignore_offset_error
+            )
         elif isinstance(fcs_path_or_data, flowio.FlowData):
             flow_data = fcs_path_or_data
         elif isinstance(fcs_path_or_data, np.ndarray):
