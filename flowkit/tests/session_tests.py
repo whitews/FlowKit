@@ -213,13 +213,6 @@ class SessionTestCase(unittest.TestCase):
 
         np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange1'))
 
-    def test_calculate_comp_from_beads(self):
-        bead_dir = "examples/4_color_beads"
-        fks = Session()
-        comp = fks.calculate_compensation_from_beads(bead_dir)
-
-        self.assertIsInstance(comp, Matrix)
-
     def test_wsp_export_simple_poly50(self):
         wsp_path = "examples/simple_line_example/simple_poly_and_rect_v2_poly50.wsp"
         fcs_path = "examples/simple_line_example/data_set_simple_line_100.fcs"
