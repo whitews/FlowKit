@@ -1,6 +1,6 @@
 import numpy as np
 from .. import gates
-from ..._utils import utils, xml_utils
+from ..._utils import gate_utils, xml_utils
 
 
 class WSPEllipsoidGate(gates.EllipsoidGate):
@@ -117,8 +117,8 @@ class WSPEllipsoidGate(gates.EllipsoidGate):
         cos, sin = np.cos(theta_rad), np.sin(theta_rad)
         r = np.array(((cos, -sin), (sin, cos)))
 
-        rv1 = utils.rotate_point_around_point(edge_vertices[0], r, center)
-        rv3 = utils.rotate_point_around_point(edge_vertices[2], r, center)
+        rv1 = gate_utils.rotate_point_around_point(edge_vertices[0], r, center)
+        rv3 = gate_utils.rotate_point_around_point(edge_vertices[2], r, center)
 
         # (((x - cx) ** 2) / a ** 2) + (((y - cy) ** 2) / b ** 2) = 1
         # let:

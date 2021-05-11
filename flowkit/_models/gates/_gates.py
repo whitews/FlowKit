@@ -1,6 +1,6 @@
 import numpy as np
 from ._base_gate import Gate
-from ..._utils import utils
+from ..._utils import gate_utils
 
 
 class RectangleGate(Gate):
@@ -117,7 +117,7 @@ class PolygonGate(Gate):
         for vert in self.vertices:
             path_vertices.append(vert.coordinates)
 
-        results = utils.points_in_polygon(np.array(path_vertices, dtype='double'), events[:, dim_idx])
+        results = gate_utils.points_in_polygon(np.array(path_vertices, dtype='double'), events[:, dim_idx])
 
         results = self._apply_parent_gate(sample, results, parent_results, gating_strategy, gate_path)
 
@@ -170,7 +170,7 @@ class EllipsoidGate(Gate):
     def apply(self, sample, parent_results, gating_strategy, gate_path):
         events, dim_idx, dim_min, dim_max, new_dims = super().preprocess_sample_events(sample, gating_strategy)
 
-        results = utils.points_in_ellipsoid(
+        results = gate_utils.points_in_ellipsoid(
             self.covariance_matrix,
             self.coordinates,
             self.distance_square,
