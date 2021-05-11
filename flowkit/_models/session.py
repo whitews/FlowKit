@@ -2,66 +2,17 @@
 Session class
 """
 import io
-import os
 import copy
-from glob import glob
 import numpy as np
 import pandas as pd
-import statsmodels.api as sm
 from bokeh.models import Title
-from .._models.sample import Sample, get_samples_from_paths
 from .._models.gating_strategy import GatingStrategy
 # noinspection PyProtectedMember
 from .._models.transforms._matrix import Matrix
 from .._models import gates
-from .._utils.utils import multi_proc, mp
-from .._utils import plot_utils, xml_utils, wsp_utils
+from .._utils.gate_utils import multi_proc, mp
+from .._utils import plot_utils, xml_utils, wsp_utils, sample_utils
 import warnings
-
-
-def load_samples(fcs_samples):
-    """
-    Returns a list of Sample instances from a variety of input types (fcs_samples), such as file or
-        directory paths, a Sample instance, or lists of the previous types.
-
-    :param fcs_samples: str or list. If given a string, it can be a directory path or a file path.
-            If a directory, any .fcs files in the directory will be loaded. If a list, then it must
-            be a list of file paths or a list of Sample instances. Lists of mixed types are not
-            supported.
-    :return: list of Sample instances
-    """
-    sample_list = []
-
-    if isinstance(fcs_samples, list):
-        # 'fcs_samples' is a list of either file paths or Sample instances
-        sample_types = set()
-
-        for sample in fcs_samples:
-            sample_types.add(type(sample))
-
-        if len(sample_types) > 1:
-            raise ValueError(
-                "Each item in 'fcs_sample' list must be a FCS file path or Sample instance"
-            )
-
-        if Sample in sample_types:
-            sample_list = fcs_samples
-        elif str in sample_types:
-            sample_list = get_samples_from_paths(fcs_samples)
-    elif isinstance(fcs_samples, Sample):
-        # 'fcs_samples' is a single Sample instance
-        sample_list = [fcs_samples]
-    elif isinstance(fcs_samples, str):
-        # 'fcs_samples' is a str to either a single FCS file or a directory
-        # If directory, search non-recursively for files w/ .fcs extension
-        if os.path.isdir(fcs_samples):
-            fcs_paths = glob(os.path.join(fcs_samples, '*.fcs'))
-            if len(fcs_paths) > 0:
-                sample_list = get_samples_from_paths(fcs_paths)
-        elif os.path.isfile(fcs_samples):
-            sample_list = get_samples_from_paths([fcs_samples])
-
-    return sample_list
 
 
 # _gate_sample & _gate_samples are multi-proc wrappers for GatingStrategy _gate_sample method
@@ -221,7 +172,7 @@ class Session(object):
         :param samples: a list of Sample instances
         :return: None
         """
-        new_samples = load_samples(samples)
+        new_samples = sample_utils.load_samples(samples)
         for s in new_samples:
             s.subsample_events(self.subsample_count)
             if s.original_filename in self.sample_lut:
@@ -514,6 +465,14 @@ class Session(object):
     # end pass through methods for GatingStrategy
 
     def export_gml(self, file_handle, group_name, sample_id=None):
+        """
+        Export a GatingML 2.0 file for the specified sample group and sample ID
+
+        :param file_handle: file handle for exporting data
+        :param group_name: a text string representing the sample group
+        :param sample_id: a text string representing a Sample instance
+        :return: None
+        """
         group = self._sample_group_lut[group_name]
         if sample_id is not None:
             gating_strategy = group['samples'][sample_id]
@@ -522,6 +481,13 @@ class Session(object):
         xml_utils.export_gatingml(gating_strategy, file_handle)
 
     def export_wsp(self, file_handle, group_name):
+        """
+        Export a FlowJo 10 workspace file (.wsp) for the specified sample group
+
+        :param file_handle: file handle for exporting data
+        :param group_name: a text string representing the sample group
+        :return: None
+        """
         group_gating_strategies = self._sample_group_lut[group_name]
         samples = self.get_group_samples(group_name)
 
@@ -534,87 +500,6 @@ class Session(object):
         :return: Sample instance
         """
         return self.sample_lut[sample_id]
-
-    @staticmethod
-    def _process_bead_samples(bead_samples):
-        # do nothing if there are no bead samples
-        bead_sample_count = len(bead_samples)
-        if bead_sample_count == 0:
-            warnings.warn("No bead samples were loaded")
-            return
-
-        bead_lut = {}
-
-        # all the bead samples must have the same panel, use the 1st one to
-        # determine the fluorescence channels
-        fluoro_indices = bead_samples[0].fluoro_indices
-
-        # 1st check is to make sure the # of bead samples matches the #
-        # of fluorescence channels
-        if bead_sample_count != len(fluoro_indices):
-            raise ValueError("Number of bead samples must match the number of fluorescence channels")
-
-        # get PnN channel names from 1st bead sample
-        pnn_labels = []
-        for f_idx in fluoro_indices:
-            pnn_label = bead_samples[0].pnn_labels[f_idx]
-            if pnn_label not in pnn_labels:
-                pnn_labels.append(pnn_label)
-                bead_lut[f_idx] = {'pnn_label': pnn_label}
-            else:
-                raise ValueError("Duplicate channel labels are not supported")
-
-        # now, determine which bead file goes with which channel, and make sure
-        # they all have the same channels
-        for i, bs in enumerate(bead_samples):
-            # check file name for a match with a channel
-            if bs.fluoro_indices != fluoro_indices:
-                raise ValueError("All bead samples must have the same channel labels")
-
-            for channel_idx, lut in bead_lut.items():
-                # file names typically don't have the "-A", "-H', or "-W" sub-strings
-                pnn_label = lut['pnn_label'].replace("-A", "")
-
-                if pnn_label in bs.original_filename:
-                    lut['bead_index'] = i
-                    lut['pns_label'] = bs.pns_labels[channel_idx]
-
-        return bead_lut
-
-    def calculate_compensation_from_beads(self, comp_bead_samples, matrix_id='comp_bead'):
-        bead_samples = load_samples(comp_bead_samples)
-        bead_lut = self._process_bead_samples(bead_samples)
-        if len(bead_lut) == 0:
-            warnings.warn("No bead samples were loaded")
-            return
-
-        detectors = []
-        fluorochromes = []
-        comp_values = []
-        for channel_idx in sorted(bead_lut.keys()):
-            detectors.append(bead_lut[channel_idx]['pnn_label'])
-            fluorochromes.append(bead_lut[channel_idx]['pns_label'])
-            bead_idx = bead_lut[channel_idx]['bead_index']
-
-            x = bead_samples[bead_idx].get_raw_events()[:, channel_idx]
-            good_events = x < (2 ** 18) - 1
-            x = x[good_events]
-
-            comp_row_values = []
-            for channel_idx2 in sorted(bead_lut.keys()):
-                if channel_idx == channel_idx2:
-                    comp_row_values.append(1.0)
-                else:
-                    y = bead_samples[bead_idx].get_raw_events()[:, channel_idx2]
-                    y = y[good_events]
-                    rlm_res = sm.RLM(y, x).fit()
-
-                    # noinspection PyUnresolvedReferences
-                    comp_row_values.append(rlm_res.params[0])
-
-            comp_values.append(comp_row_values)
-
-        return Matrix(matrix_id, np.array(comp_values), detectors, fluorochromes)
 
     def analyze_samples(self, group_name='default', sample_id=None, verbose=False):
         """
@@ -664,13 +549,40 @@ class Session(object):
             self._results_lut[group_name]['samples'][r.sample_id] = r
 
     def get_gating_results(self, group_name, sample_id):
+        """
+        Retrieve analyzed gating results gates for a sample in a sample group.
+
+        :param group_name: a text string representing the sample group
+        :param sample_id: optional sample ID, if specified only this sample will be processed
+        :return: GatingResults instance
+        """
+
         gating_result = self._results_lut[group_name]['samples'][sample_id]
         return copy.deepcopy(gating_result)
 
     def get_group_report(self, group_name):
+        """
+        Retrieve the report of an analyzed sample group as a Pandas DataFrame.
+
+        :param group_name: a text string representing the sample group
+        :return: Pandas DataFrame
+        """
         return self._results_lut[group_name]['report']
 
     def get_gate_indices(self, group_name, sample_id, gate_id, gate_path=None):
+        """
+        Retrieve a boolean array indicating gate membership for the events in the
+        specified sample. Note, the same gate ID may be found in multiple gate paths,
+        i.e. the gate ID can be ambiguous. In this case, specify the full gate path
+        to retrieve gate indices.
+
+        :param group_name: a text string representing the sample group
+        :param sample_id: a text string representing a Sample instance
+        :param gate_id: text string of a gate ID
+        :param gate_path: complete list of gate IDs for unique set of gate ancestors.
+            Required if gate_id is ambiguous
+        :return: NumPy boolean array (length of sample event count)
+        """
         gating_result = self._results_lut[group_name]['samples'][sample_id]
         return gating_result.get_gate_indices(gate_id, gate_path=gate_path)
 
@@ -684,7 +596,8 @@ class Session(object):
         :param group_name: a text string representing the sample group
         :param sample_id: a text string representing a Sample instance
         :param gate_id: text string of a gate ID
-        :param gate_path: complete list of gate IDs for unique set of gate ancestors. Required if gate_id is ambiguous
+        :param gate_path: complete list of gate IDs for unique set of gate ancestors.
+            Required if gate_id is ambiguous
         :param matrix: an instance of the Matrix class
         :param transform: an instance of a Transform sub-class
         :return: Pandas DataFrame containing only the events within the specified gate
@@ -728,7 +641,8 @@ class Session(object):
         :param group_name: The sample group containing the sample ID (and, optionally the gate ID)
         :param sample_id: The sample ID for the FCS sample to plot
         :param gate_id: Gate ID to filter events (only events within the given gate will be plotted)
-        :param gate_path: list of gate IDs for full set of gate ancestors. Required if gate_id is ambiguous
+        :param gate_path: list of gate IDs for full set of gate ancestors.
+            Required if gate_id is ambiguous
         :param x_min: Lower bound of x-axis. If None, channel's min value will
             be used with some padding to keep events off the edge of the plot.
         :param x_max: Upper bound of x-axis. If None, channel's max value will

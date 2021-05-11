@@ -1,11 +1,14 @@
 """
-Utility functions for loading data from file paths
+Utilities for meta & bulk Sample operations
 """
-import pandas as pd
-from scipy import stats
-from matplotlib import pyplot
+import os
+from glob import glob
 import numpy as np
-from .._utils import plot_utils
+import statsmodels.api as sm
+import warnings
+from .. import Sample, Matrix
+from .._utils.gate_utils import multi_proc, mp
+
 
 # FCS 3.1 reserves certain keywords as being part of the FCS standard. Some
 # of these are required, and others are optional. However, all of these
@@ -61,171 +64,168 @@ FCS_STANDARD_KEYWORDS = [
 ]
 
 
-def _rolling_window(a, window):
-    shape = a.shape[:-1] + (a.shape[-1] - window + 1, window)
-    strides = a.values.strides + (a.values.strides[-1],)
-    return np.lib.stride_tricks.as_strided(a, shape=shape, strides=strides)
-
-
-# TODO: somehow save anomalous event data in Sample class, maybe in some new class AnomalyData?
-def filter_anomalous_events(
-        transformed_events,
-        channel_labels,
-        p_value_threshold=0.03,
-        rolling_window=10000,
-        rng=None,
-        ref_set_count=3,
-        ref_size=10000,
-        plot=False
-):
+def _get_samples_from_paths(sample_paths):
     """
-    Identifies anomalous events from given event data using the Kolmogorov-Smirnov statistic.
-    Ideally, the events given are transformed.
+    Load multiple Sample instances from a list of file paths
 
-    :param transformed_events: NumPy array of transformed event data
-    :param channel_labels: list of channel labels (count must match the number of columns in transformed_events).
-    :param p_value_threshold: The p-value above which events will be marked as anomalous. Default is 0.03.
-    :param rolling_window: Size of the moving window. Default is 10,000 events.
-    :param rng: an instance of NumPy RandomState. If None, a new RandomState is created. Default is None.
-    :param ref_set_count: The number of reference sets from which the base p-values are calculated. Default is 3.
-    :param ref_size: The size (in events) of each reference set. Default is 10,000 events.
-    :param plot: Whether to plot graphs of the passing/anomalous events. Default is False
-    :return:
+    :param sample_paths: list of file paths containing FCS files
+    :return: list of Sample instances
     """
-    if rng is None:
-        rng = np.random.RandomState()
+    sample_count = len(sample_paths)
+    if multi_proc and sample_count > 1:
+        if sample_count < mp.cpu_count():
+            proc_count = sample_count
+        else:
+            proc_count = mp.cpu_count() - 1  # leave a CPU free just to be nice
 
-    event_count = transformed_events.shape[0]
+        try:
+            pool = mp.Pool(processes=proc_count)
+            samples = pool.map(Sample, sample_paths)
+        except Exception as e:
+            # noinspection PyUnboundLocalVariable
+            pool.close()
+            raise e
+        pool.close()
+    else:
+        samples = []
+        for path in sample_paths:
+            samples.append(Sample(path))
 
-    # start with boolean array where True is a bad event, initially all set to False,
-    # we will OR them for each channel
-    bad_events = np.zeros(event_count, dtype=bool)
+    return samples
 
-    for i, label in enumerate(channel_labels):
-        if label == 'Time':
-            continue
 
-        channel_events = pd.Series(transformed_events[:, i])
+def load_samples(fcs_samples):
+    """
+    Returns a list of Sample instances from a variety of input types (fcs_samples), such as file or
+        directory paths, a Sample instance, or lists of the previous types.
 
-        rolling_mean = channel_events.rolling(
-            rolling_window,
-            min_periods=1,
-            center=True
-        ).mean()
+    :param fcs_samples: str or list. If given a string, it can be a directory path or a file path.
+            If a directory, any .fcs files in the directory will be loaded. If a list, then it must
+            be a list of file paths or a list of Sample instances. Lists of mixed types are not
+            supported.
+    :return: list of Sample instances
+    """
+    sample_list = []
 
-        median = np.median(rolling_mean)
+    if isinstance(fcs_samples, list):
+        # 'fcs_samples' is a list of either file paths or Sample instances
+        sample_types = set()
 
-        # find absolute difference from the median of the moving average
-        median_diff = np.abs(rolling_mean - median)
+        for sample in fcs_samples:
+            sample_types.add(type(sample))
 
-        # sort the differences and take a random sample of size=roll from the top 20%
-        # TODO: add check for whether there are ~ 2x the events of roll size
-        reference_indices = np.argsort(median_diff)
-
-        # create reference sets, we'll average the p-values from these
-        ref_sets = []
-        for j in range(0, ref_set_count):
-            ref_subsample_idx = rng.choice(int(event_count * 0.5), ref_size, replace=False)
-            # noinspection PyUnresolvedReferences
-            ref_sets.append(channel_events[reference_indices.values[ref_subsample_idx]])
-
-        # calculate piece-wise KS test, we'll test every roll / 5 interval, cause
-        # doing a true rolling window takes way too long
-        strides = _rolling_window(channel_events, rolling_window)
-
-        ks_x = []
-        ks_y = []
-        ks_y_stats = []
-
-        test_idx = list(range(0, len(strides), int(rolling_window / 5)))
-        test_idx.append(len(strides) - 1)  # cover last stride, to get any remainder
-
-        for test_i in test_idx:
-            kss = []
-            kss_stats = []
-
-            for ref in ref_sets:
-                # TODO: maybe this should be the Anderson-Darling test?
-                ks_stat, p_value = stats.ks_2samp(ref, strides[test_i])
-                kss.append(p_value)
-                kss_stats.append(ks_stat)
-
-            ks_x.append(test_i)
-
-            ks_y.append(np.mean(kss))  # TODO: should this be max or min?
-            ks_y_stats.append(np.mean(kss_stats))  # TODO: this isn't used yet, should it?
-
-        ks_y_roll = pd.Series(ks_y).rolling(
-            3,
-            min_periods=1,
-            center=True
-        ).mean()
-
-        # interpolate our piecewise tests back to number of actual events
-        interp_y = np.interp(range(0, event_count), ks_x, ks_y_roll)
-
-        bad_events = np.logical_or(bad_events, interp_y < p_value_threshold)
-
-        if plot:
-            fig = pyplot.figure(figsize=(16, 12))
-            ax = fig.add_subplot(4, 1, 1)
-
-            plot_utils.plot_channel(channel_events, " - ".join([str(i + 1), label]), ax, xform=False)
-
-            ax = fig.add_subplot(4, 1, 2)
-            ax.set_title(
-                "Median Difference",
-                fontsize=16
-            )
-            ax.set_xlim([0, event_count])
-            pyplot.plot(
-                np.arange(0, event_count),
-                median_diff,
-                c='cornflowerblue',
-                alpha=1.0,
-                linewidth=1
+        if len(sample_types) > 1:
+            raise ValueError(
+                "Each item in 'fcs_sample' list must be a FCS file path or Sample instance"
             )
 
-            ax = fig.add_subplot(4, 1, 3)
-            ax.set_title(
-                "KS Test p-value",
-                fontsize=16
-            )
-            ax.set_xlim([0, event_count])
-            ax.set_ylim([0, 1])
-            pyplot.plot(
-                ks_x,
-                ks_y,
-                c='cornflowerblue',
-                alpha=0.6,
-                linewidth=1
-            )
-            pyplot.plot(
-                np.arange(0, event_count),
-                interp_y,
-                c='darkorange',
-                alpha=1.0,
-                linewidth=2
-            )
+        if Sample in sample_types:
+            sample_list = fcs_samples
+        elif str in sample_types:
+            sample_list = _get_samples_from_paths(fcs_samples)
+    elif isinstance(fcs_samples, Sample):
+        # 'fcs_samples' is a single Sample instance
+        sample_list = [fcs_samples]
+    elif isinstance(fcs_samples, str):
+        # 'fcs_samples' is a str to either a single FCS file or a directory
+        # If directory, search non-recursively for files w/ .fcs extension
+        if os.path.isdir(fcs_samples):
+            fcs_paths = glob(os.path.join(fcs_samples, '*.fcs'))
+            if len(fcs_paths) > 0:
+                sample_list = _get_samples_from_paths(fcs_paths)
+        elif os.path.isfile(fcs_samples):
+            sample_list = _get_samples_from_paths([fcs_samples])
 
-            ax.axhline(p_value_threshold, linestyle='-', linewidth=1, c='coral')
+    return sample_list
 
-            combined_refs = np.hstack(ref_sets)
-            ref_y_min = np.min(combined_refs)
-            ref_y_max = np.max(combined_refs)
 
-            for ref_i, reference_events in enumerate(ref_sets):
-                ax = fig.add_subplot(4, ref_set_count, (3 * ref_set_count) + ref_i + 1)
-                ax.set_xlim([0, reference_events.shape[0]])
-                ax.set_ylim([ref_y_min, ref_y_max])
-                pyplot.scatter(
-                    np.arange(0, reference_events.shape[0]),
-                    reference_events,
-                    s=2,
-                    edgecolors='none'
-                )
+def _process_bead_samples(bead_samples):
+    # do nothing if there are no bead samples
+    bead_sample_count = len(bead_samples)
+    if bead_sample_count == 0:
+        warnings.warn("No bead samples were loaded")
+        return
 
-            fig.tight_layout()
-            pyplot.show()
+    bead_lut = {}
 
-    return np.where(bad_events)[0]
+    # all the bead samples must have the same panel, use the 1st one to
+    # determine the fluorescence channels
+    fluoro_indices = bead_samples[0].fluoro_indices
+
+    # 1st check is to make sure the # of bead samples matches the #
+    # of fluorescence channels
+    if bead_sample_count != len(fluoro_indices):
+        raise ValueError("Number of bead samples must match the number of fluorescence channels")
+
+    # get PnN channel names from 1st bead sample
+    pnn_labels = []
+    for f_idx in fluoro_indices:
+        pnn_label = bead_samples[0].pnn_labels[f_idx]
+        if pnn_label not in pnn_labels:
+            pnn_labels.append(pnn_label)
+            bead_lut[f_idx] = {'pnn_label': pnn_label}
+        else:
+            raise ValueError("Duplicate channel labels are not supported")
+
+    # now, determine which bead file goes with which channel, and make sure
+    # they all have the same channels
+    for i, bs in enumerate(bead_samples):
+        # check file name for a match with a channel
+        if bs.fluoro_indices != fluoro_indices:
+            raise ValueError("All bead samples must have the same channel labels")
+
+        for channel_idx, lut in bead_lut.items():
+            # file names typically don't have the "-A", "-H', or "-W" sub-strings
+            pnn_label = lut['pnn_label'].replace("-A", "")
+
+            if pnn_label in bs.original_filename:
+                lut['bead_index'] = i
+                lut['pns_label'] = bs.pns_labels[channel_idx]
+
+    return bead_lut
+
+
+def calculate_compensation_from_beads(comp_bead_samples, matrix_id='comp_bead'):
+    """
+    Calculates spillover from a list of FCS bead files.
+
+    :param comp_bead_samples: str or list. If given a string, it can be a directory path or a file path.
+        If a directory, any .fcs files in the directory will be loaded. If a list, then it must
+        be a list of file paths or a list of Sample instances. Lists of mixed types are not
+        supported.
+    :param matrix_id: label for the calculated Matrix
+    :return: a Matrix instance
+    """
+    bead_samples = load_samples(comp_bead_samples)
+    bead_lut = _process_bead_samples(bead_samples)
+    if len(bead_lut) == 0:
+        warnings.warn("No bead samples were loaded")
+        return
+
+    detectors = []
+    fluorochromes = []
+    comp_values = []
+    for channel_idx in sorted(bead_lut.keys()):
+        detectors.append(bead_lut[channel_idx]['pnn_label'])
+        fluorochromes.append(bead_lut[channel_idx]['pns_label'])
+        bead_idx = bead_lut[channel_idx]['bead_index']
+
+        x = bead_samples[bead_idx].get_raw_events()[:, channel_idx]
+        good_events = x < (2 ** 18) - 1
+        x = x[good_events]
+
+        comp_row_values = []
+        for channel_idx2 in sorted(bead_lut.keys()):
+            if channel_idx == channel_idx2:
+                comp_row_values.append(1.0)
+            else:
+                y = bead_samples[bead_idx].get_raw_events()[:, channel_idx2]
+                y = y[good_events]
+                rlm_res = sm.RLM(y, x).fit()
+
+                # noinspection PyUnresolvedReferences
+                comp_row_values.append(rlm_res.params[0])
+
+        comp_values.append(comp_row_values)
+
+    return Matrix(matrix_id, np.array(comp_values), detectors, fluorochromes)
