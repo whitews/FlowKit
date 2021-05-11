@@ -30,7 +30,7 @@ reqs = [
 
 setup(
     name='FlowKit',
-    version='0.6.0b',
+    version='0.6.0',
     packages=find_packages(),
     package_data={'': ['_resources/*.xsd', '_resources/flowjo_xforms/*.csv']},
     include_package_data=True,
