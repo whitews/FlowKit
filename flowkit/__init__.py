@@ -1,4 +1,4 @@
-from ._models.sample import Sample, get_samples_from_paths
+from ._models.sample import Sample
 # noinspection PyProtectedMember
 from ._models.transforms._matrix import Matrix
 from ._models import transforms
@@ -10,6 +10,7 @@ from ._models.vertex import Vertex
 from ._utils.xml_utils import parse_gating_xml, export_gatingml
 from ._utils.wsp_utils import parse_wsp
 from ._utils.plot_utils import plot_channel, calculate_extent
+from ._utils.sample_utils import load_samples, calculate_compensation_from_beads
 
 __all__ = [
     'Sample',
@@ -27,5 +28,6 @@ __all__ = [
     'parse_wsp',
     'plot_channel',
     'calculate_extent',
-    'get_samples_from_paths'
+    'load_samples',
+    'calculate_compensation_from_beads'
 ]
