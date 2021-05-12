@@ -2,103 +2,30 @@
 Session class
 """
 import io
-import os
 import copy
-from glob import glob
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import StandardScaler
-import statsmodels.api as sm
-from MulticoreTSNE import MulticoreTSNE
-import seaborn
 from bokeh.models import Title
-from matplotlib import cm
-import matplotlib.pyplot as plt
-from .._models.sample import Sample
 from .._models.gating_strategy import GatingStrategy
+# noinspection PyProtectedMember
 from .._models.transforms._matrix import Matrix
 from .._models import gates
-from .._utils import plot_utils, xml_utils
+from .._utils.gate_utils import multi_proc, mp
+from .._utils import plot_utils, xml_utils, wsp_utils, sample_utils
 import warnings
 
-try:
-    import multiprocessing as mp
-    multi_proc = True
-except ImportError:
-    mp = None
-    multi_proc = False
 
-
-def get_samples_from_paths(sample_paths):
-    sample_count = len(sample_paths)
-    if multi_proc and sample_count > 1:
-        if sample_count < mp.cpu_count():
-            proc_count = sample_count
-        else:
-            proc_count = mp.cpu_count() - 1  # leave a CPU free just to be nice
-
-        try:
-            pool = mp.Pool(processes=proc_count)
-            samples = pool.map(Sample, sample_paths)
-        except Exception as e:
-            # noinspection PyUnboundLocalVariable
-            pool.close()
-            raise e
-        pool.close()
-    else:
-        samples = []
-        for path in sample_paths:
-            samples.append(Sample(path))
-
-    return samples
-
-
-def load_samples(fcs_samples):
-    sample_list = []
-
-    if isinstance(fcs_samples, list):
-        # 'fcs_samples' is a list of either file paths or Sample instances
-        sample_types = set()
-
-        for sample in fcs_samples:
-            sample_types.add(type(sample))
-
-        if len(sample_types) > 1:
-            raise ValueError(
-                "Each item in 'fcs_sample' list must be a FCS file path or Sample instance"
-            )
-
-        if Sample in sample_types:
-            sample_list = fcs_samples
-        elif str in sample_types:
-            sample_list = get_samples_from_paths(fcs_samples)
-    elif isinstance(fcs_samples, Sample):
-        # 'fcs_samples' is a single Sample instance
-        sample_list = [fcs_samples]
-    elif isinstance(fcs_samples, str):
-        # 'fcs_samples' is a str to either a single FCS file or a directory
-        # If directory, search non-recursively for files w/ .fcs extension
-        if os.path.isdir(fcs_samples):
-            fcs_paths = glob(os.path.join(fcs_samples, '*.fcs'))
-            if len(fcs_paths) > 0:
-                sample_list = get_samples_from_paths(fcs_paths)
-        elif os.path.isfile(fcs_samples):
-            sample_list = get_samples_from_paths([fcs_samples])
-
-    return sample_list
-
-
-# gate_sample & gate_samples are multi-proc wrappers for GatingStrategy gate_sample method
+# _gate_sample & _gate_samples are multi-proc wrappers for GatingStrategy _gate_sample method
 # These are functions external to GatingStrategy as mp doesn't work well for class methods
-def gate_sample(data):
+def _gate_sample(data):
     gating_strategy = data[0]
     sample = data[1]
     verbose = data[2]
     return gating_strategy.gate_sample(sample, verbose=verbose)
 
 
-def gate_samples(gating_strategies, samples, verbose):
-    # TODO: Looks like multiprocessing can fail for very large workloads (lots of gates), maybe due
+def _gate_samples(gating_strategies, samples, verbose):
+    # TODO: Multiprocessing can fail for very large workloads (lots of gates), maybe due
     #       to running out of memory. Will investigate further, but for now maybe provide an option
     #       for turning off multiprocessing so end user can avoid this issue if it occurs.
     sample_count = len(samples)
@@ -111,7 +38,7 @@ def gate_samples(gating_strategies, samples, verbose):
         try:
             pool = mp.Pool(processes=proc_count)
             data = [(gating_strategies[i], sample, verbose) for i, sample in enumerate(samples)]
-            all_results = pool.map(gate_sample, data)
+            all_results = pool.map(_gate_sample, data)
         except Exception as e:
             # noinspection PyUnboundLocalVariable
             pool.close()
@@ -178,7 +105,12 @@ class Session(object):
             'samples': {}
         }
 
-    def import_flowjo_workspace(self, workspace_file_or_path, ignore_missing_files=False):
+    def import_flowjo_workspace(
+            self,
+            workspace_file_or_path,
+            ignore_missing_files=False,
+            ignore_transforms=False
+    ):
         """
         Imports a FlowJo workspace (version 10+) into the Session. Each sample group in the workspace will
         be a sample group in the FlowKit session. Referenced samples in the workspace will be imported as
@@ -203,9 +135,11 @@ class Session(object):
         :param workspace_file_or_path: WSP workspace file as a file name/path, file object, or file-like object
         :param ignore_missing_files: Controls whether UserWarning messages are issued for FCS files found in the
             workspace that have not yet been loaded in the Session. Default is False, displaying warnings.
+        :param ignore_transforms: Controls whether transformations are applied to the gate definitions within the
+            FlowJo workspace. Useful for extracting gate vertices in the un-transformed space. Default is False.
         :return: None
         """
-        wsp_sample_groups = xml_utils.parse_wsp(workspace_file_or_path)
+        wsp_sample_groups = wsp_utils.parse_wsp(workspace_file_or_path, ignore_transforms=ignore_transforms)
         for group_name, sample_data in wsp_sample_groups.items():
             for sample, data_dict in sample_data.items():
                 if sample not in self.sample_lut:
@@ -218,9 +152,8 @@ class Session(object):
 
                 gs = GatingStrategy()
 
-                # TODO: change keys to tuple of gate ID, parent ID so gates can be "reused" for different branches
-                for gate_node in data_dict['gates'].descendants:
-                    gs.add_gate(gate_node.gate)
+                for gate_dict in data_dict['gates']:
+                    gs.add_gate(gate_dict['gate'], gate_path=gate_dict['gate_path'])
 
                 matrix = data_dict['compensation']
                 if isinstance(matrix, Matrix):
@@ -239,7 +172,7 @@ class Session(object):
         :param samples: a list of Sample instances
         :return: None
         """
-        new_samples = load_samples(samples)
+        new_samples = sample_utils.load_samples(samples)
         for s in new_samples:
             s.subsample_events(self.subsample_count)
             if s.original_filename in self.sample_lut:
@@ -270,63 +203,90 @@ class Session(object):
 
     def get_sample_ids(self):
         """
-        Retrieve the list of Sample IDs that have been loaded or referenced in the Session
+        Retrieve the list of Sample IDs that have been loaded or referenced in the Session.
+
         :return: list of Sample ID strings
         """
         return list(self.sample_lut.keys())
 
     def get_sample_groups(self):
         """
-        Retrieve the list of sample group labels defined in the Session
+        Retrieve the list of sample group labels defined in the Session.
+
         :return: list of sample group ID strings
         """
         return list(self._sample_group_lut.keys())
 
-    def get_group_sample_ids(self, sample_group):
+    def get_group_sample_ids(self, group_name):
         """
-        Retrieve the list of Sample IDs belonging to the specified sample group
-        :param sample_group: a text string representing the sample group
+        Retrieve the list of Sample IDs belonging to the specified sample group.
+        
+        :param group_name: a text string representing the sample group
         :return: list of Sample IDs
         """
-        return self._sample_group_lut[sample_group]['samples'].keys()
+        # convert to list instead of dict_keys
+        return list(self._sample_group_lut[group_name]['samples'].keys())
 
-    def get_group_samples(self, sample_group):
+    def get_group_samples(self, group_name):
         """
-        Retrieve the list of Sample instances belonging to the specified sample group
-        :param sample_group: a text string representing the sample group
+        Retrieve the list of Sample instances belonging to the specified sample group.
+        Only samples that have been loaded into the Session are returned.
+
+        :param group_name: a text string representing the sample group
         :return: list of Sample instances
         """
-        sample_ids = self.get_group_sample_ids(sample_group)
+        sample_ids = self.get_group_sample_ids(group_name)
 
         samples = []
         for s_id in sample_ids:
-            samples.append(self.sample_lut[s_id])
+            sample = self.sample_lut[s_id]
+
+            # don't return samples that haven't been loaded
+            if sample is not None:
+                samples.append(self.sample_lut[s_id])
 
         return samples
 
-    def get_gate_ids(self, sample_group):
+    def get_gate_ids(self, group_name):
         """
         Retrieve the list of gate IDs defined in the specified sample group
-        :param sample_group: a text string representing the sample group
+        :param group_name: a text string representing the sample group
         :return: list of gate ID strings
         """
-        group = self._sample_group_lut[sample_group]
+        group = self._sample_group_lut[group_name]
         template = group['template']
         return template.get_gate_ids()
 
     # start pass through methods for GatingStrategy class
-    def add_gate(self, gate, group_name='default'):
-        # TODO: allow adding multiple gates at once, while still allowing a single gate. Check if list or Gate instance
+    def add_gate(self, gate, gate_path=None, group_name='default'):
+        """
+        Add a Gate instance to a sample group in the session. Gates will be added to
+        the 'default' sample group by default.
+
+        :param gate: an instance of a Gate sub-class
+        :param gate_path: complete list of gate IDs for unique set of gate ancestors.
+            Required if gate.id and gate.parent combination is ambiguous
+        :param group_name: a text string representing the sample group
+        :return: None
+        """
         group = self._sample_group_lut[group_name]
         template = group['template']
         s_members = group['samples']
 
         # first, add gate to template, then add a copy to each group sample gating strategy
-        template.add_gate(copy.deepcopy(gate))
+        template.add_gate(copy.deepcopy(gate), gate_path=gate_path)
         for s_id, s_strategy in s_members.items():
-            s_strategy.add_gate(copy.deepcopy(gate))
+            s_strategy.add_gate(copy.deepcopy(gate), gate_path=gate_path)
 
     def add_transform(self, transform, group_name='default'):
+        """
+        Add a Transform instance to a sample group in the session. Transforms will be added to
+        the 'default' sample group by default.
+
+        :param transform: an instance of a Transform sub-class
+        :param group_name: a text string representing the sample group
+        :return: None
+        """
         group = self._sample_group_lut[group_name]
         template = group['template']
         s_members = group['samples']
@@ -336,16 +296,43 @@ class Session(object):
         for s_id, s_strategy in s_members.items():
             s_strategy.add_transform(copy.deepcopy(transform))
 
-    def get_transform(self, group_name, sample_id, transform_id):
+    def get_group_transforms(self, group_name):
+        """
+        Retrieve the list of Transform instances stored within the specified
+        sample group.
+
+        :param group_name: a text string representing the sample group
+        :return: list of Transform instances
+        """
         group = self._sample_group_lut[group_name]
-        gating_strategy = group['samples'][sample_id]
+        gating_strategy = group['template']
+
+        return list(gating_strategy.transformations.values())
+
+    def get_transform(self, group_name, transform_id):
+        """
+        Retrieve a Transform instance stored within the specified
+        sample group associated with the given sample ID & having the given transform ID.
+
+        :param group_name: a text string representing the sample group
+        :param transform_id: a text string representing a Transform ID
+        :return: an instance of a Transform sub-class
+        """
+        group = self._sample_group_lut[group_name]
+        gating_strategy = group['template']
         xform = gating_strategy.get_transform(transform_id)
+
         return xform
 
     def add_comp_matrix(self, matrix, group_name='default'):
-        # TODO: GatingStrategy method add_comp_matrix accepts only Matrix instances, so this pass through does as well.
-        #       Consider adding a pass through Session method to parse comp matrices for conveniently getting a
-        #       Matrix instance from a comp source (npy, CSV, str, etc.)
+        """
+        Add a Matrix instance to a sample group in the session. Matrices will be added to
+        the 'default' sample group by default.
+
+        :param matrix: an instance of the Matrix class
+        :param group_name: a text string representing the sample group
+        :return: None
+        """
         group = self._sample_group_lut[group_name]
         template = group['template']
         s_members = group['samples']
@@ -355,35 +342,156 @@ class Session(object):
         for s_id, s_strategy in s_members.items():
             s_strategy.add_comp_matrix(copy.deepcopy(matrix))
 
+    def get_group_comp_matrices(self, group_name):
+        """
+        Retrieve the list of compensation Matrix instances stored within the specified
+        sample group.
+
+        :param group_name: a text string representing the sample group
+        :return: list of Matrix instances
+        """
+        group = self._sample_group_lut[group_name]
+        comp_matrices = []
+
+        for sample_id in group['samples']:
+            gating_strategy = group['samples'][sample_id]
+            comp_matrices.extend(list(gating_strategy.comp_matrices.values()))
+
+        return comp_matrices
+
     def get_comp_matrix(self, group_name, sample_id, matrix_id):
+        """
+        Retrieve a compensation Matrix instance stored within the specified
+        sample group associated with the given sample ID & having the given matrix ID.
+
+        :param group_name: a text string representing the sample group
+        :param sample_id: a text string representing a Sample instance
+        :param matrix_id: a text string representing a Matrix ID
+        :return: a Matrix instance
+        """
         group = self._sample_group_lut[group_name]
         gating_strategy = group['samples'][sample_id]
         comp_mat = gating_strategy.get_comp_matrix(matrix_id)
         return comp_mat
 
     def get_parent_gate_id(self, group_name, gate_id):
+        """
+        Retrieve a parent gate instance by the child gate ID, sample group, and sample ID.
+
+        :param group_name: a text string representing the sample group
+        :param gate_id: text string of a gate ID
+        :return: Subclass of a Gate object
+        """
+        # TODO: this needs to handle getting default template gate or sample specific gate
         group = self._sample_group_lut[group_name]
         template = group['template']
         gate = template.get_gate(gate_id)
         return gate.parent
 
     def get_gate(self, group_name, sample_id, gate_id, gate_path=None):
+        """
+        Retrieve a gate instance by its group, sample, and gate ID.
+
+        :param group_name: a text string representing the sample group
+        :param sample_id: a text string representing a Sample instance
+        :param gate_id: text string of a gate ID
+        :param gate_path: complete list of gate IDs for unique set of gate ancestors. Required if gate_id is ambiguous
+        :return: Subclass of a Gate object
+        """
+        # TODO: this needs to handle getting default template gate or sample specific gate
         group = self._sample_group_lut[group_name]
         gating_strategy = group['samples'][sample_id]
         gate = gating_strategy.get_gate(gate_id, gate_path=gate_path)
         return gate
 
-    def get_gate_hierarchy(self, sample_group, output='ascii'):
-        return self._sample_group_lut[sample_group]['template'].get_gate_hierarchy(output)
+    def get_sample_gates(self, group_name, sample_id):
+        """
+        Retrieve all gates for a sample in a sample group.
+
+        :param group_name: a text string representing the sample group
+        :param sample_id: a text string representing a Sample instance
+        :return: list of Gate sub-class instances
+        """
+        group = self._sample_group_lut[group_name]
+        gating_strategy = group['samples'][sample_id]
+        gate_tuples = gating_strategy.get_gate_ids()
+
+        sample_gates = []
+
+        for gate_id, ancestors in gate_tuples:
+            gate = gating_strategy.get_gate(gate_id, gate_path=ancestors)
+            sample_gates.append(gate)
+
+        return sample_gates
+
+    def get_sample_comp_matrices(self, group_name, sample_id):
+        """
+        Retrieve all compensation matrices for a sample in a sample group.
+
+        :param group_name: a text string representing the sample group
+        :param sample_id: a text string representing a Sample instance
+        :return: list of Matrix instances
+        """
+        group = self._sample_group_lut[group_name]
+        gating_strategy = group['samples'][sample_id]
+
+        return list(gating_strategy.comp_matrices.values())
+
+    def get_sample_transforms(self, group_name, sample_id):
+        """
+        Retrieve all Transform instances for a sample in a sample group.
+
+        :param group_name: a text string representing the sample group
+        :param sample_id: a text string representing a Sample instance
+        :return: list of Transform sub-class instances
+        """
+        group = self._sample_group_lut[group_name]
+        gating_strategy = group['samples'][sample_id]
+
+        return list(gating_strategy.transformations.values())
+
+    def get_gate_hierarchy(self, group_name, output='ascii', **kwargs):
+        """
+        Retrieve the hierarchy of gates in the sample group's gating strategy. Output is available
+        in several formats, including text, dictionary, or JSON. If output == 'json', extra
+        keyword arguments are passed to json.dumps
+
+        :param group_name: a text string representing the sample group
+        :param output: Determines format of hierarchy returned, either 'ascii',
+            'dict', or 'JSON' (default is 'ascii')
+        :return: gate hierarchy as a text string or a dictionary
+        """
+        return self._sample_group_lut[group_name]['template'].get_gate_hierarchy(output, **kwargs)
     # end pass through methods for GatingStrategy
 
     def export_gml(self, file_handle, group_name, sample_id=None):
+        """
+        Export a GatingML 2.0 file for the specified sample group and sample ID
+
+        :param file_handle: file handle for exporting data
+        :param group_name: a text string representing the sample group
+        :param sample_id: a text string representing a Sample instance
+        :return: None
+        """
         group = self._sample_group_lut[group_name]
         if sample_id is not None:
             gating_strategy = group['samples'][sample_id]
         else:
             gating_strategy = group['template']
         xml_utils.export_gatingml(gating_strategy, file_handle)
+
+    def export_wsp(self, file_handle, group_name):
+        """
+        Export a FlowJo 10 workspace file (.wsp) for the specified sample group
+
+        :param file_handle: file handle for exporting data
+        :param group_name: a text string representing the sample group
+        :return: None
+        """
+        group_gating_strategies = self._sample_group_lut[group_name]
+        samples = self.get_group_samples(group_name)
+
+        wsp_utils.export_flowjo_wsp(group_gating_strategies, group_name, samples, file_handle)
 
     def get_sample(self, sample_id):
         """
@@ -393,94 +501,13 @@ class Session(object):
         """
         return self.sample_lut[sample_id]
 
-    @staticmethod
-    def _process_bead_samples(bead_samples):
-        # do nothing if there are no bead samples
-        bead_sample_count = len(bead_samples)
-        if bead_sample_count == 0:
-            warnings.warn("No bead samples were loaded")
-            return
-
-        bead_lut = {}
-
-        # all the bead samples must have the same panel, use the 1st one to
-        # determine the fluorescence channels
-        fluoro_indices = bead_samples[0].fluoro_indices
-
-        # 1st check is to make sure the # of bead samples matches the #
-        # of fluorescence channels
-        if bead_sample_count != len(fluoro_indices):
-            raise ValueError("Number of bead samples must match the number of fluorescence channels")
-
-        # get PnN channel names from 1st bead sample
-        pnn_labels = []
-        for f_idx in fluoro_indices:
-            pnn_label = bead_samples[0].pnn_labels[f_idx]
-            if pnn_label not in pnn_labels:
-                pnn_labels.append(pnn_label)
-                bead_lut[f_idx] = {'pnn_label': pnn_label}
-            else:
-                raise ValueError("Duplicate channel labels are not supported")
-
-        # now, determine which bead file goes with which channel, and make sure
-        # they all have the same channels
-        for i, bs in enumerate(bead_samples):
-            # check file name for a match with a channel
-            if bs.fluoro_indices != fluoro_indices:
-                raise ValueError("All bead samples must have the same channel labels")
-
-            for chan_idx, lut in bead_lut.items():
-                # file names typically don't have the "-A", "-H', or "-W" sub-strings
-                pnn_label = lut['pnn_label'].replace("-A", "")
-
-                if pnn_label in bs.original_filename:
-                    lut['bead_index'] = i
-                    lut['pns_label'] = bs.pns_labels[chan_idx]
-
-        return bead_lut
-
-    def calculate_compensation_from_beads(self, comp_bead_samples, matrix_id='comp_bead'):
-        bead_samples = load_samples(comp_bead_samples)
-        bead_lut = self._process_bead_samples(bead_samples)
-        if len(bead_lut) == 0:
-            warnings.warn("No bead samples were loaded")
-            return
-
-        detectors = []
-        fluorochromes = []
-        comp_values = []
-        for chan_idx in sorted(bead_lut.keys()):
-            detectors.append(bead_lut[chan_idx]['pnn_label'])
-            fluorochromes.append(bead_lut[chan_idx]['pns_label'])
-            bead_idx = bead_lut[chan_idx]['bead_index']
-
-            x = bead_samples[bead_idx].get_raw_events()[:, chan_idx]
-            good_events = x < (2 ** 18) - 1
-            x = x[good_events]
-
-            comp_row_values = []
-            for chan_idx2 in sorted(bead_lut.keys()):
-                if chan_idx == chan_idx2:
-                    comp_row_values.append(1.0)
-                else:
-                    y = bead_samples[bead_idx].get_raw_events()[:, chan_idx2]
-                    y = y[good_events]
-                    rlm_res = sm.RLM(y, x).fit()
-
-                    # noinspection PyUnresolvedReferences
-                    comp_row_values.append(rlm_res.params[0])
-
-            comp_values.append(comp_row_values)
-
-        return Matrix(matrix_id, np.array(comp_values), detectors, fluorochromes)
-
-    def analyze_samples(self, sample_group='default', sample_id=None, verbose=False):
+    def analyze_samples(self, group_name='default', sample_id=None, verbose=False):
         """
         Process gates for samples in a sample group. After running, results can be
         retrieved using the `get_gating_results`, `get_group_report`, and  `get_gate_indices`,
         methods.
 
-        :param sample_group: a text string representing the sample group
+        :param group_name: a text string representing the sample group
         :param sample_id: optional sample ID, if specified only this sample will be processed
         :param verbose: if True, print a line for every gate processed (default is False)
         :return: None
@@ -488,15 +515,15 @@ class Session(object):
         # Don't save just the DataFrame report, save the entire
         # GatingResults objects for each sample, since we'll need the gate
         # indices for each sample.
-        samples = self.get_group_samples(sample_group)
+        samples = self.get_group_samples(group_name)
         if len(samples) == 0:
-            warnings.warn("No samples have been assigned to sample group %s" % sample_group)
+            warnings.warn("No samples have been assigned to sample group %s" % group_name)
             return
 
         if sample_id is not None:
-            sample_ids = self.get_group_sample_ids(sample_group)
+            sample_ids = self.get_group_sample_ids(group_name)
             if sample_id not in sample_ids:
-                warnings.warn("%s is not assigned to sample group %s" % (sample_id, sample_group))
+                warnings.warn("%s is not assigned to sample group %s" % (sample_id, group_name))
                 return
 
             samples = [self.get_sample(sample_id)]
@@ -507,169 +534,96 @@ class Session(object):
             if s is None:
                 # sample hasn't been added to Session
                 continue
-            gating_strategies.append(self._sample_group_lut[sample_group]['samples'][s.original_filename])
+            gating_strategies.append(self._sample_group_lut[group_name]['samples'][s.original_filename])
             samples_to_run.append(s)
 
-        results = gate_samples(gating_strategies, samples_to_run, verbose)
+        results = _gate_samples(gating_strategies, samples_to_run, verbose)
 
         all_reports = [res.report for res in results]
 
-        self._results_lut[sample_group] = {
+        self._results_lut[group_name] = {
             'report': pd.concat(all_reports),
             'samples': {}  # dict will have sample ID keys and results values
         }
         for r in results:
-            self._results_lut[sample_group]['samples'][r.sample_id] = r
+            self._results_lut[group_name]['samples'][r.sample_id] = r
 
-    def get_gating_results(self, sample_group, sample_id):
-        gating_result = self._results_lut[sample_group]['samples'][sample_id]
+    def get_gating_results(self, group_name, sample_id):
+        """
+        Retrieve analyzed gating results gates for a sample in a sample group.
+
+        :param group_name: a text string representing the sample group
+        :param sample_id: optional sample ID, if specified only this sample will be processed
+        :return: GatingResults instance
+        """
+
+        gating_result = self._results_lut[group_name]['samples'][sample_id]
         return copy.deepcopy(gating_result)
 
-    def get_group_report(self, sample_group):
-        return self._results_lut[sample_group]['report']
+    def get_group_report(self, group_name):
+        """
+        Retrieve the report of an analyzed sample group as a Pandas DataFrame.
 
-    def get_gate_indices(self, sample_group, sample_id, gate_id, gate_path=None):
-        gating_result = self._results_lut[sample_group]['samples'][sample_id]
+        :param group_name: a text string representing the sample group
+        :return: Pandas DataFrame
+        """
+        return self._results_lut[group_name]['report']
+
+    def get_gate_indices(self, group_name, sample_id, gate_id, gate_path=None):
+        """
+        Retrieve a boolean array indicating gate membership for the events in the
+        specified sample. Note, the same gate ID may be found in multiple gate paths,
+        i.e. the gate ID can be ambiguous. In this case, specify the full gate path
+        to retrieve gate indices.
+
+        :param group_name: a text string representing the sample group
+        :param sample_id: a text string representing a Sample instance
+        :param gate_id: text string of a gate ID
+        :param gate_path: complete list of gate IDs for unique set of gate ancestors.
+            Required if gate_id is ambiguous
+        :return: NumPy boolean array (length of sample event count)
+        """
+        gating_result = self._results_lut[group_name]['samples'][sample_id]
         return gating_result.get_gate_indices(gate_id, gate_path=gate_path)
 
-    def calculate_tsne(
-            self,
-            sample_group,
-            n_dims=2,
-            ignore_scatter=True,
-            scale_scatter=True,
-            transform=None,
-            subsample=True
-    ):
+    def get_gate_events(self, group_name, sample_id, gate_id, gate_path=None, matrix=None, transform=None):
         """
-        Performs dimensional reduction using the TSNE algorithm
+        Retrieve a Pandas DataFrame containing only the events within the specified gate.
+        If an optional compensation matrix and/or a transform is provided, the returned
+        event data will be compensated or transformed. If both a compensation matrix and
+        a transform is provided the event data will be both compensated and transformed.
 
-        :param sample_group: The sample group on which to run TSNE
-        :param n_dims: Number of dimensions to which the source data is reduced
-        :param ignore_scatter: If True, the scatter channels are excluded
-        :param scale_scatter: If True, the scatter channel data is scaled to be
-          in the same range as the fluorescent channel data. If
-          ignore_scatter is True, this option has no effect.
-        :param transform: A Transform instance to apply to events
-        :param subsample: Whether to sub-sample events from FCS files (default: True)
-
-        :return: Dictionary of TSNE results where the keys are the FCS sample
-          IDs and the values are the TSNE data for events with n_dims
-
+        :param group_name: a text string representing the sample group
+        :param sample_id: a text string representing a Sample instance
+        :param gate_id: text string of a gate ID
+        :param gate_path: complete list of gate IDs for unique set of gate ancestors.
+            Required if gate_id is ambiguous
+        :param matrix: an instance of the Matrix class
+        :param transform: an instance of a Transform sub-class
+        :return: Pandas DataFrame containing only the events within the specified gate
         """
-        tsne_events = None
-        sample_events_lut = {}
-        samples = self.get_group_samples(sample_group)
+        gate_idx = self.get_gate_indices(group_name, sample_id, gate_id, gate_path)
+        sample = self.get_sample(sample_id)
+        sample = copy.deepcopy(sample)
 
-        for s in samples:
-            # Determine channels to include for TSNE analysis
-            if ignore_scatter:
-                tsne_indices = s.fluoro_indices
-            else:
-                # need to get all channel indices except time
-                tsne_indices = list(range(len(samples[0].channels)))
-                tsne_indices.remove(s.get_channel_index('Time'))
+        # default is 'raw' events
+        event_source = 'raw'
 
-                # TODO: implement scale_scatter option
-                if scale_scatter:
-                    pass
+        if matrix is not None:
+            sample.apply_compensation(matrix)
+            event_source = 'comp'
+        if transform is not None:
+            sample.apply_transform(transform)
+            event_source = 'xform'
 
-            s_events = s.get_raw_events(subsample=subsample)
+        events_df = sample.as_dataframe(source=event_source)
+        gated_event_data = events_df[gate_idx]
 
-            if transform is not None:
-                fluoro_indices = s.fluoro_indices
-                xform_events = transform.apply(s_events[:, fluoro_indices])
-                s_events[:, fluoro_indices] = xform_events
-
-            s_events = s_events[:, tsne_indices]
-
-            # Concatenate events for all samples, keeping track of the indices
-            # belonging to each sample
-            if tsne_events is None:
-                sample_events_lut[s.original_filename] = {
-                    'start': 0,
-                    'end': len(s_events),
-                    'channel_indices': tsne_indices,
-                    'events': s_events
-                }
-                tsne_events = s_events
-            else:
-                sample_events_lut[s.original_filename] = {
-                    'start': len(tsne_events),
-                    'end': len(tsne_events) + len(s_events),
-                    'channel_indices': tsne_indices,
-                    'events': s_events
-                }
-                tsne_events = np.vstack([tsne_events, s_events])
-
-        # Scale data & run TSNE
-        tsne_events = StandardScaler().fit(tsne_events).transform(tsne_events)
-        tsne_results = MulticoreTSNE(n_components=n_dims, n_jobs=8).fit_transform(tsne_events)
-
-        # Split TSNE results back into individual samples as a dictionary
-        for k, v in sample_events_lut.items():
-            v['tsne_results'] = tsne_results[v['start']:v['end'], :]
-
-        # Return split results
-        return sample_events_lut
-
-    def plot_tsne(
-            self,
-            tsne_results,
-            x_min=None,
-            x_max=None,
-            y_min=None,
-            y_max=None,
-            fig_size=(8, 8)
-    ):
-        for s_id, s_results in tsne_results.items():
-            sample = self.get_sample(s_id)
-            tsne_events = s_results['tsne_results']
-
-            for i, chan_idx in enumerate(s_results['channel_indices']):
-                labels = sample.channels[str(chan_idx + 1)]
-
-                x = tsne_events[:, 0]
-                y = tsne_events[:, 1]
-
-                # determine padding to keep min/max events off the edge,
-                # but only if user didn't specify the limits
-                x_min, x_max = plot_utils.calculate_extent(x, d_min=x_min, d_max=x_max, pad=0.02)
-                y_min, y_max = plot_utils.calculate_extent(y, d_min=y_min, d_max=y_max, pad=0.02)
-
-                z = s_results['events'][:, i]
-                z_sort = np.argsort(z)
-                z = z[z_sort]
-                x = x[z_sort]
-                y = y[z_sort]
-
-                fig, ax = plt.subplots(figsize=fig_size)
-                ax.set_title(" - ".join([s_id, labels['PnN'], labels['PnS']]))
-
-                ax.set_xlim([x_min, x_max])
-                ax.set_ylim([y_min, y_max])
-
-                seaborn.scatterplot(
-                    x,
-                    y,
-                    hue=z,
-                    palette=cm.get_cmap('rainbow'),
-                    legend=False,
-                    s=11,
-                    linewidth=0,
-                    alpha=0.7
-                )
-
-                file_name = s_id
-                file_name = file_name.replace(".fcs", "")
-                file_name = "_".join([file_name, labels['PnN'], labels['PnS']])
-                file_name = file_name.replace("/", "_")
-                file_name += ".png"
-                plt.savefig(file_name)
+        return gated_event_data
 
     def plot_gate(
             self,
-            sample_group,
+            group_name,
             sample_id,
             gate_id,
             gate_path=None,
@@ -684,10 +638,11 @@ class Session(object):
          dimensions used to define the gate: single dimension gates will be histograms, 2-D gates will be returned
          as a scatter plot.
 
-        :param sample_group: The sample group containing the sample ID (and, optionally the gate ID)
+        :param group_name: The sample group containing the sample ID (and, optionally the gate ID)
         :param sample_id: The sample ID for the FCS sample to plot
         :param gate_id: Gate ID to filter events (only events within the given gate will be plotted)
-        :param gate_path: list of gate IDs for full set of gate ancestors. Required if gate_id is ambiguous
+        :param gate_path: list of gate IDs for full set of gate ancestors.
+            Required if gate_id is ambiguous
         :param x_min: Lower bound of x-axis. If None, channel's min value will
             be used with some padding to keep events off the edge of the plot.
         :param x_max: Upper bound of x-axis. If None, channel's max value will
@@ -700,7 +655,7 @@ class Session(object):
             to a heat map. Default is True.
         :return: A Bokeh Figure object containing the interactive scatter plot.
         """
-        group = self._sample_group_lut[sample_group]
+        group = self._sample_group_lut[group_name]
         gating_strategy = group['samples'][sample_id]
         gate = gating_strategy.get_gate(gate_id, gate_path)
 
@@ -830,7 +785,7 @@ class Session(object):
                 'above'
             )
 
-        plot_title = "%s (%s)" % (sample_id, sample_group)
+        plot_title = "%s (%s)" % (sample_id, group_name)
         p.add_layout(
             Title(text=plot_title, text_font_size="1.1em", align='center'),
             'above'
@@ -843,7 +798,7 @@ class Session(object):
             sample_id,
             x_dim,
             y_dim,
-            sample_group='default',
+            group_name='default',
             gate_id=None,
             subsample=False,
             color_density=True,
@@ -858,7 +813,7 @@ class Session(object):
         :param sample_id: The sample ID for the FCS sample to plot
         :param x_dim:  Dimension instance to use for the x-axis data
         :param y_dim: Dimension instance to use for the y-axis data
-        :param sample_group: The sample group containing the sample ID (and, optionally the gate ID)
+        :param group_name: The sample group containing the sample ID (and, optionally the gate ID)
         :param gate_id: Gate ID to filter events (only events within the given gate will be plotted)
         :param subsample: Whether to use all events for plotting or just the
             sub-sampled events. Default is False (all events). Plotting
@@ -876,7 +831,7 @@ class Session(object):
         :return: A Bokeh Figure object containing the interactive scatter plot.
         """
         sample = self.get_sample(sample_id)
-        group = self._sample_group_lut[sample_group]
+        group = self._sample_group_lut[group_name]
         gating_strategy = group['samples'][sample_id]
 
         x_index = sample.get_channel_index(x_dim.label)

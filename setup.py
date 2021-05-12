@@ -1,4 +1,3 @@
-import os
 from setuptools import setup, find_packages, Extension
 import numpy as np
 
@@ -19,9 +18,7 @@ reqs = [
     'flowio',
     'flowutils',
     'matplotlib',
-    'multicoretsne',
     'scipy',
-    'sklearn',
     'statsmodels',
     'seaborn',
     'pandas',
@@ -31,15 +28,11 @@ reqs = [
     'anytree'
 ]
 
-on_rtd = os.environ.get('READTHEDOCS') == 'True'
-if on_rtd:
-    reqs.remove('multicoretnse')
-
 setup(
     name='FlowKit',
-    version='0.5.0',
+    version='0.6.0',
     packages=find_packages(),
-    package_data={'': ['*.xsd']},
+    package_data={'': ['_resources/*.xsd', '_resources/flowjo_xforms/*.csv']},
     include_package_data=True,
     description='Flow Cytometry Toolkit',
     long_description=long_description,
@@ -50,6 +43,7 @@ setup(
     ext_modules=[utils_extension],
     install_requires=reqs,
     classifiers=[
+        'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.6'
     ]

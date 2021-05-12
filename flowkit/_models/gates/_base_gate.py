@@ -1,5 +1,9 @@
+"""
+Module for the Gate abstract base class
+"""
 from abc import ABC, abstractmethod
 import numpy as np
+# noinspection PyProtectedMember
 from ..transforms._matrix import Matrix
 from .. import gates, dimension
 
@@ -23,13 +27,20 @@ class Gate(ABC):
         self.gate_type = None
 
     def get_dimension(self, dim_id):
+        """
+        Retrieve the Dimension instance given the dimension ID
+
+        :param dim_id: Dimension ID
+        :return: Dimension instance
+        """
         for dim in self.dimensions:
             if dim_id == dim.id:
                 return dim
 
-    def apply_parent_gate(self, sample, results, parent_results, gating_strategy):
+    def _apply_parent_gate(self, sample, results, parent_results, gating_strategy, gate_path):
+        parent_gate_path = gate_path[:-1]
         if self.parent is not None:
-            parent_gate = gating_strategy.get_gate(self.parent)
+            parent_gate = gating_strategy.get_gate(self.parent, parent_gate_path)
             if isinstance(parent_gate, gates.Quadrant):
                 # Parent references a single quadrant, get the quadrant's full QuadrantGate
                 parent_gate = gating_strategy.get_parent_gate(parent_gate.id)
@@ -40,7 +51,7 @@ class Gate(ABC):
                 results_and_parent = np.logical_and(parent_results['events'], results)
                 parent_count = parent_results['count']
             else:
-                parent_result = parent_gate.apply(sample, parent_results, gating_strategy)
+                parent_result = parent_gate.apply(sample, parent_results, gating_strategy, parent_gate_path)
 
                 if isinstance(parent_gate, gates.QuadrantGate):
                     parent_result = parent_result[self.parent]
@@ -73,7 +84,7 @@ class Gate(ABC):
         return final_results
 
     @abstractmethod
-    def apply(self, sample, parent_results, gating_strategy):
+    def apply(self, sample, parent_results, gating_strategy, gate_path):
         pass
 
     def compensate_sample(self, dim_comp_refs, sample, gating_strategy):
@@ -91,6 +102,7 @@ class Gate(ABC):
         else:
             comp_ref = list(dim_comp_refs)[0]
 
+        # noinspection PyProtectedMember
         events = gating_strategy._get_cached_compensation(
             sample,
             comp_ref
@@ -122,6 +134,7 @@ class Gate(ABC):
         if matrix is not None:
             events = matrix.apply(sample)
             # cache the comp events
+            # noinspection PyProtectedMember
             gating_strategy._cache_compensated_events(
                 sample,
                 comp_ref,

@@ -1,23 +1,23 @@
-import os
+"""
+Utility functions related to plotting
+"""
 import numpy as np
 from scipy.interpolate import interpn
-from scipy.stats import gaussian_kde
 import colorsys
 from matplotlib import cm, colors
 import matplotlib.pyplot as plt
 from bokeh.plotting import figure
 from bokeh.models import Ellipse, Patch, Span, BoxAnnotation, Rect, ColumnDataSource
-from flowio.create_fcs import create_fcs
 
 
 line_color = "#1F77B4"
-line_color_contrast = "#00aa00"
+line_color_contrast = "#73D587"
 line_width = 3
 fill_color = 'lime'
 fill_alpha = 0.08
 
 
-def generate_custom_colormap(cmap_sample_indices, base_cmap):
+def _generate_custom_colormap(cmap_sample_indices, base_cmap):
     x = np.linspace(0, np.pi, base_cmap.N)
     new_lum = (np.sin(x) * 0.75) + .25
 
@@ -48,10 +48,10 @@ cm_sample = [
     163, 167, 171, 175, 179, 183, 187, 191, 195, 199, 215, 231, 239
 ]
 
-new_jet = generate_custom_colormap(cm_sample, cm.get_cmap('jet'))
+new_jet = _generate_custom_colormap(cm_sample, cm.get_cmap('jet'))
 
 
-def get_false_bounds(bool_array):
+def _get_false_bounds(bool_array):
     diff = np.diff(np.hstack((0, bool_array, 0)))
 
     start = np.where(diff == 1)
@@ -84,7 +84,7 @@ def plot_channel(chan_events, label, subplot_ax, xform=False, bad_events=None):
     )
 
     if bad_events is not None:
-        starts, ends = get_false_bounds(bad_events)
+        starts, ends = _get_false_bounds(bad_events)
 
         for i, s in enumerate(starts):
             subplot_ax.axvspan(
@@ -270,8 +270,10 @@ def plot_scatter(
         y_max=None,
         color_density=True
 ):
-    x_min, x_max = calculate_extent(x, d_min=x_min, d_max=x_max, pad=0.02)
-    y_min, y_max = calculate_extent(y, d_min=y_min, d_max=y_max, pad=0.02)
+    if len(x) > 0:
+        x_min, x_max = calculate_extent(x, d_min=x_min, d_max=x_max, pad=0.02)
+    if len(y) > 0:
+        y_min, y_max = calculate_extent(y, d_min=y_min, d_max=y_max, pad=0.02)
 
     if y_max > x_max:
         radius_dimension = 'y'
@@ -324,85 +326,3 @@ def plot_scatter(
     )
 
     return p
-
-
-def plot_tsne_difference(
-        tsne_results1,
-        tsne_results2,
-        x_min=None,
-        x_max=None,
-        y_min=None,
-        y_max=None,
-        fig_size=(16, 16),
-        export_fcs=False,
-        export_cnt=20000,
-        fcs_export_dir=None
-):
-    # fit an array of size [Ndim, Nsamples]
-    kde1 = gaussian_kde(
-        np.vstack(
-            [
-                tsne_results1[:, 0],
-                tsne_results1[:, 1]
-            ]
-        )
-    )
-    kde2 = gaussian_kde(
-        np.vstack(
-            [
-                tsne_results2[:, 0],
-                tsne_results2[:, 1]
-            ]
-        )
-    )
-
-    # evaluate on a regular grid
-    x_grid = np.linspace(x_min, x_max, 250)
-    y_grid = np.linspace(y_min, y_max, 250)
-    x_grid, y_grid = np.meshgrid(x_grid, y_grid)
-    xy_grid = np.vstack([x_grid.ravel(), y_grid.ravel()])
-
-    z1 = kde1.evaluate(xy_grid)
-    z2 = kde2.evaluate(xy_grid)
-
-    z = z2 - z1
-
-    if export_fcs:
-        z_g2 = z.copy()
-        z_g2[z_g2 < 0] = 0
-        z_g1 = z.copy()
-        z_g1[z_g1 > 0] = 0
-        z_g1 = np.abs(z_g1)
-
-        z_g2_norm = [float(i) / sum(z_g2) for i in z_g2]
-        z_g1_norm = [float(i) / sum(z_g1) for i in z_g1]
-
-        cdf = np.cumsum(z_g2_norm)
-        cdf = cdf / cdf[-1]
-        values = np.random.rand(export_cnt)
-        value_bins = np.searchsorted(cdf, values)
-        new_g2_events = np.array([xy_grid[:, i] for i in value_bins])
-
-        cdf = np.cumsum(z_g1_norm)
-        cdf = cdf / cdf[-1]
-        values = np.random.rand(export_cnt)
-        value_bins = np.searchsorted(cdf, values)
-        new_g1_events = np.array([xy_grid[:, i] for i in value_bins])
-
-        pnn_labels = ['tsne_0', 'tsne_1']
-
-        fh = open(os.path.join(fcs_export_dir, "tsne_group_1.fcs"), 'wb')
-        create_fcs(new_g1_events.flatten(), pnn_labels, fh)
-        fh.close()
-
-        fh = open(os.path.join(fcs_export_dir, "tsne_group_2.fcs"), 'wb')
-        create_fcs(new_g2_events.flatten(), pnn_labels, fh)
-        fh.close()
-
-    # Plot the result as an image
-    _, _ = plt.subplots(figsize=fig_size)
-    plt.imshow(z.reshape(x_grid.shape),
-               origin='lower', aspect='auto',
-               extent=[x_min, x_max, y_min, y_max],
-               cmap='bwr')
-    plt.show()

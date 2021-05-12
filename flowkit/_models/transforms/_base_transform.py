@@ -26,4 +26,4 @@ class Transform(ABC):
         :param events_or_sample: A NumPy array of event data or, in some cases, a Sample instance. See sub-class
             documentation for specific implementation.
         """
-        pass
+        return

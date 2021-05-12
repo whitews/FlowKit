@@ -1,16 +1,17 @@
 """
-GatingStrategy & GatingResults classes
+GatingStrategy class
 """
 import json
 import anytree
 from anytree.exporter import DotExporter
-import pandas as pd
+# noinspection PyProtectedMember
 from .._models.gates._base_gate import Gate
 from .._models import gates as fk_gates
 # noinspection PyProtectedMember
 from .._models.transforms._base_transform import Transform
 # noinspection PyProtectedMember
 from .._models.transforms._matrix import Matrix
+from .._models.gating_results import GatingResults
 
 
 class GatingStrategy(object):
@@ -35,44 +36,84 @@ class GatingStrategy(object):
             f'{len(self.comp_matrices)} compensations)'
         )
 
-    def add_gate(self, gate):
+    def add_gate(self, gate, gate_path=None):
         """
-        Add a gate to the gating strategy, see `gates` module. The gate ID must be unique in the gating strategy.
+        Add a gate to the gating strategy, see `gates` module. The gate ID and gate path must be
+        unique in the gating strategy. A gate with a unique gate ID and parent can be added without
+        specifying a gate_path. However, if the gate's ID and parent combination already exists in
+        the gating strategy, a unique gate path must be provided.
 
         :param gate: instance from a sub-class of the Gate class
+        :param gate_path: complete list of gate IDs for unique set of gate ancestors.
+            Required if gate.id and gate.parent combination is ambiguous
+
         :return: None
         """
-
         if not isinstance(gate, Gate):
             raise ValueError("gate must be a sub-class of the Gate class")
 
         parent_id = gate.parent
         if parent_id is None:
+            # If no parent gate is specified, use root
             parent_id = 'root'
 
-        # TODO: check for uniqueness of gate ID + gate path combo
+        # Verify the gate parent matches the last item in the gate path (if given)
+        if gate_path is not None:
+            if len(gate_path) != 0:
+                if parent_id != gate_path[-1]:
+                    raise ValueError("The gate parent and the last item in gate path are different.")
+
+        # Find simple case of matching gate ID + parent where no gate_path is specified.
         matched_nodes = anytree.findall(
             self._gate_tree,
             filter_=lambda g_node:
                 g_node.name == gate.id and
                 g_node.parent.name == parent_id
         )
-        if len(matched_nodes) != 0:
-            raise KeyError("Gate ID '%s' is already defined" % gate.id)
+        match_count = len(matched_nodes)
 
-        parent_id = gate.parent
-        if parent_id is None:
+        if match_count != 0 and gate_path is None:
+            raise KeyError(
+                "A gate with ID '%s' and parent '%s' is already defined. " 
+                "You must specify a gate_path as a unique list of ancestors." % (gate.id, parent_id)
+            )
+
+        # Here we either have a unique gate ID + parent, or an ambiguous gate ID + parent with a gate path.
+        # It is still possible that the given gate_path already exists, we'll check that.
+        # We'll find the parent node from the ID, and if there are multiple parent matches then resort
+        # to using the given gate path.
+        if parent_id == 'root':
+            # Easiest case since a root parent is also the full path.
             parent_node = self._gate_tree
         else:
-            matching_nodes = anytree.search.findall_by_attr(self._gate_tree, parent_id)
+            # Find all nodes with the parent ID name. If there's only one, we've identified the correct parent.
+            # If there are none, the parent doesn't exist (or is a Quad gate).
+            # If there are >1, we have to compare the gate paths.
+            matching_parent_nodes = anytree.search.findall_by_attr(self._gate_tree, parent_id)
+            matched_parent_count = len(matching_parent_nodes)
+            match_idx = None
 
-            if len(matching_nodes) == 0:
+            if matched_parent_count == 0:
                 # TODO: could be in a quadrant gate
                 raise ValueError("Parent gate %s does not exist in the gating strategy" % parent_id)
-            elif len(matching_nodes) > 1:
-                raise ValueError("Multiple gates exist matching parent ID %s, specify full gate path" % parent_id)
+            elif matched_parent_count == 1:
+                # There's only one match for the parent, so we're done
+                match_idx = 0
+            elif matched_parent_count > 1:
+                for i, matched_parent_node in enumerate(matching_parent_nodes):
+                    matched_parent_ancestors = [pn.name for pn in matched_parent_node.path]
+                    if matched_parent_ancestors == gate_path:
+                        match_idx = i
+                        break
 
-            parent_node = matching_nodes[0]
+            # look up the parent node, then do one final check to make sure the new gate doesn't
+            # already exist as a child of the parent
+            parent_node = matching_parent_nodes[match_idx]
+            parent_child_nodes = anytree.search.findall_by_attr(parent_node, gate.id, maxlevel=1)
+            if len(parent_child_nodes) > 0:
+                raise ValueError(
+                    "A gate already exist matching gate ID %s and the specified gate path" % gate.id
+                )
 
         node = anytree.Node(gate.id, parent=parent_node, gate=gate)
 
@@ -134,16 +175,7 @@ class GatingStrategy(object):
         """
         return self.comp_matrices[matrix_id]
 
-    def get_gate(self, gate_id, gate_path=None):
-        """
-        Retrieve a gate instance from its gate ID. reference gates in their parent gating
-        strategy.
-
-        :param gate_id: text string of a gate ID
-        :param gate_path: complete list of gate IDs for unique set of gate ancestors. Required if gate_id is ambiguous
-        :return: Subclass of a Gate object
-        :raises KeyError: if gate ID is not found in gating strategy
-        """
+    def _get_gate_node(self, gate_id, gate_path=None):
         # It's not safe to just look at the gates dictionary as
         # QuadrantGate IDs cannot be parents themselves, only their component
         # Quadrant IDs can be parents.
@@ -187,28 +219,79 @@ class GatingStrategy(object):
         if node is None:
             raise ValueError("Gate ID %s was not found in gating strategy" % gate_id)
 
+        return node
+
+    def get_root_gates(self):
+        """
+        Retrieve list of root-level gate instances.
+
+        :return: list of Gate instances
+        """
+        root = self._gate_tree.root
+        root_children = root.children
+
+        root_gates = []
+
+        for node in root_children:
+            root_gates.append(node.gate)
+
+        return root_gates
+
+    def get_gate(self, gate_id, gate_path=None):
+        """
+        Retrieve a gate instance by its gate ID.
+
+        :param gate_id: text string of a gate ID
+        :param gate_path: complete list of gate IDs for unique set of gate ancestors. Required if gate_id is ambiguous
+        :return: Subclass of a Gate object
+        :raises KeyError: if gate ID is not found in gating strategy
+        """
+        node = self._get_gate_node(gate_id, gate_path)
+
         return node.gate
 
-    def get_parent_gate(self, gate_id):
+    def get_parent_gate(self, gate_id, gate_path=None):
         """
         Retrieve the gate ID for a parent gate of the given gate ID.
 
         :param gate_id: text string of a gate ID
-        :return: text string of the parent gate ID, None if given gate reference has no parent gate.
+        :param gate_path: complete list of gate IDs for unique set of gate ancestors. Required if gate_id is ambiguous
+        :return: Subclass of a Gate object
         """
-        n = anytree.find_by_attr(self._gate_tree, gate_id)
+        node = self._get_gate_node(gate_id, gate_path)
 
-        if n is None:
-            raise ValueError("Gate ID %s was not found in gating strategy" % gate_id)
+        return node.parent.gate
 
-        return n.parent.gate
+    def get_child_gates(self, gate_id, gate_path=None):
+        """
+        Retrieve list of child gate instances by their parent's gate ID.
+
+        :param gate_id: text string of a gate ID
+        :param gate_path: complete list of gate IDs for unique set of gate ancestors. Required if gate_id is ambiguous
+        :return: list of Gate instances
+        :raises KeyError: if gate ID is not found in gating strategy
+        """
+        node = self._get_gate_node(gate_id, gate_path)
+
+        child_gates = []
+
+        for n in node.children:
+            child_gates.append(n.gate)
+
+        return child_gates
 
     def get_gate_ids(self):
         """
-        Retrieve the list of gate IDs for the gating strategy
-        :return: list of gate ID strings
+        Retrieve the list of gate IDs (with ancestors) for the gating strategy
+        :return: list of tuples where the 1st item is the gate ID string and 2nd item is
+                 a list of ancestor gates
         """
-        return [node.name for node in self._gate_tree.descendants]
+        gates = []
+        for node in self._gate_tree.descendants:
+            ancestors = [a.name for a in node.ancestors]
+            gates.append((node.name, ancestors))
+
+        return gates
 
     def get_gate_hierarchy(self, output='ascii', **kwargs):
         """
@@ -294,19 +377,15 @@ class GatingStrategy(object):
 
     def gate_sample(self, sample, gate_id=None, verbose=False):
         """
-        Apply a gate to a sample, returning a dictionary where gate ID is the
-        key, and the value contains the event indices for events in the Sample
-        which are contained by the gate. If the gate has a parent gate, all
-        gates in the hierarchy above will be included in the results. If 'gate'
-        is None, then all gates will be evaluated.
+        Apply a gate to a sample, returning a GatingResults instance. If the gate
+        has a parent gate, all gates in the hierarchy above will be included in
+        the results. If 'gate_id' is None, then all gates will be evaluated.
 
         :param sample: an FCS Sample instance
         :param gate_id: A gate ID or list of gate IDs to evaluate on given
             Sample. If None, all gates will be evaluated
         :param verbose: If True, print a line for each gate processed
-        :return: Dictionary where keys are gate IDs, values are boolean arrays
-            of length matching the number sample events. Events in the gate are
-            True.
+        :return: GatingResults instance
         """
         # anytree tree allows us to iterate from the root down to the leaves
         # in an order that follows the hierarchy, thereby avoiding duplicate
@@ -336,7 +415,7 @@ class GatingStrategy(object):
                 continue
 
             if verbose:
-                print("%s: processing gate %s" % (sample, g_id))
+                print("%s: processing gate %s" % (sample.original_filename, g_id))
             if gate.parent is not None and gate.parent in results:
                 parent_results = results[gate.parent]
             else:
@@ -344,10 +423,10 @@ class GatingStrategy(object):
             # to make the dict key unique, make a string from the ancestors,
             # but also add the set of them as a set to avoid repeated & fragile
             # string splitting in the GatingResults class
-            gate_path_str = "/".join([a.name for a in item.ancestors])
-            results[g_id, gate_path_str] = gate.apply(sample, parent_results, self)
-
             gate_path_list = [a.name for a in item.ancestors]
+            gate_path_str = "/".join(gate_path_list)
+            results[g_id, gate_path_str] = gate.apply(sample, parent_results, self, gate_path_list)
+
             if isinstance(gate, fk_gates.QuadrantGate):
                 for quad_res in results[g_id, gate_path_str].values():
                     quad_res['gate_path'] = gate_path_list
@@ -355,138 +434,3 @@ class GatingStrategy(object):
                 results[g_id, gate_path_str]['gate_path'] = gate_path_list
 
         return GatingResults(results, sample_id=sample.original_filename)
-
-
-class GatingResults(object):
-    """
-    A GatingResults instance is returned from the GatingStrategy `gate_samples` method
-    as well as the Session `get_gating_results` method. End users will never create an
-    instance of GatingResults directly, only via these GatingStrategy and Session
-    methods. However, there are several GatingResults methods to retrieve the results.
-    """
-    def __init__(self, results_dict, sample_id):
-        self._raw_results = results_dict
-        self._gate_lut = {}
-        self.report = None
-        self.sample_id = sample_id
-        self._process_results()
-
-    @staticmethod
-    def _get_pd_result_dict(res_dict, gate_id):
-        return {
-            'sample': res_dict['sample'],
-            'gate_path': res_dict['gate_path'],
-            'parent': res_dict['parent'],
-            'gate_id': gate_id,
-            'gate_type': res_dict['gate_type'],
-            'count': res_dict['count'],
-            'absolute_percent': res_dict['absolute_percent'],
-            'relative_percent': res_dict['relative_percent'],
-            'quadrant_parent': None
-        }
-
-    def _process_results(self):
-        pd_list = []
-
-        for (g_id, g_path), res in self._raw_results.items():
-            if 'events' not in res:
-                # it's a quad gate with sub-gates
-                for sub_g_id, sub_res in res.items():
-                    pd_dict = self._get_pd_result_dict(sub_res, sub_g_id)
-                    pd_dict['quadrant_parent'] = g_id
-                    pd_list.append(pd_dict)
-                    if sub_g_id not in self._gate_lut:
-                        self._gate_lut[sub_g_id] = {
-                            'paths': [g_path]
-                        }
-                    else:
-                        self._gate_lut[sub_g_id]['paths'].append(g_path)
-            else:
-                pd_list.append(self._get_pd_result_dict(res, g_id))
-                if g_id not in self._gate_lut:
-                    self._gate_lut[g_id] = {
-                        'paths': [g_path]
-                    }
-                else:
-                    self._gate_lut[g_id]['paths'].append(g_path)
-
-        df = pd.DataFrame(
-            pd_list,
-            columns=[
-                'sample',
-                'gate_path',
-                'gate_id',
-                'gate_type',
-                'quadrant_parent',
-                'parent',
-                'count',
-                'absolute_percent',
-                'relative_percent'
-            ]
-        )
-        df['level'] = df.gate_path.map(len)
-
-        # ???: sorting by non-index column will result in Pandas PerformanceWarning
-        #   when looking up rows using .loc. The hit in this case is minimal and we
-        #   really want the DataFrame sorted by 'level' for better readability.
-        #   Maybe consider not setting a MultiIndex for this?
-        self.report = df.set_index(['sample', 'gate_id']).sort_index().sort_values('level')
-
-    def get_gate_indices(self, gate_id, gate_path=None):
-        """
-        Retrieve a boolean array indicating gate membership for the events in the GatingResults sample.
-        Note, the same gate ID may be found in multiple gate paths, i.e. the gate ID can be ambiguous.
-        In this case, specify the full gate path to retrieve gate indices.
-
-        :param gate_id: text string of a gate ID
-        :param gate_path: A list of ancestor gate IDs for the given gate ID. Alternatively, a string path delimited
-            by forward slashes can also be given, e.g. ('/root/singlets/lymph/live')
-        :return: NumPy boolean array (length of sample event count)
-        """
-        gate_paths = self._gate_lut[gate_id]['paths']
-        if len(gate_paths) > 1:
-            if gate_path is None:
-                raise ValueError("Gate ID %s is ambiguous, specify the full gate path")
-            elif isinstance(gate_path, list):
-                gate_path = "/".join(gate_path)
-        else:
-            gate_path = gate_paths[0]
-
-        gate_series = self.report.loc[(self.sample_id, gate_id)]
-        if isinstance(gate_series, pd.DataFrame):
-            gate_series = gate_series.iloc[0]
-
-        quad_parent = gate_series['quadrant_parent']
-
-        if quad_parent is not None:
-            return self._raw_results[quad_parent, gate_path][gate_id]['events']
-        else:
-            return self._raw_results[gate_id, gate_path]['events']
-
-    def get_gate_count(self, gate_id):
-        """
-        Retrieve event count for the specified gate ID for the gating results sample
-
-        :param gate_id: text string of a gate ID
-        :return: integer count of events in gate ID
-        """
-        return self.report.loc[(self.sample_id, gate_id), 'count']
-
-    def get_gate_absolute_percent(self, gate_id):
-        """
-        Retrieve percent of events, relative to the total sample events, of the specified gate ID for the
-        gating results sample
-
-        :param gate_id: text string of a gate ID
-        :return: floating point number of the absolute percent
-        """
-        return self.report.loc[(self.sample_id, gate_id), 'absolute_percent']
-
-    def get_gate_relative_percent(self, gate_id):
-        """
-        Retrieve percent of events, relative to parent gate, of the specified gate ID for the gating results sample
-
-        :param gate_id: text string of a gate ID
-        :return: floating point number of the relative percent
-        """
-        return self.report.loc[(self.sample_id, gate_id), 'relative_percent']

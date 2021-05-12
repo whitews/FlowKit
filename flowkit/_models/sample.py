@@ -14,10 +14,11 @@ import seaborn
 from bokeh.layouts import gridplot
 from bokeh.models import Title
 import warnings
+# noinspection PyProtectedMember
 from .._models.transforms import _transforms
+# noinspection PyProtectedMember
 from .._models.transforms._matrix import Matrix
-from .._utils import utils
-from .._utils import plot_utils
+from .._utils import plot_utils, qc_utils
 
 
 class Sample(object):
@@ -54,7 +55,8 @@ class Sample(object):
             fcs_path_or_data,
             channel_labels=None,
             compensation=None,
-            null_channel_list=None
+            null_channel_list=None,
+            ignore_offset_error=False
     ):
         """
         Create a Sample instance
@@ -62,11 +64,20 @@ class Sample(object):
         # inspect our fcs_path_or_data argument
         if isinstance(fcs_path_or_data, str):
             # if a string, we only handle file paths, so try creating a FlowData object
-            flow_data = flowio.FlowData(fcs_path_or_data)
+            flow_data = flowio.FlowData(
+                fcs_path_or_data,
+                ignore_offset_error=ignore_offset_error
+            )
         elif isinstance(fcs_path_or_data, io.IOBase):
-            flow_data = flowio.FlowData(fcs_path_or_data)
+            flow_data = flowio.FlowData(
+                fcs_path_or_data,
+                ignore_offset_error=ignore_offset_error
+            )
         elif isinstance(fcs_path_or_data, Path):
-            flow_data = flowio.FlowData(fcs_path_or_data.open('rb'))
+            flow_data = flowio.FlowData(
+                fcs_path_or_data.open('rb'),
+                ignore_offset_error=ignore_offset_error
+            )
         elif isinstance(fcs_path_or_data, flowio.FlowData):
             flow_data = fcs_path_or_data
         elif isinstance(fcs_path_or_data, np.ndarray):
@@ -80,10 +91,20 @@ class Sample(object):
             flow_data = flowio.FlowData(tmp_file)
         elif isinstance(fcs_path_or_data, pd.DataFrame):
             tmp_file = TemporaryFile()
+
+            # Handle MultiIndex columns since that is what the as_dataframe method creates.
+            if fcs_path_or_data.columns.nlevels > 1:
+                pnn_labels = fcs_path_or_data.columns.get_level_values(0)
+                pns_labels = fcs_path_or_data.columns.get_level_values(1)
+            else:
+                pnn_labels = fcs_path_or_data.columns
+                pns_labels = None
+
             flowio.create_fcs(
                 fcs_path_or_data.values.flatten().tolist(),
-                channel_names=fcs_path_or_data.columns,
-                file_handle=tmp_file
+                channel_names=pnn_labels,
+                file_handle=tmp_file,
+                opt_channel_names=pns_labels
             )
 
             flow_data = flowio.FlowData(tmp_file)
@@ -101,16 +122,17 @@ class Sample(object):
         self.pnn_labels = list()
         self.pns_labels = list()
         self.fluoro_indices = list()
+        self.scatter_indices = list()
+        self.time_index = None
 
         channel_gain = []
         channel_lin_log = []
         channel_range = []
         self.metadata = flow_data.text
-        time_index = None
 
         for n in sorted([int(k) for k in self.channels.keys()]):
-            chan_label = self.channels[str(n)]['PnN']
-            self.pnn_labels.append(chan_label)
+            channel_label = self.channels[str(n)]['PnN']
+            self.pnn_labels.append(channel_label)
 
             if 'p%dg' % n in self.metadata:
                 channel_gain.append(float(self.metadata['p%dg' % n]))
@@ -132,10 +154,12 @@ class Sample(object):
             else:
                 channel_lin_log.append((0.0, 0.0))
 
-            if chan_label.lower()[:4] not in ['fsc-', 'ssc-', 'time']:
+            if channel_label.lower()[:4] not in ['fsc-', 'ssc-', 'time']:
                 self.fluoro_indices.append(n - 1)
-            elif chan_label.lower() == 'time':
-                time_index = n - 1
+            elif channel_label.lower()[:4] in ['fsc-', 'ssc-']:
+                self.scatter_indices.append(n - 1)
+            elif channel_label.lower() == 'time':
+                self.time_index = n - 1
 
             if 'PnS' in self.channels[str(n)]:
                 self.pns_labels.append(self.channels[str(n)]['PnS'])
@@ -144,20 +168,30 @@ class Sample(object):
 
         self._flowjo_pnn_labels = [label.replace('/', '_') for label in self.pnn_labels]
 
-        # Raw events need to be scaled according to channel gain, as well
-        # as corrected for proper lin/log display
-        # This is the only pre-processing we will do on raw events
-        raw_events = np.reshape(
+        # Start processing the event data. First, we'll save the unprocessed events
+        self._orig_events = np.reshape(
             np.array(flow_data.events, dtype=np.float),
             (-1, flow_data.channel_count)
         )
 
-        if 'timestep' in self.metadata and time_index is not None:
-            time_step = float(self.metadata['timestep'])
-            raw_events[:, time_index] = raw_events[:, time_index] * time_step
+        # Event data must be scaled according to channel gain, as well
+        # as corrected for proper lin/log display, and the time channel
+        # scaled by the 'timestep' keyword value (if present).
+        # This is the only pre-processing we will do on raw events
+        raw_events = self._orig_events.copy()
 
-        # But first, we'll save the unprocessed events
-        self._orig_events = raw_events.copy()
+        # Note: The time channel is scaled by the timestep (if present),
+        # but should not be scaled by any gain value present in PnG.
+        # It seems common for cytometers to include a gain value for the
+        # time channel that matches the fluoro channels. Not sure why
+        # they do this but it makes no sense to have an amplifier gain
+        # on the time data. Here, we set any time gain to 1.0.
+        if self.time_index is not None:
+            channel_gain[self.time_index] = 1.0
+
+        if 'timestep' in self.metadata and self.time_index is not None:
+            time_step = float(self.metadata['timestep'])
+            raw_events[:, self.time_index] = raw_events[:, self.time_index] * time_step
 
         for i, (decades, log0) in enumerate(channel_lin_log):
             if decades > 0:
@@ -268,7 +302,7 @@ class Sample(object):
         for idx in eval_indices:
             eval_labels.append(self.pnn_labels[idx])
 
-        anomalous_idx = utils.filter_anomalous_events(
+        anomalous_idx = qc_utils.filter_anomalous_events(
             xform_events[:, eval_indices],
             eval_labels,
             rng=rng,
@@ -453,8 +487,9 @@ class Sample(object):
         """
         Returns a Pandas DataFrame of event data
 
-        :param source: 'raw', 'comp', 'xform' for whether the raw, compensated
-            or transformed events will be returned
+        :param source: 'orig', 'raw', 'comp', 'xform' for whether the original (no gain applied),
+            raw (orig + gain), compensated (raw + comp), or transformed (comp + xform) events will
+            be returned
         :param subsample: Whether to return all events or just the sub-sampled
             events. Default is False (all events)
         :param col_order: list of PnN labels. Determines the order of columns
@@ -472,7 +507,7 @@ class Sample(object):
         elif source == 'orig':
             events = self.get_orig_events(subsample=subsample)
         else:
-            raise ValueError("source must be one of 'raw', 'comp', or 'xform'")
+            raise ValueError("source must be one of 'orig', 'raw', 'comp', or 'xform'")
 
         multi_cols = pd.MultiIndex.from_arrays([self.pnn_labels, self.pns_labels], names=['pnn', 'pns'])
         events_df = pd.DataFrame(data=events, columns=multi_cols)
@@ -531,6 +566,8 @@ class Sample(object):
         :return: NumPy array of event data for the specified channel index
         """
         if subsample:
+            if not isinstance(self.subsample_indices, np.ndarray):
+                raise ValueError("Subsampling requested, but sample hasn't been sub-sampled: call `subsample_events`")
             idx = self.subsample_indices
         else:
             idx = np.arange(self.event_count)
@@ -546,26 +583,55 @@ class Sample(object):
 
         return channel_data
 
-    def _transform(self, transform):
+    def _transform(self, transform, include_scatter=False):
+        if isinstance(transform, _transforms.RatioTransform):
+            raise NotImplementedError(
+                "RatioTransform cannot be applied to a Sample instance directly.\n"
+                "To apply a RatioTransform, either:\n"
+                "    1) Provide the Sample instance to the transform `apply` method\n"
+                "    2) Use the RatioTransform as part of a GatingStrategy\n"
+            )
+
         if self._comp_events is not None:
             transformed_events = self._comp_events.copy()
         else:
             transformed_events = self._raw_events.copy()
 
-        transformed_events[:, self.fluoro_indices] = transform.apply(
-            transformed_events[:, self.fluoro_indices]
-        )
+        if isinstance(transform, dict):
+            for pnn_label, param_xform in transform.items():
+                param_idx = self.get_channel_index(pnn_label)
+
+                transformed_events[:, param_idx] = param_xform.apply(
+                    transformed_events[:, param_idx]
+                )
+        else:
+            if include_scatter:
+                transform_indices = self.scatter_indices + self.fluoro_indices
+            else:
+                transform_indices = self.fluoro_indices
+
+            transformed_events[:, transform_indices] = transform.apply(
+                transformed_events[:, transform_indices]
+            )
 
         return transformed_events
 
-    def apply_transform(self, transform):
+    def apply_transform(self, transform, include_scatter=False):
         """
         Applies given transform to Sample events, and overwrites the `transform` attribute.
+        By default, only the fluorescent channels are transformed. For fully customized transformations
+        per channel, the `transform` can be specified as a dictionary mapping PnN labels to an instance
+        of the Transform sub-class. If a dictionary of transforms is specified, the `include_scatter`
+        option is ignored and only the channels explicitly included in the transform dictionary will
+        be transformed.
 
-        :param transform: an instance of one of the various Transform sub-classes in the transforms module
+        :param transform: an instance of a Transform sub-class or a dictionary where the keys correspond
+            to the PnN labels and the value is an instance of a Transform sub-class.
+        :param include_scatter: Whether to transform the scatter channel in addition to the
+            fluorescent channels. Default is False.
         """
 
-        self._transformed_events = self._transform(transform)
+        self._transformed_events = self._transform(transform, include_scatter=include_scatter)
         self.transform = transform
 
     def plot_contour(
@@ -841,8 +907,9 @@ class Sample(object):
         Export Sample event data to either a new FCS file or a CSV file. Format determined by filename extension.
 
         :param filename: Text string to use for the exported file name.
-        :param source: 'raw', 'comp', 'xform' for whether the raw, compensated
-            or transformed events are used for exporting
+        :param source: 'orig', 'raw', 'comp', 'xform' for whether the original (no gain applied),
+            raw (orig + gain), compensated (raw + comp), or transformed (comp + xform) events  are
+            used for exporting
         :param exclude: Specifies whether to exclude events. Options are 'good', 'bad', or None.
             'bad' excludes neg. scatter or anomalous, 'good' will export the bad events.
             Default is None (exports all events)
@@ -879,10 +946,11 @@ class Sample(object):
         elif source == 'orig':
             events = self._orig_events[idx, :]
         else:
-            raise ValueError("source must be one of 'raw', 'comp', or 'xform'")
+            raise ValueError("source must be one of 'orig', 'raw', 'comp', or 'xform'")
 
         ext = os.path.splitext(filename)[-1]
 
+        # TODO: support exporting to HDF5 format, but as optional dependency/import
         if ext == '.csv':
             np.savetxt(
                 output_path,

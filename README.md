@@ -16,7 +16,11 @@
 
 ## Overview
 
-FlowKit is an intuitive Python toolkit for flow cytometry analysis and visualization, with full support for the [GatingML 2.0 standard](http://flowcyt.sourceforge.net/gating/latest.pdf) and limited support for FlowJo 10 workspace files. Features include:
+FlowKit is an intuitive Python toolkit for flow cytometry analysis and visualization, with full support for the [GatingML 2.0 standard](http://flowcyt.sourceforge.net/gating/latest.pdf) and limited support for FlowJo 10 workspace files.
+
+**Version 0.6 adds experimental support for exporting FlowJo 10 workspace files from a Session. Support is currently limited to exporting data from a single sample group. Please [submit an issue](https://github.com/whitews/FlowKit/issues/new/choose) if you find any bugs related to this feature.**
+
+Features include:
 
 * Reading Flow Cytometry Standard data (FCS files), including FCS versions:
   * 2.0
@@ -36,7 +40,8 @@ FlowKit is an intuitive Python toolkit for flow cytometry analysis and visualiza
   * Automatically create a compensation matrix from a set of compensation bead files
 * Transformation of FCS events in a variety of transforms used in the flow community:
   * Logicle
-  * Inverse hyperbolic sine (arcsinh)
+  * Inverse hyperbolic sine (ArcSinh)
+  * FlowJo Bi-exponential
   * Hyperlog
   * Logarithmic
   * Channel ratios
@@ -46,12 +51,15 @@ FlowKit is an intuitive Python toolkit for flow cytometry analysis and visualiza
     * Import GatingML XML documents as gating strategies
     * Export gating strategies as a valid GatingML XML document
   * Limited support for importing FlowJo 10 workspace files. Workspace files are currently limited to the following features:
-    * Linear, logarithmic, and logicle transforms
-    * Polygon, rectangle, and quadrant gates
+    * Linear, logarithmic, bi-exponential, and logicle transforms
+    * Polygon, rectangle, ellipse, and quadrant gates
   * Programmatically create gating strategies including polygon, rectangle, range, ellipsoid, quadrant, and boolean gates
   * Easily retrieve gating results from a gating strategy as a Pandas DataFrame. Results include:
     * FCS sample ID
     * Gate name
+    * Parent gate
+    * Gate path
+    * Gate level (position in gate hierarchy tree)  
     * Absolute event count
     * Relative percentage
     * Absolute percentage
@@ -76,11 +84,10 @@ above is required for correct Logicle and Hyperlog transformations.***
 
 Required Python dependencies:
 
-* [flowio](https://github.com/whitews/flowio) >= 0.9.5
-* [flowutils](https://github.com/whitews/flowutils) >= 0.7.1
+* [flowio](https://github.com/whitews/flowio) >= 0.9.7
+* [flowutils](https://github.com/whitews/flowutils) >= 0.8.0
 * numpy >= 1.13
 * scipy >= 1.3
-* scikit-learn >= 0.21
 * statsmodels >= 0.8
 * pandas >= 0.22
 * matplotlib >= 3.0
@@ -88,7 +95,6 @@ Required Python dependencies:
 * bokeh >= 1.4
 * lxml >= 4.2
 * anytree >= 2.6
-* MulticoreTSNE >= 0.1
 
 ## Installation
 
@@ -105,8 +111,11 @@ pip install flowkit
 ### From source
 
 ```
+pip install numpy
+
 git clone https://github.com/whitews/flowkit
 cd flowkit
+
 python setup.py install
 ```
 
