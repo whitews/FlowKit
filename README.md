@@ -85,7 +85,7 @@ Required Python dependencies:
 
 * [flowio](https://github.com/whitews/flowio) == 0.9.11
 * [flowutils](https://github.com/whitews/flowutils) == 0.9.3
-* numpy >= 1.20
+* numpy >= 1.19
 * scipy >= 1.3
 * statsmodels
 * pandas >= 1.1

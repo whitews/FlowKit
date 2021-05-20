@@ -1,4 +1,4 @@
-numpy>=1.20
+numpy>=1.19
 statsmodels
 flowio==0.9.11
 flowutils==0.9.3

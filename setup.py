@@ -1,6 +1,6 @@
 from setuptools import dist, setup, find_packages, Extension
 
-dist.Distribution().fetch_build_eggs(['numpy>=1.20'])
+dist.Distribution().fetch_build_eggs(['numpy>=1.19'])
 
 import numpy as np
 
