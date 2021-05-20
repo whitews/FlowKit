@@ -4,9 +4,7 @@ Tests for FlowJo 10 workspace files
 import unittest
 import os
 import numpy as np
-from flowkit import Dimension, Session, gates, transforms
-# noinspection PyProtectedMember
-from flowkit._resources import resource_path
+from flowkit import Session, gates, transforms
 
 
 class FlowJoWSPTestCase(unittest.TestCase):
@@ -144,7 +142,7 @@ class FlowJoWSPTestCase(unittest.TestCase):
 
         # this LUT exists for only the single negative value of 1.0
         lut_file_name = "tr_biex_l256_w%.6f_n%.6f_m4.418540_r262144.000029.csv" % (width, neg)
-        lut_file_path = os.path.join(resource_path, 'flowjo_xforms', lut_file_name)
+        lut_file_path = os.path.join('examples', 'flowjo_xforms', lut_file_name)
         y, x = np.loadtxt(lut_file_path, delimiter=',', usecols=(0, 1), skiprows=1, unpack=True)
 
         biex_xform = transforms.WSPBiexTransform('biex', negative=neg, width=width)

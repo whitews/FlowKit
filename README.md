@@ -9,6 +9,7 @@
 [![Documentation Status](https://readthedocs.org/projects/flowkit/badge/?version=latest)](https://flowkit.readthedocs.io/en/latest/?badge=latest)
 
 * [Overview](#overview)
+* [Features](#features)
 * [Requirements](#requirements)
 * [Installation](#installation)
 * [Usage](#usage)
@@ -20,32 +21,33 @@ FlowKit is an intuitive Python toolkit for flow cytometry analysis and visualiza
 
 **Version 0.6 adds experimental support for exporting FlowJo 10 workspace files from a Session. Support is currently limited to exporting data from a single sample group. Please [submit an issue](https://github.com/whitews/FlowKit/issues/new/choose) if you find any bugs related to this feature.**
 
-Features include:
+<img alt="Screenshot of scatterplot" src="examples/fk_scatterplot.png" style="width:128px;" />
 
-* Reading Flow Cytometry Standard data (FCS files), including FCS versions:
-  * 2.0
-  * 3.0
-  * 3.1
-* Exporting FCS data in any of the following formats:
-  * A new FCS 3.1 file, with modified metadata and/or filtered events
-  * NumPy array
-  * Pandas DataFrame
-  * CSV text file
-* Compensation of FCS events
-  * Apply compensation from spillover matrices in multiple formats:
-    * As the $SPILL or $SPILLOVER keyword value format
-    * FlowJo tab-delimited text format
+## Features
+
+* Read / Write FCS Files
+  * Read FCS files, supporting FCS versions 2.0, 3.0, and 3.1
+  * Export FCS data as:
+    * A new FCS 3.1 file, with modified metadata and/or filtered events
+    * NumPy array
+    * Pandas DataFrame
+    * CSV text file
+* Compensation
+  * Compensate events using spillover matrices from:
+    * $SPILL or $SPILLOVER keyword value
+    * FlowJo tab-delimited text
     * NumPy array
     * GatingML 2.0 spectrumMatrix XML element
-  * Automatically create a compensation matrix from a set of compensation bead files
-* Transformation of FCS events in a variety of transforms used in the flow community:
-  * Logicle
-  * Inverse hyperbolic sine (ArcSinh)
-  * FlowJo Bi-exponential
-  * Hyperlog
-  * Logarithmic
-  * Channel ratios
-  * Linear
+  * Create a compensation matrix from a set of compensation bead files
+* Transformation
+  * Support for a variety of transformations used in the flow community:
+    * Logicle
+    * Inverse hyperbolic sine (ArcSinh)
+    * FlowJo Bi-exponential
+    * Hyperlog
+    * Logarithmic
+    * Channel ratios
+    * Linear
 * Gating
   * Full support for the GatingML 2.0 specification
     * Import GatingML XML documents as gating strategies
@@ -63,15 +65,12 @@ Features include:
     * Absolute event count
     * Relative percentage
     * Absolute percentage
-* Optional, automatic filtering of negative scatter events and/or anomalous events
-* Visualizing FCS event data:
+* Visualization
   * Histogram of single channel data
   * Contour density plot of two channels
   * Interactive scatter plot of two channels
   * Interactive scatter plot matrix of any combination of channels
   * Interactive scatter plots of gates with sample events
-
-<img alt="Screenshot of scatterplot" src="examples/fk_scatterplot.png" style="width:200px;" />
 
 ## Requirements
 
@@ -79,40 +78,34 @@ FlowKit supports Python version 3.6 or above. All dependencies are installable
 via pip, and are listed below.
 
 ***Note: FlowKit and FlowUtils use C extensions for significant performance 
-improvements relating to various transformations. If using `gcc`, version 5 or 
+improvements. If using `gcc`, version 5 or 
 above is required for correct Logicle and Hyperlog transformations.***
 
 Required Python dependencies:
 
-* [flowio](https://github.com/whitews/flowio) >= 0.9.7
-* [flowutils](https://github.com/whitews/flowutils) >= 0.8.0
-* numpy >= 1.13
+* [flowio](https://github.com/whitews/flowio) == 0.9.11
+* [flowutils](https://github.com/whitews/flowutils) == 0.9.3
+* numpy >= 1.19
 * scipy >= 1.3
-* statsmodels >= 0.8
-* pandas >= 0.22
-* matplotlib >= 3.0
-* seaborn >= 0.9
+* statsmodels
+* pandas >= 1.1
+* matplotlib >= 3.1
+* seaborn >= 0.11
 * bokeh >= 1.4
-* lxml >= 4.2
+* lxml >= 4.4
 * anytree >= 2.6
 
 ## Installation
 
 ### From PyPI
 
-FlowKit is available via the `pip` command. However, NumPy must be installed prior in order to
-compile the C extensions.
-
 ```
-pip install numpy
 pip install flowkit
 ```
 
 ### From source
 
 ```
-pip install numpy
-
 git clone https://github.com/whitews/flowkit
 cd flowkit
 
@@ -121,12 +114,13 @@ python setup.py install
 
 ## Usage
 
-Click on the links below to a few Jupyter notebooks that demonstrate basic usage of the library. Note, the interactive scatterplots do not render on Github. Clone the repo (or download the example notebooks), and run them locally to see the fully interactive plots.
+Below are a few Jupyter notebooks demonstrating basic usage of the library. Note, the interactive scatterplots do not render on GitHub. Clone the repo (or download the example notebooks), and run them locally to see the fully interactive plots.
 
 * [General Overview](https://github.com/whitews/FlowKit/blob/master/examples/flowkit-tutorial.ipynb)
-* [Applying Transforms to a Sample](https://github.com/whitews/FlowKit/blob/master/examples/sample_transforms.ipynb)
-* [Compensating Spillover in a Sample](https://github.com/whitews/FlowKit/blob/master/examples/sample_compensation.ipynb)
+* [Applying transforms to a Sample](https://github.com/whitews/FlowKit/blob/master/examples/sample_transforms.ipynb)
+* [Compensating events using spillover matrix](https://github.com/whitews/FlowKit/blob/master/examples/sample_compensation.ipynb)
 * [Importing a FlowJo 10 WSP file & replicating analysis in FlowKit](https://github.com/whitews/FlowKit/blob/master/examples/flowkit-session-replicate-flowjo-wsp-example.ipynb)
+* [Compare mean fluorescence intensity (MFI) in gated populations](https://github.com/whitews/FlowKit/blob/master/examples/flowkit-session-compare-mfi-of-gated-events.ipynb)
 
 ## Contributing
 

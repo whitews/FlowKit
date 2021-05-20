@@ -38,7 +38,7 @@ class RectangleGate(Gate):
     def apply(self, sample, parent_results, gating_strategy, gate_path):
         events, dim_idx, dim_min, dim_max, new_dims = super().preprocess_sample_events(sample, gating_strategy)
 
-        results = np.ones(events.shape[0], dtype=np.bool)
+        results = np.ones(events.shape[0], dtype=bool)
 
         for i, d_idx in enumerate(dim_idx):
             if dim_min[i] is not None:
@@ -327,7 +327,7 @@ class QuadrantGate(Gate):
         results = {}
 
         for q_id, quadrant in self.quadrants.items():
-            q_results = np.ones(events.shape[0], dtype=np.bool)
+            q_results = np.ones(events.shape[0], dtype=bool)
 
             dim_lut = {dim.id: dim.dimension_ref for dim in self.dimensions}
 

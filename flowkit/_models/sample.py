@@ -170,7 +170,7 @@ class Sample(object):
 
         # Start processing the event data. First, we'll save the unprocessed events
         self._orig_events = np.reshape(
-            np.array(flow_data.events, dtype=np.float),
+            np.array(flow_data.events, dtype=float),
             (-1, flow_data.channel_count)
         )
 
@@ -340,7 +340,7 @@ class Sample(object):
         self._subsample_seed = random_seed
         rng = np.random.RandomState(seed=self._subsample_seed)
 
-        bad_idx = np.empty(0, dtype=np.int)
+        bad_idx = np.empty(0, dtype=int)
 
         if self.negative_scatter_indices is not None:
             bad_idx = self.negative_scatter_indices
@@ -695,8 +695,8 @@ class Sample(object):
 
         if plot_events:
             seaborn.scatterplot(
-                x,
-                y,
+                x=x,
+                y=y,
                 palette=plot_utils.new_jet,
                 legend=False,
                 s=5,
@@ -706,9 +706,9 @@ class Sample(object):
 
         if plot_contour:
             seaborn.kdeplot(
-                x,
-                y,
-                bw='scott',
+                x=x,
+                y=y,
+                bw_method='scott',
                 cmap=plot_utils.new_jet,
                 linewidths=2,
                 alpha=1
@@ -924,16 +924,16 @@ class Sample(object):
             output_path = filename
 
         if subsample:
-            idx = np.zeros(self.event_count, np.bool)
+            idx = np.zeros(self.event_count, bool)
             idx[self.subsample_indices] = True
         else:
             # include all events to start with
-            idx = np.ones(self.event_count, np.bool)
+            idx = np.ones(self.event_count, bool)
 
         if exclude == 'bad':
             idx[self.anomalous_indices] = False
         elif exclude == 'good':
-            good_idx = np.zeros(self.event_count, np.bool)
+            good_idx = np.zeros(self.event_count, bool)
             good_idx[self.anomalous_indices] = True
             idx = np.logical_and(idx, good_idx)
 

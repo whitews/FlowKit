@@ -678,7 +678,7 @@ class Session(object):
         if gate.parent is not None:
             parent_results = gating_strategy.gate_sample(sample_to_plot, gate.parent)
             is_parent_event = parent_results.get_gate_indices(gate.parent)
-            is_subsample = np.zeros(sample_to_plot.event_count, dtype=np.bool)
+            is_subsample = np.zeros(sample_to_plot.event_count, dtype=bool)
             is_subsample[sample_to_plot.subsample_indices] = True
             idx_to_plot = np.logical_and(is_parent_event, is_subsample)
         else:
@@ -872,10 +872,10 @@ class Session(object):
             gate_results = gating_strategy.gate_sample(sample, gate_id)
             is_gate_event = gate_results.get_gate_indices(gate_id)
             if subsample:
-                is_subsample = np.zeros(sample.event_count, dtype=np.bool)
+                is_subsample = np.zeros(sample.event_count, dtype=bool)
                 is_subsample[sample.subsample_indices] = True
             else:
-                is_subsample = np.ones(sample.event_count, dtype=np.bool)
+                is_subsample = np.ones(sample.event_count, dtype=bool)
 
             idx_to_plot = np.logical_and(is_gate_event, is_subsample)
             x = x[idx_to_plot]
