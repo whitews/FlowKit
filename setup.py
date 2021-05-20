@@ -1,4 +1,7 @@
-from setuptools import setup, find_packages, Extension
+from setuptools import dist, setup, find_packages, Extension
+
+dist.Distribution().fetch_build_eggs(['numpy>=1.20'])
+
 import numpy as np
 
 with open("README.md", "r") as fh:
@@ -30,7 +33,7 @@ reqs = [
 
 setup(
     name='FlowKit',
-    version='0.6.0',
+    version='0.6.1b0',
     packages=find_packages(),
     package_data={'': ['_resources/*.xsd']},
     include_package_data=True,
