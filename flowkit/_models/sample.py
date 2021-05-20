@@ -695,8 +695,8 @@ class Sample(object):
 
         if plot_events:
             seaborn.scatterplot(
-                x,
-                y,
+                x=x,
+                y=y,
                 palette=plot_utils.new_jet,
                 legend=False,
                 s=5,
@@ -706,9 +706,9 @@ class Sample(object):
 
         if plot_contour:
             seaborn.kdeplot(
-                x,
-                y,
-                bw='scott',
+                x=x,
+                y=y,
+                bw_method='scott',
                 cmap=plot_utils.new_jet,
                 linewidths=2,
                 alpha=1
