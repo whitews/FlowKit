@@ -10,6 +10,7 @@ from .._models.gating_strategy import GatingStrategy
 # noinspection PyProtectedMember
 from .._models.transforms._matrix import Matrix
 from .._models import gates
+from .._models.sample import Sample
 from .._utils.gate_utils import multi_proc, mp
 from .._utils import plot_utils, xml_utils, wsp_utils, sample_utils
 import warnings
@@ -201,13 +202,25 @@ class Session(object):
         template = group['template']
         group['samples'][sample_id] = copy.deepcopy(template)
 
-    def get_sample_ids(self):
+    def get_sample_ids(self, loaded_only=True):
         """
         Retrieve the list of Sample IDs that have been loaded or referenced in the Session.
 
+        :param loaded_only: only return IDs for samples loaded in the Session (relevant
+            when a FlowJo workspace was imported without samples)
+
         :return: list of Sample ID strings
         """
-        return list(self.sample_lut.keys())
+        if loaded_only:
+            sample_ids = []
+
+            for k, v in self.sample_lut.items():
+                if isinstance(v, Sample):
+                    sample_ids.append(k)
+        else:
+            sample_ids = list(self.sample_lut.keys())
+
+        return sample_ids
 
     def get_sample_groups(self):
         """
@@ -217,15 +230,24 @@ class Session(object):
         """
         return list(self._sample_group_lut.keys())
 
-    def get_group_sample_ids(self, group_name):
+    def get_group_sample_ids(self, group_name, loaded_only=True):
         """
         Retrieve the list of Sample IDs belonging to the specified sample group.
         
         :param group_name: a text string representing the sample group
+        :param loaded_only: only return IDs for samples loaded in the Session (relevant
+            when a FlowJo workspace was imported without samples)
         :return: list of Sample IDs
         """
         # convert to list instead of dict_keys
-        return list(self._sample_group_lut[group_name]['samples'].keys())
+        sample_ids = list(self._sample_group_lut[group_name]['samples'].keys())
+        if loaded_only:
+            loaded_sample_ids = self.get_sample_ids()
+            sample_ids = list(set(sample_ids).union(set(loaded_sample_ids)))
+        else:
+            sample_ids = list(self._sample_group_lut[group_name]['samples'].keys())
+
+        return sample_ids
 
     def get_group_samples(self, group_name):
         """
@@ -235,15 +257,13 @@ class Session(object):
         :param group_name: a text string representing the sample group
         :return: list of Sample instances
         """
-        sample_ids = self.get_group_sample_ids(group_name)
+        # don't return samples that haven't been loaded
+        sample_ids = self.get_group_sample_ids(group_name, loaded_only=True)
 
         samples = []
         for s_id in sample_ids:
             sample = self.sample_lut[s_id]
-
-            # don't return samples that haven't been loaded
-            if sample is not None:
-                samples.append(self.sample_lut[s_id])
+            samples.append(sample)
 
         return samples
 
