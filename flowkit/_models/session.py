@@ -179,7 +179,7 @@ class Session(object):
                 # sample ID may have been added via a FlowJo workspace,
                 # check if Sample value is None
                 if self.sample_lut[s.original_filename] is not None:
-                    warnings.warn("A sample with this ID already exists...skipping")
+                    warnings.warn("A sample with ID %s already exists...skipping" % s.original_filename)
                     continue
             self.sample_lut[s.original_filename] = s
 
