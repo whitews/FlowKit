@@ -18,8 +18,9 @@ class FlowJoWSPTestCase(unittest.TestCase):
         self.assertIsInstance(
             fks.get_gate(
                 'my_group',
-                'data_set_simple_line_100.fcs',
-                'poly1'),
+                'poly1',
+                sample_id='data_set_simple_line_100.fcs'
+            ),
             gates.PolygonGate
         )
 
@@ -38,8 +39,9 @@ class FlowJoWSPTestCase(unittest.TestCase):
         self.assertIsInstance(
             fks.get_gate(
                 'All Samples',
-                'data_set_simple_line_100.fcs',
-                'ellipse1'),
+                'ellipse1',
+                sample_id='data_set_simple_line_100.fcs'
+            ),
             gates.EllipsoidGate
         )
 
@@ -59,8 +61,9 @@ class FlowJoWSPTestCase(unittest.TestCase):
         self.assertIsInstance(
             fks.get_gate(
                 'All Samples',
-                'test_data_diamond_01.fcs',
-                'Q1: channel_A- , channel_B+'),
+                'Q1: channel_A- , channel_B+',
+                sample_id='test_data_diamond_01.fcs'
+            ),
             gates.RectangleGate
         )
 
@@ -86,8 +89,9 @@ class FlowJoWSPTestCase(unittest.TestCase):
         self.assertIsInstance(
             fks.get_gate(
                 'All Samples',
-                'test_data_diamond_01.fcs',
-                'upper_right'),
+                'upper_right',
+                sample_id='test_data_diamond_01.fcs'
+            ),
             gates.RectangleGate
         )
 
@@ -106,8 +110,9 @@ class FlowJoWSPTestCase(unittest.TestCase):
         self.assertIsInstance(
             fks.get_gate(
                 'All Samples',
-                'test_data_diamond_01.fcs',
-                'upper_right'),
+                'upper_right',
+                sample_id='test_data_diamond_01.fcs'
+            ),
             gates.RectangleGate
         )
 
@@ -126,8 +131,9 @@ class FlowJoWSPTestCase(unittest.TestCase):
         self.assertIsInstance(
             fks.get_gate(
                 'All Samples',
-                'test_data_diamond_01.fcs',
-                'upper_right'),
+                'upper_right',
+                sample_id='test_data_diamond_01.fcs'
+            ),
             gates.RectangleGate
         )
 

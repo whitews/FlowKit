@@ -1116,7 +1116,7 @@ class ExportGMLTestCase(unittest.TestCase):
 
         self.assertEqual(parent_id, 'ScaleRect1')
 
-        parent_gate = sess_out.get_gate(group_name, data1_sample.original_filename, parent_id)
+        parent_gate = sess_out.get_gate(group_name, parent_id, sample_id=data1_sample.original_filename)
 
         self.assertIsInstance(parent_gate, gates.RectangleGate)
 
@@ -1141,7 +1141,7 @@ class ExportGMLTestCase(unittest.TestCase):
 
         self.assertEqual(parent_id, 'FL2P-FL4P')
 
-        parent_gate = sess_out.get_gate(group_name, data1_sample.original_filename, parent_id)
+        parent_gate = sess_out.get_gate(group_name, parent_id, sample_id=data1_sample.original_filename)
 
         self.assertIsInstance(parent_gate, gates.Quadrant)
 

@@ -408,19 +408,22 @@ class Session(object):
         gate = template.get_gate(gate_id)
         return gate.parent
 
-    def get_gate(self, group_name, sample_id, gate_id, gate_path=None):
+    def get_gate(self, group_name, gate_id, gate_path=None, sample_id=None):
         """
         Retrieve a gate instance by its group, sample, and gate ID.
 
         :param group_name: a text string representing the sample group
-        :param sample_id: a text string representing a Sample instance
         :param gate_id: text string of a gate ID
         :param gate_path: complete list of gate IDs for unique set of gate ancestors. Required if gate_id is ambiguous
+        :param sample_id: a text string representing a Sample instance. If None, the template gate is returned.
         :return: Subclass of a Gate object
         """
         # TODO: this needs to handle getting default template gate or sample specific gate
         group = self._sample_group_lut[group_name]
-        gating_strategy = group['samples'][sample_id]
+        if sample_id is None:
+            gating_strategy = group['template']
+        else:
+            gating_strategy = group['samples'][sample_id]
         gate = gating_strategy.get_gate(gate_id, gate_path=gate_path)
         return gate
 

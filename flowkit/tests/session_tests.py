@@ -173,6 +173,14 @@ class SessionTestCase(unittest.TestCase):
 
         np.testing.assert_array_equal(truth, result.get_gate_indices('Polygon1'))
 
+    def test_get_gate_from_template(self):
+        fks = Session(fcs_samples=data1_sample)
+        fks.add_gate(poly1_gate)
+
+        template_gate = fks.get_gate('default', 'Polygon1')
+
+        self.assertEqual(template_gate.id, 'Polygon1')
+
     @staticmethod
     def test_add_matrix_poly4_gate():
         fks = Session(fcs_samples=data1_sample)

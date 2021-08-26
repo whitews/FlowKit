@@ -74,7 +74,7 @@ class PlotTestCase(unittest.TestCase):
         gate_tuples = fks.get_gate_ids(group_name)
 
         for gate_id, ancestors in gate_tuples:
-            gate = fks.get_gate(group_name, sample_name, gate_id)
+            gate = fks.get_gate(group_name, gate_id, sample_id=sample_name)
             if isinstance(gate, fk.gates.Quadrant):
                 # cannot plot single quadrants of a quadrant gate
                 continue
