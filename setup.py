@@ -33,8 +33,8 @@ reqs = [
 
 setup(
     name='FlowKit',
-    version='0.6.2b',
-    packages=find_packages(),
+    version='0.6.2',
+    packages=find_packages(exclude=["flowkit/tests/"]),
     package_data={'': ['_resources/*.xsd']},
     include_package_data=True,
     description='Flow Cytometry Toolkit',
