@@ -8,7 +8,11 @@ from .. import _utils_c as utils_c
 
 try:
     import multiprocessing as mp
-    multi_proc = True
+
+    # TODO: Multi-processing is still having issues with large data sets. Reset back to True when fixed.
+    #   See potential fix here:
+    #   https://pythonspeed.com/articles/python-multiprocessing/
+    multi_proc = False
 except ImportError:
     mp = None
     multi_proc = False
