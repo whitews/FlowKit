@@ -165,7 +165,7 @@ class LogTransform(Transform):
         """
         return flowutils.transforms.log(
             events,
-            range(events.shape[1]),
+            None,
             t=self.param_t,
             m=self.param_m
         )
@@ -179,7 +179,7 @@ class LogTransform(Transform):
         """
         return flowutils.transforms.log_inverse(
             events,
-            range(events.shape[1]),
+            None,
             t=self.param_t,
             m=self.param_m
         )
@@ -238,7 +238,7 @@ class HyperlogTransform(Transform):
         """
         return flowutils.transforms.hyperlog(
             events,
-            range(events.shape[1]),
+            None,
             t=self.param_t,
             m=self.param_m,
             w=self.param_w,
@@ -254,7 +254,7 @@ class HyperlogTransform(Transform):
         """
         return flowutils.transforms.hyperlog_inverse(
             events,
-            range(events.shape[1]),
+            None,
             t=self.param_t,
             m=self.param_m,
             w=self.param_w,
@@ -316,7 +316,7 @@ class LogicleTransform(Transform):
         """
         return flowutils.transforms.logicle(
             events,
-            range(events.shape[1]),
+            None,
             t=self.param_t,
             m=self.param_m,
             w=self.param_w,
@@ -332,7 +332,7 @@ class LogicleTransform(Transform):
         """
         return flowutils.transforms.logicle_inverse(
             events,
-            range(events.shape[1]),
+            None,
             t=self.param_t,
             m=self.param_m,
             w=self.param_w,
@@ -378,7 +378,7 @@ class AsinhTransform(Transform):
         """
         return flowutils.transforms.asinh(
             events,
-            range(events.shape[1]),
+            None,
             t=self.param_t,
             m=self.param_m,
             a=self.param_a
@@ -393,7 +393,7 @@ class AsinhTransform(Transform):
         """
         return flowutils.transforms.asinh_inverse(
             events,
-            range(events.shape[1]),
+            None,
             t=self.param_t,
             m=self.param_m,
             a=self.param_a
