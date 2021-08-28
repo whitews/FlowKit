@@ -689,8 +689,8 @@ def _add_rectangle_gate(parent_el, gate, fj_gate_id, fj_parent_gate_id, gating_s
 
         if xform_ref is not None:
             xform = gating_strategy.get_transform(xform_ref)
-            dim_min = xform.inverse(dim.min)
-            dim_max = xform.inverse(dim.max)
+            dim_min = xform.inverse(np.array([[dim.min]]))[0, 0]
+            dim_max = xform.inverse(np.array([[dim.max]]))[0, 0]
         else:
             dim_min = dim.min
             dim_max = dim.max
