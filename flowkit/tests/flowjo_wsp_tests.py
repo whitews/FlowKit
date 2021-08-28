@@ -208,4 +208,4 @@ class FlowJoWSPTestCase(unittest.TestCase):
         fks.analyze_samples(sample_grp, sample_id=sample_id)
         report = fks.get_group_report(sample_grp)
 
-        self.assertEqual(report.index.get_level_values('sample').nunique(), 1)
+        self.assertEqual(report['sample'].nunique(), 1)

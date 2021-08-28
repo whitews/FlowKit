@@ -1179,6 +1179,6 @@ class ExportGMLTestCase(unittest.TestCase):
 
         for row in gs_results.report.itertuples():
             np.testing.assert_array_equal(
-                truth_dict[row[0][1]],
-                gs_results.get_gate_indices(row[0][1])
+                truth_dict[row.gate_id],
+                gs_results.get_gate_indices(row.gate_id)
             )

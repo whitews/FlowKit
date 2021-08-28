@@ -77,7 +77,7 @@ class GatingResults(object):
         #   when looking up rows using .loc. The hit in this case is minimal and we
         #   really want the DataFrame sorted by 'level' for better readability.
         #   Maybe consider not setting a MultiIndex for this?
-        self.report = df.set_index(['sample', 'gate_id']).sort_index().sort_values('level')
+        self.report = df.sort_values(['sample', 'level', 'gate_id'])
 
     def get_gate_indices(self, gate_id, gate_path=None):
         """
@@ -99,16 +99,18 @@ class GatingResults(object):
         else:
             gate_path = gate_paths[0]
 
-        gate_series = self.report.loc[(self.sample_id, gate_id)]
-        if isinstance(gate_series, pd.DataFrame):
-            gate_series = gate_series.iloc[0]
+        # need to check for quadrant gates, as they need to be handled differently
+        gate_data = self.report[(self.report['sample'] == self.sample_id) & (self.report.gate_id == gate_id)]
+        quad_parent_values = set(gate_data.quadrant_parent.to_list())
 
-        quad_parent = gate_series['quadrant_parent']
-
-        if quad_parent is not None:
+        if len(quad_parent_values) == 1 and None in quad_parent_values:
+            # it's not a quadrant gate
+            return self._raw_results[gate_id, gate_path]['events']
+        elif len(quad_parent_values) == 1:
+            quad_parent = quad_parent_values.pop()
             return self._raw_results[quad_parent, gate_path][gate_id]['events']
         else:
-            return self._raw_results[gate_id, gate_path]['events']
+            raise ValueError("Report as bug: The gate %s appears to have multiple quadrant parents." % gate_id)
 
     def get_gate_count(self, gate_id):
         """
@@ -117,7 +119,12 @@ class GatingResults(object):
         :param gate_id: text string of a gate ID
         :return: integer count of events in gate ID
         """
-        return self.report.loc[(self.sample_id, gate_id), 'count']
+        results = self.report[(self.report['sample'] == self.sample_id) & (self.report['gate_id'] == gate_id)]
+
+        if len(results) > 1:
+            raise NotImplementedError("Gate ID %s is ambiguous and gate_path is not yet implemented for this method")
+
+        return results['count'].values[0]
 
     def get_gate_absolute_percent(self, gate_id):
         """
@@ -127,7 +134,12 @@ class GatingResults(object):
         :param gate_id: text string of a gate ID
         :return: floating point number of the absolute percent
         """
-        return self.report.loc[(self.sample_id, gate_id), 'absolute_percent']
+        results = self.report[(self.report['sample'] == self.sample_id) & (self.report['gate_id'] == gate_id)]
+
+        if len(results) > 1:
+            raise NotImplementedError("Gate ID %s is ambiguous and gate_path is not yet implemented for this method")
+
+        return results['absolute_percent'].values[0]
 
     def get_gate_relative_percent(self, gate_id):
         """
@@ -136,4 +148,9 @@ class GatingResults(object):
         :param gate_id: text string of a gate ID
         :return: floating point number of the relative percent
         """
-        return self.report.loc[(self.sample_id, gate_id), 'relative_percent']
+        results = self.report[(self.report['sample'] == self.sample_id) & (self.report['gate_id'] == gate_id)]
+
+        if len(results) > 1:
+            raise NotImplementedError("Gate ID %s is ambiguous and gate_path is not yet implemented for this method")
+
+        return results['relative_percent'].values[0]
