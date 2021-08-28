@@ -3,6 +3,7 @@ Tests for FlowJo 10 workspace files
 """
 import unittest
 import os
+from io import BytesIO
 import numpy as np
 from flowkit import Session, gates, transforms
 
@@ -209,3 +210,33 @@ class FlowJoWSPTestCase(unittest.TestCase):
         report = fks.get_group_report(sample_grp)
 
         self.assertEqual(report['sample'].nunique(), 1)
+
+    def test_export_wsp(self):
+        wsp_path = "examples/8_color_data_set/8_color_ICS.wsp"
+        fcs_path = "examples/8_color_data_set/fcs_files"
+        sample_grp = 'DEN'
+
+        # use a leaf gate to test if the new WSP session is created correctly
+        gate_id = 'TNFa+'
+        gate_path = ['root', 'Time', 'Singlets', 'aAmine-', 'CD3+', 'CD4+']
+
+        fks = Session(fcs_samples=fcs_path)
+        fks.import_flowjo_workspace(wsp_path, ignore_missing_files=True)
+
+        out_file = BytesIO()
+        fks.export_wsp(out_file, sample_grp)
+        out_file.seek(0)
+
+        fks_out = Session(fcs_samples=fcs_path)
+        fks_out.import_flowjo_workspace(out_file, ignore_missing_files=True)
+
+        self.assertIsInstance(fks_out, Session)
+
+        fks_gate = fks.get_gate(sample_grp, gate_id, gate_path)
+        fks_out_gate = fks_out.get_gate(sample_grp, gate_id, gate_path)
+
+        self.assertIsInstance(fks_gate, gates.RectangleGate)
+        self.assertIsInstance(fks_out_gate, gates.RectangleGate)
+
+        self.assertEqual(fks_gate.id, gate_id)
+        self.assertEqual(fks_out_gate.id, gate_id)
