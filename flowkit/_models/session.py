@@ -81,8 +81,9 @@ class Session(object):
         Create a new sample group to the session. The group name must be unique to the session.
 
         :param group_name: a text string representing the sample group
-        :param gating_strategy: a gating strategy instance to use for the group template. If None, then a new, blank
-            gating strategy will be created.
+        :param gating_strategy: an optional gating strategy to use for the group template. Can be
+            a path or file to a GatingML 2.0 file or a GatingStrategy instance. If None, then a new,
+            blank gating strategy will be created.
         :return: None
         """
         if group_name in self._sample_group_lut:
@@ -576,7 +577,8 @@ class Session(object):
         Retrieve analyzed gating results gates for a sample in a sample group.
 
         :param group_name: a text string representing the sample group
-        :param sample_id: optional sample ID, if specified only this sample will be processed
+        :param sample_id: a text string representing a loaded Sample instance that is
+            assigned to the specified group
         :return: GatingResults instance
         """
 
