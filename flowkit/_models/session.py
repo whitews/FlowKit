@@ -664,6 +664,68 @@ class Session(object):
 
         return gated_event_data
 
+    def get_wsp_gated_events(self, sample_group, sample_ids=None, gate_id=None):
+        """
+        Convert gated events in FlowJo WSP sample group to
+        list of compensated and transformed DataFrames.
+        """
+
+        if sample_ids is None:
+            sample_ids = self.get_group_sample_ids(sample_group)
+
+        if gate_id is None:
+            gate_ids = self.get_gate_ids(sample_group)
+            gate_name, gate_path = gate_ids[0]
+        elif isinstance(gate_id, tuple):
+            gate_name, gate_path = gate_id
+        else:
+            gate_name, gate_path = gate_id, None
+
+        df_events_list = []
+
+        for sample_id in sample_ids:
+            # determine sample's comp matrix...possible there are many
+            comp_matrices = self.get_sample_comp_matrices(sample_group, sample_id)
+
+            if len(comp_matrices) > 1:
+                # choose first transform, we'll verify the rest match it
+                ref_cm = comp_matrices[0]
+
+                for cm in comp_matrices:
+                    diff_mat = ref_cm.matrix != cm.matrix
+                    if np.sum(diff_mat) != 0:
+                        warnings.warn(
+                            "Sample %s has multiple comp matrices that differ, choosing the 1st." % sample_id,
+                            UserWarning
+                        )
+            elif len(comp_matrices) == 1:
+                ref_cm = comp_matrices[0]
+            else:
+                ref_cm = None
+
+            xforms = self.get_sample_transforms(sample_group, sample_id)
+
+            xform_lut = {xform.id: xform for xform in xforms if not xform.id.startswith('Comp')}
+
+            df = self.get_gate_events(
+                group_name=sample_group,
+                sample_id=sample_id,
+                gate_id=gate_name,
+                gate_path=gate_path,
+                matrix=ref_cm,
+                transform=xform_lut,
+            )
+
+            # TODO: not sure if this column merging is best to do here
+            df.columns = [' '.join(col).strip() for col in df.columns.values]
+
+            df.insert(0, 'sample_group', sample_group)
+            df.insert(1, 'sample_id', sample_id)
+
+            df_events_list.append(df)
+
+        return df_events_list
+
     def plot_gate(
             self,
             group_name,
