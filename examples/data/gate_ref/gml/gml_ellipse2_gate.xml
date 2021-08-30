@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<gating:Gating-ML
+    xmlns:gating="http://www.isac-net.org/std/Gating-ML/v2.0/gating"
+    xmlns:data-type="http://www.isac-net.org/std/Gating-ML/v2.0/datatypes">
+
+    <gating:EllipsoidGate gating:id="myEllipse2">
+        <data-type:custom_info a="37" b="30" rotation="-45dg" />
+
+        <gating:dimension gating:compensation-ref="uncompensated">
+            <data-type:fcs-dimension data-type:name="FSC-H" />
+        </gating:dimension>
+
+        <gating:dimension gating:compensation-ref="uncompensated">
+            <data-type:fcs-dimension data-type:name="SSC-H" />
+        </gating:dimension>
+
+        <gating:mean>
+            <gating:coordinate data-type:value="40" />
+            <gating:coordinate data-type:value="40" />
+        </gating:mean>
+
+        <gating:covarianceMatrix>
+            <gating:row>
+                <gating:entry data-type:value="1134.5" />
+                <gating:entry data-type:value="-234.5" />
+            </gating:row>
+            <gating:row>
+                <gating:entry data-type:value="-234.5" />
+                <gating:entry data-type:value="1134.5" />
+            </gating:row>
+        </gating:covarianceMatrix>
+        <gating:distanceSquare data-type:value="1" />
+    </gating:EllipsoidGate>
+
+</gating:Gating-ML>

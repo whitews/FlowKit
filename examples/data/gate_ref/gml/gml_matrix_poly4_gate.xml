@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<gating:Gating-ML
+    xmlns:gating="http://www.isac-net.org/std/Gating-ML/v2.0/gating"
+    xmlns:transforms="http://www.isac-net.org/std/Gating-ML/v2.0/transformations"
+    xmlns:data-type="http://www.isac-net.org/std/Gating-ML/v2.0/datatypes">
+
+    <transforms:spectrumMatrix transforms:id="MySpill">
+        <transforms:fluorochromes>
+            <data-type:fcs-dimension data-type:name="FITC" />
+            <data-type:fcs-dimension data-type:name="PE" />
+            <data-type:fcs-dimension data-type:name="PerCP" />
+        </transforms:fluorochromes>
+        <transforms:detectors>
+            <data-type:fcs-dimension data-type:name="FL1-H" />
+            <data-type:fcs-dimension data-type:name="FL2-H" />
+            <data-type:fcs-dimension data-type:name="FL3-H" />
+        </transforms:detectors>
+        <transforms:spectrum>
+            <transforms:coefficient transforms:value="1" />
+            <transforms:coefficient transforms:value="0.02" />
+            <transforms:coefficient transforms:value="0.06" />
+        </transforms:spectrum>
+        <transforms:spectrum>
+            <transforms:coefficient transforms:value="0.11" />
+            <transforms:coefficient transforms:value="1" />
+            <transforms:coefficient transforms:value="0.07" />
+        </transforms:spectrum>
+        <transforms:spectrum>
+            <transforms:coefficient transforms:value="0.09" />
+            <transforms:coefficient transforms:value="0.01" />
+            <transforms:coefficient transforms:value="1" />
+        </transforms:spectrum>
+    </transforms:spectrumMatrix>
+
+    <gating:PolygonGate gating:id="Polygon4">
+        <data-type:custom_info>
+            Same as Polygon 1 except for compensation.
+        </data-type:custom_info>
+        <gating:dimension gating:compensation-ref="MySpill">
+            <data-type:fcs-dimension data-type:name="PE" />
+        </gating:dimension>
+        <gating:dimension gating:compensation-ref="MySpill">
+            <data-type:fcs-dimension data-type:name="PerCP" />
+        </gating:dimension>
+        <gating:vertex>
+            <gating:coordinate data-type:value="5" />
+            <gating:coordinate data-type:value="5" />
+        </gating:vertex>
+        <gating:vertex>
+            <gating:coordinate data-type:value="500" />
+            <gating:coordinate data-type:value="5" />
+        </gating:vertex>
+        <gating:vertex>
+            <gating:coordinate data-type:value="500" />
+            <gating:coordinate data-type:value="500" />
+        </gating:vertex>
+    </gating:PolygonGate>
+
+</gating:Gating-ML>
