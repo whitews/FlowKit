@@ -35,7 +35,7 @@ class GatingMLTestCase(unittest.TestCase):
         group_name = 'gml'
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
-        s.assign_sample(data1_sample.original_filename, group_name)
+        s.assign_samples(data1_sample.original_filename, group_name)
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -52,7 +52,7 @@ class GatingMLTestCase(unittest.TestCase):
         group_name = 'gml'
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
-        s.assign_sample(data1_sample.original_filename, group_name)
+        s.assign_samples(data1_sample.original_filename, group_name)
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -69,7 +69,7 @@ class GatingMLTestCase(unittest.TestCase):
         group_name = 'gml'
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
-        s.assign_sample(data1_sample.original_filename, group_name)
+        s.assign_samples(data1_sample.original_filename, group_name)
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -86,7 +86,7 @@ class GatingMLTestCase(unittest.TestCase):
         group_name = 'gml'
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
-        s.assign_sample(data1_sample.original_filename, group_name)
+        s.assign_samples(data1_sample.original_filename, group_name)
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -103,7 +103,7 @@ class GatingMLTestCase(unittest.TestCase):
         group_name = 'gml'
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
-        s.assign_sample(data1_sample.original_filename, group_name)
+        s.assign_samples(data1_sample.original_filename, group_name)
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -120,7 +120,7 @@ class GatingMLTestCase(unittest.TestCase):
         group_name = 'gml'
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
-        s.assign_sample(data1_sample.original_filename, group_name)
+        s.assign_samples(data1_sample.original_filename, group_name)
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -137,7 +137,7 @@ class GatingMLTestCase(unittest.TestCase):
         group_name = 'gml'
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
-        s.assign_sample(data1_sample.original_filename, group_name)
+        s.assign_samples(data1_sample.original_filename, group_name)
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -154,7 +154,7 @@ class GatingMLTestCase(unittest.TestCase):
         group_name = 'gml'
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
-        s.assign_sample(data1_sample.original_filename, group_name)
+        s.assign_samples(data1_sample.original_filename, group_name)
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -171,7 +171,7 @@ class GatingMLTestCase(unittest.TestCase):
         group_name = 'gml'
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
-        s.assign_sample(data1_sample.original_filename, group_name)
+        s.assign_samples(data1_sample.original_filename, group_name)
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -191,7 +191,7 @@ class GatingMLTestCase(unittest.TestCase):
         group_name = 'gml'
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
-        s.assign_sample(data1_sample.original_filename, group_name)
+        s.assign_samples(data1_sample.original_filename, group_name)
 
         truth1 = pd.read_csv(res1_path, header=None, squeeze=True, dtype='bool').values
         truth2 = pd.read_csv(res2_path, header=None, squeeze=True, dtype='bool').values
@@ -217,7 +217,7 @@ class GatingMLTestCase(unittest.TestCase):
         group_name = 'gml'
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
-        s.assign_sample(data1_sample.original_filename, group_name)
+        s.assign_samples(data1_sample.original_filename, group_name)
         s.analyze_samples(group_name=group_name)
 
         result = s.get_gating_results(group_name, data1_sample.original_filename)
@@ -242,7 +242,7 @@ class GatingMLTestCase(unittest.TestCase):
         group_name = 'gml'
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
-        s.assign_sample(data1_sample.original_filename, group_name)
+        s.assign_samples(data1_sample.original_filename, group_name)
         s.analyze_samples(group_name=group_name)
 
         truth1 = pd.read_csv(res1_path, header=None, squeeze=True, dtype='bool').values
@@ -268,7 +268,7 @@ class GatingMLTestCase(unittest.TestCase):
         group_name = 'gml'
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
-        s.assign_sample(data1_sample.original_filename, group_name)
+        s.assign_samples(data1_sample.original_filename, group_name)
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -285,7 +285,7 @@ class GatingMLTestCase(unittest.TestCase):
         group_name = 'gml'
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
-        s.assign_sample(data1_sample.original_filename, group_name)
+        s.assign_samples(data1_sample.original_filename, group_name)
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -302,7 +302,7 @@ class GatingMLTestCase(unittest.TestCase):
         group_name = 'gml'
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
-        s.assign_sample(data1_sample.original_filename, group_name)
+        s.assign_samples(data1_sample.original_filename, group_name)
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -319,7 +319,7 @@ class GatingMLTestCase(unittest.TestCase):
         group_name = 'gml'
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
-        s.assign_sample(data1_sample.original_filename, group_name)
+        s.assign_samples(data1_sample.original_filename, group_name)
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -336,7 +336,7 @@ class GatingMLTestCase(unittest.TestCase):
         group_name = 'gml'
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
-        s.assign_sample(data1_sample.original_filename, group_name)
+        s.assign_samples(data1_sample.original_filename, group_name)
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -353,7 +353,7 @@ class GatingMLTestCase(unittest.TestCase):
         group_name = 'gml'
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
-        s.assign_sample(data1_sample.original_filename, group_name)
+        s.assign_samples(data1_sample.original_filename, group_name)
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -370,7 +370,7 @@ class GatingMLTestCase(unittest.TestCase):
         group_name = 'gml'
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
-        s.assign_sample(data1_sample.original_filename, group_name)
+        s.assign_samples(data1_sample.original_filename, group_name)
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -387,7 +387,7 @@ class GatingMLTestCase(unittest.TestCase):
         group_name = 'gml'
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
-        s.assign_sample(data1_sample.original_filename, group_name)
+        s.assign_samples(data1_sample.original_filename, group_name)
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -404,7 +404,7 @@ class GatingMLTestCase(unittest.TestCase):
         group_name = 'gml'
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
-        s.assign_sample(data1_sample.original_filename, group_name)
+        s.assign_samples(data1_sample.original_filename, group_name)
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -421,7 +421,7 @@ class GatingMLTestCase(unittest.TestCase):
         group_name = 'gml'
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
-        s.assign_sample(data1_sample.original_filename, group_name)
+        s.assign_samples(data1_sample.original_filename, group_name)
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -438,7 +438,7 @@ class GatingMLTestCase(unittest.TestCase):
         group_name = 'gml'
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
-        s.assign_sample(data1_sample.original_filename, group_name)
+        s.assign_samples(data1_sample.original_filename, group_name)
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -455,7 +455,7 @@ class GatingMLTestCase(unittest.TestCase):
         group_name = 'gml'
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
-        s.assign_sample(data1_sample.original_filename, group_name)
+        s.assign_samples(data1_sample.original_filename, group_name)
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -472,7 +472,7 @@ class GatingMLTestCase(unittest.TestCase):
         group_name = 'gml'
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
-        s.assign_sample(data1_sample.original_filename, group_name)
+        s.assign_samples(data1_sample.original_filename, group_name)
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -489,7 +489,7 @@ class GatingMLTestCase(unittest.TestCase):
         group_name = 'gml'
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
-        s.assign_sample(data1_sample.original_filename, group_name)
+        s.assign_samples(data1_sample.original_filename, group_name)
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -506,7 +506,7 @@ class GatingMLTestCase(unittest.TestCase):
         group_name = 'gml'
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
-        s.assign_sample(data1_sample.original_filename, group_name)
+        s.assign_samples(data1_sample.original_filename, group_name)
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -523,7 +523,7 @@ class GatingMLTestCase(unittest.TestCase):
         group_name = 'gml'
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
-        s.assign_sample(data1_sample.original_filename, group_name)
+        s.assign_samples(data1_sample.original_filename, group_name)
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -540,7 +540,7 @@ class GatingMLTestCase(unittest.TestCase):
         group_name = 'gml'
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
-        s.assign_sample(data1_sample.original_filename, group_name)
+        s.assign_samples(data1_sample.original_filename, group_name)
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -557,7 +557,7 @@ class GatingMLTestCase(unittest.TestCase):
         group_name = 'gml'
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
-        s.assign_sample(data1_sample.original_filename, group_name)
+        s.assign_samples(data1_sample.original_filename, group_name)
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -574,7 +574,7 @@ class GatingMLTestCase(unittest.TestCase):
         group_name = 'gml'
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
-        s.assign_sample(data1_sample.original_filename, group_name)
+        s.assign_samples(data1_sample.original_filename, group_name)
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -591,7 +591,7 @@ class GatingMLTestCase(unittest.TestCase):
         group_name = 'gml'
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
-        s.assign_sample(data1_sample.original_filename, group_name)
+        s.assign_samples(data1_sample.original_filename, group_name)
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -608,7 +608,7 @@ class GatingMLTestCase(unittest.TestCase):
         group_name = 'gml'
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
-        s.assign_sample(data1_sample.original_filename, group_name)
+        s.assign_samples(data1_sample.original_filename, group_name)
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -625,7 +625,7 @@ class GatingMLTestCase(unittest.TestCase):
         group_name = 'gml'
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
-        s.assign_sample(data1_sample.original_filename, group_name)
+        s.assign_samples(data1_sample.original_filename, group_name)
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -642,7 +642,7 @@ class GatingMLTestCase(unittest.TestCase):
         group_name = 'gml'
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
-        s.assign_sample(data1_sample.original_filename, group_name)
+        s.assign_samples(data1_sample.original_filename, group_name)
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -659,7 +659,7 @@ class GatingMLTestCase(unittest.TestCase):
         group_name = 'gml'
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
-        s.assign_sample(data1_sample.original_filename, group_name)
+        s.assign_samples(data1_sample.original_filename, group_name)
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -676,7 +676,7 @@ class GatingMLTestCase(unittest.TestCase):
         group_name = 'gml'
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
-        s.assign_sample(data1_sample.original_filename, group_name)
+        s.assign_samples(data1_sample.original_filename, group_name)
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -693,7 +693,7 @@ class GatingMLTestCase(unittest.TestCase):
         group_name = 'gml'
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
-        s.assign_sample(data1_sample.original_filename, group_name)
+        s.assign_samples(data1_sample.original_filename, group_name)
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -710,7 +710,7 @@ class GatingMLTestCase(unittest.TestCase):
         group_name = 'gml'
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
-        s.assign_sample(data1_sample.original_filename, group_name)
+        s.assign_samples(data1_sample.original_filename, group_name)
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -727,7 +727,7 @@ class GatingMLTestCase(unittest.TestCase):
         group_name = 'gml'
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
-        s.assign_sample(data1_sample.original_filename, group_name)
+        s.assign_samples(data1_sample.original_filename, group_name)
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -744,7 +744,7 @@ class GatingMLTestCase(unittest.TestCase):
         group_name = 'gml'
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
-        s.assign_sample(data1_sample.original_filename, group_name)
+        s.assign_samples(data1_sample.original_filename, group_name)
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -761,7 +761,7 @@ class GatingMLTestCase(unittest.TestCase):
         group_name = 'gml'
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
-        s.assign_sample(data1_sample.original_filename, group_name)
+        s.assign_samples(data1_sample.original_filename, group_name)
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -778,7 +778,7 @@ class GatingMLTestCase(unittest.TestCase):
         group_name = 'gml'
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
-        s.assign_sample(data1_sample.original_filename, group_name)
+        s.assign_samples(data1_sample.original_filename, group_name)
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -795,7 +795,7 @@ class GatingMLTestCase(unittest.TestCase):
         group_name = 'gml'
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
-        s.assign_sample(data1_sample.original_filename, group_name)
+        s.assign_samples(data1_sample.original_filename, group_name)
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -812,7 +812,7 @@ class GatingMLTestCase(unittest.TestCase):
         group_name = 'gml'
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
-        s.assign_sample(data1_sample.original_filename, group_name)
+        s.assign_samples(data1_sample.original_filename, group_name)
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -827,7 +827,7 @@ class GatingMLTestCase(unittest.TestCase):
         group_name = 'gml'
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
-        s.assign_sample(data1_sample.original_filename, group_name)
+        s.assign_samples(data1_sample.original_filename, group_name)
         parent_id = s.get_parent_gate_id(group_name, 'ScalePar1')
 
         self.assertEqual(parent_id, 'ScaleRect1')
@@ -843,7 +843,7 @@ class GatingMLTestCase(unittest.TestCase):
         group_name = 'gml'
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
-        s.assign_sample(data1_sample.original_filename, group_name)
+        s.assign_samples(data1_sample.original_filename, group_name)
         parent_id = s.get_parent_gate_id(group_name, 'ParRectangle1')
 
         self.assertEqual(parent_id, 'FL2P-FL4P')
@@ -884,7 +884,7 @@ class GatingMLTestCase(unittest.TestCase):
         group_name = 'gml'
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
-        s.assign_sample(data1_sample.original_filename, group_name)
+        s.assign_samples(data1_sample.original_filename, group_name)
         s.analyze_samples(group_name=group_name)
         results = s.get_gating_results(group_name, data1_sample.original_filename)
 

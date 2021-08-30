@@ -32,7 +32,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out = Session()
         sess_out.add_sample_group(group_name, gating_strategy=out_file)
         sess_out.add_samples(data1_sample)
-        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -56,7 +56,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out = Session()
         sess_out.add_sample_group(group_name, gating_strategy=out_file)
         sess_out.add_samples(data1_sample)
-        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -80,7 +80,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out = Session()
         sess_out.add_sample_group(group_name, gating_strategy=out_file)
         sess_out.add_samples(data1_sample)
-        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -104,7 +104,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out = Session()
         sess_out.add_sample_group(group_name, gating_strategy=out_file)
         sess_out.add_samples(data1_sample)
-        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -128,7 +128,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out = Session()
         sess_out.add_sample_group(group_name, gating_strategy=out_file)
         sess_out.add_samples(data1_sample)
-        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -152,7 +152,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out = Session()
         sess_out.add_sample_group(group_name, gating_strategy=out_file)
         sess_out.add_samples(data1_sample)
-        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -176,7 +176,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out = Session()
         sess_out.add_sample_group(group_name, gating_strategy=out_file)
         sess_out.add_samples(data1_sample)
-        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -200,7 +200,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out = Session()
         sess_out.add_sample_group(group_name, gating_strategy=out_file)
         sess_out.add_samples(data1_sample)
-        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -224,7 +224,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out = Session()
         sess_out.add_sample_group(group_name, gating_strategy=out_file)
         sess_out.add_samples(data1_sample)
-        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -251,7 +251,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out = Session()
         sess_out.add_sample_group(group_name, gating_strategy=out_file)
         sess_out.add_samples(data1_sample)
-        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
         truth1 = pd.read_csv(res1_path, header=None, squeeze=True, dtype='bool').values
@@ -286,7 +286,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out = Session()
         sess_out.add_sample_group(group_name, gating_strategy=out_file)
         sess_out.add_samples(data1_sample)
-        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
         truth1 = pd.read_csv(res1_path, header=None, squeeze=True, dtype='bool').values
@@ -319,7 +319,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out = Session()
         sess_out.add_sample_group(group_name, gating_strategy=out_file)
         sess_out.add_samples(data1_sample)
-        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -343,7 +343,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out = Session()
         sess_out.add_sample_group(group_name, gating_strategy=out_file)
         sess_out.add_samples(data1_sample)
-        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -367,7 +367,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out = Session()
         sess_out.add_sample_group(group_name, gating_strategy=out_file)
         sess_out.add_samples(data1_sample)
-        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -391,7 +391,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out = Session()
         sess_out.add_sample_group(group_name, gating_strategy=out_file)
         sess_out.add_samples(data1_sample)
-        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -415,7 +415,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out = Session()
         sess_out.add_sample_group(group_name, gating_strategy=out_file)
         sess_out.add_samples(data1_sample)
-        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -439,7 +439,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out = Session()
         sess_out.add_sample_group(group_name, gating_strategy=out_file)
         sess_out.add_samples(data1_sample)
-        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -463,7 +463,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out = Session()
         sess_out.add_sample_group(group_name, gating_strategy=out_file)
         sess_out.add_samples(data1_sample)
-        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -487,7 +487,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out = Session()
         sess_out.add_sample_group(group_name, gating_strategy=out_file)
         sess_out.add_samples(data1_sample)
-        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -511,7 +511,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out = Session()
         sess_out.add_sample_group(group_name, gating_strategy=out_file)
         sess_out.add_samples(data1_sample)
-        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -535,7 +535,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out = Session()
         sess_out.add_sample_group(group_name, gating_strategy=out_file)
         sess_out.add_samples(data1_sample)
-        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -559,7 +559,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out = Session()
         sess_out.add_sample_group(group_name, gating_strategy=out_file)
         sess_out.add_samples(data1_sample)
-        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -583,7 +583,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out = Session()
         sess_out.add_sample_group(group_name, gating_strategy=out_file)
         sess_out.add_samples(data1_sample)
-        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -607,7 +607,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out = Session()
         sess_out.add_sample_group(group_name, gating_strategy=out_file)
         sess_out.add_samples(data1_sample)
-        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -631,7 +631,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out = Session()
         sess_out.add_sample_group(group_name, gating_strategy=out_file)
         sess_out.add_samples(data1_sample)
-        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -655,7 +655,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out = Session()
         sess_out.add_sample_group(group_name, gating_strategy=out_file)
         sess_out.add_samples(data1_sample)
-        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -679,7 +679,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out = Session()
         sess_out.add_sample_group(group_name, gating_strategy=out_file)
         sess_out.add_samples(data1_sample)
-        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -703,7 +703,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out = Session()
         sess_out.add_sample_group(group_name, gating_strategy=out_file)
         sess_out.add_samples(data1_sample)
-        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -727,7 +727,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out = Session()
         sess_out.add_sample_group(group_name, gating_strategy=out_file)
         sess_out.add_samples(data1_sample)
-        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -751,7 +751,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out = Session()
         sess_out.add_sample_group(group_name, gating_strategy=out_file)
         sess_out.add_samples(data1_sample)
-        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -775,7 +775,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out = Session()
         sess_out.add_sample_group(group_name, gating_strategy=out_file)
         sess_out.add_samples(data1_sample)
-        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -799,7 +799,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out = Session()
         sess_out.add_sample_group(group_name, gating_strategy=out_file)
         sess_out.add_samples(data1_sample)
-        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -823,7 +823,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out = Session()
         sess_out.add_sample_group(group_name, gating_strategy=out_file)
         sess_out.add_samples(data1_sample)
-        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -847,7 +847,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out = Session()
         sess_out.add_sample_group(group_name, gating_strategy=out_file)
         sess_out.add_samples(data1_sample)
-        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -871,7 +871,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out = Session()
         sess_out.add_sample_group(group_name, gating_strategy=out_file)
         sess_out.add_samples(data1_sample)
-        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -895,7 +895,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out = Session()
         sess_out.add_sample_group(group_name, gating_strategy=out_file)
         sess_out.add_samples(data1_sample)
-        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -919,7 +919,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out = Session()
         sess_out.add_sample_group(group_name, gating_strategy=out_file)
         sess_out.add_samples(data1_sample)
-        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -943,7 +943,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out = Session()
         sess_out.add_sample_group(group_name, gating_strategy=out_file)
         sess_out.add_samples(data1_sample)
-        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -967,7 +967,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out = Session()
         sess_out.add_sample_group(group_name, gating_strategy=out_file)
         sess_out.add_samples(data1_sample)
-        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -991,7 +991,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out = Session()
         sess_out.add_sample_group(group_name, gating_strategy=out_file)
         sess_out.add_samples(data1_sample)
-        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -1015,7 +1015,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out = Session()
         sess_out.add_sample_group(group_name, gating_strategy=out_file)
         sess_out.add_samples(data1_sample)
-        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -1039,7 +1039,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out = Session()
         sess_out.add_sample_group(group_name, gating_strategy=out_file)
         sess_out.add_samples(data1_sample)
-        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -1063,7 +1063,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out = Session()
         sess_out.add_sample_group(group_name, gating_strategy=out_file)
         sess_out.add_samples(data1_sample)
-        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -1087,7 +1087,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out = Session()
         sess_out.add_sample_group(group_name, gating_strategy=out_file)
         sess_out.add_samples(data1_sample)
-        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
@@ -1109,7 +1109,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out = Session()
         sess_out.add_sample_group(group_name, gating_strategy=out_file)
         sess_out.add_samples(data1_sample)
-        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
         parent_id = sess_out.get_parent_gate_id(group_name, 'ScalePar1')
@@ -1134,7 +1134,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out = Session()
         sess_out.add_sample_group(group_name, gating_strategy=out_file)
         sess_out.add_samples(data1_sample)
-        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
         parent_id = sess_out.get_parent_gate_id(group_name, 'ParRectangle1')
@@ -1160,7 +1160,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out = Session()
         sess_out.add_sample_group(group_name, gating_strategy=out_file)
         sess_out.add_samples(data1_sample)
-        sess_out.assign_sample(data1_sample.original_filename, group_name)
+        sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
         gs_results = sess_out.get_gating_results(group_name, data1_sample.original_filename)

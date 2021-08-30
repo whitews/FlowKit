@@ -195,22 +195,27 @@ class Session(object):
             self.sample_lut[s.original_filename] = s
 
             # all samples get added to the 'default' group
-            self.assign_sample(s.original_filename, 'default')
+            self.assign_samples(s.original_filename, 'default')
 
-    def assign_sample(self, sample_id, group_name):
+    def assign_samples(self, sample_ids, group_name):
         """
         Assigns a sample ID to a sample group. Samples can belong to more than one sample group.
 
-        :param sample_id: Sample ID to assign to the specified sample group
+        :param sample_ids: a text string of a Sample ID or list of Sample IDs to assign to the specified sample group
         :param group_name: name of sample group to which the sample will be assigned
         :return: None
         """
         group = self._sample_group_lut[group_name]
-        if sample_id in group['samples']:
-            warnings.warn("Sample %s is already assigned to the group %s...nothing changed" % (sample_id, group_name))
-            return
-        template = group['template']
-        group['samples'][sample_id] = copy.deepcopy(template)
+
+        if isinstance(sample_ids, str):
+            sample_ids = [sample_ids]
+
+        for sample_id in sample_ids:
+            if sample_id in group['samples']:
+                warnings.warn("Sample %s is already assigned to the group %s...skipping" % (sample_id, group_name))
+                continue
+            template = group['template']
+            group['samples'][sample_id] = copy.deepcopy(template)
 
     def get_sample_ids(self, loaded_only=True):
         """
