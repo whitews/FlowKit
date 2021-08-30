@@ -161,6 +161,27 @@ class SessionTestCase(unittest.TestCase):
         self.assertIsInstance(df_gated_events, pd.DataFrame)
         self.assertEqual(len(df_gated_events), 133670)
 
+    def test_get_wsp_gated_events(self):
+        wsp_path = "examples/data/8_color_data_set/8_color_ICS_simple.wsp"
+        fcs_path = "examples/data/8_color_data_set/fcs_files"
+        sample_grp = 'DEN'
+        sample_id = '101_DEN084Y5_15_E01_008_clean.fcs'
+        gate_id = 'CD3+'
+
+        fks = Session(fcs_samples=fcs_path)
+        fks.import_flowjo_workspace(wsp_path, ignore_missing_files=True)
+
+        fks.analyze_samples(sample_grp, sample_id)
+
+        df_gated_events = fks.get_wsp_gated_events(
+            sample_grp,
+            [sample_id],
+            gate_id
+        )
+
+        self.assertIsInstance(df_gated_events, list)
+        self.assertEqual(len(df_gated_events[0]), 133670)
+
     @staticmethod
     def test_add_poly1_gate():
         fks = Session(fcs_samples=data1_sample)
