@@ -259,3 +259,17 @@ class SessionTestCase(unittest.TestCase):
         self.assertEqual(fks2_rect1_count, 0)
         self.assertEqual(fks_poly1_count, 50)
         self.assertEqual(fks2_poly1_count, 50)
+
+    def test_add_samples_with_group(self):
+        sample_ids = ["100715.fcs", "109567.fcs", "113548.fcs"]
+
+        s = Session()
+
+        group_name = 'gml'
+        s.add_sample_group(group_name)
+
+        s.add_samples(fcs_file_paths, group_name)
+
+        s_sample_ids = sorted(s.get_group_sample_ids(group_name))
+
+        self.assertListEqual(sample_ids, s_sample_ids)

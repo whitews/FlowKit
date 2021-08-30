@@ -175,11 +175,13 @@ class Session(object):
 
                 self._sample_group_lut[group_name]['samples'][sample] = gs
 
-    def add_samples(self, samples):
+    def add_samples(self, samples, group_name=None):
         """
         Adds FCS samples to the session. All added samples will be added to the 'default' sample group.
 
         :param samples: a list of Sample instances
+        :param group_name: a text string representing the sample group to which to assign samples. If None,
+            samples are only added to the 'default' group.
         :return: None
         """
         # TODO: Using mp here causes problems when running tests in debug mode. Needs further investigation.
@@ -196,6 +198,8 @@ class Session(object):
 
             # all samples get added to the 'default' group
             self.assign_samples(s.original_filename, 'default')
+            if group_name is not None:
+                self.assign_samples(s.original_filename, group_name)
 
     def assign_samples(self, sample_ids, group_name):
         """
