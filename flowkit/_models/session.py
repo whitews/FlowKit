@@ -262,9 +262,7 @@ class Session(object):
         sample_ids = list(self._sample_group_lut[group_name]['samples'].keys())
         if loaded_only:
             loaded_sample_ids = self.get_sample_ids()
-            sample_ids = list(set(sample_ids).union(set(loaded_sample_ids)))
-        else:
-            sample_ids = list(self._sample_group_lut[group_name]['samples'].keys())
+            sample_ids = list(set(sample_ids).intersection(set(loaded_sample_ids)))
 
         return sample_ids
 

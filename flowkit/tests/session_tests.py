@@ -273,3 +273,15 @@ class SessionTestCase(unittest.TestCase):
         s_sample_ids = sorted(s.get_group_sample_ids(group_name))
 
         self.assertListEqual(sample_ids, s_sample_ids)
+
+    def test_new_group_membership_is_empty(self):
+        s = Session()
+
+        group_name = 'new_group'
+        s.add_sample_group(group_name)
+
+        s.add_samples(fcs_file_paths)  # load without assigning a group
+
+        s_sample_ids = sorted(s.get_group_sample_ids(group_name))
+
+        self.assertListEqual(s_sample_ids, [])
