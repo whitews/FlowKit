@@ -419,7 +419,8 @@ class Session(object):
         :param gate_id: text string of a gate ID
         :return: Subclass of a Gate object
         """
-        # TODO: this needs to handle getting default template gate or sample specific gate
+        # this method doesn't need to lookup sample specific gates, as the gate names
+        # and hierarchy must be the same for all samples in a group
         group = self._sample_group_lut[group_name]
         template = group['template']
         gate = template.get_gate(gate_id)
@@ -435,11 +436,12 @@ class Session(object):
         :param sample_id: a text string representing a Sample instance. If None, the template gate is returned.
         :return: Subclass of a Gate object
         """
-        # TODO: this needs to handle getting default template gate or sample specific gate
         group = self._sample_group_lut[group_name]
         if sample_id is None:
+            # get the default template gate
             gating_strategy = group['template']
         else:
+            # get the custom sample gate
             gating_strategy = group['samples'][sample_id]
         gate = gating_strategy.get_gate(gate_id, gate_path=gate_path)
         return gate
