@@ -10,8 +10,8 @@ from flowkit import Session, gates, transforms
 
 class FlowJoWSPTestCase(unittest.TestCase):
     def test_load_wsp_single_poly(self):
-        wsp_path = "examples/simple_line_example/simple_poly_and_rect.wsp"
-        fcs_path = "examples/simple_line_example/data_set_simple_line_100.fcs"
+        wsp_path = "examples/data/simple_line_example/simple_poly_and_rect.wsp"
+        fcs_path = "examples/data/simple_line_example/data_set_simple_line_100.fcs"
 
         fks = Session(fcs_samples=fcs_path)
         fks.import_flowjo_workspace(wsp_path)
@@ -31,8 +31,8 @@ class FlowJoWSPTestCase(unittest.TestCase):
         self.assertSetEqual(wsp_gate_ids, gate_ids)
 
     def test_load_wsp_single_ellipse(self):
-        wsp_path = "examples/simple_line_example/single_ellipse_51_events.wsp"
-        fcs_path = "examples/simple_line_example/data_set_simple_line_100.fcs"
+        wsp_path = "examples/data/simple_line_example/single_ellipse_51_events.wsp"
+        fcs_path = "examples/data/simple_line_example/data_set_simple_line_100.fcs"
 
         fks = Session(fcs_samples=fcs_path)
         fks.import_flowjo_workspace(wsp_path)
@@ -52,8 +52,8 @@ class FlowJoWSPTestCase(unittest.TestCase):
         self.assertEqual(gate_count, 48)
 
     def test_load_wsp_single_quad(self):
-        wsp_path = "examples/simple_diamond_example/simple_diamond_example_quad_gate.wsp"
-        fcs_path = "examples/simple_diamond_example/test_data_diamond_01.fcs"
+        wsp_path = "examples/data/simple_diamond_example/simple_diamond_example_quad_gate.wsp"
+        fcs_path = "examples/data/simple_diamond_example/test_data_diamond_01.fcs"
 
         fks = Session(fcs_samples=fcs_path)
         fks.import_flowjo_workspace(wsp_path)
@@ -81,8 +81,8 @@ class FlowJoWSPTestCase(unittest.TestCase):
         self.assertEqual(gate_count_q4, 49403)
 
     def test_wsp_biex_transform(self):
-        wsp_path = "examples/simple_diamond_example/test_data_diamond_biex_rect.wsp"
-        fcs_path = "examples/simple_diamond_example/test_data_diamond_01.fcs"
+        wsp_path = "examples/data/simple_diamond_example/test_data_diamond_biex_rect.wsp"
+        fcs_path = "examples/data/simple_diamond_example/test_data_diamond_01.fcs"
 
         fks = Session(fcs_samples=fcs_path)
         fks.import_flowjo_workspace(wsp_path)
@@ -102,8 +102,8 @@ class FlowJoWSPTestCase(unittest.TestCase):
         self.assertEqual(gate_count, 50605)
 
     def test_wsp_fasinh_transform(self):
-        wsp_path = "examples/simple_diamond_example/test_data_diamond_asinh_rect.wsp"
-        fcs_path = "examples/simple_diamond_example/test_data_diamond_01.fcs"
+        wsp_path = "examples/data/simple_diamond_example/test_data_diamond_asinh_rect.wsp"
+        fcs_path = "examples/data/simple_diamond_example/test_data_diamond_01.fcs"
 
         fks = Session(fcs_samples=fcs_path)
         fks.import_flowjo_workspace(wsp_path)
@@ -123,8 +123,8 @@ class FlowJoWSPTestCase(unittest.TestCase):
         self.assertEqual(gate_count, 50559)
 
     def test_wsp_fasinh_transform_v2(self):
-        wsp_path = "examples/simple_diamond_example/test_data_diamond_asinh_rect2.wsp"
-        fcs_path = "examples/simple_diamond_example/test_data_diamond_01.fcs"
+        wsp_path = "examples/data/simple_diamond_example/test_data_diamond_asinh_rect2.wsp"
+        fcs_path = "examples/data/simple_diamond_example/test_data_diamond_01.fcs"
 
         fks = Session(fcs_samples=fcs_path)
         fks.import_flowjo_workspace(wsp_path)
@@ -160,8 +160,8 @@ class FlowJoWSPTestCase(unittest.TestCase):
         self.assertLess(mean_pct_diff, 1.0)
 
     def test_get_sample_groups(self):
-        wsp_path = "examples/simple_line_example/simple_poly_and_rect.wsp"
-        fcs_path = "examples/simple_line_example/data_set_simple_line_100.fcs"
+        wsp_path = "examples/data/simple_line_example/simple_poly_and_rect.wsp"
+        fcs_path = "examples/data/simple_line_example/data_set_simple_line_100.fcs"
 
         fks = Session(fcs_samples=fcs_path)
         fks.import_flowjo_workspace(wsp_path)
@@ -178,8 +178,8 @@ class FlowJoWSPTestCase(unittest.TestCase):
         self.assertListEqual(groups, groups_truth)
 
     def test_get_ambiguous_gate_objects(self):
-        wsp_path = "examples/8_color_data_set/8_color_ICS.wsp"
-        fcs_path = "examples/8_color_data_set/fcs_files/101_DEN084Y5_15_E01_008_clean.fcs"
+        wsp_path = "examples/data/8_color_data_set/8_color_ICS.wsp"
+        fcs_path = "examples/data/8_color_data_set/fcs_files/101_DEN084Y5_15_E01_008_clean.fcs"
         sample_id = '101_DEN084Y5_15_E01_008_clean.fcs'
         sample_grp = 'DEN'
         gate_id = 'TNFa+'
@@ -195,8 +195,8 @@ class FlowJoWSPTestCase(unittest.TestCase):
         self.assertEqual(np.sum(gate_indices), 21)
 
     def test_analyze_single_sample(self):
-        wsp_path = "examples/8_color_data_set/8_color_ICS_simple.wsp"
-        fcs_path = "examples/8_color_data_set/fcs_files"
+        wsp_path = "examples/data/8_color_data_set/8_color_ICS_simple.wsp"
+        fcs_path = "examples/data/8_color_data_set/fcs_files"
         sample_id = '101_DEN084Y5_15_E01_008_clean.fcs'
         sample_grp = 'DEN'
 
@@ -212,8 +212,8 @@ class FlowJoWSPTestCase(unittest.TestCase):
         self.assertEqual(report['sample'].nunique(), 1)
 
     def test_export_wsp(self):
-        wsp_path = "examples/8_color_data_set/8_color_ICS.wsp"
-        fcs_path = "examples/8_color_data_set/fcs_files"
+        wsp_path = "examples/data/8_color_data_set/8_color_ICS.wsp"
+        fcs_path = "examples/data/8_color_data_set/fcs_files"
         sample_grp = 'DEN'
 
         # use a leaf gate to test if the new WSP session is created correctly

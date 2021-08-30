@@ -22,7 +22,7 @@ class GatingMLTestCase(unittest.TestCase):
         self.assertIsInstance(gs, GatingStrategy)
 
     def test_fail_parse_gating_xml(self):
-        gml_path = 'examples/simple_line_example/single_ellipse_51_events.wsp'
+        gml_path = 'examples/data/simple_line_example/single_ellipse_51_events.wsp'
 
         self.assertRaises(ValueError, parse_gating_xml, gml_path)
 

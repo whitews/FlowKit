@@ -1,8 +1,8 @@
 import flowkit as fk
 from bokeh.plotting import show
 
-fcs_file_path = "test_comp_example.fcs"
-comp_file_path = "comp_complete_example.csv"
+fcs_file_path = "data/test_comp_example.fcs"
+comp_file_path = "data/comp_complete_example.csv"
 
 sample = fk.Sample(
     fcs_path_or_data=fcs_file_path,

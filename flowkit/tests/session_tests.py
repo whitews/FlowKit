@@ -18,9 +18,9 @@ from flowkit._models.gates._base_gate import Gate
 from .gating_strategy_prog_gate_tests import data1_sample, poly1_gate, poly1_vertices, comp_matrix_01, asinh_xform1
 
 fcs_file_paths = [
-    "examples/100715.fcs",
-    "examples/109567.fcs",
-    "examples/113548.fcs"
+    "examples/data/100715.fcs",
+    "examples/data/109567.fcs",
+    "examples/data/113548.fcs"
 ]
 
 
@@ -50,8 +50,8 @@ class SessionTestCase(unittest.TestCase):
         self.assertIsInstance(comp_mat, Matrix)
 
     def test_get_sample_comp_matrices(self):
-        wsp_path = "examples/8_color_data_set/8_color_ICS_simple.wsp"
-        fcs_path = "examples/8_color_data_set/fcs_files"
+        wsp_path = "examples/data/8_color_data_set/8_color_ICS_simple.wsp"
+        fcs_path = "examples/data/8_color_data_set/fcs_files"
         sample_grp = 'DEN'
         sample_id = '101_DEN084Y5_15_E01_008_clean.fcs'
 
@@ -65,8 +65,8 @@ class SessionTestCase(unittest.TestCase):
             self.assertIsInstance(cm, Matrix)
 
     def test_get_group_comp_matrices(self):
-        wsp_path = "examples/8_color_data_set/8_color_ICS_simple.wsp"
-        fcs_path = "examples/8_color_data_set/fcs_files"
+        wsp_path = "examples/data/8_color_data_set/8_color_ICS_simple.wsp"
+        fcs_path = "examples/data/8_color_data_set/fcs_files"
         sample_grp = 'DEN'
 
         fks = Session(fcs_samples=fcs_path)
@@ -86,8 +86,8 @@ class SessionTestCase(unittest.TestCase):
         self.assertIsInstance(comp_mat, transforms.AsinhTransform)
 
     def test_get_group_transforms(self):
-        wsp_path = "examples/8_color_data_set/8_color_ICS_simple.wsp"
-        fcs_path = "examples/8_color_data_set/fcs_files"
+        wsp_path = "examples/data/8_color_data_set/8_color_ICS_simple.wsp"
+        fcs_path = "examples/data/8_color_data_set/fcs_files"
         sample_grp = 'DEN'
 
         fks = Session(fcs_samples=fcs_path)
@@ -100,8 +100,8 @@ class SessionTestCase(unittest.TestCase):
             self.assertIsInstance(cm, Transform)
 
     def test_get_sample_transforms(self):
-        wsp_path = "examples/8_color_data_set/8_color_ICS_simple.wsp"
-        fcs_path = "examples/8_color_data_set/fcs_files"
+        wsp_path = "examples/data/8_color_data_set/8_color_ICS_simple.wsp"
+        fcs_path = "examples/data/8_color_data_set/fcs_files"
         sample_grp = 'DEN'
         sample_id = '101_DEN084Y5_15_E01_008_clean.fcs'
 
@@ -115,8 +115,8 @@ class SessionTestCase(unittest.TestCase):
             self.assertIsInstance(cm, Transform)
 
     def test_get_sample_gates(self):
-        wsp_path = "examples/8_color_data_set/8_color_ICS_simple.wsp"
-        fcs_path = "examples/8_color_data_set/fcs_files"
+        wsp_path = "examples/data/8_color_data_set/8_color_ICS_simple.wsp"
+        fcs_path = "examples/data/8_color_data_set/fcs_files"
         sample_grp = 'DEN'
         sample_id = '101_DEN084Y5_15_E01_008_clean.fcs'
 
@@ -130,8 +130,8 @@ class SessionTestCase(unittest.TestCase):
             self.assertIsInstance(cm, Gate)
 
     def test_get_sample_gate_events(self):
-        wsp_path = "examples/8_color_data_set/8_color_ICS_simple.wsp"
-        fcs_path = "examples/8_color_data_set/fcs_files"
+        wsp_path = "examples/data/8_color_data_set/8_color_ICS_simple.wsp"
+        fcs_path = "examples/data/8_color_data_set/fcs_files"
         sample_grp = 'DEN'
         sample_id = '101_DEN084Y5_15_E01_008_clean.fcs'
         gate_id = 'CD3+'
@@ -222,8 +222,8 @@ class SessionTestCase(unittest.TestCase):
         np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange1'))
 
     def test_wsp_export_simple_poly50(self):
-        wsp_path = "examples/simple_line_example/simple_poly_and_rect_v2_poly50.wsp"
-        fcs_path = "examples/simple_line_example/data_set_simple_line_100.fcs"
+        wsp_path = "examples/data/simple_line_example/simple_poly_and_rect_v2_poly50.wsp"
+        fcs_path = "examples/data/simple_line_example/data_set_simple_line_100.fcs"
         sample_group = 'my_group'
         sample_id = 'data_set_simple_line_100.fcs'
 
