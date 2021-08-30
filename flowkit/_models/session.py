@@ -2,6 +2,7 @@
 Session class
 """
 import io
+import sys
 import copy
 import numpy as np
 import pandas as pd
@@ -16,6 +17,15 @@ from .._utils import plot_utils, xml_utils, wsp_utils, sample_utils
 import warnings
 
 
+# Used to detect PyCharm's debugging mode to turn off multi-processing for debugging with tests
+get_trace = getattr(sys, 'gettrace', lambda: None)
+
+if get_trace() is None:
+    use_mp = True
+else:
+    use_mp = False
+
+
 # _gate_sample & _gate_samples are multi-proc wrappers for GatingStrategy _gate_sample method
 # These are functions external to GatingStrategy as mp doesn't work well for class methods
 def _gate_sample(data):
@@ -25,26 +35,24 @@ def _gate_sample(data):
     return gating_strategy.gate_sample(sample, verbose=verbose)
 
 
-def _gate_samples(gating_strategies, samples, verbose):
+def _gate_samples(gating_strategies, samples, verbose, use_mp=False):
     # TODO: Multiprocessing can fail for very large workloads (lots of gates), maybe due
-    #       to running out of memory. Will investigate further, but for now maybe provide an option
-    #       for turning off multiprocessing so end user can avoid this issue if it occurs.
+    #       to running out of memory. Will investigate further, but for now setting an
+    #       option to control whether mp is used (default is True)
+    #       Needs further investigation, as this is still causing problems.
     sample_count = len(samples)
-    if multi_proc and sample_count > 1:
+    if multi_proc and sample_count > 1 and use_mp:
         if sample_count < mp.cpu_count():
             proc_count = sample_count
         else:
             proc_count = mp.cpu_count() - 1  # leave a CPU free just to be nice
 
-        try:
-            pool = mp.Pool(processes=proc_count)
+        with mp.get_context("spawn").Pool(processes=proc_count) as pool:
             data = [(gating_strategies[i], sample, verbose) for i, sample in enumerate(samples)]
             all_results = pool.map(_gate_sample, data)
-        except Exception as e:
-            # noinspection PyUnboundLocalVariable
+
             pool.close()
-            raise e
-        pool.close()
+            pool.join()
     else:
         all_results = []
         for i, sample in enumerate(samples):
@@ -174,7 +182,8 @@ class Session(object):
         :param samples: a list of Sample instances
         :return: None
         """
-        new_samples = sample_utils.load_samples(samples)
+        # TODO: Using mp here causes problems when running tests in debug mode. Needs further investigation.
+        new_samples = sample_utils.load_samples(samples, use_mp=use_mp)
         for s in new_samples:
             s.subsample_events(self.subsample_count)
             if s.original_filename in self.sample_lut:
@@ -561,7 +570,7 @@ class Session(object):
             gating_strategies.append(self._sample_group_lut[group_name]['samples'][s.original_filename])
             samples_to_run.append(s)
 
-        results = _gate_samples(gating_strategies, samples_to_run, verbose)
+        results = _gate_samples(gating_strategies, samples_to_run, verbose, use_mp=use_mp)
 
         all_reports = [res.report for res in results]
 

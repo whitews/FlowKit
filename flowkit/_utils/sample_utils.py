@@ -64,28 +64,25 @@ FCS_STANDARD_KEYWORDS = [
 ]
 
 
-def _get_samples_from_paths(sample_paths):
+def _get_samples_from_paths(sample_paths, use_mp=True):
     """
     Load multiple Sample instances from a list of file paths
 
     :param sample_paths: list of file paths containing FCS files
+    :param use_mp: Controls whether multiprocessing is used to load samples.
     :return: list of Sample instances
     """
     sample_count = len(sample_paths)
-    if multi_proc and sample_count > 1:
+    if multi_proc and sample_count > 1 and use_mp:
         if sample_count < mp.cpu_count():
             proc_count = sample_count
         else:
             proc_count = mp.cpu_count() - 1  # leave a CPU free just to be nice
 
-        try:
-            pool = mp.Pool(processes=proc_count)
+        with mp.get_context().Pool(processes=proc_count) as pool:
             samples = pool.map(Sample, sample_paths)
-        except Exception as e:
-            # noinspection PyUnboundLocalVariable
             pool.close()
-            raise e
-        pool.close()
+            pool.join()
     else:
         samples = []
         for path in sample_paths:
@@ -94,7 +91,7 @@ def _get_samples_from_paths(sample_paths):
     return samples
 
 
-def load_samples(fcs_samples):
+def load_samples(fcs_samples, use_mp=True):
     """
     Returns a list of Sample instances from a variety of input types (fcs_samples), such as file or
         directory paths, a Sample instance, or lists of the previous types.
@@ -103,6 +100,7 @@ def load_samples(fcs_samples):
             If a directory, any .fcs files in the directory will be loaded. If a list, then it must
             be a list of file paths or a list of Sample instances. Lists of mixed types are not
             supported.
+    :param use_mp: Controls whether multiprocessing is used to load samples.
     :return: list of Sample instances
     """
     sample_list = []
@@ -122,7 +120,7 @@ def load_samples(fcs_samples):
         if Sample in sample_types:
             sample_list = fcs_samples
         elif str in sample_types:
-            sample_list = _get_samples_from_paths(fcs_samples)
+            sample_list = _get_samples_from_paths(fcs_samples, use_mp=use_mp)
     elif isinstance(fcs_samples, Sample):
         # 'fcs_samples' is a single Sample instance
         sample_list = [fcs_samples]
@@ -132,9 +130,9 @@ def load_samples(fcs_samples):
         if os.path.isdir(fcs_samples):
             fcs_paths = glob(os.path.join(fcs_samples, '*.fcs'))
             if len(fcs_paths) > 0:
-                sample_list = _get_samples_from_paths(fcs_paths)
+                sample_list = _get_samples_from_paths(fcs_paths, use_mp=use_mp)
         elif os.path.isfile(fcs_samples):
-            sample_list = _get_samples_from_paths([fcs_samples])
+            sample_list = _get_samples_from_paths([fcs_samples], use_mp=False)
 
     return sample_list
 

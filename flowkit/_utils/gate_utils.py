@@ -12,7 +12,7 @@ try:
     # TODO: Multi-processing is still having issues with large data sets. Reset back to True when fixed.
     #   See potential fix here:
     #   https://pythonspeed.com/articles/python-multiprocessing/
-    multi_proc = False
+    multi_proc = True
 except ImportError:
     mp = None
     multi_proc = False
