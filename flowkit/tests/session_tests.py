@@ -168,7 +168,7 @@ class SessionTestCase(unittest.TestCase):
         fks.analyze_samples()
         result = fks.get_gating_results('default', data1_sample.original_filename)
 
-        res_path = 'examples/gate_ref/truth/Results_Polygon1.txt'
+        res_path = 'examples/data/gate_ref/truth/Results_Polygon1.txt'
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
 
         np.testing.assert_array_equal(truth, result.get_gate_indices('Polygon1'))
@@ -194,7 +194,7 @@ class SessionTestCase(unittest.TestCase):
         poly_gate = gates.PolygonGate('Polygon4', None, dims, poly1_vertices)
         fks.add_gate(poly_gate)
 
-        res_path = 'examples/gate_ref/truth/Results_Polygon4.txt'
+        res_path = 'examples/data/gate_ref/truth/Results_Polygon4.txt'
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
 
         fks.analyze_samples()
@@ -213,7 +213,7 @@ class SessionTestCase(unittest.TestCase):
         rect_gate = gates.RectangleGate('ScaleRange1', None, dims)
         fks.add_gate(rect_gate)
 
-        res_path = 'examples/gate_ref/truth/Results_ScaleRange1.txt'
+        res_path = 'examples/data/gate_ref/truth/Results_ScaleRange1.txt'
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
 
         fks.analyze_samples()

@@ -3,7 +3,7 @@ import numpy as np
 import flowkit as fk
 
 
-data1_fcs_path = 'examples/gate_ref/data1.fcs'
+data1_fcs_path = 'examples/data/gate_ref/data1.fcs'
 data1_sample = fk.Sample(data1_fcs_path)
 
 poly1_vertices = [

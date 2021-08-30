@@ -5,7 +5,7 @@ import unittest
 import flowkit as fk
 from .gating_strategy_prog_gate_tests import comp_matrix_01, logicle_xform1, hyperlog_xform1, poly1_gate
 
-data1_fcs_path = 'examples/gate_ref/data1.fcs'
+data1_fcs_path = 'examples/data/gate_ref/data1.fcs'
 data1_sample = fk.Sample(data1_fcs_path)
 
 
@@ -84,7 +84,7 @@ class StringReprTestCase(unittest.TestCase):
         self.assertEqual(repr(xform), xform_string)
 
     def test_sample_repr(self):
-        fcs_file_path = "examples/gate_ref/data1.fcs"
+        fcs_file_path = "examples/data/gate_ref/data1.fcs"
         sample = fk.Sample(fcs_path_or_data=fcs_file_path)
         sample_string = "Sample(v2.0, B07, 8 channels, 13367 events)"
 

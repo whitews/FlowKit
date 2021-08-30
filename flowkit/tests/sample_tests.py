@@ -12,7 +12,7 @@ sys.path.append(os.path.abspath('../..'))
 
 from flowkit import Sample, transforms
 
-data1_fcs_path = 'examples/gate_ref/data1.fcs'
+data1_fcs_path = 'examples/data/gate_ref/data1.fcs'
 data1_sample = Sample(data1_fcs_path)
 
 xform_logicle = transforms.LogicleTransform('logicle', param_t=10000, param_w=0.5, param_m=4.5, param_a=0)
