@@ -21,9 +21,9 @@ import warnings
 get_trace = getattr(sys, 'gettrace', lambda: None)
 
 if get_trace() is None:
-    use_mp = True
+    debug = True
 else:
-    use_mp = False
+    debug = False
 
 
 # _gate_sample & _gate_samples are multi-proc wrappers for GatingStrategy _gate_sample method
@@ -185,7 +185,7 @@ class Session(object):
         :return: None
         """
         # TODO: Using mp here causes problems when running tests in debug mode. Needs further investigation.
-        new_samples = sample_utils.load_samples(samples, use_mp=use_mp)
+        new_samples = sample_utils.load_samples(samples, use_mp=debug)
         for s in new_samples:
             s.subsample_events(self.subsample_count)
             if s.original_filename in self.sample_lut:
@@ -579,7 +579,7 @@ class Session(object):
             gating_strategies.append(self._sample_group_lut[group_name]['samples'][s.original_filename])
             samples_to_run.append(s)
 
-        results = _gate_samples(gating_strategies, samples_to_run, verbose, use_mp=use_mp)
+        results = _gate_samples(gating_strategies, samples_to_run, verbose, use_mp=debug)
 
         all_reports = [res.report for res in results]
 
