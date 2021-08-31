@@ -21,7 +21,7 @@ FlowKit is an intuitive Python toolkit for flow cytometry analysis and visualiza
 
 **Version 0.6 adds experimental support for exporting FlowJo 10 workspace files from a Session. Support is currently limited to exporting data from a single sample group. Please [submit an issue](https://github.com/whitews/FlowKit/issues/new/choose) if you find any bugs related to this feature.**
 
-<img alt="Screenshot of scatterplot" src="examples/fk_scatterplot.png" style="width:128px;" />
+<img alt="Screenshot of scatterplot" src="docs/fk_scatterplot.png" style="width:128px;" />
 
 ## Features
 
