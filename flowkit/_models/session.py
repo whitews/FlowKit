@@ -664,17 +664,24 @@ class Session(object):
 
         return gated_event_data
 
-    def get_wsp_gated_events(self, sample_group, sample_ids=None, gate_id=None):
+    def get_wsp_gated_events(self, group_name, sample_ids=None, gate_id=None):
         """
         Convert gated events in FlowJo WSP sample group to
         list of compensated and transformed DataFrames.
+
+        :param group_name: a text string representing the sample group
+        :param sample_ids: a list of Sample ID strings
+        :param gate_id: optional text string of a gate ID. If None, the first gate will be evaluated.
+
+        :return: a list of Pandas DataFrames with the gated events, compensated & transformed according
+            to the group's compensation matrix and transforms
         """
 
         if sample_ids is None:
-            sample_ids = self.get_group_sample_ids(sample_group)
+            sample_ids = self.get_group_sample_ids(group_name)
 
         if gate_id is None:
-            gate_ids = self.get_gate_ids(sample_group)
+            gate_ids = self.get_gate_ids(group_name)
             gate_name, gate_path = gate_ids[0]
         elif isinstance(gate_id, tuple):
             gate_name, gate_path = gate_id
@@ -685,7 +692,7 @@ class Session(object):
 
         for sample_id in sample_ids:
             # determine sample's comp matrix...possible there are many
-            comp_matrices = self.get_sample_comp_matrices(sample_group, sample_id)
+            comp_matrices = self.get_sample_comp_matrices(group_name, sample_id)
 
             if len(comp_matrices) > 1:
                 # choose first transform, we'll verify the rest match it
@@ -703,12 +710,12 @@ class Session(object):
             else:
                 ref_cm = None
 
-            xforms = self.get_sample_transforms(sample_group, sample_id)
+            xforms = self.get_sample_transforms(group_name, sample_id)
 
             xform_lut = {xform.id: xform for xform in xforms if not xform.id.startswith('Comp')}
 
             df = self.get_gate_events(
-                group_name=sample_group,
+                group_name=group_name,
                 sample_id=sample_id,
                 gate_id=gate_name,
                 gate_path=gate_path,
@@ -719,7 +726,7 @@ class Session(object):
             # TODO: not sure if this column merging is best to do here
             df.columns = [' '.join(col).strip() for col in df.columns.values]
 
-            df.insert(0, 'sample_group', sample_group)
+            df.insert(0, 'sample_group', group_name)
             df.insert(1, 'sample_id', sample_id)
 
             df_events_list.append(df)
