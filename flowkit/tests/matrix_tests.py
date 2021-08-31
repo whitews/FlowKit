@@ -35,7 +35,7 @@ fcs_spill_header = [
     'G560-A'
 ]
 
-csv_8c_comp_file_path = 'examples/8_color_data_set/den_comp.csv'
+csv_8c_comp_file_path = 'examples/data/8_color_data_set/den_comp.csv'
 detectors_8c = [
     'TNFa FITC FLR-A',
     'CD8 PerCP-Cy55 FLR-A',

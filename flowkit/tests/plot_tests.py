@@ -6,8 +6,8 @@ from bokeh.plotting.figure import Figure as bk_Figure
 from matplotlib.pyplot import Figure as mpl_Figure
 import flowkit as fk
 
-fcs_path = 'examples/gate_ref/data1.fcs'
-gml_path = 'examples/gate_ref/gml/gml_all_gates.xml'
+fcs_path = 'examples/data/gate_ref/data1.fcs'
+gml_path = 'examples/data/gate_ref/gml/gml_all_gates.xml'
 
 
 class PlotTestCase(unittest.TestCase):
@@ -70,11 +70,11 @@ class PlotTestCase(unittest.TestCase):
 
         group_name = 'my_group'
         sample_name = 'B07'
-        fks.assign_sample(sample_name, group_name)
+        fks.assign_samples(sample_name, group_name)
         gate_tuples = fks.get_gate_ids(group_name)
 
         for gate_id, ancestors in gate_tuples:
-            gate = fks.get_gate(group_name, sample_name, gate_id)
+            gate = fks.get_gate(group_name, gate_id, sample_id=sample_name)
             if isinstance(gate, fk.gates.Quadrant):
                 # cannot plot single quadrants of a quadrant gate
                 continue
@@ -91,7 +91,7 @@ class PlotTestCase(unittest.TestCase):
 
         group_name = 'my_group'
         sample_name = 'B07'
-        fks.assign_sample(sample_name, group_name)
+        fks.assign_samples(sample_name, group_name)
         x_dim = fk.Dimension('FL2-H', compensation_ref='MySpill', transformation_ref='Logicle_10000_0.5_4.5_0')
         y_dim = fk.Dimension('FL3-H', compensation_ref='MySpill', transformation_ref='Logicle_10000_0.5_4.5_0')
 

@@ -18,9 +18,9 @@ from flowkit._models.gates._base_gate import Gate
 from .gating_strategy_prog_gate_tests import data1_sample, poly1_gate, poly1_vertices, comp_matrix_01, asinh_xform1
 
 fcs_file_paths = [
-    "examples/100715.fcs",
-    "examples/109567.fcs",
-    "examples/113548.fcs"
+    "examples/data/100715.fcs",
+    "examples/data/109567.fcs",
+    "examples/data/113548.fcs"
 ]
 
 
@@ -50,8 +50,8 @@ class SessionTestCase(unittest.TestCase):
         self.assertIsInstance(comp_mat, Matrix)
 
     def test_get_sample_comp_matrices(self):
-        wsp_path = "examples/8_color_data_set/8_color_ICS_simple.wsp"
-        fcs_path = "examples/8_color_data_set/fcs_files"
+        wsp_path = "examples/data/8_color_data_set/8_color_ICS_simple.wsp"
+        fcs_path = "examples/data/8_color_data_set/fcs_files"
         sample_grp = 'DEN'
         sample_id = '101_DEN084Y5_15_E01_008_clean.fcs'
 
@@ -65,8 +65,8 @@ class SessionTestCase(unittest.TestCase):
             self.assertIsInstance(cm, Matrix)
 
     def test_get_group_comp_matrices(self):
-        wsp_path = "examples/8_color_data_set/8_color_ICS_simple.wsp"
-        fcs_path = "examples/8_color_data_set/fcs_files"
+        wsp_path = "examples/data/8_color_data_set/8_color_ICS_simple.wsp"
+        fcs_path = "examples/data/8_color_data_set/fcs_files"
         sample_grp = 'DEN'
 
         fks = Session(fcs_samples=fcs_path)
@@ -86,8 +86,8 @@ class SessionTestCase(unittest.TestCase):
         self.assertIsInstance(comp_mat, transforms.AsinhTransform)
 
     def test_get_group_transforms(self):
-        wsp_path = "examples/8_color_data_set/8_color_ICS_simple.wsp"
-        fcs_path = "examples/8_color_data_set/fcs_files"
+        wsp_path = "examples/data/8_color_data_set/8_color_ICS_simple.wsp"
+        fcs_path = "examples/data/8_color_data_set/fcs_files"
         sample_grp = 'DEN'
 
         fks = Session(fcs_samples=fcs_path)
@@ -100,8 +100,8 @@ class SessionTestCase(unittest.TestCase):
             self.assertIsInstance(cm, Transform)
 
     def test_get_sample_transforms(self):
-        wsp_path = "examples/8_color_data_set/8_color_ICS_simple.wsp"
-        fcs_path = "examples/8_color_data_set/fcs_files"
+        wsp_path = "examples/data/8_color_data_set/8_color_ICS_simple.wsp"
+        fcs_path = "examples/data/8_color_data_set/fcs_files"
         sample_grp = 'DEN'
         sample_id = '101_DEN084Y5_15_E01_008_clean.fcs'
 
@@ -115,8 +115,8 @@ class SessionTestCase(unittest.TestCase):
             self.assertIsInstance(cm, Transform)
 
     def test_get_sample_gates(self):
-        wsp_path = "examples/8_color_data_set/8_color_ICS_simple.wsp"
-        fcs_path = "examples/8_color_data_set/fcs_files"
+        wsp_path = "examples/data/8_color_data_set/8_color_ICS_simple.wsp"
+        fcs_path = "examples/data/8_color_data_set/fcs_files"
         sample_grp = 'DEN'
         sample_id = '101_DEN084Y5_15_E01_008_clean.fcs'
 
@@ -130,8 +130,8 @@ class SessionTestCase(unittest.TestCase):
             self.assertIsInstance(cm, Gate)
 
     def test_get_sample_gate_events(self):
-        wsp_path = "examples/8_color_data_set/8_color_ICS_simple.wsp"
-        fcs_path = "examples/8_color_data_set/fcs_files"
+        wsp_path = "examples/data/8_color_data_set/8_color_ICS_simple.wsp"
+        fcs_path = "examples/data/8_color_data_set/fcs_files"
         sample_grp = 'DEN'
         sample_id = '101_DEN084Y5_15_E01_008_clean.fcs'
         gate_id = 'CD3+'
@@ -161,6 +161,27 @@ class SessionTestCase(unittest.TestCase):
         self.assertIsInstance(df_gated_events, pd.DataFrame)
         self.assertEqual(len(df_gated_events), 133670)
 
+    def test_get_wsp_gated_events(self):
+        wsp_path = "examples/data/8_color_data_set/8_color_ICS_simple.wsp"
+        fcs_path = "examples/data/8_color_data_set/fcs_files"
+        sample_grp = 'DEN'
+        sample_id = '101_DEN084Y5_15_E01_008_clean.fcs'
+        gate_id = 'CD3+'
+
+        fks = Session(fcs_samples=fcs_path)
+        fks.import_flowjo_workspace(wsp_path, ignore_missing_files=True)
+
+        fks.analyze_samples(sample_grp, sample_id)
+
+        df_gated_events = fks.get_wsp_gated_events(
+            sample_grp,
+            [sample_id],
+            gate_id
+        )
+
+        self.assertIsInstance(df_gated_events, list)
+        self.assertEqual(len(df_gated_events[0]), 133670)
+
     @staticmethod
     def test_add_poly1_gate():
         fks = Session(fcs_samples=data1_sample)
@@ -168,10 +189,18 @@ class SessionTestCase(unittest.TestCase):
         fks.analyze_samples()
         result = fks.get_gating_results('default', data1_sample.original_filename)
 
-        res_path = 'examples/gate_ref/truth/Results_Polygon1.txt'
+        res_path = 'examples/data/gate_ref/truth/Results_Polygon1.txt'
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
 
         np.testing.assert_array_equal(truth, result.get_gate_indices('Polygon1'))
+
+    def test_get_gate_from_template(self):
+        fks = Session(fcs_samples=data1_sample)
+        fks.add_gate(poly1_gate)
+
+        template_gate = fks.get_gate('default', 'Polygon1')
+
+        self.assertEqual(template_gate.id, 'Polygon1')
 
     @staticmethod
     def test_add_matrix_poly4_gate():
@@ -186,7 +215,7 @@ class SessionTestCase(unittest.TestCase):
         poly_gate = gates.PolygonGate('Polygon4', None, dims, poly1_vertices)
         fks.add_gate(poly_gate)
 
-        res_path = 'examples/gate_ref/truth/Results_Polygon4.txt'
+        res_path = 'examples/data/gate_ref/truth/Results_Polygon4.txt'
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
 
         fks.analyze_samples()
@@ -205,7 +234,7 @@ class SessionTestCase(unittest.TestCase):
         rect_gate = gates.RectangleGate('ScaleRange1', None, dims)
         fks.add_gate(rect_gate)
 
-        res_path = 'examples/gate_ref/truth/Results_ScaleRange1.txt'
+        res_path = 'examples/data/gate_ref/truth/Results_ScaleRange1.txt'
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
 
         fks.analyze_samples()
@@ -214,8 +243,8 @@ class SessionTestCase(unittest.TestCase):
         np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange1'))
 
     def test_wsp_export_simple_poly50(self):
-        wsp_path = "examples/simple_line_example/simple_poly_and_rect_v2_poly50.wsp"
-        fcs_path = "examples/simple_line_example/data_set_simple_line_100.fcs"
+        wsp_path = "examples/data/simple_line_example/simple_poly_and_rect_v2_poly50.wsp"
+        fcs_path = "examples/data/simple_line_example/data_set_simple_line_100.fcs"
         sample_group = 'my_group'
         sample_id = 'data_set_simple_line_100.fcs'
 
@@ -251,3 +280,29 @@ class SessionTestCase(unittest.TestCase):
         self.assertEqual(fks2_rect1_count, 0)
         self.assertEqual(fks_poly1_count, 50)
         self.assertEqual(fks2_poly1_count, 50)
+
+    def test_add_samples_with_group(self):
+        sample_ids = ["100715.fcs", "109567.fcs", "113548.fcs"]
+
+        s = Session()
+
+        group_name = 'gml'
+        s.add_sample_group(group_name)
+
+        s.add_samples(fcs_file_paths, group_name)
+
+        s_sample_ids = sorted(s.get_group_sample_ids(group_name))
+
+        self.assertListEqual(sample_ids, s_sample_ids)
+
+    def test_new_group_membership_is_empty(self):
+        s = Session()
+
+        group_name = 'new_group'
+        s.add_sample_group(group_name)
+
+        s.add_samples(fcs_file_paths)  # load without assigning a group
+
+        s_sample_ids = sorted(s.get_group_sample_ids(group_name))
+
+        self.assertListEqual(s_sample_ids, [])

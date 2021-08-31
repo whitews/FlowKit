@@ -5,6 +5,7 @@ scratch/*
 *.html
 *.xml
 *.fcs
+*.wsp
 *.csv
 *.xlsx
 

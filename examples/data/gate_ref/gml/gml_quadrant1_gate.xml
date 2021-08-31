@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<gating:Gating-ML
+    xmlns:gating="http://www.isac-net.org/std/Gating-ML/v2.0/gating"
+    xmlns:data-type="http://www.isac-net.org/std/Gating-ML/v2.0/datatypes">
+
+    <gating:QuadrantGate gating:id="Quadrant1">
+        <gating:divider gating:id="FL2" gating:compensation-ref="FCS">
+            <data-type:fcs-dimension data-type:name="FL2-H" />
+            <gating:value>12.14748</gating:value>
+        </gating:divider>
+        <gating:divider gating:id="FL4" gating:compensation-ref="FCS">
+            <data-type:fcs-dimension data-type:name="FL4-H" />
+            <gating:value>14.22417</gating:value>
+        </gating:divider>
+        <gating:Quadrant gating:id="FL2P-FL4P">
+            <gating:position gating:divider_ref="FL2" gating:location="15" />
+            <gating:position gating:divider_ref="FL4" gating:location="15" />
+        </gating:Quadrant>
+        <gating:Quadrant gating:id="FL2N-FL4P">
+            <gating:position gating:divider_ref="FL2" gating:location="5" />
+            <gating:position gating:divider_ref="FL4" gating:location="15" />
+        </gating:Quadrant>
+        <gating:Quadrant gating:id="FL2N-FL4N">
+            <gating:position gating:divider_ref="FL2" gating:location="5" />
+            <gating:position gating:divider_ref="FL4" gating:location="5" />
+        </gating:Quadrant>
+        <gating:Quadrant gating:id="FL2P-FL4N">
+            <gating:position gating:divider_ref="FL2" gating:location="15" />
+            <gating:position gating:divider_ref="FL4" gating:location="5" />
+        </gating:Quadrant>
+    </gating:QuadrantGate>
+
+</gating:Gating-ML>

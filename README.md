@@ -19,9 +19,9 @@
 
 FlowKit is an intuitive Python toolkit for flow cytometry analysis and visualization, with full support for the [GatingML 2.0 standard](http://flowcyt.sourceforge.net/gating/latest.pdf) and limited support for FlowJo 10 workspace files.
 
-**Version 0.6 adds experimental support for exporting FlowJo 10 workspace files from a Session. Support is currently limited to exporting data from a single sample group. Please [submit an issue](https://github.com/whitews/FlowKit/issues/new/choose) if you find any bugs related to this feature.**
+**Version 0.6 added experimental support for exporting FlowJo 10 workspace files from a Session. Support is currently limited to exporting data from a single sample group. Please [submit an issue](https://github.com/whitews/FlowKit/issues/new/choose) if you find any bugs related to this feature.**
 
-<img alt="Screenshot of scatterplot" src="examples/fk_scatterplot.png" style="width:128px;" />
+<img alt="Screenshot of scatterplot" src="docs/fk_scatterplot.png" style="width:128px;" />
 
 ## Features
 
@@ -84,7 +84,7 @@ above is required for correct Logicle and Hyperlog transformations.***
 Required Python dependencies:
 
 * [flowio](https://github.com/whitews/flowio) == 0.9.11
-* [flowutils](https://github.com/whitews/flowutils) == 0.9.3
+* [flowutils](https://github.com/whitews/flowutils) == 0.9.4
 * numpy >= 1.19
 * scipy >= 1.3
 * statsmodels
@@ -119,8 +119,10 @@ Below are a few Jupyter notebooks demonstrating basic usage of the library. Note
 * [General Overview](https://github.com/whitews/FlowKit/blob/master/examples/flowkit-tutorial.ipynb)
 * [Applying transforms to a Sample](https://github.com/whitews/FlowKit/blob/master/examples/sample_transforms.ipynb)
 * [Compensating events using spillover matrix](https://github.com/whitews/FlowKit/blob/master/examples/sample_compensation.ipynb)
-* [Importing a FlowJo 10 WSP file & replicating analysis in FlowKit](https://github.com/whitews/FlowKit/blob/master/examples/flowkit-session-replicate-flowjo-wsp-example.ipynb)
+* [Importing a FlowJo 10 WSP file & replicating analysis in FlowKit](https://github.com/whitews/FlowKit/blob/master/examples/flowkit-session-replicate-flowjo-wsp.ipynb)
 * [Compare mean fluorescence intensity (MFI) in gated populations](https://github.com/whitews/FlowKit/blob/master/examples/flowkit-session-compare-mfi-of-gated-events.ipynb)
+* [Dimension reduction on gated populations](https://github.com/whitews/FlowKit/blob/master/examples/dimension_reduction_on_gated_populations.ipynb)
+* [Comparison between Leiden & Louvain clustering](https://github.com/whitews/FlowKit/blob/master/examples/clustering_comparison_leiden_vs_louvain.ipynb)
 
 ## Contributing
 

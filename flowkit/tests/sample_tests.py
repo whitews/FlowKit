@@ -12,7 +12,7 @@ sys.path.append(os.path.abspath('../..'))
 
 from flowkit import Sample, transforms
 
-data1_fcs_path = 'examples/gate_ref/data1.fcs'
+data1_fcs_path = 'examples/data/gate_ref/data1.fcs'
 data1_sample = Sample(data1_fcs_path)
 
 xform_logicle = transforms.LogicleTransform('logicle', param_t=10000, param_w=0.5, param_m=4.5, param_a=0)
@@ -24,7 +24,7 @@ class SampleTestCase(unittest.TestCase):
     """Tests for loading FCS files as Sample objects"""
     def test_load_from_fcs_file_path(self):
         """Test creating Sample object from an FCS file path"""
-        fcs_file_path = "examples/test_data_2d_01.fcs"
+        fcs_file_path = "examples/data/test_data_2d_01.fcs"
 
         sample = Sample(fcs_path_or_data=fcs_file_path)
 
@@ -32,14 +32,14 @@ class SampleTestCase(unittest.TestCase):
 
     def test_load_from_pathlib(self):
         """Test creating Sample object from a pathlib Path object"""
-        fcs_file_path = "examples/test_data_2d_01.fcs"
+        fcs_file_path = "examples/data/test_data_2d_01.fcs"
         path = Path(fcs_file_path)
         sample = Sample(fcs_path_or_data=path)
 
         self.assertIsInstance(sample, Sample)
 
     def test_load_from_numpy_array(self):
-        npy_file_path = "examples/test_comp_example.npy"
+        npy_file_path = "examples/data/test_comp_example.npy"
         channels = [
             'FSC-A', 'FSC-W', 'SSC-A',
             'Ax488-A', 'PE-A', 'PE-TR-A',
@@ -59,7 +59,7 @@ class SampleTestCase(unittest.TestCase):
         self.assertIsInstance(sample, Sample)
 
     def test_load_from_pandas_multi_index(self):
-        sample_orig = Sample("examples/100715.fcs")
+        sample_orig = Sample("examples/data/100715.fcs")
         pnn_orig = sample_orig.pnn_labels
         pns_orig = sample_orig.pns_labels
 
@@ -77,8 +77,8 @@ class SampleTestCase(unittest.TestCase):
         self.assertRaises(ValueError, Sample, object())
 
     def test_comp_matrix_from_csv(self):
-        fcs_file_path = "examples/test_comp_example.fcs"
-        comp_file_path = "examples/comp_complete_example.csv"
+        fcs_file_path = "examples/data/test_comp_example.fcs"
+        comp_file_path = "examples/data/comp_complete_example.csv"
 
         sample = Sample(
             fcs_path_or_data=fcs_file_path,
@@ -89,8 +89,8 @@ class SampleTestCase(unittest.TestCase):
         self.assertIsNotNone(sample._comp_events)
 
     def test_clearing_comp_events(self):
-        fcs_file_path = "examples/test_comp_example.fcs"
-        comp_file_path = "examples/comp_complete_example.csv"
+        fcs_file_path = "examples/data/test_comp_example.fcs"
+        comp_file_path = "examples/data/comp_complete_example.csv"
 
         sample = Sample(
             fcs_path_or_data=fcs_file_path,
@@ -103,8 +103,8 @@ class SampleTestCase(unittest.TestCase):
         self.assertIsNone(sample._comp_events)
 
     def test_comp_matrix_from_pathlib_path(self):
-        fcs_file_path = "examples/test_comp_example.fcs"
-        comp_file_path = Path("examples/comp_complete_example.csv")
+        fcs_file_path = "examples/data/test_comp_example.fcs"
+        comp_file_path = Path("examples/data/comp_complete_example.csv")
 
         sample = Sample(
             fcs_path_or_data=fcs_file_path,
@@ -116,7 +116,7 @@ class SampleTestCase(unittest.TestCase):
 
     def test_get_metadata(self):
         """Test Sample method get_metadata"""
-        fcs_file_path = "examples/test_data_2d_01.fcs"
+        fcs_file_path = "examples/data/test_data_2d_01.fcs"
 
         sample = Sample(fcs_path_or_data=fcs_file_path)
         meta = sample.get_metadata()
@@ -146,8 +146,8 @@ class SampleTestCase(unittest.TestCase):
 
     @staticmethod
     def test_get_channel_data_comp():
-        fcs_file_path = "examples/test_comp_example.fcs"
-        comp_file_path = Path("examples/comp_complete_example.csv")
+        fcs_file_path = "examples/data/test_comp_example.fcs"
+        comp_file_path = Path("examples/data/comp_complete_example.csv")
 
         sample = Sample(
             fcs_path_or_data=fcs_file_path,
@@ -161,8 +161,8 @@ class SampleTestCase(unittest.TestCase):
 
     @staticmethod
     def test_get_channel_data_xform():
-        fcs_file_path = "examples/test_comp_example.fcs"
-        comp_file_path = Path("examples/comp_complete_example.csv")
+        fcs_file_path = "examples/data/test_comp_example.fcs"
+        comp_file_path = Path("examples/data/comp_complete_example.csv")
 
         sample = Sample(
             fcs_path_or_data=fcs_file_path,
@@ -209,8 +209,8 @@ class SampleTestCase(unittest.TestCase):
         self.assertEqual(events.shape[0], 500)
 
     def test_get_subsampled_comp_events(self):
-        fcs_file_path = "examples/test_comp_example.fcs"
-        comp_file_path = Path("examples/comp_complete_example.csv")
+        fcs_file_path = "examples/data/test_comp_example.fcs"
+        comp_file_path = Path("examples/data/comp_complete_example.csv")
 
         sample = Sample(
             fcs_path_or_data=fcs_file_path,
@@ -224,8 +224,8 @@ class SampleTestCase(unittest.TestCase):
         self.assertEqual(events.shape[0], 500)
 
     def test_get_subsampled_xform_events(self):
-        fcs_file_path = "examples/test_comp_example.fcs"
-        comp_file_path = Path("examples/comp_complete_example.csv")
+        fcs_file_path = "examples/data/test_comp_example.fcs"
+        comp_file_path = Path("examples/data/comp_complete_example.csv")
 
         sample = Sample(
             fcs_path_or_data=fcs_file_path,
@@ -241,7 +241,7 @@ class SampleTestCase(unittest.TestCase):
         self.assertEqual(events.shape[0], 500)
 
     def test_get_comp_events_if_no_comp(self):
-        fcs_file_path = "examples/test_comp_example.fcs"
+        fcs_file_path = "examples/data/test_comp_example.fcs"
 
         sample = Sample(
             fcs_path_or_data=fcs_file_path,
@@ -253,7 +253,7 @@ class SampleTestCase(unittest.TestCase):
         self.assertIsNone(comp_events)
 
     def test_get_transformed_events_if_no_xform(self):
-        fcs_file_path = "examples/test_comp_example.fcs"
+        fcs_file_path = "examples/data/test_comp_example.fcs"
 
         sample = Sample(
             fcs_path_or_data=fcs_file_path,
@@ -266,8 +266,8 @@ class SampleTestCase(unittest.TestCase):
 
     @staticmethod
     def test_get_transformed_events_exclude_scatter():
-        fcs_file_path = "examples/test_comp_example.fcs"
-        comp_file_path = Path("examples/comp_complete_example.csv")
+        fcs_file_path = "examples/data/test_comp_example.fcs"
+        comp_file_path = Path("examples/data/comp_complete_example.csv")
 
         sample = Sample(
             fcs_path_or_data=fcs_file_path,
@@ -282,8 +282,8 @@ class SampleTestCase(unittest.TestCase):
         np.testing.assert_equal(sample._raw_events[:, fsc_a_index], data_fsc_a)
 
     def test_get_transformed_events_include_scatter(self):
-        fcs_file_path = "examples/test_comp_example.fcs"
-        comp_file_path = Path("examples/comp_complete_example.csv")
+        fcs_file_path = "examples/data/test_comp_example.fcs"
+        comp_file_path = Path("examples/data/comp_complete_example.csv")
 
         sample = Sample(
             fcs_path_or_data=fcs_file_path,
@@ -308,8 +308,8 @@ class SampleTestCase(unittest.TestCase):
         np.testing.assert_equal(df.values, data1_sample.get_transformed_events())
 
     def test_get_events_as_data_frame_comp(self):
-        fcs_file_path = "examples/test_comp_example.fcs"
-        comp_file_path = "examples/comp_complete_example.csv"
+        fcs_file_path = "examples/data/test_comp_example.fcs"
+        comp_file_path = "examples/data/comp_complete_example.csv"
 
         sample = Sample(
             fcs_path_or_data=fcs_file_path,
@@ -382,8 +382,8 @@ class SampleTestCase(unittest.TestCase):
         np.testing.assert_raises(AssertionError, np.testing.assert_equal, s1_fl3, s2_fl3)
 
     def test_create_fcs(self):
-        fcs_file_path = "examples/test_comp_example.fcs"
-        comp_file_path = Path("examples/comp_complete_example.csv")
+        fcs_file_path = "examples/data/test_comp_example.fcs"
+        comp_file_path = Path("examples/data/comp_complete_example.csv")
 
         sample = Sample(
             fcs_path_or_data=fcs_file_path,
@@ -404,8 +404,8 @@ class SampleTestCase(unittest.TestCase):
         np.testing.assert_almost_equal(sample._comp_events[:, :-1], exported_sample._raw_events[:, :-1], decimal=3)
 
     def test_create_csv(self):
-        fcs_file_path = "examples/test_comp_example.fcs"
-        comp_file_path = Path("examples/comp_complete_example.csv")
+        fcs_file_path = "examples/data/test_comp_example.fcs"
+        comp_file_path = Path("examples/data/comp_complete_example.csv")
 
         sample = Sample(
             fcs_path_or_data=fcs_file_path,
@@ -427,7 +427,7 @@ class SampleTestCase(unittest.TestCase):
 
     def test_filter_negative_scatter(self):
         # there are 2 negative SSC-A events in this file (of 65016 total events)
-        fcs_file_path = "examples/100715.fcs"
+        fcs_file_path = "examples/data/100715.fcs"
         sample = Sample(fcs_path_or_data=fcs_file_path)
         sample.subsample_events(50000)
         sample.filter_negative_scatter(reapply_subsample=False)
@@ -444,7 +444,7 @@ class SampleTestCase(unittest.TestCase):
 
     def test_filter_anomalous_events(self):
         # there are 2 negative SSC-A events in this file (of 65016 total events)
-        fcs_file_path = "examples/100715.fcs"
+        fcs_file_path = "examples/data/100715.fcs"
         sample = Sample(fcs_path_or_data=fcs_file_path)
         sample.subsample_events(50000)
         sample.filter_anomalous_events(reapply_subsample=False)

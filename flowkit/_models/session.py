@@ -2,6 +2,7 @@
 Session class
 """
 import io
+import sys
 import copy
 import numpy as np
 import pandas as pd
@@ -10,9 +11,19 @@ from .._models.gating_strategy import GatingStrategy
 # noinspection PyProtectedMember
 from .._models.transforms._matrix import Matrix
 from .._models import gates
+from .._models.sample import Sample
 from .._utils.gate_utils import multi_proc, mp
 from .._utils import plot_utils, xml_utils, wsp_utils, sample_utils
 import warnings
+
+
+# Used to detect PyCharm's debugging mode to turn off multi-processing for debugging with tests
+get_trace = getattr(sys, 'gettrace', lambda: None)
+
+if get_trace() is None:
+    debug = True
+else:
+    debug = False
 
 
 # _gate_sample & _gate_samples are multi-proc wrappers for GatingStrategy _gate_sample method
@@ -24,26 +35,24 @@ def _gate_sample(data):
     return gating_strategy.gate_sample(sample, verbose=verbose)
 
 
-def _gate_samples(gating_strategies, samples, verbose):
+def _gate_samples(gating_strategies, samples, verbose, use_mp=False):
     # TODO: Multiprocessing can fail for very large workloads (lots of gates), maybe due
-    #       to running out of memory. Will investigate further, but for now maybe provide an option
-    #       for turning off multiprocessing so end user can avoid this issue if it occurs.
+    #       to running out of memory. Will investigate further, but for now setting an
+    #       option to control whether mp is used (default is True)
+    #       Needs further investigation, as this is still causing problems.
     sample_count = len(samples)
-    if multi_proc and sample_count > 1:
+    if multi_proc and sample_count > 1 and use_mp:
         if sample_count < mp.cpu_count():
             proc_count = sample_count
         else:
             proc_count = mp.cpu_count() - 1  # leave a CPU free just to be nice
 
-        try:
-            pool = mp.Pool(processes=proc_count)
+        with mp.get_context("spawn").Pool(processes=proc_count) as pool:
             data = [(gating_strategies[i], sample, verbose) for i, sample in enumerate(samples)]
             all_results = pool.map(_gate_sample, data)
-        except Exception as e:
-            # noinspection PyUnboundLocalVariable
+
             pool.close()
-            raise e
-        pool.close()
+            pool.join()
     else:
         all_results = []
         for i, sample in enumerate(samples):
@@ -80,8 +89,9 @@ class Session(object):
         Create a new sample group to the session. The group name must be unique to the session.
 
         :param group_name: a text string representing the sample group
-        :param gating_strategy: a gating strategy instance to use for the group template. If None, then a new, blank
-            gating strategy will be created.
+        :param gating_strategy: an optional gating strategy to use for the group template. Can be
+            a path or file to a GatingML 2.0 file or a GatingStrategy instance. If None, then a new,
+            blank gating strategy will be created.
         :return: None
         """
         if group_name in self._sample_group_lut:
@@ -165,49 +175,71 @@ class Session(object):
 
                 self._sample_group_lut[group_name]['samples'][sample] = gs
 
-    def add_samples(self, samples):
+    def add_samples(self, samples, group_name=None):
         """
         Adds FCS samples to the session. All added samples will be added to the 'default' sample group.
 
         :param samples: a list of Sample instances
+        :param group_name: a text string representing the sample group to which to assign samples. If None,
+            samples are only added to the 'default' group.
         :return: None
         """
-        new_samples = sample_utils.load_samples(samples)
+        # TODO: Using mp here causes problems when running tests in debug mode. Needs further investigation.
+        new_samples = sample_utils.load_samples(samples, use_mp=debug)
         for s in new_samples:
             s.subsample_events(self.subsample_count)
             if s.original_filename in self.sample_lut:
                 # sample ID may have been added via a FlowJo workspace,
                 # check if Sample value is None
                 if self.sample_lut[s.original_filename] is not None:
-                    warnings.warn("A sample with this ID already exists...skipping")
+                    warnings.warn("A sample with ID %s already exists...skipping" % s.original_filename)
                     continue
             self.sample_lut[s.original_filename] = s
 
             # all samples get added to the 'default' group
-            self.assign_sample(s.original_filename, 'default')
+            self.assign_samples(s.original_filename, 'default')
+            if group_name is not None:
+                self.assign_samples(s.original_filename, group_name)
 
-    def assign_sample(self, sample_id, group_name):
+    def assign_samples(self, sample_ids, group_name):
         """
         Assigns a sample ID to a sample group. Samples can belong to more than one sample group.
 
-        :param sample_id: Sample ID to assign to the specified sample group
+        :param sample_ids: a text string of a Sample ID or list of Sample IDs to assign to the specified sample group
         :param group_name: name of sample group to which the sample will be assigned
         :return: None
         """
         group = self._sample_group_lut[group_name]
-        if sample_id in group['samples']:
-            warnings.warn("Sample %s is already assigned to the group %s...nothing changed" % (sample_id, group_name))
-            return
-        template = group['template']
-        group['samples'][sample_id] = copy.deepcopy(template)
 
-    def get_sample_ids(self):
+        if isinstance(sample_ids, str):
+            sample_ids = [sample_ids]
+
+        for sample_id in sample_ids:
+            if sample_id in group['samples']:
+                warnings.warn("Sample %s is already assigned to the group %s...skipping" % (sample_id, group_name))
+                continue
+            template = group['template']
+            group['samples'][sample_id] = copy.deepcopy(template)
+
+    def get_sample_ids(self, loaded_only=True):
         """
         Retrieve the list of Sample IDs that have been loaded or referenced in the Session.
 
+        :param loaded_only: only return IDs for samples loaded in the Session (relevant
+            when a FlowJo workspace was imported without samples)
+
         :return: list of Sample ID strings
         """
-        return list(self.sample_lut.keys())
+        if loaded_only:
+            sample_ids = []
+
+            for k, v in self.sample_lut.items():
+                if isinstance(v, Sample):
+                    sample_ids.append(k)
+        else:
+            sample_ids = list(self.sample_lut.keys())
+
+        return sample_ids
 
     def get_sample_groups(self):
         """
@@ -217,15 +249,22 @@ class Session(object):
         """
         return list(self._sample_group_lut.keys())
 
-    def get_group_sample_ids(self, group_name):
+    def get_group_sample_ids(self, group_name, loaded_only=True):
         """
         Retrieve the list of Sample IDs belonging to the specified sample group.
         
         :param group_name: a text string representing the sample group
+        :param loaded_only: only return IDs for samples loaded in the Session (relevant
+            when a FlowJo workspace was imported without samples)
         :return: list of Sample IDs
         """
         # convert to list instead of dict_keys
-        return list(self._sample_group_lut[group_name]['samples'].keys())
+        sample_ids = list(self._sample_group_lut[group_name]['samples'].keys())
+        if loaded_only:
+            loaded_sample_ids = self.get_sample_ids()
+            sample_ids = list(set(sample_ids).intersection(set(loaded_sample_ids)))
+
+        return sample_ids
 
     def get_group_samples(self, group_name):
         """
@@ -235,15 +274,13 @@ class Session(object):
         :param group_name: a text string representing the sample group
         :return: list of Sample instances
         """
-        sample_ids = self.get_group_sample_ids(group_name)
+        # don't return samples that haven't been loaded
+        sample_ids = self.get_group_sample_ids(group_name, loaded_only=True)
 
         samples = []
         for s_id in sample_ids:
             sample = self.sample_lut[s_id]
-
-            # don't return samples that haven't been loaded
-            if sample is not None:
-                samples.append(self.sample_lut[s_id])
+            samples.append(sample)
 
         return samples
 
@@ -382,25 +419,30 @@ class Session(object):
         :param gate_id: text string of a gate ID
         :return: Subclass of a Gate object
         """
-        # TODO: this needs to handle getting default template gate or sample specific gate
+        # this method doesn't need to lookup sample specific gates, as the gate names
+        # and hierarchy must be the same for all samples in a group
         group = self._sample_group_lut[group_name]
         template = group['template']
         gate = template.get_gate(gate_id)
         return gate.parent
 
-    def get_gate(self, group_name, sample_id, gate_id, gate_path=None):
+    def get_gate(self, group_name, gate_id, gate_path=None, sample_id=None):
         """
         Retrieve a gate instance by its group, sample, and gate ID.
 
         :param group_name: a text string representing the sample group
-        :param sample_id: a text string representing a Sample instance
         :param gate_id: text string of a gate ID
         :param gate_path: complete list of gate IDs for unique set of gate ancestors. Required if gate_id is ambiguous
+        :param sample_id: a text string representing a Sample instance. If None, the template gate is returned.
         :return: Subclass of a Gate object
         """
-        # TODO: this needs to handle getting default template gate or sample specific gate
         group = self._sample_group_lut[group_name]
-        gating_strategy = group['samples'][sample_id]
+        if sample_id is None:
+            # get the default template gate
+            gating_strategy = group['template']
+        else:
+            # get the custom sample gate
+            gating_strategy = group['samples'][sample_id]
         gate = gating_strategy.get_gate(gate_id, gate_path=gate_path)
         return gate
 
@@ -537,7 +579,7 @@ class Session(object):
             gating_strategies.append(self._sample_group_lut[group_name]['samples'][s.original_filename])
             samples_to_run.append(s)
 
-        results = _gate_samples(gating_strategies, samples_to_run, verbose)
+        results = _gate_samples(gating_strategies, samples_to_run, verbose, use_mp=debug)
 
         all_reports = [res.report for res in results]
 
@@ -553,7 +595,8 @@ class Session(object):
         Retrieve analyzed gating results gates for a sample in a sample group.
 
         :param group_name: a text string representing the sample group
-        :param sample_id: optional sample ID, if specified only this sample will be processed
+        :param sample_id: a text string representing a loaded Sample instance that is
+            assigned to the specified group
         :return: GatingResults instance
         """
 
@@ -620,6 +663,75 @@ class Session(object):
         gated_event_data = events_df[gate_idx]
 
         return gated_event_data
+
+    def get_wsp_gated_events(self, group_name, sample_ids=None, gate_id=None):
+        """
+        Convert gated events in FlowJo WSP sample group to
+        list of compensated and transformed DataFrames.
+
+        :param group_name: a text string representing the sample group
+        :param sample_ids: a list of Sample ID strings
+        :param gate_id: optional text string of a gate ID. If None, the first gate will be evaluated.
+
+        :return: a list of Pandas DataFrames with the gated events, compensated & transformed according
+            to the group's compensation matrix and transforms
+        """
+
+        if sample_ids is None:
+            sample_ids = self.get_group_sample_ids(group_name)
+
+        if gate_id is None:
+            gate_ids = self.get_gate_ids(group_name)
+            gate_name, gate_path = gate_ids[0]
+        elif isinstance(gate_id, tuple):
+            gate_name, gate_path = gate_id
+        else:
+            gate_name, gate_path = gate_id, None
+
+        df_events_list = []
+
+        for sample_id in sample_ids:
+            # determine sample's comp matrix...possible there are many
+            comp_matrices = self.get_sample_comp_matrices(group_name, sample_id)
+
+            if len(comp_matrices) > 1:
+                # choose first transform, we'll verify the rest match it
+                ref_cm = comp_matrices[0]
+
+                for cm in comp_matrices:
+                    diff_mat = ref_cm.matrix != cm.matrix
+                    if np.sum(diff_mat) != 0:
+                        warnings.warn(
+                            "Sample %s has multiple comp matrices that differ, choosing the 1st." % sample_id,
+                            UserWarning
+                        )
+            elif len(comp_matrices) == 1:
+                ref_cm = comp_matrices[0]
+            else:
+                ref_cm = None
+
+            xforms = self.get_sample_transforms(group_name, sample_id)
+
+            xform_lut = {xform.id: xform for xform in xforms if not xform.id.startswith('Comp')}
+
+            df = self.get_gate_events(
+                group_name=group_name,
+                sample_id=sample_id,
+                gate_id=gate_name,
+                gate_path=gate_path,
+                matrix=ref_cm,
+                transform=xform_lut,
+            )
+
+            # TODO: not sure if this column merging is best to do here
+            df.columns = [' '.join(col).strip() for col in df.columns.values]
+
+            df.insert(0, 'sample_group', group_name)
+            df.insert(1, 'sample_id', sample_id)
+
+            df_events_list.append(df)
+
+        return df_events_list
 
     def plot_gate(
             self,
