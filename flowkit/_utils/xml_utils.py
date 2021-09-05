@@ -337,7 +337,8 @@ def find_attribute_value(xml_el, namespace, attribute_name):
     elif len(attribs) == 0:
         return None
 
-    return attribs[0]
+    # return as pure str to save memory (otherwise it's an _ElementUnicodeResult from lxml
+    return str(attribs[0])
 
 
 def parse_gate_element(
