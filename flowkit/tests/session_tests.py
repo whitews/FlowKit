@@ -159,7 +159,7 @@ class SessionTestCase(unittest.TestCase):
         )
 
         self.assertIsInstance(df_gated_events, pd.DataFrame)
-        self.assertEqual(len(df_gated_events), 133670)
+        self.assertEqual(len(df_gated_events), 133669)
 
     def test_get_wsp_gated_events(self):
         wsp_path = "examples/data/8_color_data_set/8_color_ICS_simple.wsp"
@@ -180,7 +180,7 @@ class SessionTestCase(unittest.TestCase):
         )
 
         self.assertIsInstance(df_gated_events, list)
-        self.assertEqual(len(df_gated_events[0]), 133670)
+        self.assertEqual(len(df_gated_events[0]), 133669)
 
     @staticmethod
     def test_add_poly1_gate():
