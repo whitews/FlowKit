@@ -1,6 +1,7 @@
 """
 Session Tests
 """
+import copy
 import unittest
 import sys
 import os
@@ -10,7 +11,7 @@ import pandas as pd
 
 sys.path.append(os.path.abspath('../..'))
 
-from flowkit import Session, Sample, Matrix, Dimension, gates, transforms
+from flowkit import Session, Sample, Matrix, Dimension, gates, transforms, load_samples
 # noinspection PyProtectedMember
 from flowkit._models.transforms._base_transform import Transform
 # noinspection PyProtectedMember
@@ -22,6 +23,8 @@ fcs_file_paths = [
     "examples/data/109567.fcs",
     "examples/data/113548.fcs"
 ]
+test_samples_base_set = load_samples(fcs_file_paths)
+test_samples_8c_full_set = load_samples("examples/data/8_color_data_set/fcs_files")
 
 
 class SessionTestCase(unittest.TestCase):
@@ -36,7 +39,7 @@ class SessionTestCase(unittest.TestCase):
         self.assertListEqual(fks.get_sample_ids(), sample_ids)
 
     def test_load_samples_from_list_of_samples(self):
-        samples = [Sample(file_path) for file_path in fcs_file_paths]
+        samples = copy.deepcopy(test_samples_base_set)
         fks = Session(fcs_samples=samples)
 
         self.assertEqual(len(fks.sample_lut.keys()), 3)
@@ -51,11 +54,10 @@ class SessionTestCase(unittest.TestCase):
 
     def test_get_sample_comp_matrices(self):
         wsp_path = "examples/data/8_color_data_set/8_color_ICS_simple.wsp"
-        fcs_path = "examples/data/8_color_data_set/fcs_files"
         sample_grp = 'DEN'
         sample_id = '101_DEN084Y5_15_E01_008_clean.fcs'
 
-        fks = Session(fcs_samples=fcs_path)
+        fks = Session(copy.deepcopy(test_samples_8c_full_set))
         fks.import_flowjo_workspace(wsp_path, ignore_missing_files=True)
 
         comp_matrices = fks.get_sample_comp_matrices(sample_grp, sample_id)
@@ -66,10 +68,9 @@ class SessionTestCase(unittest.TestCase):
 
     def test_get_group_comp_matrices(self):
         wsp_path = "examples/data/8_color_data_set/8_color_ICS_simple.wsp"
-        fcs_path = "examples/data/8_color_data_set/fcs_files"
         sample_grp = 'DEN'
 
-        fks = Session(fcs_samples=fcs_path)
+        fks = Session(copy.deepcopy(test_samples_8c_full_set))
         fks.import_flowjo_workspace(wsp_path, ignore_missing_files=True)
 
         comp_matrices = fks.get_group_comp_matrices(sample_grp)
@@ -87,10 +88,9 @@ class SessionTestCase(unittest.TestCase):
 
     def test_get_group_transforms(self):
         wsp_path = "examples/data/8_color_data_set/8_color_ICS_simple.wsp"
-        fcs_path = "examples/data/8_color_data_set/fcs_files"
         sample_grp = 'DEN'
 
-        fks = Session(fcs_samples=fcs_path)
+        fks = Session(copy.deepcopy(test_samples_8c_full_set))
         fks.import_flowjo_workspace(wsp_path, ignore_missing_files=True)
 
         xforms = fks.get_group_transforms(sample_grp)
@@ -101,11 +101,10 @@ class SessionTestCase(unittest.TestCase):
 
     def test_get_sample_transforms(self):
         wsp_path = "examples/data/8_color_data_set/8_color_ICS_simple.wsp"
-        fcs_path = "examples/data/8_color_data_set/fcs_files"
         sample_grp = 'DEN'
         sample_id = '101_DEN084Y5_15_E01_008_clean.fcs'
 
-        fks = Session(fcs_samples=fcs_path)
+        fks = Session(copy.deepcopy(test_samples_8c_full_set))
         fks.import_flowjo_workspace(wsp_path, ignore_missing_files=True)
 
         xforms = fks.get_sample_transforms(sample_grp, sample_id)
@@ -116,11 +115,10 @@ class SessionTestCase(unittest.TestCase):
 
     def test_get_sample_gates(self):
         wsp_path = "examples/data/8_color_data_set/8_color_ICS_simple.wsp"
-        fcs_path = "examples/data/8_color_data_set/fcs_files"
         sample_grp = 'DEN'
         sample_id = '101_DEN084Y5_15_E01_008_clean.fcs'
 
-        fks = Session(fcs_samples=fcs_path)
+        fks = Session(copy.deepcopy(test_samples_8c_full_set))
         fks.import_flowjo_workspace(wsp_path, ignore_missing_files=True)
 
         sample_gates = fks.get_sample_gates(sample_grp, sample_id)
@@ -131,12 +129,11 @@ class SessionTestCase(unittest.TestCase):
 
     def test_get_sample_gate_events(self):
         wsp_path = "examples/data/8_color_data_set/8_color_ICS_simple.wsp"
-        fcs_path = "examples/data/8_color_data_set/fcs_files"
         sample_grp = 'DEN'
         sample_id = '101_DEN084Y5_15_E01_008_clean.fcs'
         gate_id = 'CD3+'
 
-        fks = Session(fcs_samples=fcs_path)
+        fks = Session(copy.deepcopy(test_samples_8c_full_set))
         fks.import_flowjo_workspace(wsp_path, ignore_missing_files=True)
 
         fks.analyze_samples(sample_grp, sample_id)
@@ -163,12 +160,11 @@ class SessionTestCase(unittest.TestCase):
 
     def test_get_wsp_gated_events(self):
         wsp_path = "examples/data/8_color_data_set/8_color_ICS_simple.wsp"
-        fcs_path = "examples/data/8_color_data_set/fcs_files"
         sample_grp = 'DEN'
         sample_id = '101_DEN084Y5_15_E01_008_clean.fcs'
         gate_id = 'CD3+'
 
-        fks = Session(fcs_samples=fcs_path)
+        fks = Session(copy.deepcopy(test_samples_8c_full_set))
         fks.import_flowjo_workspace(wsp_path, ignore_missing_files=True)
 
         fks.analyze_samples(sample_grp, sample_id)
@@ -289,7 +285,7 @@ class SessionTestCase(unittest.TestCase):
         group_name = 'gml'
         s.add_sample_group(group_name)
 
-        s.add_samples(fcs_file_paths, group_name)
+        s.add_samples(copy.deepcopy(test_samples_base_set), group_name)
 
         s_sample_ids = sorted(s.get_group_sample_ids(group_name))
 
@@ -301,7 +297,7 @@ class SessionTestCase(unittest.TestCase):
         group_name = 'new_group'
         s.add_sample_group(group_name)
 
-        s.add_samples(fcs_file_paths)  # load without assigning a group
+        s.add_samples(copy.deepcopy(test_samples_base_set))  # load without assigning a group
 
         s_sample_ids = sorted(s.get_group_sample_ids(group_name))
 

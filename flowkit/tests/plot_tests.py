@@ -1,6 +1,7 @@
 """
 Unit tests for plotting functions
 """
+import copy
 import unittest
 from bokeh.plotting.figure import Figure as bk_Figure
 from matplotlib.pyplot import Figure as mpl_Figure
@@ -8,6 +9,9 @@ import flowkit as fk
 
 fcs_path = 'examples/data/gate_ref/data1.fcs'
 gml_path = 'examples/data/gate_ref/gml/gml_all_gates.xml'
+test_sample = fk.Sample(fcs_path)
+test_sample.subsample_events(2000)
+test_gating_strategy = fk.parse_gating_xml(gml_path)
 
 
 class PlotTestCase(unittest.TestCase):
@@ -20,53 +24,58 @@ class PlotTestCase(unittest.TestCase):
     """
 
     def test_plot_sample_histogram(self):
-        sample = fk.Sample(fcs_path)
+        sample = copy.deepcopy(test_sample)
         xform_logicle = fk.transforms.LogicleTransform('logicle', param_t=10000, param_w=0.5, param_m=4.5, param_a=0)
         sample.apply_transform(xform_logicle)
 
         p = sample.plot_histogram(
             'FL2-H',
-            source='xform'
+            source='xform',
+            subsample=True
         )
 
         self.assertIsInstance(p, bk_Figure)
 
     def test_plot_sample_contour(self):
-        sample = fk.Sample(fcs_path)
+        sample = copy.deepcopy(test_sample)
+        sample.subsample_events(5000)
         xform_logicle = fk.transforms.LogicleTransform('logicle', param_t=10000, param_w=0.5, param_m=4.5, param_a=0)
         sample.apply_transform(xform_logicle)
 
         p1 = sample.plot_contour(
             'FL1-H',
             'FL2-H',
-            source='xform'
+            source='xform',
+            subsample=True
         )
         p2 = sample.plot_contour(
             'FL1-H',
             'FL2-H',
             source='xform',
             plot_events=True,
+            subsample=True
         )
 
         self.assertIsInstance(p1, mpl_Figure)
         self.assertIsInstance(p2, mpl_Figure)
 
     def test_plot_sample_scatter(self):
-        sample = fk.Sample(fcs_path)
+        sample = copy.deepcopy(test_sample)
         xform_logicle = fk.transforms.LogicleTransform('logicle', param_t=10000, param_w=0.5, param_m=4.5, param_a=0)
         sample.apply_transform(xform_logicle)
 
         p = sample.plot_scatter(
             'FL1-H',
             'FL2-H',
-            source='xform'
+            source='xform',
+            subsample=True
         )
 
         self.assertIsInstance(p, bk_Figure)
 
     def test_plot_gates(self):
-        fks = fk.Session(fcs_path)
-        fks.add_sample_group('my_group', gml_path)
+        fks = fk.Session(copy.deepcopy(test_sample))
+        fks.add_sample_group('my_group', copy.deepcopy(test_gating_strategy))
 
         group_name = 'my_group'
         sample_name = 'B07'
@@ -86,8 +95,8 @@ class PlotTestCase(unittest.TestCase):
             self.assertIsInstance(p, bk_Figure)
 
     def test_plot_gated_scatter(self):
-        fks = fk.Session(fcs_path)
-        fks.add_sample_group('my_group', gml_path)
+        fks = fk.Session(copy.deepcopy(test_sample))
+        fks.add_sample_group('my_group', copy.deepcopy(test_gating_strategy))
 
         group_name = 'my_group'
         sample_name = 'B07'
@@ -100,7 +109,8 @@ class PlotTestCase(unittest.TestCase):
             x_dim,
             y_dim,
             group_name=group_name,
-            gate_id='ScaleRect1'
+            gate_id='ScaleRect1',
+            subsample=True
         )
 
         self.assertIsInstance(p, bk_Figure)

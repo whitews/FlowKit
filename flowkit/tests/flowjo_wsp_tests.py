@@ -1,11 +1,13 @@
 """
 Tests for FlowJo 10 workspace files
 """
+import copy
 import unittest
 import os
 from io import BytesIO
 import numpy as np
 from flowkit import Session, gates, transforms
+from .session_tests import test_samples_8c_full_set
 
 
 class FlowJoWSPTestCase(unittest.TestCase):
@@ -196,11 +198,10 @@ class FlowJoWSPTestCase(unittest.TestCase):
 
     def test_analyze_single_sample(self):
         wsp_path = "examples/data/8_color_data_set/8_color_ICS_simple.wsp"
-        fcs_path = "examples/data/8_color_data_set/fcs_files"
         sample_id = '101_DEN084Y5_15_E01_008_clean.fcs'
         sample_grp = 'DEN'
 
-        fks = Session(fcs_samples=fcs_path)
+        fks = Session(copy.deepcopy(test_samples_8c_full_set))
         fks.import_flowjo_workspace(wsp_path, ignore_missing_files=True)
 
         sample_ids = fks.get_group_sample_ids(sample_grp)
@@ -213,21 +214,20 @@ class FlowJoWSPTestCase(unittest.TestCase):
 
     def test_export_wsp(self):
         wsp_path = "examples/data/8_color_data_set/8_color_ICS.wsp"
-        fcs_path = "examples/data/8_color_data_set/fcs_files"
         sample_grp = 'DEN'
 
         # use a leaf gate to test if the new WSP session is created correctly
         gate_id = 'TNFa+'
         gate_path = ['root', 'Time', 'Singlets', 'aAmine-', 'CD3+', 'CD4+']
 
-        fks = Session(fcs_samples=fcs_path)
+        fks = Session(copy.deepcopy(test_samples_8c_full_set))
         fks.import_flowjo_workspace(wsp_path, ignore_missing_files=True)
 
         out_file = BytesIO()
         fks.export_wsp(out_file, sample_grp)
         out_file.seek(0)
 
-        fks_out = Session(fcs_samples=fcs_path)
+        fks_out = Session(copy.deepcopy(test_samples_8c_full_set))
         fks_out.import_flowjo_workspace(out_file, ignore_missing_files=True)
 
         self.assertIsInstance(fks_out, Session)
