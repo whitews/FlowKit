@@ -401,30 +401,52 @@ class GatingStrategy(object):
 
         results = {}
 
+        # The goal here is to avoid re-analyzing any gates.
+        # For every gate processed, the results will be cached.
+        # Since the nodes are retrieved in hierarchy order,
+        # we simply check our cached results for the gate's
+        # parent results. This should avoid having any gate
+        # processed more than once.
         for item in nodes:
+            # to make the dict key unique, make a string from the ancestors,
+            # but also add the set of them as a set to avoid repeated & fragile
+            # string splitting in the GatingResults class
             g_id = item.name
+
+            # 'root' is not a true gate
             if g_id == 'root':
                 continue
-            gate = item.gate
-            if isinstance(gate, fk_gates.QuadrantGate) and g_id in gate.quadrants:
-                # TODO: think this conditional is now unnecessary and unreachable
-                # This is a sub-gate, we'll process the sub-gates all at once
-                # with the main QuadrantGate ID
+
+            gate_path_list = [a.name for a in item.ancestors]
+            gate_path_str = "/".join(gate_path_list)
+
+            p_id = item.parent.name
+            parent_path_list = [a.name for a in item.parent.ancestors]
+            parent_gate_path_str = "/".join(parent_path_list)
+
+            g_uid = (g_id, gate_path_str)
+            p_uid = (p_id, parent_gate_path_str)
+
+            # check if this gate has already been processed
+            if g_uid in results:
                 continue
-            elif isinstance(gate, fk_gates.Quadrant):
+
+            gate = item.gate
+
+            if isinstance(gate, fk_gates.Quadrant):
+                # This is a quadrant sub-gate, we'll process the quadrant sub-gates
+                # all at once with the main QuadrantGate ID
                 continue
 
             if verbose:
                 print("%s: processing gate %s" % (sample.original_filename, g_id))
-            if gate.parent is not None and gate.parent in results:
-                parent_results = results[gate.parent]
+
+            # look up parent results
+            if gate.parent is not None and p_uid in results:
+                parent_results = results[p_uid]
             else:
                 parent_results = None
-            # to make the dict key unique, make a string from the ancestors,
-            # but also add the set of them as a set to avoid repeated & fragile
-            # string splitting in the GatingResults class
-            gate_path_list = [a.name for a in item.ancestors]
-            gate_path_str = "/".join(gate_path_list)
+
             results[g_id, gate_path_str] = gate.apply(sample, parent_results, self, gate_path_list)
 
             if isinstance(gate, fk_gates.QuadrantGate):
