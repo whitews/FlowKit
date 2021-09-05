@@ -185,7 +185,7 @@ class Session(object):
         :return: None
         """
         # TODO: Using mp here causes problems when running tests in debug mode. Needs further investigation.
-        new_samples = sample_utils.load_samples(samples, use_mp=debug)
+        new_samples = sample_utils.load_samples(samples)
         for s in new_samples:
             s.subsample_events(self.subsample_count)
             if s.original_filename in self.sample_lut:
