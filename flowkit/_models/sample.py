@@ -170,7 +170,7 @@ class Sample(object):
 
         # Start processing the event data. First, we'll save the unprocessed events
         self._orig_events = np.reshape(
-            np.array(flow_data.events, dtype=float),
+            np.array(flow_data.events, dtype=np.float32),
             (-1, flow_data.channel_count)
         )
 
