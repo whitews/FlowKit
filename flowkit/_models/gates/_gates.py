@@ -117,7 +117,7 @@ class PolygonGate(Gate):
         for vert in self.vertices:
             path_vertices.append(vert.coordinates)
 
-        results = gate_utils.points_in_polygon(np.array(path_vertices, dtype=np.float32), events[:, dim_idx])
+        results = gate_utils.points_in_polygon(np.array(path_vertices, dtype=np.float64), events[:, dim_idx])
 
         results = self._apply_parent_gate(sample, results, parent_results, gating_strategy, gate_path)
 

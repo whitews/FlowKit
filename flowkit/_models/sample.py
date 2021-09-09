@@ -185,9 +185,13 @@ class Sample(object):
 
         self._flowjo_pnn_labels = [label.replace('/', '_') for label in self.pnn_labels]
 
-        # Start processing the event data. First, we'll save the unprocessed events
-        self._orig_events = np.reshape(
-            np.array(flow_data.events, dtype=np.float32),
+        # Start processing the event data. First, we'll get the unprocessed events
+        # This is the main entry point for event data into FlowKit, and we ensure
+        # the events are double precision because of the pre-processing that will
+        # make even integer FCS data types floating point. The precision is needed
+        # for accurate gating results.
+        tmp_orig_events = np.reshape(
+            np.array(flow_data.events, dtype=np.float64),
             (-1, flow_data.channel_count)
         )
 
