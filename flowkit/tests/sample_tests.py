@@ -59,7 +59,7 @@ class SampleTestCase(unittest.TestCase):
         self.assertIsInstance(sample, Sample)
 
     def test_load_from_pandas_multi_index(self):
-        sample_orig = Sample("examples/data/100715.fcs")
+        sample_orig = Sample("examples/data/100715.fcs", cache_original_events=True)
         pnn_orig = sample_orig.pnn_labels
         pns_orig = sample_orig.pns_labels
 
@@ -193,12 +193,20 @@ class SampleTestCase(unittest.TestCase):
         self.assertEqual(len(data_idx_6), 500)
 
     def test_get_subsampled_orig_events(self):
-        sample = Sample(data1_fcs_path)
+        sample = Sample(data1_fcs_path, cache_original_events=True)
         sample.subsample_events(500)
 
         events = sample.get_orig_events(subsample=True)
 
         self.assertEqual(events.shape[0], 500)
+
+    def test_get_subsampled_orig_events_not_cached(self):
+        sample = Sample(data1_fcs_path, cache_original_events=False)
+        sample.subsample_events(500)
+
+        events = sample.get_orig_events(subsample=True)
+
+        self.assertIsNone(events, None)
 
     def test_get_subsampled_raw_events(self):
         sample = Sample(data1_fcs_path)
