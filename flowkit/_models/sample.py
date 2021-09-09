@@ -2,6 +2,7 @@
 Sample class
 """
 
+import copy
 import flowio
 import os
 from pathlib import Path
@@ -26,6 +27,13 @@ class Sample(object):
     Represents a single FCS sample from an FCS file, NumPy array or Pandas
     DataFrame.
 
+    Note:
+        Some FCS files incorrectly report the location of the last data byte
+        as the last byte exclusive of the data section rather than the last
+        byte inclusive of the data section. Technically, these are invalid
+        FCS files but these are not corrupted data files. To attempt to read
+        in these files, set the `ignore_offset_error` option to True.
+
     :param fcs_path_or_data: FCS data, can be either:
 
         - a file path or file handle to an FCS file
@@ -49,6 +57,14 @@ class Sample(object):
         but do not contain useful data. Note, this should only be used if there were
         truly no fluorochromes used targeting those detectors and the channels
         do not contribute to compensation.
+
+    :param ignore_offset_error: option to ignore data offset error (see above note), default is False
+
+    :param cache_original_events: Original events are the unprocessed events as stored in the FCS binary,
+        meaning they have not been scaled according to channel gain, corrected for proper lin/log display,
+        or had the time channel scaled by the 'timestep' keyword value (if present). By default, these
+        events are not retained by the Sample class as they are typically not useful. To retrieve the
+        original events, set this to True and call the get_orig_events() method.
     """
     def __init__(
             self,
@@ -56,7 +72,8 @@ class Sample(object):
             channel_labels=None,
             compensation=None,
             null_channel_list=None,
-            ignore_offset_error=False
+            ignore_offset_error=False,
+            cache_original_events=False
     ):
         """
         Create a Sample instance
@@ -174,11 +191,16 @@ class Sample(object):
             (-1, flow_data.channel_count)
         )
 
+        if cache_original_events:
+            self._orig_events = tmp_orig_events
+        else:
+            self._orig_events = None
+
         # Event data must be scaled according to channel gain, as well
         # as corrected for proper lin/log display, and the time channel
         # scaled by the 'timestep' keyword value (if present).
         # This is the only pre-processing we will do on raw events
-        raw_events = self._orig_events.copy()
+        raw_events = copy.deepcopy(tmp_orig_events)
 
         # Note: The time channel is scaled by the timestep (if present),
         # but should not be scaled by any gain value present in PnG.
@@ -420,6 +442,14 @@ class Sample(object):
             events. Default is False (all events)
         :return: NumPy array of original events
         """
+        if self._orig_events is None:
+            warnings.warn(
+                "Original events were not cached, to retrieve them create a "
+                "Sample instance with cache_original_events=True",
+                UserWarning
+            )
+            return None
+
         if subsample:
             return self._orig_events[self.subsample_indices]
         else:
@@ -944,7 +974,9 @@ class Sample(object):
         elif source == 'raw':
             events = self._raw_events[idx, :]
         elif source == 'orig':
-            events = self._orig_events[idx, :]
+            events = self.get_orig_events()
+            if events is not None:
+                events = events[idx, :]
         else:
             raise ValueError("source must be one of 'orig', 'raw', 'comp', or 'xform'")
 
