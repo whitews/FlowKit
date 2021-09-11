@@ -1,14 +1,10 @@
-dist: xenial
+dist: bionic
 language: python
-before_install:
-  - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
-  - sudo apt-get update -q
-  - sudo apt-get install -y gcc-7
-  - export CC=/usr/bin/gcc-7
 python:
   - "3.6"
   - "3.7"
   - "3.8"
+  - "3.9"
 install:
   - pip install -r requirements.txt
   - pip install codecov
