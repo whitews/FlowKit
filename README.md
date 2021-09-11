@@ -1,4 +1,4 @@
-# <img alt="FlowKit" src="docs/_static/flowkit.png" />
+[!["FlowKit"](https://raw.githubusercontent.com/whitews/FlowKit/master/docs/_static/flowkit.png)](https://github.com/whitews/flowkit)
 
 [![PyPI license](https://img.shields.io/pypi/l/flowkit.svg?colorB=dodgerblue)](https://pypi.python.org/pypi/flowkit/)
 [![PyPI pyversions](https://img.shields.io/pypi/pyversions/flowkit.svg)](https://pypi.python.org/pypi/flowkit/)
@@ -23,7 +23,7 @@ FlowKit is an intuitive Python toolkit for flow cytometry analysis and visualiza
 
 **Version 0.6 added experimental support for exporting FlowJo 10 workspace files from a Session. Support is currently limited to exporting data from a single sample group. Please [submit an issue](https://github.com/whitews/FlowKit/issues/new/choose) if you find any bugs related to this feature.**
 
-<img alt="Screenshot of scatterplot" src="docs/fk_scatterplot.png" style="width:128px;" />
+[!["Screenshot of scatterplot"](https://raw.githubusercontent.com/whitews/FlowKit/master/docs/_static/fk_scatterplot.png)]()
 
 ## Features
 
