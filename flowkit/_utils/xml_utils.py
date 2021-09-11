@@ -8,14 +8,18 @@ from .._resources import gml_schema
 from .._models.dimension import Dimension, RatioDimension, QuadrantDivider
 from .._models.vertex import Vertex
 from .._models.gating_strategy import GatingStrategy
+# noinspection PyProtectedMember
 from .._models.transforms import _transforms, _gml_transforms
+# noinspection PyProtectedMember
 from .._models.transforms._matrix import Matrix
+# noinspection PyProtectedMember
 from .._models.gates._gml_gates import \
     GMLBooleanGate, \
     GMLEllipsoidGate, \
     GMLQuadrantGate, \
     GMLPolygonGate, \
     GMLRectangleGate
+# noinspection PyProtectedMember
 from .._models.gates._gates import \
     BooleanGate, \
     EllipsoidGate, \
@@ -116,6 +120,12 @@ def _build_hierarchy_tree(gates_dict):
 
 
 def parse_gating_xml(xml_file_or_path):
+    """
+    Parse a GatingML 20 document and return as a GatingStrategy.
+
+    :param xml_file_or_path: file handle or file path to a GatingML 2.0 document
+    :return: GatingStrategy instance
+    """
     doc_type, root_gml, gating_ns, data_type_ns, xform_ns = _get_xml_type(xml_file_or_path)
 
     gating_strategy = GatingStrategy()
@@ -323,6 +333,14 @@ def _construct_matrices(root_gml, transform_ns, data_type_ns):
 
 
 def find_attribute_value(xml_el, namespace, attribute_name):
+    """
+    Extract the value from an XML element attribute.
+
+    :param xml_el: lxml etree Element
+    :param namespace: string for the XML element's namespace prefix
+    :param attribute_name: attribute string to retrieve the value from
+    :return: value string for the given attribute_name
+    """
     attribs = xml_el.xpath(
         '@%s:%s' % (namespace, attribute_name),
         namespaces=xml_el.nsmap
@@ -421,7 +439,7 @@ def parse_dimension_element(
 
         if ratio_xform_ref is None:
             raise ValueError(
-                "New dimensions must provid a transform reference (line %d)" % dim_element.sourceline
+                "New dimensions must provide a transform reference (line %d)" % dim_element.sourceline
             )
         dimension = RatioDimension(
             ratio_xform_ref,
@@ -449,7 +467,7 @@ def parse_dimension_element(
 
 
 def parse_divider_element(divider_element, gating_namespace, data_type_namespace):
-    # Get'id' (present in quad gate dividers)
+    # Get 'id' (present in quad gate dividers)
     dimension_id = find_attribute_value(divider_element, gating_namespace, 'id')
 
     compensation_ref = find_attribute_value(divider_element, gating_namespace, 'compensation-ref')
