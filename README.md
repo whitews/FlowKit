@@ -85,7 +85,7 @@ above is required for correct Logicle and Hyperlog transformations.***
 
 Required Python dependencies:
 
-* [flowio](https://github.com/whitews/flowio) == 0.9.11
+* [flowio](https://github.com/whitews/flowio) == 0.9.12
 * [flowutils](https://github.com/whitews/flowutils) == 0.9.4
 * numpy >= 1.19
 * scipy >= 1.3
