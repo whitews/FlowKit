@@ -218,7 +218,7 @@ class FlowJoWSPTestCase(unittest.TestCase):
 
         # use a leaf gate to test if the new WSP session is created correctly
         gate_id = 'TNFa+'
-        gate_path = ['root', 'Time', 'Singlets', 'aAmine-', 'CD3+', 'CD4+']
+        gate_path = ('root', 'Time', 'Singlets', 'aAmine-', 'CD3+', 'CD4+')
 
         fks = Session(copy.deepcopy(test_samples_8c_full_set))
         fks.import_flowjo_workspace(wsp_path, ignore_missing_files=True)
