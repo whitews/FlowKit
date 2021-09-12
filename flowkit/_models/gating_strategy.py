@@ -4,6 +4,7 @@ GatingStrategy class
 import json
 import anytree
 from anytree.exporter import DotExporter
+import networkx as nx
 # noinspection PyProtectedMember
 from .._models.gates._base_gate import Gate
 from .._models import gates as fk_gates
@@ -28,6 +29,12 @@ class GatingStrategy(object):
         self.comp_matrices = {}
 
         self._gate_tree = anytree.Node('root')
+
+        # use a directed acyclic graph for later processing and enforcing there
+        # are no cyclical gate relationships.
+        # Each node is made from a tuple representing it's full gate path
+        self._dag = nx.DiGraph()
+        self._dag.add_node(('root',))
 
     def __repr__(self):
         return (
@@ -101,7 +108,7 @@ class GatingStrategy(object):
                 match_idx = 0
             elif matched_parent_count > 1:
                 for i, matched_parent_node in enumerate(matching_parent_nodes):
-                    matched_parent_ancestors = [pn.name for pn in matched_parent_node.path]
+                    matched_parent_ancestors = tuple((pn.name for pn in matched_parent_node.path))
                     if matched_parent_ancestors == gate_path:
                         match_idx = i
                         break
@@ -116,6 +123,10 @@ class GatingStrategy(object):
                 )
 
         node = anytree.Node(gate.id, parent=parent_node, gate=gate)
+        parent_node_tuple = tuple(n.name for n in parent_node.path)
+        new_node_tuple = parent_node_tuple + (gate.id,)
+        self._dag.add_node(new_node_tuple)
+        self._dag.add_edge(parent_node_tuple, new_node_tuple)
 
         # Quadrant gates need special handling to add their individual quadrants as children.
         # Other gates cannot have the main quadrant gate as a parent, they can only reference
@@ -123,6 +134,17 @@ class GatingStrategy(object):
         if isinstance(gate, fk_gates.QuadrantGate):
             for q_id, q in gate.quadrants.items():
                 anytree.Node(q_id, parent=node, gate=q)
+
+                q_node_tuple = new_node_tuple + (q_id,)
+
+                self._dag.add_node(q_node_tuple)
+                self._dag.add_edge(new_node_tuple, q_node_tuple)
+
+        if isinstance(gate, fk_gates.BooleanGate):
+            bool_gate_refs = gate.gate_refs
+            for gate_ref in bool_gate_refs:
+                gate_ref_node_tuple = tuple(gate_ref['path']) + (gate_ref['ref'],)
+                self._dag.add_edge(gate_ref_node_tuple, new_node_tuple)
 
     def add_transform(self, transform):
         """
@@ -196,7 +218,7 @@ class GatingStrategy(object):
             for n in node_matches:
                 if len(n.ancestors) != gate_path_length:
                     continue
-                ancestor_matches = [a.name for a in n.ancestors if a.name in gate_path]
+                ancestor_matches = tuple((a.name for a in n.ancestors if a.name in gate_path))
                 if ancestor_matches == gate_path:
                     gate_matches.append(n)
 
@@ -215,7 +237,7 @@ class GatingStrategy(object):
                 if isinstance(d.gate, fk_gates.QuadrantGate):
                     if gate_id in d.gate.quadrants:
                         node = d
-                        continue
+                        break
         if node is None:
             raise ValueError("Gate ID %s was not found in gating strategy" % gate_id)
 
@@ -288,7 +310,7 @@ class GatingStrategy(object):
         """
         gates = []
         for node in self._gate_tree.descendants:
-            ancestors = [a.name for a in node.ancestors]
+            ancestors = tuple((a.name for a in node.ancestors))
             gates.append((node.name, ancestors))
 
         return gates
@@ -375,30 +397,14 @@ class GatingStrategy(object):
         else:
             self._cached_compensations[sample.original_filename][comp_ref] = comp_events
 
-    def gate_sample(self, sample, gate_id=None, verbose=False):
+    def gate_sample(self, sample, verbose=False):
         """
-        Apply a gate to a sample, returning a GatingResults instance. If the gate
-        has a parent gate, all gates in the hierarchy above will be included in
-        the results. If 'gate_id' is None, then all gates will be evaluated.
+        Apply GatingStrategy to a Sample instance, returning a GatingResults instance.
 
         :param sample: an FCS Sample instance
-        :param gate_id: A gate ID or list of gate IDs to evaluate on given
-            Sample. If None, all gates will be evaluated
         :param verbose: If True, print a line for each gate processed
         :return: GatingResults instance
         """
-        # anytree tree allows us to iterate from the root down to the leaves
-        # in an order that follows the hierarchy, thereby avoiding duplicate
-        # processing of parent gates
-        if gate_id is None:
-            nodes = self._gate_tree.descendants
-        elif isinstance(gate_id, list):
-            nodes = []
-            for g_id in gate_id:
-                nodes.extend(anytree.search.findall_by_attr(self._gate_tree, g_id))
-        else:
-            nodes = anytree.search.findall_by_attr(self._gate_tree, gate_id)
-
         results = {}
 
         # The goal here is to avoid re-analyzing any gates.
@@ -407,22 +413,23 @@ class GatingStrategy(object):
         # we simply check our cached results for the gate's
         # parent results. This should avoid having any gate
         # processed more than once.
-        for item in nodes:
+        process_order = list(nx.algorithms.topological_sort(self._dag))
+
+        process_order.remove(('root',))
+
+        # TODO: cache comp + xform events
+
+        for item in process_order:
             # to make the dict key unique, make a string from the ancestors,
             # but also add the set of them as a set to avoid repeated & fragile
             # string splitting in the GatingResults class
-            g_id = item.name
+            g_id = item[-1]
+            g_path = item[:-1]
+            gate_path_str = "/".join(g_path)
 
-            # 'root' is not a true gate
-            if g_id == 'root':
-                continue
-
-            gate_path_list = [a.name for a in item.ancestors]
-            gate_path_str = "/".join(gate_path_list)
-
-            p_id = item.parent.name
-            parent_path_list = [a.name for a in item.parent.ancestors]
-            parent_gate_path_str = "/".join(parent_path_list)
+            p_id = g_path[-1]
+            p_path = g_path[:-1]
+            parent_gate_path_str = "/".join(p_path)
 
             g_uid = (g_id, gate_path_str)
             p_uid = (p_id, parent_gate_path_str)
@@ -431,7 +438,7 @@ class GatingStrategy(object):
             if g_uid in results:
                 continue
 
-            gate = item.gate
+            gate = self.get_gate(g_id, g_path)
 
             if isinstance(gate, fk_gates.Quadrant):
                 # This is a quadrant sub-gate, we'll process the quadrant sub-gates
@@ -447,12 +454,12 @@ class GatingStrategy(object):
             else:
                 parent_results = None
 
-            results[g_id, gate_path_str] = gate.apply(sample, parent_results, self, gate_path_list)
+            results[g_id, gate_path_str] = gate.apply(sample, parent_results, self, g_path)
 
             if isinstance(gate, fk_gates.QuadrantGate):
                 for quad_res in results[g_id, gate_path_str].values():
-                    quad_res['gate_path'] = gate_path_list
+                    quad_res['gate_path'] = g_path
             else:
-                results[g_id, gate_path_str]['gate_path'] = gate_path_list
+                results[g_id, gate_path_str]['gate_path'] = g_path
 
         return GatingResults(results, sample_id=sample.original_filename)
