@@ -81,6 +81,7 @@ class PlotTestCase(unittest.TestCase):
         sample_name = 'B07'
         fks.assign_samples(sample_name, group_name)
         gate_tuples = fks.get_gate_ids(group_name)
+        fks.analyze_samples(group_name, sample_id=sample_name)
 
         for gate_id, ancestors in gate_tuples:
             gate = fks.get_gate(group_name, gate_id, sample_id=sample_name)
@@ -101,6 +102,8 @@ class PlotTestCase(unittest.TestCase):
         group_name = 'my_group'
         sample_name = 'B07'
         fks.assign_samples(sample_name, group_name)
+        fks.analyze_samples(group_name, sample_id=sample_name)
+
         x_dim = fk.Dimension('FL2-H', compensation_ref='MySpill', transformation_ref='Logicle_10000_0.5_4.5_0')
         y_dim = fk.Dimension('FL3-H', compensation_ref='MySpill', transformation_ref='Logicle_10000_0.5_4.5_0')
 
