@@ -96,6 +96,7 @@ Required Python dependencies:
 * bokeh >= 1.4
 * lxml >= 4.4
 * anytree >= 2.6
+* networkx >= 2.3
 
 ## Installation
 
