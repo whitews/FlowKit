@@ -197,19 +197,19 @@ class GatingStrategyReusedGatesTestCase(unittest.TestCase):
             'ReusedChild', 'ReusedParent', [dim_cd3_a, dim_ssc_a], reused_child_vertices
         )
 
-        gate_path_1 = ['root', 'Gate_A', 'Gate_B', 'ReusedParent']
-        gate_path_2 = ['root', 'Gate_A', 'Gate_C', 'ReusedParent']
+        gate_path_1 = ('root', 'Gate_A', 'Gate_B', 'ReusedParent')
+        gate_path_2 = ('root', 'Gate_A', 'Gate_C', 'ReusedParent')
         self.gs.add_gate(reused_child_gate, gate_path=gate_path_1)
         self.gs.add_gate(reused_child_gate, gate_path=gate_path_2)
 
         self.all_gate_ids = [
-            ('Gate_A', ['root']),
-            ('Gate_B', ['root', 'Gate_A']),
-            ('ReusedParent', ['root', 'Gate_A', 'Gate_B']),
-            ('ReusedChild', ['root', 'Gate_A', 'Gate_B', 'ReusedParent']),
-            ('Gate_C', ['root', 'Gate_A']),
-            ('ReusedParent', ['root', 'Gate_A', 'Gate_C']),
-            ('ReusedChild', ['root', 'Gate_A', 'Gate_C', 'ReusedParent'])
+            ('Gate_A', ('root',)),
+            ('Gate_B', ('root', 'Gate_A')),
+            ('ReusedParent', ('root', 'Gate_A', 'Gate_B')),
+            ('ReusedChild', ('root', 'Gate_A', 'Gate_B', 'ReusedParent')),
+            ('Gate_C', ('root', 'Gate_A')),
+            ('ReusedParent', ('root', 'Gate_A', 'Gate_C')),
+            ('ReusedChild', ('root', 'Gate_A', 'Gate_C', 'ReusedParent'))
         ]
 
     def test_gate_reuse_with_reused_parent(self):
