@@ -757,7 +757,7 @@ def _recurse_add_sub_populations(parent_el, gate_id, gate_path, gating_strategy,
 
         # child gate path will be the parent's gate path plus the parent ID
         child_gate_path = copy.deepcopy(gate_path)
-        child_gate_path.append(gate_id)
+        child_gate_path = child_gate_path + (gate_id,)
         for child_gate in child_gates:
             _recurse_add_sub_populations(
                 sub_pops_el,
@@ -798,7 +798,7 @@ def _add_sample_node_to_wsp(parent_el, sample_name, sample_id, group_name, gatin
             break
 
     for gate in root_gates:
-        _recurse_add_sub_populations(sub_pops_el, gate.id, ['root'], gating_strategy, gate_fj_id_lut, comp_prefix, ns_map)
+        _recurse_add_sub_populations(sub_pops_el, gate.id, ('root',), gating_strategy, gate_fj_id_lut, comp_prefix, ns_map)
 
 
 def export_flowjo_wsp(group_gating_strategies, group_name, samples, file_handle):
