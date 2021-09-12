@@ -432,7 +432,7 @@ class Session(object):
 
         :param group_name: a text string representing the sample group
         :param gate_id: text string of a gate ID
-        :param gate_path: complete list of gate IDs for unique set of gate ancestors. Required if gate_id is ambiguous
+        :param gate_path: tuple of gate IDs for unique set of gate ancestors. Required if gate_id is ambiguous
         :param sample_id: a text string representing a Sample instance. If None, the template gate is returned.
         :return: Subclass of a Gate object
         """
@@ -724,7 +724,7 @@ class Session(object):
             )
 
             # TODO: not sure if this column merging is best to do here
-            df.columns = [' '.join(col).strip() for col in df.columns.values]
+            df.columns = [' '.join(col).strip() for col in df.columns]
 
             df.insert(0, 'sample_group', group_name)
             df.insert(1, 'sample_id', sample_id)
@@ -788,8 +788,9 @@ class Session(object):
 
         # get parent gate results to display only those events
         if gate.parent is not None:
-            parent_results = gating_strategy.gate_sample(sample_to_plot, gate.parent)
-            is_parent_event = parent_results.get_gate_indices(gate.parent)
+            # TODO:  make it clear to call analyze_samples prior to calling this method
+            gating_results = self.get_gating_results(group_name, sample_id)
+            is_parent_event = gating_results.get_gate_indices(gate.parent)
             is_subsample = np.zeros(sample_to_plot.event_count, dtype=bool)
             is_subsample[sample_to_plot.subsample_indices] = True
             idx_to_plot = np.logical_and(is_parent_event, is_subsample)
@@ -981,7 +982,7 @@ class Session(object):
             y = y_xform.apply(y.reshape(-1, 1))[:, 0]
 
         if gate_id is not None:
-            gate_results = gating_strategy.gate_sample(sample, gate_id)
+            gate_results = self.get_gating_results(group_name, sample_id=sample_id)
             is_gate_event = gate_results.get_gate_indices(gate_id)
             if subsample:
                 is_subsample = np.zeros(sample.event_count, dtype=bool)
