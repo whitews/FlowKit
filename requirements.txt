@@ -9,3 +9,4 @@ pandas>=1.1
 lxml>=4.4
 bokeh>=1.4
 anytree>=2.6
+networkx>=2.3

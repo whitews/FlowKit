@@ -28,7 +28,8 @@ reqs = [
     'numpy',
     'lxml',
     'bokeh',
-    'anytree'
+    'anytree',
+    'networkx'
 ]
 
 setup(
