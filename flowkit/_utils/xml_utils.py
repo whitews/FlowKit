@@ -3,7 +3,7 @@ Utility functions for parsing & exporting gating related XML documents
 """
 import numpy as np
 from lxml import etree
-import anytree
+import networkx as nx
 from .._resources import gml_schema
 from .._models.dimension import Dimension, RatioDimension, QuadrantDivider
 from .._models.vertex import Vertex
@@ -39,86 +39,6 @@ gate_constructor_lut = {
 }
 
 
-def _build_hierarchy_tree(gates_dict):
-    nodes = {}
-
-    root = anytree.Node('root')
-    parent_gates = set()
-
-    for g_id, gate in gates_dict.items():
-        if gate.parent is not None:
-            # record the set of parents so we can find the leaves later
-            parent_gates.add(gate.parent)
-
-            # we'll get children nodes after
-            continue
-
-        # use g_id for lookup (for uid), gate.id for Node name
-        nodes[g_id] = anytree.Node(
-            g_id,
-            parent=root,
-            gate=gate
-        )
-
-        if isinstance(gate, QuadrantGate):
-            for q_id, quad in gate.quadrants.items():
-                nodes[q_id] = anytree.Node(
-                    q_id,
-                    parent=nodes[gate.id],
-                    gate=quad
-                )
-
-    parent_gates.difference_update(set(nodes.keys()))
-    # Now we have all the root-level nodes and the set of parents.
-    # Process the parent gates
-    parents_remaining = len(parent_gates)
-    while parents_remaining > 0:
-        discard = []
-        for gate_id in parent_gates:
-            gate = gates_dict[gate_id]
-            parent_id = gate.parent
-
-            if parent_id in nodes or parent_id is None:
-                nodes[gate_id] = anytree.Node(
-                    gate_id,
-                    parent=root if parent_id is None else nodes[parent_id],
-                    gate=gate
-                )
-
-                if isinstance(gate, QuadrantGate):
-                    for q_id, quad in gate.quadrants.items():
-                        nodes[q_id] = anytree.Node(
-                            q_id,
-                            parent=nodes[gate.id],
-                            gate=quad
-                        )
-                discard.append(gate_id)
-        parent_gates.difference_update(set(discard))
-        parents_remaining = len(parent_gates)
-
-    # Process remaining leaves
-    for g_id, gate in gates_dict.items():
-        if g_id in nodes:
-            continue
-
-        nodes[g_id] = anytree.Node(
-            g_id,
-            parent=nodes[gate.parent],
-            gate=gate
-        )
-
-        # TODO: this conditional isn't covered in tests
-        if isinstance(gate, QuadrantGate):
-            for q_id, quad in gate.quadrants.items():
-                nodes[q_id] = anytree.Node(
-                    q_id,
-                    parent=nodes[g_id],
-                    gate=quad
-                )
-
-    return root
-
-
 def parse_gating_xml(xml_file_or_path):
     """
     Parse a GatingML 20 document and return as a GatingStrategy.
@@ -144,12 +64,62 @@ def parse_gating_xml(xml_file_or_path):
     for t_id, t in transformations.items():
         gating_strategy.add_transform(t)
 
-    root = _build_hierarchy_tree(gates)
+    deps = []
+    quadrants = []
+    bool_edges = []
 
-    for n in root.descendants:
-        if isinstance(n.gate, Quadrant):
+    for g_id, gate in gates.items():
+        if gate.parent is None:
+            parent = 'root'
+        else:
+            parent = gate.parent
+
+        deps.append((parent, g_id))
+
+        if isinstance(gate, QuadrantGate):
+            for q_id in gate.quadrants:
+                deps.append((g_id, q_id))
+                quadrants.append(q_id)
+
+        if isinstance(gate, BooleanGate):
+            for g_ref in gate.gate_refs:
+                deps.append((g_ref['ref'], g_id))
+
+                bool_edges.append((g_ref['ref'], g_id))
+
+    dag = nx.DiGraph()
+    dag.add_edges_from(deps)
+
+    is_acyclic = nx.is_directed_acyclic_graph(dag)
+
+    if not is_acyclic:
+        raise ValueError("The given GatingML 2.0 file is invalid, cyclic gate dependencies are not allowed.")
+
+    process_order = list(nx.algorithms.topological_sort(dag))
+
+    for q_id in quadrants:
+        process_order.remove(q_id)
+
+    # remove boolean edges to create a true ancestor graph
+    dag.remove_edges_from(bool_edges)
+
+    for g_id in process_order:
+        # skip 'root' node
+        if g_id == 'root':
             continue
-        gating_strategy.add_gate(n.gate)
+        gate = gates[g_id]
+
+        # For Boolean gates we need to add gate paths to the
+        # referenced gates via 'gate_path' key in the gate_refs dict
+        if isinstance(gate, BooleanGate):
+            bool_gate_refs = gate.gate_refs
+            for gate_ref in bool_gate_refs:
+                # since we're parsing GML, all gate IDs must be unique
+                # so safe to lookup in our graph
+                gate_ref_path = list(nx.all_simple_paths(dag, 'root', gate_ref['ref']))[0]
+                gate_ref['path'] = gate_ref_path[:-1]  # don't repeat the gate name
+
+        gating_strategy.add_gate(gate)
 
     return gating_strategy
 
