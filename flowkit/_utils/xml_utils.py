@@ -117,7 +117,7 @@ def parse_gating_xml(xml_file_or_path):
                 # since we're parsing GML, all gate IDs must be unique
                 # so safe to lookup in our graph
                 gate_ref_path = list(nx.all_simple_paths(dag, 'root', gate_ref['ref']))[0]
-                gate_ref['path'] = gate_ref_path[:-1]  # don't repeat the gate name
+                gate_ref['path'] = tuple(gate_ref_path[:-1])  # don't repeat the gate name
 
         gating_strategy.add_gate(gate)
 
