@@ -1,5 +1,6 @@
 import numpy as np
 from ._base_gate import Gate
+from ..dimension import RatioDimension
 from ..._utils import gate_utils
 
 
@@ -35,46 +36,19 @@ class RectangleGate(Gate):
             f'{self.id}, parent: {self.parent}, dims: {len(self.dimensions)})'
         )
 
-    def apply(self, sample, parent_results, gating_strategy, gate_path):
-        events, dim_idx, dim_min, dim_max, new_dims = super().preprocess_sample_events(sample, gating_strategy)
+    def apply(self, df_events):
+        results = np.ones(df_events.shape[0], dtype=bool)
 
-        results = np.ones(events.shape[0], dtype=bool)
+        for i, dim in enumerate(self.dimensions):
+            if isinstance(dim, RatioDimension):
+                dim_label = dim.ratio_ref
+            else:
+                dim_label = dim.label
 
-        for i, d_idx in enumerate(dim_idx):
-            if dim_min[i] is not None:
-                results = np.bitwise_and(results, events[:, d_idx] >= dim_min[i])
-            if dim_max[i] is not None:
-                results = np.bitwise_and(results, events[:, d_idx] < dim_max[i])
-
-        for new_dim in new_dims:
-            # TODO: RatioTransforms aren't limited to rect gates, refactor to
-            #       allow other gate classes to handle new dimensions created from
-            #       ratio transforms. Also, the ratio transform's apply method is
-            #       different from other transforms in that it takes a sample argument
-            #       and not an events argument
-
-            # new dimensions are defined by transformations of other dims
-            try:
-                new_dim_xform = gating_strategy.transformations[new_dim.ratio_ref]
-            except KeyError:
-                raise KeyError("New dimensions must provide a transformation")
-
-            xform_events = new_dim_xform.apply(sample)
-
-            if new_dim.transformation_ref is not None:
-                xform = gating_strategy.transformations[new_dim.transformation_ref]
-
-                # transformed events in the new single dimension will be 1-D,
-                # but xform.apply wants to see 2-D arrays, so reshape & then
-                # extract the single column as 1-D.
-                xform_events = xform.apply(xform_events.reshape(-1, 1))[:, 0]
-
-            if new_dim.min is not None:
-                results = np.bitwise_and(results, xform_events >= new_dim.min)
-            if new_dim.max is not None:
-                results = np.bitwise_and(results, xform_events < new_dim.max)
-
-        results = self._apply_parent_gate(sample, results, parent_results, gating_strategy, gate_path)
+            if dim.min is not None:
+                results = np.bitwise_and(results, df_events[dim_label].values >= dim.min)
+            if dim.max is not None:
+                results = np.bitwise_and(results, df_events[dim_label].values < dim.max)
 
         return results
 
@@ -110,16 +84,20 @@ class PolygonGate(Gate):
             f'{self.id}, parent: {self.parent}, vertices: {len(self.vertices)})'
         )
 
-    def apply(self, sample, parent_results, gating_strategy, gate_path):
-        events, dim_idx, dim_min, dim_max, new_dims = super().preprocess_sample_events(sample, gating_strategy)
+    def apply(self, df_events):
         path_vertices = []
+
+        dim_labels_ordered = []
+        for i, dim in enumerate(self.dimensions):
+            if isinstance(dim, RatioDimension):
+                dim_labels_ordered.append(dim.ratio_ref)
+            else:
+                dim_labels_ordered.append(dim.label)
 
         for vert in self.vertices:
             path_vertices.append(vert.coordinates)
 
-        results = gate_utils.points_in_polygon(np.array(path_vertices, dtype=np.float64), events[:, dim_idx])
-
-        results = self._apply_parent_gate(sample, results, parent_results, gating_strategy, gate_path)
+        results = gate_utils.points_in_polygon(np.array(path_vertices, dtype=np.float64), df_events[dim_labels_ordered])
 
         return results
 
@@ -167,17 +145,20 @@ class EllipsoidGate(Gate):
             f'{self.id}, parent: {self.parent}, coords: {self.coordinates})'
         )
 
-    def apply(self, sample, parent_results, gating_strategy, gate_path):
-        events, dim_idx, dim_min, dim_max, new_dims = super().preprocess_sample_events(sample, gating_strategy)
+    def apply(self, df_events):
+        dim_labels_ordered = []
+        for i, dim in enumerate(self.dimensions):
+            if isinstance(dim, RatioDimension):
+                dim_labels_ordered.append(dim.ratio_ref)
+            else:
+                dim_labels_ordered.append(dim.label)
 
         results = gate_utils.points_in_ellipsoid(
             self.covariance_matrix,
             self.coordinates,
             self.distance_square,
-            events[:, dim_idx]
+            df_events[dim_labels_ordered]
         )
-
-        results = self._apply_parent_gate(sample, results, parent_results, gating_strategy, gate_path)
 
         return results
 
@@ -275,59 +256,12 @@ class QuadrantGate(Gate):
             f'{self.id}, parent: {self.parent}, quadrants: {len(self.quadrants)})'
         )
 
-    def _apply_parent_gate(self, sample, results, parent_results, gating_strategy, gate_path):
-        if self.parent is not None and parent_results is not None:
-            parent_gate = gating_strategy.get_gate(self.parent)
-            parent_id = self.parent
-            parent_events = parent_gate.apply(sample)
-
-            if isinstance(parent_gate, QuadrantGate):
-                parent_events = parent_events[self.parent]
-                parent_count = parent_events.sum()
-            else:
-                parent_count = parent_events['events'].sum()
-
-            results_and_parent = {}
-            for q_id, q_result in results.items():
-                results_and_parent[q_id] = np.logical_and(
-                    parent_events,
-                    q_result
-                )
-        else:
-            if parent_results is not None:
-                results_and_parent = np.logical_and(
-                    parent_results,
-                    results
-                )
-            else:
-                results_and_parent = results
-            parent_count = sample.event_count
-            parent_id = None
-
-        final_results = {}
-
-        for q_id, q_result in results_and_parent.items():
-            q_event_count = q_result.sum()
-
-            final_results[q_id] = {
-                'sample': sample.original_filename,
-                'events': q_result,
-                'count': q_event_count,
-                'absolute_percent': (q_event_count / float(sample.event_count)) * 100.0,
-                'relative_percent': (q_event_count / float(parent_count)) * 100.0,
-                'parent': parent_id,
-                'gate_type': self.gate_type
-            }
-
-        return final_results
-
-    def apply(self, sample, parent_results, gating_strategy, gate_path):
-        events, dim_idx, dim_min, dim_max, new_dims = super().preprocess_sample_events(sample, gating_strategy)
+    def apply(self, df_events):
 
         results = {}
 
         for q_id, quadrant in self.quadrants.items():
-            q_results = np.ones(events.shape[0], dtype=bool)
+            q_results = np.ones(df_events.shape[0], dtype=bool)
 
             dim_lut = {dim.id: dim.dimension_ref for dim in self.dimensions}
 
@@ -335,23 +269,20 @@ class QuadrantGate(Gate):
             # the referenced dimension
             for div_ref in quadrant.divider_refs:
                 dim_ref = dim_lut[div_ref]
-                dim_idx = sample.pnn_labels.index(dim_ref)
                 div_ranges = quadrant.get_divider_range(div_ref)
 
                 if div_ranges[0] is not None:
                     q_results = np.bitwise_and(
                         q_results,
-                        events[:, dim_idx] >= div_ranges[0]
+                        df_events[dim_ref].values >= div_ranges[0]
                     )
                 if div_ranges[1] is not None:
                     q_results = np.bitwise_and(
                         q_results,
-                        events[:, dim_idx] < div_ranges[1]
+                        df_events[dim_ref].values < div_ranges[1]
                     )
 
                 results[quadrant.id] = q_results
-
-        results = self._apply_parent_gate(sample, results, parent_results, gating_strategy, gate_path)
 
         return results
 
@@ -393,21 +324,12 @@ class BooleanGate(Gate):
             f'{self.id}, parent: {self.parent}, type: {self.type})'
         )
 
-    def apply(self, sample, parent_results, gating_strategy, gate_path):
+    def apply(self, df_events):
         all_gate_results = []
 
         for gate_ref_dict in self.gate_refs:
-            gate = gating_strategy.get_gate(gate_ref_dict['ref'])
-            if isinstance(gate, Quadrant):
-                # A single quadrant has no apply method, get it's full Quadrant gate
-                gate = gating_strategy.get_parent_gate(gate.id)
-
-            gate_ref_results = gate.apply(sample, parent_results, gating_strategy, gate_path)
-
-            if isinstance(gate, QuadrantGate):
-                gate_ref_events = gate_ref_results[gate_ref_dict['ref']]['events']
-            else:
-                gate_ref_events = gate_ref_results['events']
+            res_key = (gate_ref_dict['ref'], "/".join(gate_ref_dict['path']))
+            gate_ref_events = df_events[res_key]
 
             if gate_ref_dict['complement']:
                 gate_ref_events = ~gate_ref_events
@@ -425,7 +347,5 @@ class BooleanGate(Gate):
             raise ValueError(
                 "Boolean gate must specify one of 'and', 'or', or 'not'"
             )
-
-        results = self._apply_parent_gate(sample, results, parent_results, gating_strategy, gate_path)
 
         return results

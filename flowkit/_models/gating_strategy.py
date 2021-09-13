@@ -3,8 +3,11 @@ GatingStrategy class
 """
 import json
 import anytree
+import pandas as pd
 from anytree.exporter import DotExporter
+import numpy as np
 import networkx as nx
+from .._models import dimension
 # noinspection PyProtectedMember
 from .._models.gates._base_gate import Gate
 from .._models import gates as fk_gates
@@ -21,7 +24,7 @@ class GatingStrategy(object):
     for compensation and transformation.
     """
     def __init__(self):
-        self._cached_compensations = {}
+        self._cached_preprocessed_events = {}
 
         # keys are the object's ID (xform or matrix),
         # values are the object itself
@@ -369,33 +372,239 @@ class GatingStrategy(object):
         """
         DotExporter(self._gate_tree).to_picture(output_file_path)
 
-    def _get_cached_compensation(self, sample, comp_ref):
+    def _get_cached_preprocessed_events(self, sample_id, comp_ref, xform_ref):
         """
         Retrieve cached comp events if they exist
-        :param sample: a Sample instance
+        :param sample_id: a text string for a Sample ID
         :param comp_ref: text string for a Matrix ID
+        :param xform_ref: text string for a Transform ID
         :return: NumPy array of the cached compensated events for the given sample, None if no cache exists.
         """
+        ref_tuple = (comp_ref, xform_ref)
+
         try:
             # return a copy of cached events in case downstream modifies them
-            return self._cached_compensations[sample.original_filename][comp_ref].copy()
+            return self._cached_preprocessed_events[sample_id][ref_tuple].copy()
         except KeyError:
             return None
 
-    def _cache_compensated_events(self, sample, comp_ref, comp_events):
+    def _cache_preprocessed_events(self, sample_id, comp_ref, xform_ref, preprocessed_events):
         """
         Cache comp events for a sample
-        :param sample: a Sample instance
+        :param sample_id: a text string for a Sample ID
         :param comp_ref: text string for a Matrix ID
-        :param comp_events: NumPy array of the cached compensated events for the given sample
+        :param xform_ref: text string for a Transform ID
+        :param preprocessed_events: NumPy array of the cached compensated events for the given sample
         :return: None
         """
-        if sample.original_filename not in self._cached_compensations:
-            self._cached_compensations[sample.original_filename] = {
-                comp_ref: comp_events
-            }
+        if sample_id not in self._cached_preprocessed_events:
+            self._cached_preprocessed_events[sample_id] = {}
+
+        sample_cache = self._cached_preprocessed_events[sample_id]
+        ref_tuple = (comp_ref, xform_ref)
+
+        if ref_tuple not in sample_cache:
+            sample_cache[ref_tuple] = preprocessed_events
+
+    def _compensate_sample(self, dim_comp_refs, sample):
+        dim_comp_ref_count = len(dim_comp_refs)
+
+        if dim_comp_ref_count == 0:
+            events = sample.get_raw_events()
+            return events.copy()
+        elif dim_comp_ref_count > 1:
+            raise NotImplementedError(
+                "Mixed compensation between individual channels is not "
+                "implemented. Never seen it, but if you are reading this "
+                "message, submit an issue to have it implemented."
+            )
         else:
-            self._cached_compensations[sample.original_filename][comp_ref] = comp_events
+            comp_ref = list(dim_comp_refs)[0]
+
+        # noinspection PyProtectedMember
+        events = self._get_cached_preprocessed_events(
+            sample.original_filename,
+            comp_ref,
+            None
+        )
+
+        if events is not None:
+            return events
+
+        if comp_ref == 'FCS':
+            meta = sample.get_metadata()
+
+            if 'spill' not in meta or 'spillover' not in meta:
+                # GML 2.0 spec states if 'FCS' is specified but no spill is present, treat as uncompensated
+                events = sample.get_raw_events()
+                return events.copy()
+
+            try:
+                spill = meta['spillover']  # preferred, per FCS standard
+            except KeyError:
+                spill = meta['spill']
+
+            detectors = [sample.pnn_labels[i] for i in sample.fluoro_indices]
+            fluorochromes = [sample.pns_labels[i] for i in sample.fluoro_indices]
+            matrix = Matrix('fcs', spill, detectors, fluorochromes, null_channels=sample.null_channels)
+        else:
+            # lookup specified comp-ref in gating strategy
+            matrix = self.comp_matrices[comp_ref]
+
+        if matrix is not None:
+            events = matrix.apply(sample)
+            # cache the comp events
+            # noinspection PyProtectedMember
+            self._cache_preprocessed_events(
+                sample,
+                comp_ref,
+                None,
+                events.copy()  # think this needs to be copied to de-couple from user's analysis
+            )
+
+        return events
+
+    def _preprocess_sample_events(self, sample, gate):
+        pnn_labels = sample.pnn_labels
+        pns_labels = sample.pns_labels
+        # FlowJo replaces slashes with underscores, so make a set of labels with that replacement
+        flowjo_pnn_labels = [label.replace('/', '_') for label in pnn_labels]
+
+        dim_idx = []
+        dim_labels = []
+        dim_comp_refs = set()
+        new_dims = []
+        new_dim_labels = []
+        dim_xform = []
+
+        for dim in gate.dimensions:
+            dim_comp = False
+            if dim.compensation_ref not in [None, 'uncompensated']:
+                dim_comp_refs.add(dim.compensation_ref)
+                dim_comp = True
+
+            if isinstance(dim, dimension.RatioDimension):
+                # dimension is a transform of other dimensions
+                new_dims.append(dim)
+                new_dim_labels.append(dim.ratio_ref)
+                continue
+            elif isinstance(dim, dimension.QuadrantDivider):
+                dim_label = dim.dimension_ref
+            else:
+                dim_label = dim.label
+
+            if dim_label in pnn_labels:
+                dim_idx.append(pnn_labels.index(dim_label))
+            elif dim_label in pns_labels:
+                dim_idx.append(pns_labels.index(dim_label))
+            elif dim_label in flowjo_pnn_labels:
+                dim_idx.append(flowjo_pnn_labels.index(dim_label))
+            else:
+                # for a referenced comp, the label may have been the
+                # fluorochrome instead of the channel's PnN label. If so,
+                # the referenced matrix object will also have the detector
+                # names that will match
+                if not dim_comp:
+                    raise LookupError(
+                        "%s is not found as a channel label or channel reference in %s" % (dim_label, sample)
+                    )
+                matrix = self.comp_matrices[dim.compensation_ref]
+                try:
+                    matrix_dim_idx = matrix.fluorochomes.index(dim_label)
+                except ValueError:
+                    raise ValueError("%s not found in list of matrix fluorochromes" % dim_label)
+                detector = matrix.detectors[matrix_dim_idx]
+                dim_idx.append(pnn_labels.index(detector))
+
+            dim_labels.append(dim_label)
+
+            dim_xform.append(dim.transformation_ref)
+
+        # TODO: cache the comp events so we don't have to repeat the compensation for each gate
+        events = self._compensate_sample(dim_comp_refs, sample)
+
+        for i, dim in enumerate(dim_idx):
+            if dim_xform[i] is not None:
+                xform = self.transformations[dim_xform[i]]
+                events[:, [dim]] = xform.apply(events[:, [dim]])
+
+        df_events = pd.DataFrame(events[:, dim_idx], columns=dim_labels)
+        if len(new_dims) > 0:
+            new_dim_events = self._process_new_dims(sample, new_dims)
+            df_new_dim_events = pd.DataFrame(new_dim_events, columns=new_dim_labels)
+            df_events = pd.concat([df_events, df_new_dim_events], axis=1)
+
+        return df_events
+
+    def _process_new_dims(self, sample, new_dims):
+        new_dims_events = []
+
+        for new_dim in new_dims:
+            # Allows gate classes to handle new dimensions created from
+            # ratio transforms. Note, the ratio transform's apply method is
+            # different from other transforms in that it takes a sample argument
+            # and not an events argument
+
+            # new dimensions are defined by transformations of other dims
+            try:
+                new_dim_xform = self.transformations[new_dim.ratio_ref]
+            except KeyError:
+                raise KeyError("New dimensions must provide a transformation")
+
+            xform_events = new_dim_xform.apply(sample)
+
+            if new_dim.transformation_ref is not None:
+                xform = self.transformations[new_dim.transformation_ref]
+                xform_events = xform.apply(xform_events)
+
+            new_dims_events.append(xform_events)
+
+        return np.hstack(new_dims_events)
+
+    @staticmethod
+    def _apply_parent_results(sample, gate, results, parent_results):
+        if parent_results is not None:
+            results_and_parent = np.logical_and(parent_results['events'], results)
+            parent_count = parent_results['count']
+        else:
+            # no parent, so results are unchanged & parent count is total count
+            parent_count = sample.event_count
+            results_and_parent = results
+
+        if isinstance(gate, fk_gates.QuadrantGate):
+            final_results = {}
+
+            for q_id, q_result in results_and_parent.items():
+                q_event_count = q_result.sum()
+
+                final_results[q_id] = {
+                    'sample': sample.original_filename,
+                    'events': q_result,
+                    'count': q_event_count,
+                    'absolute_percent': (q_event_count / float(sample.event_count)) * 100.0,
+                    'relative_percent': (q_event_count / float(parent_count)) * 100.0,
+                    'parent': gate.parent,
+                    'gate_type': gate.gate_type
+                }
+        else:
+            event_count = results_and_parent.sum()
+
+            # check parent_count to avoid div by zero
+            if parent_count == 0:
+                relative_percent = 0.0
+            else:
+                relative_percent = (event_count / float(parent_count)) * 100.0
+            final_results = {
+                'sample': sample.original_filename,
+                'events': results_and_parent,
+                'count': event_count,
+                'absolute_percent': (event_count / float(sample.event_count)) * 100.0,
+                'relative_percent': relative_percent,
+                'parent': gate.parent,
+                'gate_type': gate.gate_type
+            }
+
+        return final_results
 
     def gate_sample(self, sample, verbose=False):
         """
@@ -448,13 +657,49 @@ class GatingStrategy(object):
             if verbose:
                 print("%s: processing gate %s" % (sample.original_filename, g_id))
 
-            # look up parent results
-            if gate.parent is not None and p_uid in results:
-                parent_results = results[p_uid]
-            else:
-                parent_results = None
+            # first, preprocess events
+            df_events = self._preprocess_sample_events(sample, gate)
 
-            results[g_id, gate_path_str] = gate.apply(sample, parent_results, self, g_path)
+            # look up parent results
+            parent_results = None  # default to None
+            if gate.parent is not None:
+                parent_gate = self.get_gate(p_id, p_path)
+                if p_uid in results:
+                    parent_results = results[p_uid]
+                elif isinstance(parent_gate, fk_gates.Quadrant):
+                    # need to check for quadrant results in a quadrant gate
+                    q_gate_id = p_path[-1]
+                    q_gate_path = p_path[:-1]
+                    q_gate_res_key = (q_gate_id, "/".join(q_gate_path))
+                    if q_gate_res_key in results:
+                        parent_results = results[q_gate_res_key][p_id]
+
+            # Call appropriate gate apply method
+            if isinstance(gate, fk_gates.BooleanGate):
+                # BooleanGate is a bit different, needs a DataFrame of gate ref results
+                bool_gate_ref_results = {}
+                for gate_ref in gate.gate_refs:
+                    gate_ref_gate = self.get_gate(gate_ref['ref'], gate_ref['path'])
+                    gate_ref_res_key = (gate_ref['ref'], "/".join(gate_ref['path']))
+
+                    if isinstance(gate_ref_gate, fk_gates.Quadrant):
+                        quad_gate_id = gate_ref['path'][-1]
+                        quad_gate_path_str = "/".join(gate_ref['path'][:-1])
+                        quad_gate_res_key = (quad_gate_id, quad_gate_path_str)
+                        quad_gate_results = results[quad_gate_res_key]
+
+                        # but the quadrant result is what we're after
+                        bool_gate_ref_results[gate_ref_res_key] = quad_gate_results[gate_ref['ref']]['events']
+                    else:
+                        bool_gate_ref_results[gate_ref_res_key] = results[gate_ref_res_key]['events']
+
+                gate_results = gate.apply(pd.DataFrame(bool_gate_ref_results))
+            else:
+                # all other gate types process our labelled event DataFrame
+                gate_results = gate.apply(df_events)
+
+            # Combine gate and parent results
+            results[g_id, gate_path_str] = self._apply_parent_results(sample, gate, gate_results, parent_results)
 
             if isinstance(gate, fk_gates.QuadrantGate):
                 for quad_res in results[g_id, gate_path_str].values():
