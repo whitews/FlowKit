@@ -456,7 +456,7 @@ class GatingStrategy(object):
             # cache the comp events
             # noinspection PyProtectedMember
             self._cache_preprocessed_events(
-                sample,
+                sample.original_filename,
                 comp_ref,
                 None,
                 events.copy()  # think this needs to be copied to de-couple from user's analysis
