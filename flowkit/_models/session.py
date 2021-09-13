@@ -937,7 +937,7 @@ class Session(object):
 
         if gate_path is not None:
             full_gate_path = gate_path[1:]  # omit 'root'
-            full_gate_path.append(gate_id)
+            full_gate_path = full_gate_path + (gate_id,)
             sub_title = ' > '.join(full_gate_path)
 
             # truncate beginning of long gate paths
