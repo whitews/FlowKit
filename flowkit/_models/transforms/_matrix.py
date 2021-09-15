@@ -78,9 +78,25 @@ class Matrix(object):
             sample.get_channel_index(d) for d in self.detectors
         ]
         events = sample.get_raw_events()
-        events = events.copy()
 
         return flowutils.compensate.compensate(
+            events,
+            self.matrix,
+            indices
+        )
+
+    def inverse(self, sample):
+        """
+        Apply compensation matrix to given Sample instance.
+        :param sample: Sample instance with matching set of detectors
+        :return: NumPy array of compensated events
+        """
+        indices = [
+            sample.get_channel_index(d) for d in self.detectors
+        ]
+        events = sample.get_comp_events()
+
+        return flowutils.compensate.inverse_compensate(
             events,
             self.matrix,
             indices
