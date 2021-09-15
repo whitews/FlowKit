@@ -177,3 +177,11 @@ class TransformsTestCase(unittest.TestCase):
 
         self.assertIsInstance(data1_sample._transformed_events, np.ndarray)
 
+    @staticmethod
+    def test_inverse_wsp_biex_transform():
+        xform = transforms.WSPBiexTransform('biex')
+        y = xform.apply(test_data_range1)
+        x = xform.inverse(y)
+
+        np.testing.assert_array_almost_equal(test_data_range1, x, decimal=10)
+
