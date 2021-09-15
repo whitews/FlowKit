@@ -195,6 +195,9 @@ class WSPBiexTransform(Transform):
         self._lut_func = interpolate.interp1d(
             x, y, kind='linear', bounds_error=False, fill_value=(np.min(y), np.max(y))
         )
+        self._inverse_lut_func = interpolate.interp1d(
+            y, x, kind='linear', bounds_error=False, fill_value=(np.min(x), np.max(x))
+        )
 
     def __repr__(self):
         return (
@@ -210,5 +213,16 @@ class WSPBiexTransform(Transform):
         :return: NumPy array of transformed events
         """
         new_events = self._lut_func(events)
+
+        return new_events
+
+    def inverse(self, events):
+        """
+        Apply the inverse transform to given events.
+
+        :param events: NumPy array of FCS event data
+        :return: NumPy array of inversely transformed events
+        """
+        new_events = self._inverse_lut_func(events)
 
         return new_events
