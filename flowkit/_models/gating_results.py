@@ -86,7 +86,7 @@ class GatingResults(object):
         In this case, specify the full gate path to retrieve gate indices.
 
         :param gate_id: text string of a gate ID
-        :param gate_path: A list of ancestor gate IDs for the given gate ID. Alternatively, a string path delimited
+        :param gate_path: A tuple of ancestor gate IDs for the given gate ID. Alternatively, a string path delimited
             by forward slashes can also be given, e.g. ('/root/singlets/lymph/live')
         :return: NumPy boolean array (length of sample event count)
         """
@@ -94,7 +94,7 @@ class GatingResults(object):
         if len(gate_paths) > 1:
             if gate_path is None:
                 raise ValueError("Gate ID %s is ambiguous, specify the full gate path")
-            elif isinstance(gate_path, list):
+            elif isinstance(gate_path, tuple):
                 gate_path = "/".join(gate_path)
         else:
             gate_path = gate_paths[0]
