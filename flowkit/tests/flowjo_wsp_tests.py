@@ -185,7 +185,7 @@ class FlowJoWSPTestCase(unittest.TestCase):
         sample_id = '101_DEN084Y5_15_E01_008_clean.fcs'
         sample_grp = 'DEN'
         gate_id = 'TNFa+'
-        gate_path = ['root', 'Time', 'Singlets', 'aAmine-', 'CD3+', 'CD4+']
+        gate_path = ('root', 'Time', 'Singlets', 'aAmine-', 'CD3+', 'CD4+')
 
         fks = Session(fcs_samples=fcs_path)
         fks.import_flowjo_workspace(wsp_path, ignore_missing_files=True)
