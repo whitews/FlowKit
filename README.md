@@ -63,7 +63,7 @@ FlowKit is an intuitive Python toolkit for flow cytometry analysis and visualiza
     * Gate name
     * Parent gate
     * Gate path
-    * Gate level (position in gate hierarchy tree)  
+    * Gate level (depth in gate hierarchy tree)  
     * Absolute event count
     * Relative percentage
     * Absolute percentage
