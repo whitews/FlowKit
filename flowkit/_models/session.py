@@ -301,7 +301,7 @@ class Session(object):
         the 'default' sample group by default.
 
         :param gate: an instance of a Gate sub-class
-        :param gate_path: complete list of gate IDs for unique set of gate ancestors.
+        :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
             Required if gate.id and gate.parent combination is ambiguous
         :param group_name: a text string representing the sample group
         :return: None
@@ -622,14 +622,14 @@ class Session(object):
         :param group_name: a text string representing the sample group
         :param sample_id: a text string representing a Sample instance
         :param gate_id: text string of a gate ID
-        :param gate_path: complete list of gate IDs for unique set of gate ancestors.
+        :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
             Required if gate_id is ambiguous
         :return: NumPy boolean array (length of sample event count)
         """
         gating_result = self._results_lut[group_name]['samples'][sample_id]
         return gating_result.get_gate_indices(gate_id, gate_path=gate_path)
 
-    def get_gate_events(self, group_name, sample_id, gate_id, gate_path=None, matrix=None, transform=None):
+    def get_gate_events(self, group_name, sample_id, gate_id=None, gate_path=None, matrix=None, transform=None):
         """
         Retrieve a Pandas DataFrame containing only the events within the specified gate.
         If an optional compensation matrix and/or a transform is provided, the returned
@@ -638,14 +638,13 @@ class Session(object):
 
         :param group_name: a text string representing the sample group
         :param sample_id: a text string representing a Sample instance
-        :param gate_id: text string of a gate ID
-        :param gate_path: complete list of gate IDs for unique set of gate ancestors.
+        :param gate_id: text string of a gate ID. If None, all Sample events will be returned (i.e. un-gated)
+        :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
             Required if gate_id is ambiguous
         :param matrix: an instance of the Matrix class
         :param transform: an instance of a Transform sub-class
         :return: Pandas DataFrame containing only the events within the specified gate
         """
-        gate_idx = self.get_gate_indices(group_name, sample_id, gate_id, gate_path)
         sample = self.get_sample(sample_id)
         sample = copy.deepcopy(sample)
 
@@ -660,33 +659,29 @@ class Session(object):
             event_source = 'xform'
 
         events_df = sample.as_dataframe(source=event_source)
-        gated_event_data = events_df[gate_idx]
 
-        return gated_event_data
+        if gate_id is not None:
+            gate_idx = self.get_gate_indices(group_name, sample_id, gate_id, gate_path)
+            events_df = events_df[gate_idx]
 
-    def get_wsp_gated_events(self, group_name, sample_ids=None, gate_id=None):
+        return events_df
+
+    def get_wsp_gated_events(self, group_name, sample_ids=None, gate_id=None, gate_path=None):
         """
         Convert gated events in FlowJo WSP sample group to
         list of compensated and transformed DataFrames.
 
         :param group_name: a text string representing the sample group
         :param sample_ids: a list of Sample ID strings
-        :param gate_id: optional text string of a gate ID. If None, the first gate will be evaluated.
-
+        :param gate_id: text string of a gate ID. If None, all Sample events will be returned (i.e. un-gated)
+        :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
+            Required if gate_id is ambiguous
         :return: a list of Pandas DataFrames with the gated events, compensated & transformed according
             to the group's compensation matrix and transforms
         """
 
         if sample_ids is None:
             sample_ids = self.get_group_sample_ids(group_name)
-
-        if gate_id is None:
-            gate_ids = self.get_gate_ids(group_name)
-            gate_name, gate_path = gate_ids[0]
-        elif isinstance(gate_id, tuple):
-            gate_name, gate_path = gate_id
-        else:
-            gate_name, gate_path = gate_id, None
 
         df_events_list = []
 
@@ -717,7 +712,7 @@ class Session(object):
             df = self.get_gate_events(
                 group_name=group_name,
                 sample_id=sample_id,
-                gate_id=gate_name,
+                gate_id=gate_id,
                 gate_path=gate_path,
                 matrix=ref_cm,
                 transform=xform_lut,
@@ -753,7 +748,7 @@ class Session(object):
         :param group_name: The sample group containing the sample ID (and, optionally the gate ID)
         :param sample_id: The sample ID for the FCS sample to plot
         :param gate_id: Gate ID to filter events (only events within the given gate will be plotted)
-        :param gate_path: list of gate IDs for full set of gate ancestors.
+        :param gate_path: tuple of gate IDs for full set of gate ancestors.
             Required if gate_id is ambiguous
         :param x_min: Lower bound of x-axis. If None, channel's min value will
             be used with some padding to keep events off the edge of the plot.
