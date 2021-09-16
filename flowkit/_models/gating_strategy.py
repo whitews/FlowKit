@@ -54,7 +54,7 @@ class GatingStrategy(object):
         the gating strategy, a unique gate path must be provided.
 
         :param gate: instance from a sub-class of the Gate class
-        :param gate_path: complete list of gate IDs for unique set of gate ancestors.
+        :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
             Required if gate.id and gate.parent combination is ambiguous
 
         :return: None
@@ -85,7 +85,7 @@ class GatingStrategy(object):
         if match_count != 0 and gate_path is None:
             raise KeyError(
                 "A gate with ID '%s' and parent '%s' is already defined. " 
-                "You must specify a gate_path as a unique list of ancestors." % (gate.id, parent_id)
+                "You must specify a gate_path as a unique tuple of ancestors." % (gate.id, parent_id)
             )
 
         # Here we either have a unique gate ID + parent, or an ambiguous gate ID + parent with a gate path.
@@ -267,7 +267,7 @@ class GatingStrategy(object):
         Retrieve a gate instance by its gate ID.
 
         :param gate_id: text string of a gate ID
-        :param gate_path: complete list of gate IDs for unique set of gate ancestors. Required if gate_id is ambiguous
+        :param gate_path: complete tuple of gate IDs for unique set of gate ancestors. Required if gate_id is ambiguous
         :return: Subclass of a Gate object
         :raises KeyError: if gate ID is not found in gating strategy
         """
@@ -280,7 +280,7 @@ class GatingStrategy(object):
         Retrieve the gate ID for a parent gate of the given gate ID.
 
         :param gate_id: text string of a gate ID
-        :param gate_path: complete list of gate IDs for unique set of gate ancestors. Required if gate_id is ambiguous
+        :param gate_path: complete tuple of gate IDs for unique set of gate ancestors. Required if gate_id is ambiguous
         :return: Subclass of a Gate object
         """
         node = self._get_gate_node(gate_id, gate_path)
@@ -292,7 +292,7 @@ class GatingStrategy(object):
         Retrieve list of child gate instances by their parent's gate ID.
 
         :param gate_id: text string of a gate ID
-        :param gate_path: complete list of gate IDs for unique set of gate ancestors. Required if gate_id is ambiguous
+        :param gate_path: complete tuple of gate IDs for unique set of gate ancestors. Required if gate_id is ambiguous
         :return: list of Gate instances
         :raises KeyError: if gate ID is not found in gating strategy
         """
