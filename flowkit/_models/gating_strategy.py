@@ -375,15 +375,17 @@ class GatingStrategy(object):
         """
         DotExporter(self._gate_tree).to_picture(output_file_path)
 
-    def _get_cached_preprocessed_events(self, sample_id, comp_ref, xform_ref):
+    def _get_cached_preprocessed_events(self, sample_id, comp_ref, xform_ref, dim_idx=None):
         """
-        Retrieve cached comp events if they exist
+        Retrieve cached pre-processed events (if they exist)
+
         :param sample_id: a text string for a Sample ID
         :param comp_ref: text string for a Matrix ID
         :param xform_ref: text string for a Transform ID
+        :param dim_idx: channel index for requested preprocessed events. If None, all channels are requested.
         :return: NumPy array of the cached compensated events for the given sample, None if no cache exists.
         """
-        ref_tuple = (comp_ref, xform_ref)
+        ref_tuple = (comp_ref, xform_ref, dim_idx)
 
         try:
             # return a copy of cached events in case downstream modifies them
@@ -391,20 +393,23 @@ class GatingStrategy(object):
         except KeyError:
             return None
 
-    def _cache_preprocessed_events(self, sample_id, comp_ref, xform_ref, preprocessed_events):
+    # TODO: create method for clearing cache (per sample or everything)
+    def _cache_preprocessed_events(self, preprocessed_events, sample_id, comp_ref, xform_ref, dim_idx=None):
         """
-        Cache comp events for a sample
+        Cache pre-processed events for a Sample instance
+
+        :param preprocessed_events: NumPy array of the cached compensated events for the given sample
         :param sample_id: a text string for a Sample ID
         :param comp_ref: text string for a Matrix ID
         :param xform_ref: text string for a Transform ID
-        :param preprocessed_events: NumPy array of the cached compensated events for the given sample
+        :param dim_idx: channel index for given preprocessed events. If None, all channels where preprocessed
         :return: None
         """
         if sample_id not in self._cached_preprocessed_events:
             self._cached_preprocessed_events[sample_id] = {}
 
         sample_cache = self._cached_preprocessed_events[sample_id]
-        ref_tuple = (comp_ref, xform_ref)
+        ref_tuple = (comp_ref, xform_ref, dim_idx)
 
         if ref_tuple not in sample_cache:
             sample_cache[ref_tuple] = preprocessed_events
@@ -428,6 +433,7 @@ class GatingStrategy(object):
         events = self._get_cached_preprocessed_events(
             sample.original_filename,
             comp_ref,
+            None,
             None
         )
 
@@ -459,21 +465,22 @@ class GatingStrategy(object):
             # cache the comp events
             # noinspection PyProtectedMember
             self._cache_preprocessed_events(
+                events.copy(),  # this needs to be copied to de-couple from user's analysis
                 sample.original_filename,
                 comp_ref,
                 None,
-                events.copy()  # think this needs to be copied to de-couple from user's analysis
+                None
             )
 
         return events
 
-    def _preprocess_sample_events(self, sample, gate):
+    def _preprocess_sample_events(self, sample, gate, cache_events=False):
         pnn_labels = sample.pnn_labels
         pns_labels = sample.pns_labels
         # FlowJo replaces slashes with underscores, so make a set of labels with that replacement
         flowjo_pnn_labels = [label.replace('/', '_') for label in pnn_labels]
 
-        dim_idx = []
+        dim_indices = []
         dim_labels = []
         dim_comp_refs = set()
         new_dims = []
@@ -497,11 +504,11 @@ class GatingStrategy(object):
                 dim_label = dim.label
 
             if dim_label in pnn_labels:
-                dim_idx.append(pnn_labels.index(dim_label))
+                dim_indices.append(pnn_labels.index(dim_label))
             elif dim_label in pns_labels:
-                dim_idx.append(pns_labels.index(dim_label))
+                dim_indices.append(pns_labels.index(dim_label))
             elif dim_label in flowjo_pnn_labels:
-                dim_idx.append(flowjo_pnn_labels.index(dim_label))
+                dim_indices.append(flowjo_pnn_labels.index(dim_label))
             else:
                 # for a referenced comp, the label may have been the
                 # fluorochrome instead of the channel's PnN label. If so,
@@ -517,21 +524,51 @@ class GatingStrategy(object):
                 except ValueError:
                     raise ValueError("%s not found in list of matrix fluorochromes" % dim_label)
                 detector = matrix.detectors[matrix_dim_idx]
-                dim_idx.append(pnn_labels.index(detector))
+                dim_indices.append(pnn_labels.index(detector))
 
             dim_labels.append(dim_label)
 
             dim_xform.append(dim.transformation_ref)
 
-        # TODO: cache the comp events so we don't have to repeat the compensation for each gate
+        # compensate will cache events regardless of cache_events arg value
+        # this is much more universally useful to speed up analysis as the
+        # same comp matrix is nearly always used for all sample gates.
         events = self._compensate_sample(dim_comp_refs, sample)
 
-        for i, dim in enumerate(dim_idx):
+        for i, dim in enumerate(dim_indices):
             if dim_xform[i] is not None:
-                xform = self.transformations[dim_xform[i]]
-                events[:, [dim]] = xform.apply(events[:, [dim]])
+                if len(dim_comp_refs) > 0:
+                    comp_ref = list(dim_comp_refs)[0]
+                else:
+                    comp_ref = None
 
-        df_events = pd.DataFrame(events[:, dim_idx], columns=dim_labels)
+                xform = self.transformations[dim_xform[i]]
+
+                if cache_events:
+                    cached_events = self._get_cached_preprocessed_events(
+                        sample.original_filename,
+                        comp_ref,
+                        dim_xform[i],
+                        dim_idx=dim
+                    )
+                else:
+                    cached_events = None
+
+                if cached_events is not None:
+                    events[:, [dim]] = cached_events
+                else:
+                    xform_events = xform.apply(events[:, [dim]])
+                    events[:, [dim]] = xform_events
+                    if cache_events:
+                        self._cache_preprocessed_events(
+                            xform_events,
+                            sample.original_filename,
+                            comp_ref,
+                            dim_xform[i],
+                            dim_idx=dim
+                        )
+
+        df_events = pd.DataFrame(events[:, dim_indices], columns=dim_labels)
         if len(new_dims) > 0:
             new_dim_events = self._process_new_dims(sample, new_dims)
             df_new_dim_events = pd.DataFrame(new_dim_events, columns=new_dim_labels)
@@ -609,11 +646,15 @@ class GatingStrategy(object):
 
         return final_results
 
-    def gate_sample(self, sample, verbose=False):
+    def gate_sample(self, sample, cache_events=False, verbose=False):
         """
         Apply GatingStrategy to a Sample instance, returning a GatingResults instance.
 
         :param sample: an FCS Sample instance
+        :param cache_events: Whether to cache pre-processed events (compensated and transformed). This can
+            be useful to speed up processing of gates that share the same pre-processing instructions for
+            the same channel data, but can consume significantly more memory space. See the related
+            clear_cache method for additional information. Default is False.
         :param verbose: If True, print a line for each gate processed
         :return: GatingResults instance
         """
@@ -628,8 +669,6 @@ class GatingStrategy(object):
         process_order = list(nx.algorithms.topological_sort(self._dag))
 
         process_order.remove(('root',))
-
-        # TODO: cache comp + xform events
 
         for item in process_order:
             # to make the dict key unique, make a string from the ancestors,
@@ -659,9 +698,6 @@ class GatingStrategy(object):
 
             if verbose:
                 print("%s: processing gate %s" % (sample.original_filename, g_id))
-
-            # first, preprocess events
-            df_events = self._preprocess_sample_events(sample, gate)
 
             # look up parent results
             parent_results = None  # default to None
@@ -699,6 +735,8 @@ class GatingStrategy(object):
                 gate_results = gate.apply(pd.DataFrame(bool_gate_ref_results))
             else:
                 # all other gate types process our labelled event DataFrame
+                # first, preprocess events then apply gate
+                df_events = self._preprocess_sample_events(sample, gate, cache_events=cache_events)
                 gate_results = gate.apply(df_events)
 
             # Combine gate and parent results
