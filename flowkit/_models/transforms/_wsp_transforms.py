@@ -95,33 +95,25 @@ def generate_biex_lut(channel_range=4096, pos=4.418540, neg=0.0, width_basis=-10
 
     step = (max_channel_value - 1) / (n_points - 1)
 
-    values = []
-    positive = []
-    negative = []
-    for i in range(n_points):
-        values.append(i * step)
-        i_pos = np.exp(i / float(n_points) * positive_range)
-        positive.append(i_pos)
-        i_neg = np.exp(i / float(n_points) * -negative_range)
-        negative.append(i_neg)
+    values = np.arange(n_points)
+    positive = np.exp(values / float(n_points) * positive_range)
+    negative = np.exp(values / float(n_points) * -negative_range)
+
+    # apply step to values
+    values = values * step
 
     s = np.exp((positive_range + negative_range) * (width + extra / decades))
 
-    for i in range(n_points):
-        negative[i] *= s
-
+    negative *= s
     s = positive[zero_point] - negative[zero_point]
 
-    for i in range(zero_point, n_points):
-        positive[i] = minimum * (positive[i] - negative[i] - s)
+    positive[zero_point:n_points] = positive[zero_point:n_points] - negative[zero_point:n_points]
+    positive[zero_point:n_points] = minimum * (positive[zero_point:n_points] - s)
 
-    for i in range(zero_point):
-        m = 2 * zero_point - i
+    neg_range = np.arange(zero_point)
+    m = 2 * zero_point - neg_range
 
-        positive[i] = -positive[m]
-
-    positive = np.array(positive)
-    values = np.array(values)
+    positive[neg_range] = -positive[m]
 
     return positive, values
 
