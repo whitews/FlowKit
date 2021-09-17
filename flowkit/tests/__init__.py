@@ -13,6 +13,7 @@ from .session_tests import SessionTestCase
 from .flowjo_wsp_tests import FlowJoWSPTestCase
 from .matrix_tests import MatrixTestCase
 from .transform_tests import TransformsTestCase
+from .gate_tests import GateTestCase
 from .string_repr_tests import StringReprTestCase
 from .plot_tests import PlotTestCase
 
