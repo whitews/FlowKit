@@ -313,16 +313,18 @@ def find_attribute_value(xml_el, namespace, attribute_name):
     """
     attribs = xml_el.xpath(
         '@%s:%s' % (namespace, attribute_name),
-        namespaces=xml_el.nsmap
+        namespaces=xml_el.nsmap,
+        smart_strings=False
     )
+    attribs_cnt = len(attribs)
 
-    if len(attribs) > 1:
+    if attribs_cnt > 1:
         raise ValueError(
             "Multiple %s attributes found (line %d)" % (
                 attribute_name, xml_el.sourceline
             )
         )
-    elif len(attribs) == 0:
+    elif attribs_cnt == 0:
         return None
 
     # return as pure str to save memory (otherwise it's an _ElementUnicodeResult from lxml
