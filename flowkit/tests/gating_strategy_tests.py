@@ -55,6 +55,14 @@ class GatingStrategyTestCase(unittest.TestCase):
 
         self.assertRaises(KeyError, gs.add_gate, poly1_gate)
 
+    def test_get_parent_gate_is_none(self):
+        gs = fk.GatingStrategy()
+        gs.add_gate(poly1_gate)
+
+        parent_gate = gs.get_parent_gate('Polygon1')
+
+        self.assertIsNone(parent_gate)
+
     def test_add_transform_non_transform_class(self):
         gs = fk.GatingStrategy()
         self.assertRaises(ValueError, gs.add_transform, "not a transform class")
