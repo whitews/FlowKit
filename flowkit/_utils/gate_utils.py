@@ -6,18 +6,6 @@ import numpy as np
 from .. import _utils_c as utils_c
 
 
-try:
-    import multiprocessing as mp
-
-    # TODO: Multi-processing is still having issues with large data sets. Reset back to True when fixed.
-    #   See potential fix here:
-    #   https://pythonspeed.com/articles/python-multiprocessing/
-    multi_proc = True
-except ImportError:
-    mp = None
-    multi_proc = False
-
-
 def points_in_ellipsoid(
         ellipsoid_covariance_matrix,
         ellipsoid_means,

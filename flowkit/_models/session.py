@@ -2,28 +2,18 @@
 Session class
 """
 import io
-import sys
 import copy
 import numpy as np
 import pandas as pd
 from bokeh.models import Title
+from .._conf import debug, multi_proc, mp, mp_context
 from .._models.gating_strategy import GatingStrategy
 # noinspection PyProtectedMember
 from .._models.transforms._matrix import Matrix
 from .._models import gates, dimension
 from .._models.sample import Sample
-from .._utils.gate_utils import multi_proc, mp
 from .._utils import plot_utils, xml_utils, wsp_utils, sample_utils
 import warnings
-
-
-# Used to detect PyCharm's debugging mode to turn off multi-processing for debugging with tests
-get_trace = getattr(sys, 'gettrace', lambda: None)
-
-if get_trace() is None:
-    debug = True
-else:
-    debug = False
 
 
 # _gate_sample & _gate_samples are multi-proc wrappers for GatingStrategy _gate_sample method
@@ -31,29 +21,38 @@ else:
 def _gate_sample(data):
     gating_strategy = data[0]
     sample = data[1]
-    verbose = data[2]
-    return gating_strategy.gate_sample(sample, verbose=verbose)
+    cache_events = data[2]
+    verbose = data[3]
+    return gating_strategy.gate_sample(sample, cache_events=cache_events, verbose=verbose)
 
 
-def _gate_samples(gating_strategies, samples, verbose, use_mp=False):
-    # TODO: Multiprocessing can fail for very large workloads (lots of gates), maybe due
-    #       to running out of memory. Will investigate further, but for now setting an
-    #       option to control whether mp is used (default is True)
-    #       Needs further investigation, as this is still causing problems.
+def _gate_samples(gating_strategies, samples, cache_events, verbose, use_mp=False):
+    # NOTE: Multiprocessing can fail for very large workloads (lots of gates) due
+    #       to running out of memory. For those cases setting use_mp should be set
+    #       to False in the Session.analyze_samples() method
     sample_count = len(samples)
+
     if multi_proc and sample_count > 1 and use_mp:
         if sample_count < mp.cpu_count():
             proc_count = sample_count
         else:
             proc_count = mp.cpu_count() - 1  # leave a CPU free just to be nice
 
-        with mp.get_context("spawn").Pool(processes=proc_count) as pool:
-            data = [(gating_strategies[i], sample, verbose) for i, sample in enumerate(samples)]
-            all_results = pool.map(_gate_sample, data)
+        with mp.get_context(mp_context).Pool(processes=proc_count, maxtasksperchild=1) as pool:
+            if verbose:
+                print('#### Processing gates for %d samples (multiprocessing is enabled) ####' % sample_count)
+            data = [(gating_strategies[i], sample, cache_events, verbose) for i, sample in enumerate(samples)]
+
+            async_results = [pool.apply_async(_gate_sample, args=(d,)) for d in data]
 
             pool.close()
             pool.join()
+
+            all_results = [result.get() for result in async_results]
     else:
+        if verbose:
+            print('#### Processing gates for %d samples (multiprocessing is disabled) ####' % sample_count)
+
         all_results = []
         for i, sample in enumerate(samples):
             results = gating_strategies[i].gate_sample(sample, verbose=verbose)
@@ -543,7 +542,7 @@ class Session(object):
         """
         return self.sample_lut[sample_id]
 
-    def analyze_samples(self, group_name='default', sample_id=None, verbose=False):
+    def analyze_samples(self, group_name='default', sample_id=None, cache_events=False, use_mp=True, verbose=False):
         """
         Process gates for samples in a sample group. After running, results can be
         retrieved using the `get_gating_results`, `get_group_report`, and  `get_gate_indices`,
@@ -551,6 +550,14 @@ class Session(object):
 
         :param group_name: a text string representing the sample group
         :param sample_id: optional sample ID, if specified only this sample will be processed
+        :param cache_events: Whether to cache pre-processed events (compensated and transformed). This can
+            be useful to speed up processing of gates that share the same pre-processing instructions for
+            the same channel data, but can consume significantly more memory space. See the related
+            clear_cache method for additional information. Default is False.
+        :param use_mp: Controls whether multiprocessing is used to gate samples (default is True).
+            Multiprocessing can fail for large workloads (lots of samples & gates) due to running out of
+            memory. For those cases setting use_mp should be set to False (processing will take longer,
+            but will use significantly less memory).
         :param verbose: if True, print a line for every gate processed (default is False)
         :return: None
         """
@@ -579,7 +586,12 @@ class Session(object):
             gating_strategies.append(self._sample_group_lut[group_name]['samples'][s.original_filename])
             samples_to_run.append(s)
 
-        results = _gate_samples(gating_strategies, samples_to_run, verbose, use_mp=debug)
+        results = _gate_samples(
+            gating_strategies,
+            samples_to_run,
+            cache_events,
+            verbose, use_mp=False if debug else use_mp
+        )
 
         all_reports = [res.report for res in results]
 
@@ -826,6 +838,7 @@ class Session(object):
 
         if dim_is_ratio[0]:
             dim_labels.append(dim_labels_ordered[0])
+            x_pnn_label = None
         else:
             try:
                 x_index = sample_to_plot.get_channel_index(dim_labels_ordered[0])
