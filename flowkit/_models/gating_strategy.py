@@ -277,13 +277,16 @@ class GatingStrategy(object):
 
     def get_parent_gate(self, gate_id, gate_path=None):
         """
-        Retrieve the gate ID for a parent gate of the given gate ID.
+        Retrieve the parent Gate instance for the given gate ID.
 
         :param gate_id: text string of a gate ID
         :param gate_path: complete tuple of gate IDs for unique set of gate ancestors. Required if gate_id is ambiguous
-        :return: Subclass of a Gate object
+        :return: Subclassed Gate instance
         """
         node = self._get_gate_node(gate_id, gate_path)
+
+        if node.parent.name == 'root':
+            return None
 
         return node.parent.gate
 
