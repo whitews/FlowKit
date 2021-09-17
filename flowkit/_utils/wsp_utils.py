@@ -210,27 +210,27 @@ def _convert_wsp_gate(wsp_gate, comp_matrix, xform_lut, ignore_transforms=False)
         if comp_matrix is not None:
             pre = comp_matrix['prefix']
             suf = comp_matrix['suffix']
-            dim_label = dim.label
+            dim_id = dim.id
 
-            if dim_label.startswith(pre):
-                dim_label = re.sub(r'^%s' % pre, '', dim_label)
-            if dim_label.endswith(suf):
-                dim_label = re.sub(r'%s$' % suf, '', dim_label)
+            if dim_id.startswith(pre):
+                dim_id = re.sub(r'^%s' % pre, '', dim_id)
+            if dim_id.endswith(suf):
+                dim_id = re.sub(r'%s$' % suf, '', dim_id)
 
-            if dim_label in comp_matrix['detectors']:
+            if dim_id in comp_matrix['detectors']:
                 comp_ref = comp_matrix['matrix_name']
             else:
                 comp_ref = None
         else:
-            dim_label = dim.label
+            dim_id = dim.id
             comp_ref = None
 
         xform_id = None
         new_dim_min = None
         new_dim_max = None
 
-        if dim_label in xform_lut and not ignore_transforms:
-            xform = xform_lut[dim_label]
+        if dim_id in xform_lut and not ignore_transforms:
+            xform = xform_lut[dim_id]
             xforms.append(xform)  # need these later for vertices, coordinates, etc.
             xform_id = xform.id
             if dim.min is not None:
@@ -247,7 +247,7 @@ def _convert_wsp_gate(wsp_gate, comp_matrix, xform_lut, ignore_transforms=False)
                 new_dim_max = float(dim.max)
 
         new_dim = Dimension(
-            dim_label,
+            dim_id,
             comp_ref,
             xform_id,
             range_min=new_dim_min,
@@ -644,14 +644,14 @@ def _add_polygon_gate(parent_el, gate, fj_gate_id, fj_parent_gate_id, gating_str
     xform_refs = []
     for dim in gate.dimensions:
         # use comp prefix for label except for scatter and time channels
-        if dim.label[:4] in ['FSC-', 'SSC-', 'Time']:
-            dim_label = dim.label
+        if dim.id[:4] in ['FSC-', 'SSC-', 'Time']:
+            dim_id = dim.id
         else:
-            dim_label = comp_prefix + dim.label
+            dim_id = comp_prefix + dim.id
 
         dim_el = etree.SubElement(gate_instance_el, "{%s}dimension" % ns_map['gating'])
         fcs_dim_el = etree.SubElement(dim_el, "{%s}fcs-dimension" % ns_map['data-type'])
-        fcs_dim_el.set("{%s}name" % ns_map['data-type'], dim_label)
+        fcs_dim_el.set("{%s}name" % ns_map['data-type'], dim_id)
 
         xform_refs.append(dim.transformation_ref)
 
@@ -678,14 +678,14 @@ def _add_rectangle_gate(parent_el, gate, fj_gate_id, fj_parent_gate_id, gating_s
 
     for dim in gate.dimensions:
         # use comp prefix for label except for scatter and time channels
-        if dim.label[:4] in ['FSC-', 'SSC-', 'Time']:
-            dim_label = dim.label
+        if dim.id[:4] in ['FSC-', 'SSC-', 'Time']:
+            dim_id = dim.id
         else:
-            dim_label = comp_prefix + dim.label
+            dim_id = comp_prefix + dim.id
 
         dim_el = etree.SubElement(gate_instance_el, "{%s}dimension" % ns_map['gating'])
         fcs_dim_el = etree.SubElement(dim_el, "{%s}fcs-dimension" % ns_map['data-type'])
-        fcs_dim_el.set("{%s}name" % ns_map['data-type'], dim_label)
+        fcs_dim_el.set("{%s}name" % ns_map['data-type'], dim_id)
 
         xform_ref = dim.transformation_ref
 
@@ -881,10 +881,10 @@ def export_flowjo_wsp(group_gating_strategies, group_name, samples, file_handle)
         gates.append(gate)
 
         for dim in gate.dimensions:
-            if dim.label not in dim_xform_lut.keys():
-                dim_xform_lut[dim.label] = set()
+            if dim.id not in dim_xform_lut.keys():
+                dim_xform_lut[dim.id] = set()
 
-            dim_xform_lut[dim.label].add(dim.transformation_ref)
+            dim_xform_lut[dim.id].add(dim.transformation_ref)
 
     for dim in dim_xform_lut:
         xform_refs = list(dim_xform_lut[dim])

@@ -481,10 +481,10 @@ class GatingStrategy(object):
         flowjo_pnn_labels = [label.replace('/', '_') for label in pnn_labels]
 
         dim_indices = []
-        dim_labels = []
+        dim_ids = []
         dim_comp_refs = set()
         new_dims = []
-        new_dim_labels = []
+        new_dim_ids = []
         dim_xform = []
 
         for dim in gate.dimensions:
@@ -496,19 +496,19 @@ class GatingStrategy(object):
             if isinstance(dim, dimension.RatioDimension):
                 # dimension is a transform of other dimensions
                 new_dims.append(dim)
-                new_dim_labels.append(dim.ratio_ref)
+                new_dim_ids.append(dim.ratio_ref)
                 continue
             elif isinstance(dim, dimension.QuadrantDivider):
-                dim_label = dim.dimension_ref
+                dim_id = dim.dimension_ref
             else:
-                dim_label = dim.label
+                dim_id = dim.id
 
-            if dim_label in pnn_labels:
-                dim_indices.append(pnn_labels.index(dim_label))
-            elif dim_label in pns_labels:
-                dim_indices.append(pns_labels.index(dim_label))
-            elif dim_label in flowjo_pnn_labels:
-                dim_indices.append(flowjo_pnn_labels.index(dim_label))
+            if dim_id in pnn_labels:
+                dim_indices.append(pnn_labels.index(dim_id))
+            elif dim_id in pns_labels:
+                dim_indices.append(pns_labels.index(dim_id))
+            elif dim_id in flowjo_pnn_labels:
+                dim_indices.append(flowjo_pnn_labels.index(dim_id))
             else:
                 # for a referenced comp, the label may have been the
                 # fluorochrome instead of the channel's PnN label. If so,
@@ -516,17 +516,17 @@ class GatingStrategy(object):
                 # names that will match
                 if not dim_comp:
                     raise LookupError(
-                        "%s is not found as a channel label or channel reference in %s" % (dim_label, sample)
+                        "%s is not found as a channel label or channel reference in %s" % (dim_id, sample)
                     )
                 matrix = self.comp_matrices[dim.compensation_ref]
                 try:
-                    matrix_dim_idx = matrix.fluorochomes.index(dim_label)
+                    matrix_dim_idx = matrix.fluorochomes.index(dim_id)
                 except ValueError:
-                    raise ValueError("%s not found in list of matrix fluorochromes" % dim_label)
+                    raise ValueError("%s not found in list of matrix fluorochromes" % dim_id)
                 detector = matrix.detectors[matrix_dim_idx]
                 dim_indices.append(pnn_labels.index(detector))
 
-            dim_labels.append(dim_label)
+            dim_ids.append(dim_id)
 
             dim_xform.append(dim.transformation_ref)
 
@@ -568,10 +568,10 @@ class GatingStrategy(object):
                             dim_idx=dim
                         )
 
-        df_events = pd.DataFrame(events[:, dim_indices], columns=dim_labels)
+        df_events = pd.DataFrame(events[:, dim_indices], columns=dim_ids)
         if len(new_dims) > 0:
             new_dim_events = self._process_new_dims(sample, new_dims)
-            df_new_dim_events = pd.DataFrame(new_dim_events, columns=new_dim_labels)
+            df_new_dim_events = pd.DataFrame(new_dim_events, columns=new_dim_ids)
             df_events = pd.concat([df_events, df_new_dim_events], axis=1)
 
         return df_events

@@ -800,22 +800,22 @@ class Sample(object):
         x = self.get_channel_data(x_index, source=source, subsample=subsample)
         y = self.get_channel_data(y_index, source=source, subsample=subsample)
 
-        dim_labels = []
+        dim_ids = []
 
         if self.pns_labels[x_index] != '':
-            dim_labels.append('%s (%s)' % (self.pns_labels[x_index], self.pnn_labels[x_index]))
+            dim_ids.append('%s (%s)' % (self.pns_labels[x_index], self.pnn_labels[x_index]))
         else:
-            dim_labels.append(self.pnn_labels[x_index])
+            dim_ids.append(self.pnn_labels[x_index])
 
         if self.pns_labels[y_index] != '':
-            dim_labels.append('%s (%s)' % (self.pns_labels[y_index], self.pnn_labels[y_index]))
+            dim_ids.append('%s (%s)' % (self.pns_labels[y_index], self.pnn_labels[y_index]))
         else:
-            dim_labels.append(self.pnn_labels[y_index])
+            dim_ids.append(self.pnn_labels[y_index])
 
         p = plot_utils.plot_scatter(
             x,
             y,
-            dim_labels,
+            dim_ids,
             x_min=x_min,
             x_max=x_max,
             y_min=y_min,

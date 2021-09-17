@@ -263,7 +263,7 @@ def plot_histogram(x, x_label='x', bins=None, title=None):
 def plot_scatter(
         x,
         y,
-        dim_labels=None,
+        dim_ids=None,
         x_min=None,
         x_max=None,
         y_min=None,
@@ -312,8 +312,8 @@ def plot_scatter(
         y_range=(y_min, y_max)
     )
 
-    p.xaxis.axis_label = dim_labels[0]
-    p.yaxis.axis_label = dim_labels[1]
+    p.xaxis.axis_label = dim_ids[0]
+    p.yaxis.axis_label = dim_ids[1]
 
     p.scatter(
         x,

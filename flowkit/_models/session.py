@@ -778,24 +778,24 @@ class Session(object):
         gating_strategy = group['samples'][sample_id]
         gate = gating_strategy.get_gate(gate_id, gate_path)
 
-        dim_labels_ordered = []
+        dim_ids_ordered = []
         dim_is_ratio = []
         dim_comp_refs = []
         dim_min = []
         dim_max = []
         for i, dim in enumerate(gate.dimensions):
             if isinstance(dim, dimension.RatioDimension):
-                dim_labels_ordered.append(dim.ratio_ref)
+                dim_ids_ordered.append(dim.ratio_ref)
                 tmp_dim_min = dim.min
                 tmp_dim_max = dim.max
                 is_ratio = True
             elif isinstance(dim, dimension.QuadrantDivider):
-                dim_labels_ordered.append(dim.dimension_ref)
+                dim_ids_ordered.append(dim.dimension_ref)
                 tmp_dim_min = None
                 tmp_dim_max = None
                 is_ratio = False
             else:
-                dim_labels_ordered.append(dim.label)
+                dim_ids_ordered.append(dim.id)
                 tmp_dim_min = dim.min
                 tmp_dim_max = dim.max
                 is_ratio = False
@@ -806,7 +806,7 @@ class Session(object):
             dim_comp_refs.append(dim.compensation_ref)
 
         # dim count determines if we need a histogram, scatter, or multi-scatter
-        dim_count = len(dim_labels_ordered)
+        dim_count = len(dim_ids_ordered)
         if dim_count == 1:
             gate_type = 'hist'
         elif dim_count == 2:
@@ -832,66 +832,66 @@ class Session(object):
         else:
             idx_to_plot = sample_to_plot.subsample_indices
 
-        x = events.loc[idx_to_plot, dim_labels_ordered[0]].values
+        x = events.loc[idx_to_plot, dim_ids_ordered[0]].values
 
-        dim_labels = []
+        dim_ids = []
 
         if dim_is_ratio[0]:
-            dim_labels.append(dim_labels_ordered[0])
+            dim_ids.append(dim_ids_ordered[0])
             x_pnn_label = None
         else:
             try:
-                x_index = sample_to_plot.get_channel_index(dim_labels_ordered[0])
+                x_index = sample_to_plot.get_channel_index(dim_ids_ordered[0])
             except ValueError:
                 # might be a label reference in the comp matrix
                 matrix = gating_strategy.get_comp_matrix(dim_comp_refs[0])
                 try:
-                    matrix_dim_idx = matrix.fluorochomes.index(dim_labels_ordered[0])
+                    matrix_dim_idx = matrix.fluorochomes.index(dim_ids_ordered[0])
                 except ValueError:
-                    raise ValueError("%s not found in list of matrix fluorochromes" % dim_labels_ordered[0])
+                    raise ValueError("%s not found in list of matrix fluorochromes" % dim_ids_ordered[0])
                 detector = matrix.detectors[matrix_dim_idx]
                 x_index = sample_to_plot.get_channel_index(detector)
 
             x_pnn_label = sample_to_plot.pnn_labels[x_index]
 
             if sample_to_plot.pns_labels[x_index] != '':
-                dim_labels.append('%s (%s)' % (sample_to_plot.pns_labels[x_index], x_pnn_label))
+                dim_ids.append('%s (%s)' % (sample_to_plot.pns_labels[x_index], x_pnn_label))
             else:
-                dim_labels.append(sample_to_plot.pnn_labels[x_index])
+                dim_ids.append(sample_to_plot.pnn_labels[x_index])
 
         y_pnn_label = None
 
         if dim_count > 1:
             if dim_is_ratio[1]:
-                dim_labels.append(dim_labels_ordered[1])
+                dim_ids.append(dim_ids_ordered[1])
 
             else:
                 try:
-                    y_index = sample_to_plot.get_channel_index(dim_labels_ordered[1])
+                    y_index = sample_to_plot.get_channel_index(dim_ids_ordered[1])
                 except ValueError:
                     # might be a label reference in the comp matrix
                     matrix = gating_strategy.get_comp_matrix(dim_comp_refs[1])
                     try:
-                        matrix_dim_idx = matrix.fluorochomes.index(dim_labels_ordered[1])
+                        matrix_dim_idx = matrix.fluorochomes.index(dim_ids_ordered[1])
                     except ValueError:
-                        raise ValueError("%s not found in list of matrix fluorochromes" % dim_labels_ordered[1])
+                        raise ValueError("%s not found in list of matrix fluorochromes" % dim_ids_ordered[1])
                     detector = matrix.detectors[matrix_dim_idx]
                     y_index = sample_to_plot.get_channel_index(detector)
 
                 y_pnn_label = sample_to_plot.pnn_labels[y_index]
 
                 if sample_to_plot.pns_labels[y_index] != '':
-                    dim_labels.append('%s (%s)' % (sample_to_plot.pns_labels[y_index], y_pnn_label))
+                    dim_ids.append('%s (%s)' % (sample_to_plot.pns_labels[y_index], y_pnn_label))
                 else:
-                    dim_labels.append(sample_to_plot.pnn_labels[y_index])
+                    dim_ids.append(sample_to_plot.pnn_labels[y_index])
 
         if gate_type == 'scatter':
-            y = events.loc[idx_to_plot, dim_labels_ordered[1]].values
+            y = events.loc[idx_to_plot, dim_ids_ordered[1]].values
 
             p = plot_utils.plot_scatter(
                 x,
                 y,
-                dim_labels,
+                dim_ids,
                 x_min=x_min,
                 x_max=x_max,
                 y_min=y_min,
@@ -899,7 +899,7 @@ class Session(object):
                 color_density=color_density
             )
         elif gate_type == 'hist':
-            p = plot_utils.plot_histogram(x, dim_labels[0])
+            p = plot_utils.plot_histogram(x, dim_ids[0])
         else:
             raise NotImplementedError("Only histograms and scatter plots are supported in this version of FlowKit")
 
@@ -1010,8 +1010,8 @@ class Session(object):
         group = self._sample_group_lut[group_name]
         gating_strategy = group['samples'][sample_id]
 
-        x_index = sample.get_channel_index(x_dim.label)
-        y_index = sample.get_channel_index(y_dim.label)
+        x_index = sample.get_channel_index(x_dim.id)
+        y_index = sample.get_channel_index(y_dim.id)
 
         x_comp_ref = x_dim.compensation_ref
         x_xform_ref = x_dim.transformation_ref
@@ -1057,22 +1057,22 @@ class Session(object):
             x = x[idx_to_plot]
             y = y[idx_to_plot]
 
-        dim_labels = []
+        dim_ids = []
 
         if sample.pns_labels[x_index] != '':
-            dim_labels.append('%s (%s)' % (sample.pns_labels[x_index], sample.pnn_labels[x_index]))
+            dim_ids.append('%s (%s)' % (sample.pns_labels[x_index], sample.pnn_labels[x_index]))
         else:
-            dim_labels.append(sample.pnn_labels[x_index])
+            dim_ids.append(sample.pnn_labels[x_index])
 
         if sample.pns_labels[y_index] != '':
-            dim_labels.append('%s (%s)' % (sample.pns_labels[y_index], sample.pnn_labels[y_index]))
+            dim_ids.append('%s (%s)' % (sample.pns_labels[y_index], sample.pnn_labels[y_index]))
         else:
-            dim_labels.append(sample.pnn_labels[y_index])
+            dim_ids.append(sample.pnn_labels[y_index])
 
         p = plot_utils.plot_scatter(
             x,
             y,
-            dim_labels,
+            dim_ids,
             x_min=x_min,
             x_max=x_max,
             y_min=y_min,

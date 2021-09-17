@@ -17,10 +17,8 @@ class Matrix(object):
             - a pathlib Path object to a CSV/TSF file
             - a NumPy array of spill data
             - a Pandas DataFrame (channel labels as headers)
-    :param detectors: A list of strings or a list of tuples to use for the detector
-        labels.
-    :param fluorochromes: A list of strings or a list of tuples to use for the detector
-        labels.
+    :param detectors: A list of strings or a list of tuples to use for the detector labels.
+    :param fluorochromes: A list of strings or a list of tuples to use for the detector labels.
     :param null_channels: List of PnN labels for channels that were collected
         but do not contain useful data. Note, this should only be used if there were
         truly no fluorochromes used targeting those detectors and the channels

@@ -291,7 +291,7 @@ def _construct_matrices(root_gml, transform_ns, data_type_ns):
         )
 
         for matrix_el in matrix_els:
-            matrix = parse_matrix_element(
+            matrix = _parse_matrix_element(
                 matrix_el,
                 transform_ns,
                 data_type_ns
@@ -357,17 +357,17 @@ def parse_gate_element(
         dimensions = []
 
         for dim_el in dim_els:
-            dim = parse_dimension_element(dim_el, gating_namespace, data_type_namespace)
+            dim = _parse_dimension_element(dim_el, gating_namespace, data_type_namespace)
             dimensions.append(dim)
     else:
         for div_el in div_els:
-            dim = parse_divider_element(div_el, gating_namespace, data_type_namespace)
+            dim = _parse_divider_element(div_el, gating_namespace, data_type_namespace)
             dimensions.append(dim)
 
     return gate_id, parent_id, dimensions
 
 
-def parse_dimension_element(
+def _parse_dimension_element(
         dim_element,
         gating_namespace,
         data_type_namespace
@@ -387,7 +387,7 @@ def parse_dimension_element(
     if _max is not None:
         range_max = float(_max)
 
-    # label be here
+    # ID be here
     fcs_dim_el = dim_element.find(
         '%s:fcs-dimension' % data_type_namespace,
         namespaces=dim_element.nsmap
@@ -421,14 +421,14 @@ def parse_dimension_element(
             range_max=range_max
         )
     else:
-        label = find_attribute_value(fcs_dim_el, data_type_namespace, 'name')
-        if label is None:
+        dim_id = find_attribute_value(fcs_dim_el, data_type_namespace, 'name')
+        if dim_id is None:
             raise ValueError(
                 'Dimension name not found (line %d)' % fcs_dim_el.sourceline
             )
 
         dimension = Dimension(
-            label,
+            dim_id,
             compensation_ref,
             transformation_ref,
             range_min=range_min,
@@ -438,21 +438,21 @@ def parse_dimension_element(
     return dimension
 
 
-def parse_divider_element(divider_element, gating_namespace, data_type_namespace):
+def _parse_divider_element(divider_element, gating_namespace, data_type_namespace):
     # Get 'id' (present in quad gate dividers)
-    dimension_id = find_attribute_value(divider_element, gating_namespace, 'id')
+    divider_id = find_attribute_value(divider_element, gating_namespace, 'id')
 
     compensation_ref = find_attribute_value(divider_element, gating_namespace, 'compensation-ref')
     transformation_ref = find_attribute_value(divider_element, gating_namespace, 'transformation-ref')
 
-    # label be here
+    # ID be here
     fcs_dim_el = divider_element.find(
         '%s:fcs-dimension' % data_type_namespace,
         namespaces=divider_element.nsmap
     )
 
-    label = find_attribute_value(fcs_dim_el, data_type_namespace, 'name')
-    if label is None:
+    dim_id = find_attribute_value(fcs_dim_el, data_type_namespace, 'name')
+    if dim_id is None:
         raise ValueError(
             'Divider dimension name not found (line %d)' % fcs_dim_el.sourceline
         )
@@ -468,7 +468,7 @@ def parse_divider_element(divider_element, gating_namespace, data_type_namespace
     for value in value_els:
         values.append(float(value.text))
 
-    divider = QuadrantDivider(dimension_id, label, compensation_ref, values, transformation_ref)
+    divider = QuadrantDivider(divider_id, dim_id, compensation_ref, values, transformation_ref)
 
     return divider
 
@@ -499,7 +499,7 @@ def parse_vertex_element(vert_element, gating_namespace, data_type_namespace):
     return Vertex(coordinates)
 
 
-def parse_matrix_element(
+def _parse_matrix_element(
     matrix_element,
     xform_namespace,
     data_type_namespace
@@ -742,7 +742,7 @@ def _add_gate_to_gml(root, gate, ns_map):
         else:
             fcs_dim_ml = etree.SubElement(dim_ml, '{%s}fcs-dimension' % ns_map['data-type'])
             if dim_type == 'dim':
-                fcs_dim_ml.set('{%s}name' % ns_map['data-type'], dim.label)
+                fcs_dim_ml.set('{%s}name' % ns_map['data-type'], dim.id)
             elif dim_type == 'quad':
                 fcs_dim_ml.set('{%s}name' % ns_map['data-type'], dim.dimension_ref)
                 for val in dim.values:

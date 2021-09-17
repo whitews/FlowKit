@@ -181,7 +181,7 @@ class GMLQuadrantGate(gates.QuadrantGate):
     """
     Represents a GatingML Quadrant Gate
 
-    A QuadrantGate must have at least 1 divider, and must specify the labels
+    A QuadrantGate must have at least 1 divider, and must specify the IDs
     of the resulting quadrants the dividers produce. Quadrant gates are
     different from other gate types in that they are actually a collection of
     gates (quadrants), though even the term quadrant is misleading as they can
@@ -236,13 +236,13 @@ class GMLQuadrantGate(gates.QuadrantGate):
                 location = float(location)
                 q_min = None
                 q_max = None
-                dim_label = None
+                dim_id = None
 
                 for div in dividers:
                     if div.id != divider_ref:
                         continue
                     else:
-                        dim_label = div.dimension_ref
+                        dim_id = div.dimension_ref
 
                     for v in sorted(div.values):
                         if v > location:
@@ -253,7 +253,7 @@ class GMLQuadrantGate(gates.QuadrantGate):
                         elif v <= location:
                             q_min = v
 
-                if dim_label is None:
+                if dim_id is None:
                     raise ValueError(
                         'Quadrant must define a divider reference (line %d)' % pos_el.sourceline
                     )

@@ -41,14 +41,14 @@ class RectangleGate(Gate):
 
         for i, dim in enumerate(self.dimensions):
             if isinstance(dim, RatioDimension):
-                dim_label = dim.ratio_ref
+                dim_id = dim.ratio_ref
             else:
-                dim_label = dim.label
+                dim_id = dim.id
 
             if dim.min is not None:
-                results = np.bitwise_and(results, df_events[dim_label].values >= dim.min)
+                results = np.bitwise_and(results, df_events[dim_id].values >= dim.min)
             if dim.max is not None:
-                results = np.bitwise_and(results, df_events[dim_label].values < dim.max)
+                results = np.bitwise_and(results, df_events[dim_id].values < dim.max)
 
         return results
 
@@ -87,17 +87,20 @@ class PolygonGate(Gate):
     def apply(self, df_events):
         path_vertices = []
 
-        dim_labels_ordered = []
+        dim_ids_ordered = []
         for i, dim in enumerate(self.dimensions):
             if isinstance(dim, RatioDimension):
-                dim_labels_ordered.append(dim.ratio_ref)
+                dim_ids_ordered.append(dim.ratio_ref)
             else:
-                dim_labels_ordered.append(dim.label)
+                dim_ids_ordered.append(dim.id)
 
         for vert in self.vertices:
             path_vertices.append(vert.coordinates)
 
-        results = gate_utils.points_in_polygon(np.array(path_vertices, dtype=np.float64), df_events[dim_labels_ordered])
+        results = gate_utils.points_in_polygon(
+            np.array(path_vertices, dtype=np.float64),
+            df_events[dim_ids_ordered]
+        )
 
         return results
 
@@ -146,18 +149,18 @@ class EllipsoidGate(Gate):
         )
 
     def apply(self, df_events):
-        dim_labels_ordered = []
+        dim_ids_ordered = []
         for i, dim in enumerate(self.dimensions):
             if isinstance(dim, RatioDimension):
-                dim_labels_ordered.append(dim.ratio_ref)
+                dim_ids_ordered.append(dim.ratio_ref)
             else:
-                dim_labels_ordered.append(dim.label)
+                dim_ids_ordered.append(dim.id)
 
         results = gate_utils.points_in_ellipsoid(
             self.covariance_matrix,
             self.coordinates,
             self.distance_square,
-            df_events[dim_labels_ordered]
+            df_events[dim_ids_ordered]
         )
 
         return results
@@ -232,18 +235,18 @@ class QuadrantGate(Gate):
         # Parse quadrants
         for quadrant in quadrants:
             for divider_ref in quadrant.divider_refs:
-                dim_label = None
+                dim_id = None
 
                 # self.dimensions in a QuadrantGate are dividers
                 # make sure all divider IDs are referenced in the list of quadrants
-                # and verify there is a dimension label (for each quad)
+                # and verify there is a dimension ID (for each quad)
                 for dim in self.dimensions:
                     if dim.id != divider_ref:
                         continue
                     else:
-                        dim_label = dim.dimension_ref
+                        dim_id = dim.dimension_ref
 
-                if dim_label is None:
+                if dim_id is None:
                     raise ValueError(
                         'Quadrant must define a divider reference'
                     )

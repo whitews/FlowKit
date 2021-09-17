@@ -7,7 +7,7 @@ class Dimension(object):
     """
     Represents a single dimension of an array of FCS data.
 
-    :param label: A string identifying the dimension, typically matching the PnN label of a channel in an FCS sample
+    :param id: A string identifying the dimension, typically matching the PnN label of a channel in an FCS sample
     :param compensation_ref: A string referencing the ID of a Matrix instance
     :param transformation_ref: A string referencing the ID of an instance of a Transform sub-class
     :param range_min: For use in defining the boundaries of a RectangleGate. A float defining the minimum boundary
@@ -17,7 +17,7 @@ class Dimension(object):
     """
     def __init__(
             self,
-            label,
+            id,
             compensation_ref='uncompensated',
             transformation_ref=None,
             range_min=None,
@@ -29,8 +29,8 @@ class Dimension(object):
         # reference to a Matrix in the GatingStrategy
         self.compensation_ref = compensation_ref
 
-        # label is required
-        self.label = label
+        # ID is required
+        self.id = id
 
         # transformation is optional, but if present must be a string
         if transformation_ref is not None and not isinstance(transformation_ref, str):
@@ -48,7 +48,7 @@ class Dimension(object):
             self.max = range_max
 
     def __repr__(self):
-        return f'{self.__class__.__name__}(label: {self.label})'
+        return f'{self.__class__.__name__}(id: {self.id})'
 
 
 class RatioDimension(object):

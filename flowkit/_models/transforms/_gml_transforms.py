@@ -44,21 +44,21 @@ class RatioGMLTransform(RatioTransform):
             namespaces=xform_element.nsmap
         )
 
-        dim_labels = []
+        dim_ids = []
 
         for dim_el in fcs_dim_els:
-            label = xml_utils.find_attribute_value(dim_el, data_type_namespace, 'name')
+            dim_id = xml_utils.find_attribute_value(dim_el, data_type_namespace, 'name')
 
-            if label is None:
+            if dim_id is None:
                 raise ValueError(
                     'Dimension name not found (line %d)' % dim_el.sourceline
                 )
-            dim_labels.append(label)
+            dim_ids.append(dim_id)
 
         RatioTransform.__init__(
             self,
             t_id,
-            dim_labels,
+            dim_ids,
             float(param_a),
             float(param_b),
             float(param_c)

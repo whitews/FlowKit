@@ -20,7 +20,7 @@ class StringReprTestCase(unittest.TestCase):
 
     def test_dim_repr(self):
         poly1_dim1 = fk.Dimension('FL2-H', compensation_ref='FCS')
-        dim_string = "Dimension(label: FL2-H)"
+        dim_string = "Dimension(id: FL2-H)"
 
         self.assertEqual(repr(poly1_dim1), dim_string)
 
