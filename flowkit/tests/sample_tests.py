@@ -38,6 +38,15 @@ class SampleTestCase(unittest.TestCase):
 
         self.assertIsInstance(sample, Sample)
 
+    def test_load_from_io_base(self):
+        """Test creating Sample object from a IOBase object"""
+        fcs_file_path = "examples/data/test_data_2d_01.fcs"
+        f = open(fcs_file_path, 'rb')
+        sample = Sample(fcs_path_or_data=f)
+        f.close()
+
+        self.assertIsInstance(sample, Sample)
+
     def test_load_from_numpy_array(self):
         npy_file_path = "examples/data/test_comp_example.npy"
         channels = [
