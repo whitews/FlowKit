@@ -42,9 +42,11 @@ def _parse_wsp_compensation(sample_el, transform_ns, data_type_ns):
         namespaces=sample_el.nsmap
     )
 
-    if len(matrix_els) > 1:
+    matrix_els_cnt = len(matrix_els)
+
+    if matrix_els_cnt > 1:
         raise ValueError("Multiple spillover matrices per sample are not supported.")
-    elif len(matrix_els) == 0:
+    elif matrix_els_cnt == 0:
         return None
 
     matrix_el = matrix_els[0]
