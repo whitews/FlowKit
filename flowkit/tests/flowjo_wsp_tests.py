@@ -159,7 +159,7 @@ class FlowJoWSPTestCase(unittest.TestCase):
         test_y = biex_xform.apply(x)
 
         mean_pct_diff = 100. * np.mean(np.abs(test_y[1:] - y[1:]) / y[1:])
-        self.assertLess(mean_pct_diff, 1.0)
+        self.assertLess(mean_pct_diff, 0.01)
 
     def test_get_sample_groups(self):
         wsp_path = "examples/data/simple_line_example/simple_poly_and_rect.wsp"
