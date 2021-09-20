@@ -38,17 +38,10 @@ class PlotTestCase(unittest.TestCase):
 
     def test_plot_sample_contour(self):
         sample = copy.deepcopy(test_sample)
-        sample.subsample_events(5000)
         xform_logicle = fk.transforms.LogicleTransform('logicle', param_t=10000, param_w=0.5, param_m=4.5, param_a=0)
         sample.apply_transform(xform_logicle)
 
-        p1 = sample.plot_contour(
-            'FL1-H',
-            'FL2-H',
-            source='xform',
-            subsample=True
-        )
-        p2 = sample.plot_contour(
+        p = sample.plot_contour(
             'FL1-H',
             'FL2-H',
             source='xform',
@@ -56,8 +49,7 @@ class PlotTestCase(unittest.TestCase):
             subsample=True
         )
 
-        self.assertIsInstance(p1, mpl_Figure)
-        self.assertIsInstance(p2, mpl_Figure)
+        self.assertIsInstance(p, mpl_Figure)
 
     def test_plot_sample_scatter(self):
         sample = copy.deepcopy(test_sample)
