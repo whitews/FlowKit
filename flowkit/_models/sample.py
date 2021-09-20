@@ -680,6 +680,7 @@ class Sample(object):
             x_max=None,
             y_min=None,
             y_max=None,
+            fill=False,
             fig_size=(8, 8)
     ):
         """
@@ -706,6 +707,8 @@ class Sample(object):
             be used with some padding to keep events off the edge of the plot.
         :param y_max: Upper bound of y-axis. If None, channel's max value will
             be used with some padding to keep events off the edge of the plot.
+        :param fill: Whether to fill in color between contour lines. D default
+            is False.
         :param fig_size: Tuple of 2 values specifying the size of the returned
             figure. Values are in Matplotlib size units.
         :return: Matplotlib figure of the contour plot
@@ -733,7 +736,7 @@ class Sample(object):
                 y=y,
                 palette=plot_utils.new_jet,
                 legend=False,
-                s=5,
+                s=6,
                 linewidth=0,
                 alpha=0.4
             )
@@ -745,7 +748,8 @@ class Sample(object):
                 bw_method='scott',
                 cmap=plot_utils.new_jet,
                 linewidths=2,
-                alpha=1
+                alpha=0.6,
+                fill=fill
             )
 
         return fig
