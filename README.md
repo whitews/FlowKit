@@ -122,6 +122,7 @@ Below are a few Jupyter notebooks demonstrating basic usage of the library. Note
 * [General Overview](https://github.com/whitews/FlowKit/blob/master/examples/flowkit-tutorial.ipynb)
 * [Applying transforms to a Sample](https://github.com/whitews/FlowKit/blob/master/examples/sample_transforms.ipynb)
 * [Compensating events using spillover matrix](https://github.com/whitews/FlowKit/blob/master/examples/sample_compensation.ipynb)
+* [Customize gate for a single Sample in a Session sample group](https://github.com/whitews/FlowKit/blob/master/examples/flowkit-session-create-custom-sample-gate.ipynb)
 * [Importing a FlowJo 10 WSP file & replicating analysis in FlowKit](https://github.com/whitews/FlowKit/blob/master/examples/flowkit-session-replicate-flowjo-wsp.ipynb)
 * [Compare mean fluorescence intensity (MFI) in gated populations](https://github.com/whitews/FlowKit/blob/master/examples/flowkit-session-compare-mfi-of-gated-events.ipynb)
 * [Dimension reduction on gated populations](https://github.com/whitews/FlowKit/blob/master/examples/dimension_reduction_on_gated_populations.ipynb)
