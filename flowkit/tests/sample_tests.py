@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import numpy as np
 import pandas as pd
+import flowio
 
 sys.path.append(os.path.abspath('../..'))
 
@@ -27,6 +28,17 @@ class SampleTestCase(unittest.TestCase):
         fcs_file_path = "examples/data/test_data_2d_01.fcs"
 
         sample = Sample(fcs_path_or_data=fcs_file_path)
+
+        self.assertIsInstance(sample, Sample)
+
+    def test_load_from_flowio_flowdata_object(self):
+        """Test creating Sample object from an FCS file path"""
+        fcs_file_path = "examples/data/test_data_2d_01.fcs"
+        flow_data = flowio.FlowData(fcs_file_path)
+
+        self.assertIsInstance(flow_data, flowio.FlowData)
+
+        sample = Sample(flow_data)
 
         self.assertIsInstance(sample, Sample)
 
