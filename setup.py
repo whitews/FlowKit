@@ -34,7 +34,7 @@ reqs = [
 
 setup(
     name='FlowKit',
-    version='0.7.1b1',
+    version='0.7.1b2',
     packages=find_packages(exclude=["flowkit/tests/"]),
     package_data={'': ['_resources/*.xsd']},
     include_package_data=True,
