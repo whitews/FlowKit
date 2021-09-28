@@ -19,7 +19,7 @@ import warnings
 from .._models.transforms import _transforms
 # noinspection PyProtectedMember
 from .._models.transforms._matrix import Matrix
-from .._utils import plot_utils, qc_utils
+from .._utils import plot_utils
 
 
 class Sample(object):
@@ -276,68 +276,6 @@ class Sample(object):
         is_neg = np.where(self._raw_events[:, scatter_indices] < 0)[0]
 
         self.negative_scatter_indices = is_neg
-
-        if reapply_subsample and self._subsample_count is not None:
-            self.subsample_events(self._subsample_count, self._subsample_seed)
-
-    def filter_anomalous_events(
-            self,
-            random_seed=1,
-            p_value_threshold=0.03,
-            ref_size=10000,
-            channel_labels_or_numbers=None,
-            reapply_subsample=True,
-            plot=False
-    ):
-        """
-        Anomalous events are determined via Kolmogorov-Smirnov (KS) statistical
-        test performed on each channel. The reference distribution is chosen based on
-        the difference from the median.
-
-        :param random_seed: Random seed used for initializing the anomaly detection routine. Default is 1
-        :param p_value_threshold: Controls the sensitivity for anomalous event detection. The value is the p-value
-            threshold for the KS test. A higher value will filter more events. Default is 0.03
-        :param ref_size: The number of reference groups to sample from the 'stable' regions. Default is 3
-        :param channel_labels_or_numbers: List of fluorescent channel labels or numbers (not indices)
-            to evaluate for anomalous events. If None, then all fluorescent channels will be evaluated.
-            Default is None
-        :param reapply_subsample: Whether to re-subsample the Sample events after filtering. Default is True
-        :param plot: Whether to plot the intermediate data for the provided channel labels
-        :return: None
-        """
-        rng = np.random.RandomState(seed=random_seed)
-
-        logicle_xform = _transforms.LogicleTransform(
-            'my_xform',
-            param_t=262144,
-            param_w=1.0,
-            param_m=4.5,
-            param_a=0
-        )
-        xform_events = self._transform(logicle_xform)
-
-        eval_indices = []
-        eval_labels = []
-        if channel_labels_or_numbers is not None:
-            for label_or_num in channel_labels_or_numbers:
-                c_idx = self.get_channel_index(label_or_num)
-                eval_indices.append(c_idx)
-        else:
-            eval_indices = self.fluoro_indices
-
-        for idx in eval_indices:
-            eval_labels.append(self.pnn_labels[idx])
-
-        anomalous_idx = qc_utils.filter_anomalous_events(
-            xform_events[:, eval_indices],
-            eval_labels,
-            rng=rng,
-            ref_set_count=3,
-            p_value_threshold=p_value_threshold,
-            ref_size=ref_size,
-            plot=plot
-        )
-        self.anomalous_indices = anomalous_idx
 
         if reapply_subsample and self._subsample_count is not None:
             self.subsample_events(self._subsample_count, self._subsample_seed)
