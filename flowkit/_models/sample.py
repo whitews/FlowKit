@@ -156,10 +156,8 @@ class Sample(object):
             else:
                 channel_gain.append(1.0)
 
-            if 'p%dr' % n in self.metadata:
-                channel_range.append(float(self.metadata['p%dr' % n]))
-            else:
-                channel_range.append(None)
+            # PnR range values are required for all channels
+            channel_range.append(float(self.metadata['p%dr' % n]))
 
             if 'p%de' % n in self.metadata:
                 (decades, log0) = [
