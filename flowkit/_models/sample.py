@@ -143,7 +143,7 @@ class Sample(object):
         self.time_index = None
 
         channel_gain = []
-        channel_lin_log = []
+        self.channel_lin_log = []
         channel_range = []
         self.metadata = flow_data.text
 
@@ -159,15 +159,23 @@ class Sample(object):
             # PnR range values are required for all channels
             channel_range.append(float(self.metadata['p%dr' % n]))
 
+            # PnE specifies whether the parameter data is stored in on linear or log scale
+            # and includes 2 values: (f1, f2)
+            # where:
+            #     f1 is the number of log decades (valid values are f1 >= 0)
+            #     f2 is the value to use for log(0) (valid values are f2 >= 0)
+            # Note for log scale, both values must be > 0
+            # linear = (0, 0)
+            # log    = (f1 > 0, f2 > 0)
             if 'p%de' % n in self.metadata:
                 (decades, log0) = [
                     float(x) for x in self.metadata['p%de' % n].split(',')
                 ]
                 if log0 == 0 and decades != 0:
                     log0 = 1.0  # FCS std states to use 1.0 for invalid 0 value
-                channel_lin_log.append((decades, log0))
+                self.channel_lin_log.append((decades, log0))
             else:
-                channel_lin_log.append((0.0, 0.0))
+                self.channel_lin_log.append((0.0, 0.0))
 
             if channel_label.lower()[:4] not in ['fsc-', 'ssc-', 'time']:
                 self.fluoro_indices.append(n - 1)
@@ -217,7 +225,7 @@ class Sample(object):
             time_step = float(self.metadata['timestep'])
             raw_events[:, self.time_index] = raw_events[:, self.time_index] * time_step
 
-        for i, (decades, log0) in enumerate(channel_lin_log):
+        for i, (decades, log0) in enumerate(self.channel_lin_log):
             if decades > 0:
                 raw_events[:, i] = (10 ** (decades * raw_events[:, i] / channel_range[i])) * log0
 
@@ -234,7 +242,7 @@ class Sample(object):
 
         # if filtering any events, save those in case they want to be retrieved
         self.negative_scatter_indices = None
-        self.anomalous_indices = None
+        self.flagged_indices = None
         self.subsample_indices = None
 
         try:
@@ -307,8 +315,8 @@ class Sample(object):
         if self.negative_scatter_indices is not None:
             bad_idx = self.negative_scatter_indices
 
-        if self.anomalous_indices is not None:
-            bad_idx = np.unique(np.concatenate([bad_idx, self.anomalous_indices]))
+        if self.flagged_indices is not None:
+            bad_idx = np.unique(np.concatenate([bad_idx, self.flagged_indices]))
 
         bad_count = bad_idx.shape[0]
         if bad_count > 0:
@@ -873,25 +881,43 @@ class Sample(object):
             self,
             filename,
             source='xform',
-            exclude=None,
+            exclude_neg_scatter=False,
+            exclude_flagged=False,
+            exclude_normal=False,
             subsample=False,
             directory=None
     ):
         """
         Export Sample event data to either a new FCS file or a CSV file. Format determined by filename extension.
 
-        :param filename: Text string to use for the exported file name.
+        :param filename: Text string to use for the exported file name. File type is determined by
+            the filename extension (supported types are .fcs & .csv).
         :param source: 'orig', 'raw', 'comp', 'xform' for whether the original (no gain applied),
             raw (orig + gain), compensated (raw + comp), or transformed (comp + xform) events  are
             used for exporting
-        :param exclude: Specifies whether to exclude events. Options are 'good', 'bad', or None.
-            'bad' excludes neg. scatter or anomalous, 'good' will export the bad events.
-            Default is None (exports all events)
-        :param subsample: Whether to export all events or just the
-            sub-sampled events. Default is False (all events).
-        :param directory: Directory path where the CSV will be saved
+        :param exclude_neg_scatter: Whether to exclude negative scatter events. Default is False.
+        :param exclude_flagged: Whether to exclude flagged events. Default is False.
+        :param exclude_normal: Whether to exclude "normal" events. This is useful for retrieving all
+             the "bad" events (neg scatter and/or flagged events). Default is False.
+        :param subsample: Whether to export all events or just the sub-sampled events.
+            Default is False (all events).
+        :param directory: Directory path where the exported file will be saved. If None, the file
+            will be saved in the current working directory.
         :return: None
         """
+        # get the requested file type (either .fcs or .csv)
+        ext = os.path.splitext(filename)[-1].lower()
+
+        # Next, check if exporting as CSV, and issue a warning if so.
+        # Exporting original events to CSV doesn't allow for the
+        # inclusion of the proper metadata (PnG, PnE, PnR) for the
+        # exported event values to be interpreted correctly.
+        if ext == '.csv' and source == 'orig':
+            warnings.warn(
+                "Exporting original events as CSV will not include the metadata (gain, timestep, etc.) "
+                "to properly interpret the exported event values."
+            )
+
         if directory is not None:
             output_path = os.path.join(directory, filename)
         else:
@@ -904,12 +930,22 @@ class Sample(object):
             # include all events to start with
             idx = np.ones(self.event_count, bool)
 
-        if exclude == 'bad':
-            idx[self.anomalous_indices] = False
-        elif exclude == 'good':
-            good_idx = np.zeros(self.event_count, bool)
-            good_idx[self.anomalous_indices] = True
-            idx = np.logical_and(idx, good_idx)
+        if exclude_flagged:
+            idx[self.flagged_indices] = False
+        if exclude_neg_scatter:
+            idx[self.negative_scatter_indices] = False
+        if exclude_normal:
+            # start with all events marked normal
+            normal_idx = np.zeros(self.event_count, bool)
+
+            # set neg scatter and flagged events to False
+            normal_idx[self.negative_scatter_indices] = False
+            normal_idx[self.flagged_indices] = False
+
+            # then filter out the inverse normal indices
+            idx = np.logical_and(idx, ~normal_idx)
+
+        extra_dict = {}
 
         if source == 'xform':
             events = self._transformed_events[idx, :]
@@ -918,13 +954,31 @@ class Sample(object):
         elif source == 'raw':
             events = self._raw_events[idx, :]
         elif source == 'orig':
+            if 'timestep' in self.metadata and self.time_index is not None:
+                extra_dict['TIMESTEP'] = self.metadata['timestep']
+
+            # check for channel scale for each channel, log scale is not supported yet by FlowIO
+            for (decades, log0) in self.channel_lin_log:
+                if decades > 0:
+                    raise NotImplementedError(
+                        "Export of FCS files with original events containing PnE instructions "
+                        "for log scale is not yet supported"
+                    )
+
+            # check for channel gain values != 1.0
+            for n in sorted([int(k) for k in self.channels.keys()]):
+                gain_keyword = 'p%dg' % n
+                if gain_keyword in self.metadata:
+                    gain_value = float(self.metadata[gain_keyword])
+                    if gain_value != 1.0:
+                        extra_dict[gain_keyword] = self.metadata[gain_keyword]
+
             events = self.get_orig_events()
+
             if events is not None:
                 events = events[idx, :]
         else:
             raise ValueError("source must be one of 'orig', 'raw', 'comp', or 'xform'")
-
-        ext = os.path.splitext(filename)[-1]
 
         # TODO: support exporting to HDF5 format, but as optional dependency/import
         if ext == '.csv':
@@ -942,6 +996,7 @@ class Sample(object):
                 events.flatten().tolist(),
                 channel_names=self.pnn_labels,
                 opt_channel_names=self.pns_labels,
-                file_handle=fh
+                file_handle=fh,
+                extra=extra_dict
             )
             fh.close()
