@@ -121,6 +121,83 @@ class GatingStrategyTestCase(unittest.TestCase):
         self.assertEqual(true_abs_pct, gate_abs_pct)
         self.assertEqual(true_rel_pct, gate_rel_pct)
 
+    def test_clear_cache(self):
+        gs = fk.GatingStrategy()
+
+        gs.add_comp_matrix(comp_matrix_01)
+
+        gs.add_transform(logicle_xform1)
+        gs.add_transform(hyperlog_xform1)
+
+        gs.add_gate(poly1_gate)
+
+        dim1 = fk.Dimension('PE', 'MySpill', 'Logicle_10000_0.5_4.5_0', range_min=0.31, range_max=0.69)
+        dim2 = fk.Dimension('PerCP', 'MySpill', 'Logicle_10000_0.5_4.5_0', range_min=0.27, range_max=0.73)
+        dims1 = [dim1, dim2]
+
+        rect_gate1 = fk.gates.RectangleGate('ScaleRect1', None, dims1)
+        gs.add_gate(rect_gate1)
+
+        dim3 = fk.Dimension('FITC', 'MySpill', 'Hyperlog_10000_1_4.5_0', range_min=0.12, range_max=0.43)
+        dims2 = [dim3]
+
+        rect_gate2 = fk.gates.RectangleGate('ScalePar1', 'ScaleRect1', dims2)
+        gs.add_gate(rect_gate2)
+
+        _ = gs.gate_sample(data1_sample, cache_events=True)
+
+        pre_proc_events = gs._cached_preprocessed_events
+
+        truth_key_set = {
+            ('MySpill', None, None),
+            ('MySpill', 'Logicle_10000_0.5_4.5_0', 3),
+            ('MySpill', 'Logicle_10000_0.5_4.5_0', 4),
+            ('MySpill', 'Hyperlog_10000_1_4.5_0', 2)
+        }
+
+        self.assertSetEqual(set(pre_proc_events['B07'].keys()), truth_key_set)
+
+        gs.clear_cache()
+        pre_proc_events = gs._cached_preprocessed_events
+
+        self.assertEqual(pre_proc_events, {})
+
+    def test_cache_preprocessed_events(self):
+        gs = fk.GatingStrategy()
+
+        gs.add_comp_matrix(comp_matrix_01)
+
+        gs.add_transform(logicle_xform1)
+        gs.add_transform(hyperlog_xform1)
+
+        gs.add_gate(poly1_gate)
+
+        dim1 = fk.Dimension('PE', 'MySpill', 'Logicle_10000_0.5_4.5_0', range_min=0.31, range_max=0.69)
+        dim2 = fk.Dimension('PerCP', 'MySpill', 'Logicle_10000_0.5_4.5_0', range_min=0.27, range_max=0.73)
+        dims1 = [dim1, dim2]
+
+        rect_gate1 = fk.gates.RectangleGate('ScaleRect1', None, dims1)
+        gs.add_gate(rect_gate1)
+
+        dim3 = fk.Dimension('FITC', 'MySpill', 'Hyperlog_10000_1_4.5_0', range_min=0.12, range_max=0.43)
+        dims2 = [dim3]
+
+        rect_gate2 = fk.gates.RectangleGate('ScalePar1', 'ScaleRect1', dims2)
+        gs.add_gate(rect_gate2)
+
+        _ = gs.gate_sample(data1_sample, cache_events=True)
+
+        pre_proc_events = gs._cached_preprocessed_events
+
+        truth_key_set = {
+            ('MySpill', None, None),
+            ('MySpill', 'Logicle_10000_0.5_4.5_0', 3),
+            ('MySpill', 'Logicle_10000_0.5_4.5_0', 4),
+            ('MySpill', 'Hyperlog_10000_1_4.5_0', 2)
+        }
+
+        self.assertSetEqual(set(pre_proc_events['B07'].keys()), truth_key_set)
+
 
 class GatingStrategyReusedGatesTestCase(unittest.TestCase):
     def setUp(self):
