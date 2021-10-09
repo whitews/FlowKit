@@ -393,6 +393,15 @@ class GatingStrategy(object):
         except KeyError:
             return None
 
+    def clear_cache(self):
+        """
+        Clears all cached pre-processed events stored in the GatingStrategy. This is useful to
+        reduce memory usage after analyzing large data sets. Clearing the cache will not affect
+        any results previously retrieved.
+        :return: None
+        """
+        self._cached_preprocessed_events = {}
+
     # TODO: create method for clearing cache (per sample or everything)
     def _cache_preprocessed_events(self, preprocessed_events, sample_id, comp_ref, xform_ref, dim_idx=None):
         """
@@ -412,7 +421,8 @@ class GatingStrategy(object):
         ref_tuple = (comp_ref, xform_ref, dim_idx)
 
         if ref_tuple not in sample_cache:
-            sample_cache[ref_tuple] = preprocessed_events
+            # copy the given events here to decouple from any use analysis
+            sample_cache[ref_tuple] = preprocessed_events.copy()
 
     def _compensate_sample(self, dim_comp_refs, sample):
         dim_comp_ref_count = len(dim_comp_refs)
@@ -465,7 +475,7 @@ class GatingStrategy(object):
             # cache the comp events
             # noinspection PyProtectedMember
             self._cache_preprocessed_events(
-                events.copy(),  # this needs to be copied to de-couple from user's analysis
+                events,
                 sample.original_filename,
                 comp_ref,
                 None,
@@ -747,5 +757,8 @@ class GatingStrategy(object):
                     quad_res['gate_path'] = g_path
             else:
                 results[g_id, gate_path_str]['gate_path'] = g_path
+
+        if not cache_events:
+            self.clear_cache()
 
         return GatingResults(results, sample_id=sample.original_filename)
