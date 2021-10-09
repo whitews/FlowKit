@@ -104,7 +104,7 @@ class GatingStrategy(object):
             match_idx = None
 
             if matched_parent_count == 0:
-                # TODO: could be in a quadrant gate
+                # TODO: need to double-check whether this scenario could be in a quadrant gate
                 raise ValueError("Parent gate %s does not exist in the gating strategy" % parent_id)
             elif matched_parent_count == 1:
                 # There's only one match for the parent, so we're done
