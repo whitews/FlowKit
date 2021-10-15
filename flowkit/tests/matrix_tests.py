@@ -61,6 +61,11 @@ fluorochromes_8c = [
 
 class MatrixTestCase(unittest.TestCase):
     """Tests related to compensation matrices and the Matrix class"""
+    def test_matrix_from_fcs_spill(self):
+        comp_mat = fk.Matrix('my_spill', fcs_spill, fcs_spill_header)
+
+        self.assertIsInstance(comp_mat, fk.Matrix)
+
     def test_parse_csv_file(self):
         comp_mat = fk.Matrix(
             'my_spill',
