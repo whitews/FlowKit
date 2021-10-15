@@ -363,7 +363,7 @@ class Sample(object):
             If a string, both multi-line traditional CSV, and the single
             line FCS spill formats are supported. If a NumPy array, we
             assume the columns are in the same order as the channel labels.
-        :param comp_id: text ID for identifying compensation matrix
+        :param comp_id: text ID for identifying compensation matrix (not used if compensation was a Matrix instance)
         :return: None
         """
         if isinstance(compensation, Matrix):
