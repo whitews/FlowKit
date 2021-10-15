@@ -135,7 +135,9 @@ class Sample(object):
 
         self.null_channels = null_channel_list
         self.event_count = flow_data.event_count
-        self.channels = flow_data.channels
+
+        # make a temp channels dict, self.channels will be a DataFrame built from it
+        tmp_channels = flow_data.channels
         self.pnn_labels = list()
         self.pns_labels = list()
         self.fluoro_indices = list()
@@ -147,8 +149,8 @@ class Sample(object):
         channel_range = []
         self.metadata = flow_data.text
 
-        for n in sorted([int(k) for k in self.channels.keys()]):
-            channel_label = self.channels[str(n)]['PnN']
+        for n in sorted([int(k) for k in tmp_channels.keys()]):
+            channel_label = tmp_channels[str(n)]['PnN']
             self.pnn_labels.append(channel_label)
 
             if 'p%dg' % n in self.metadata:
@@ -184,12 +186,20 @@ class Sample(object):
             elif channel_label.lower() == 'time':
                 self.time_index = n - 1
 
-            if 'PnS' in self.channels[str(n)]:
-                self.pns_labels.append(self.channels[str(n)]['PnS'])
+            if 'PnS' in tmp_channels[str(n)]:
+                self.pns_labels.append(tmp_channels[str(n)]['PnS'])
             else:
                 self.pns_labels.append('')
 
         self._flowjo_pnn_labels = [label.replace('/', '_') for label in self.pnn_labels]
+
+        # build the self.channels DataFrame
+        self.channels = pd.DataFrame()
+        self.channels['channel_number'] = sorted([int(k) for k in tmp_channels.keys()])
+        self.channels['pnn'] = self.pnn_labels
+        self.channels['pns'] = self.pns_labels
+        self.channels['png'] = channel_gain
+        self.channels['pnr'] = channel_range
 
         # Start processing the event data. First, we'll get the unprocessed events
         # This is the main entry point for event data into FlowKit, and we ensure
@@ -966,12 +976,11 @@ class Sample(object):
                     )
 
             # check for channel gain values != 1.0
-            for n in sorted([int(k) for k in self.channels.keys()]):
-                gain_keyword = 'p%dg' % n
-                if gain_keyword in self.metadata:
-                    gain_value = float(self.metadata[gain_keyword])
-                    if gain_value != 1.0:
-                        extra_dict[gain_keyword] = self.metadata[gain_keyword]
+            for _, channel_row in self.channels.iterrows():
+                gain_keyword = 'p%dg' % channel_row['channel_number']
+                gain_value = channel_row['png']
+                if gain_value != 1.0:
+                    extra_dict[gain_keyword] = gain_value
 
             events = self.get_orig_events()
 
