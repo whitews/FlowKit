@@ -13,6 +13,7 @@ class Matrix(object):
 
     :param matrix_id: Text string used to identify the matrix (cannot be 'uncompensated' or 'fcs')
     :param spill_data_or_file: matrix data array, can be either:
+            - text string from FCS $SPILL or $SPILLOVER metadata value
             - a file path or file handle to a CSV/TSF file
             - a pathlib Path object to a CSV/TSF file
             - a NumPy array of spill data
