@@ -246,6 +246,7 @@ class Sample(object):
         self.transform = None
         self._subsample_count = None
         self._subsample_seed = None
+        self._include_scatter_option = False  # stores user option from transform_events method
 
         if compensation is not None:
             self.apply_compensation(compensation)
@@ -348,9 +349,9 @@ class Sample(object):
     def apply_compensation(self, compensation, comp_id='custom_spill'):
         """
         Applies given compensation matrix to Sample events. If any
-        transformation has been applied, those events will be deleted.
-        Compensated events can be retrieved afterward by calling
-        `get_comp_events`.
+        transformation has been applied, it will be re-applied after
+        compensation. Compensated events can be retrieved afterward
+        by calling `get_comp_events`.
 
         :param compensation: Compensation matrix, which can be a:
 
@@ -379,9 +380,9 @@ class Sample(object):
             self.compensation = None
             self._comp_events = None
 
-        # Clear any previously transformed events
-        # TODO: Consider caching the transform and re-applying
-        self._transformed_events = None
+        # Re-apply transform if set
+        if self.transform is not None:
+            self._transformed_events = self._transform(self.transform, self._include_scatter_option)
 
     def get_metadata(self):
         """
@@ -618,8 +619,8 @@ class Sample(object):
         :param include_scatter: Whether to transform the scatter channel in addition to the
             fluorescent channels. Default is False.
         """
-
         self._transformed_events = self._transform(transform, include_scatter=include_scatter)
+        self._include_scatter_option = include_scatter
         self.transform = transform
 
     def plot_contour(
@@ -701,7 +702,7 @@ class Sample(object):
                 y=y,
                 bw_method='scott',
                 cmap=plot_utils.new_jet,
-                linewidths=2,
+                linewidths=2 if not fill else None,
                 alpha=0.6,
                 fill=fill
             )
