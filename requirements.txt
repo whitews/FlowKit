@@ -1,4 +1,5 @@
 numpy>=1.19
+psutil~=5.8.0
 statsmodels
 flowio==0.9.12
 flowutils==0.9.5
