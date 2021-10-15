@@ -302,3 +302,19 @@ class SessionTestCase(unittest.TestCase):
         s_sample_ids = sorted(s.get_group_sample_ids(group_name))
 
         self.assertListEqual(s_sample_ids, [])
+
+    def test_analyze_samples_multiproc(self):
+        wsp_path = "examples/data/8_color_data_set/8_color_ICS_simple.wsp"
+        sample_grp = 'DEN'
+        sample_id = '101_DEN084Y5_15_E01_008_clean.fcs'
+        gate_id = 'CD3+'
+
+        fks = Session(copy.deepcopy(test_samples_8c_full_set))
+        fks.import_flowjo_workspace(wsp_path, ignore_missing_files=True)
+
+        fks.analyze_samples(sample_grp)
+
+        gate_membership = fks.get_gate_indices(sample_grp, sample_id, gate_id)
+
+        self.assertEqual(gate_membership.sum(), 133670)
+

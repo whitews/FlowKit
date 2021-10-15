@@ -12,6 +12,10 @@ if get_trace() is None:
 else:
     debug = True
 
+    if 'coverage' in sys.modules.keys():
+        # if running with coverage, don't use debug mode
+        debug = False
+
 _platform = platform.system().lower()
 
 if _platform in ['linux', 'darwin']:
