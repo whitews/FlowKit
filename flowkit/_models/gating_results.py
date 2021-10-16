@@ -79,7 +79,7 @@ class GatingResults(object):
         #   Maybe consider not setting a MultiIndex for this?
         self.report = df.sort_values(['sample', 'level', 'gate_id'])
 
-    def get_gate_indices(self, gate_id, gate_path=None):
+    def get_gate_membership(self, gate_id, gate_path=None):
         """
         Retrieve a boolean array indicating gate membership for the events in the GatingResults sample.
         Note, the same gate ID may be found in multiple gate paths, i.e. the gate ID can be ambiguous.

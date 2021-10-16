@@ -39,7 +39,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = s.get_gate_indices(group_name, data1_sample.original_filename, 'Range1')
+        result = s.get_gate_membership(group_name, data1_sample.original_filename, 'Range1')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -56,7 +56,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = s.get_gate_indices(group_name, data1_sample.original_filename, 'Rectangle1')
+        result = s.get_gate_membership(group_name, data1_sample.original_filename, 'Rectangle1')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -73,7 +73,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = s.get_gate_indices(group_name, data1_sample.original_filename, 'Rectangle2')
+        result = s.get_gate_membership(group_name, data1_sample.original_filename, 'Rectangle2')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -90,7 +90,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = s.get_gate_indices(group_name, data1_sample.original_filename, 'Polygon1')
+        result = s.get_gate_membership(group_name, data1_sample.original_filename, 'Polygon1')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -107,7 +107,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = s.get_gate_indices(group_name, data1_sample.original_filename, 'Polygon2')
+        result = s.get_gate_membership(group_name, data1_sample.original_filename, 'Polygon2')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -124,7 +124,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = s.get_gate_indices(group_name, data1_sample.original_filename, 'Polygon3NS')
+        result = s.get_gate_membership(group_name, data1_sample.original_filename, 'Polygon3NS')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -141,7 +141,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = s.get_gate_indices(group_name, data1_sample.original_filename, 'Ellipse1')
+        result = s.get_gate_membership(group_name, data1_sample.original_filename, 'Ellipse1')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -158,7 +158,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = s.get_gate_indices(group_name, data1_sample.original_filename, 'Ellipsoid3D')
+        result = s.get_gate_membership(group_name, data1_sample.original_filename, 'Ellipsoid3D')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -175,7 +175,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = s.get_gate_indices(group_name, data1_sample.original_filename, 'Range2')
+        result = s.get_gate_membership(group_name, data1_sample.original_filename, 'Range2')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -200,10 +200,10 @@ class GatingMLTestCase(unittest.TestCase):
 
         s.analyze_samples(group_name)
         results = s.get_gating_results(group_name, data1_sample.original_filename)
-        result1 = results.get_gate_indices('FL2N-FL4N')
-        result2 = results.get_gate_indices('FL2N-FL4P')
-        result3 = results.get_gate_indices('FL2P-FL4N')
-        result4 = results.get_gate_indices('FL2P-FL4P')
+        result1 = results.get_gate_membership('FL2N-FL4N')
+        result2 = results.get_gate_membership('FL2N-FL4P')
+        result3 = results.get_gate_membership('FL2P-FL4N')
+        result4 = results.get_gate_membership('FL2P-FL4P')
 
         np.testing.assert_array_equal(truth1, result1)
         np.testing.assert_array_equal(truth2, result2)
@@ -253,11 +253,11 @@ class GatingMLTestCase(unittest.TestCase):
 
         result = s.get_gating_results(group_name, data1_sample.original_filename)
 
-        np.testing.assert_array_equal(truth1, result.get_gate_indices('FSCN-SSCN'))
-        np.testing.assert_array_equal(truth2, result.get_gate_indices('FSCD-SSCN-FL1N'))
-        np.testing.assert_array_equal(truth3, result.get_gate_indices('FSCP-SSCN-FL1N'))
-        np.testing.assert_array_equal(truth4, result.get_gate_indices('FSCD-FL1P'))
-        np.testing.assert_array_equal(truth5, result.get_gate_indices('FSCN-SSCP-FL1P'))
+        np.testing.assert_array_equal(truth1, result.get_gate_membership('FSCN-SSCN'))
+        np.testing.assert_array_equal(truth2, result.get_gate_membership('FSCD-SSCN-FL1N'))
+        np.testing.assert_array_equal(truth3, result.get_gate_membership('FSCP-SSCN-FL1N'))
+        np.testing.assert_array_equal(truth4, result.get_gate_membership('FSCD-FL1P'))
+        np.testing.assert_array_equal(truth5, result.get_gate_membership('FSCN-SSCP-FL1P'))
 
     @staticmethod
     def test_ratio_range1_gate():
@@ -272,7 +272,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = s.get_gate_indices(group_name, data1_sample.original_filename, 'RatRange1')
+        result = s.get_gate_membership(group_name, data1_sample.original_filename, 'RatRange1')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -289,7 +289,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = s.get_gate_indices(group_name, data1_sample.original_filename, 'RatRange2')
+        result = s.get_gate_membership(group_name, data1_sample.original_filename, 'RatRange2')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -306,7 +306,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = s.get_gate_indices(group_name, data1_sample.original_filename, 'RatRange1a')
+        result = s.get_gate_membership(group_name, data1_sample.original_filename, 'RatRange1a')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -323,7 +323,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = s.get_gate_indices(group_name, data1_sample.original_filename, 'And1')
+        result = s.get_gate_membership(group_name, data1_sample.original_filename, 'And1')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -340,7 +340,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = s.get_gate_indices(group_name, data1_sample.original_filename, 'And2')
+        result = s.get_gate_membership(group_name, data1_sample.original_filename, 'And2')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -357,7 +357,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = s.get_gate_indices(group_name, data1_sample.original_filename, 'Or1')
+        result = s.get_gate_membership(group_name, data1_sample.original_filename, 'Or1')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -374,7 +374,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = s.get_gate_indices(group_name, data1_sample.original_filename, 'And3')
+        result = s.get_gate_membership(group_name, data1_sample.original_filename, 'And3')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -391,7 +391,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = s.get_gate_indices(group_name, data1_sample.original_filename, 'Not1')
+        result = s.get_gate_membership(group_name, data1_sample.original_filename, 'Not1')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -408,7 +408,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = s.get_gate_indices(group_name, data1_sample.original_filename, 'And4')
+        result = s.get_gate_membership(group_name, data1_sample.original_filename, 'And4')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -425,7 +425,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = s.get_gate_indices(group_name, data1_sample.original_filename, 'Or2')
+        result = s.get_gate_membership(group_name, data1_sample.original_filename, 'Or2')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -442,7 +442,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = s.get_gate_indices(group_name, data1_sample.original_filename, 'Polygon4')
+        result = s.get_gate_membership(group_name, data1_sample.original_filename, 'Polygon4')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -459,7 +459,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = s.get_gate_indices(group_name, data1_sample.original_filename, 'Rectangle3')
+        result = s.get_gate_membership(group_name, data1_sample.original_filename, 'Rectangle3')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -476,7 +476,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = s.get_gate_indices(group_name, data1_sample.original_filename, 'Rectangle4')
+        result = s.get_gate_membership(group_name, data1_sample.original_filename, 'Rectangle4')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -493,7 +493,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = s.get_gate_indices(group_name, data1_sample.original_filename, 'Rectangle5')
+        result = s.get_gate_membership(group_name, data1_sample.original_filename, 'Rectangle5')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -510,7 +510,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = s.get_gate_indices(group_name, data1_sample.original_filename, 'ScaleRange1')
+        result = s.get_gate_membership(group_name, data1_sample.original_filename, 'ScaleRange1')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -527,7 +527,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = s.get_gate_indices(group_name, data1_sample.original_filename, 'ScaleRange2')
+        result = s.get_gate_membership(group_name, data1_sample.original_filename, 'ScaleRange2')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -544,7 +544,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = s.get_gate_indices(group_name, data1_sample.original_filename, 'ScaleRange3')
+        result = s.get_gate_membership(group_name, data1_sample.original_filename, 'ScaleRange3')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -561,7 +561,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = s.get_gate_indices(group_name, data1_sample.original_filename, 'ScaleRange4')
+        result = s.get_gate_membership(group_name, data1_sample.original_filename, 'ScaleRange4')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -578,7 +578,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = s.get_gate_indices(group_name, data1_sample.original_filename, 'ScaleRange5')
+        result = s.get_gate_membership(group_name, data1_sample.original_filename, 'ScaleRange5')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -595,7 +595,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = s.get_gate_indices(group_name, data1_sample.original_filename, 'ScaleRange6')
+        result = s.get_gate_membership(group_name, data1_sample.original_filename, 'ScaleRange6')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -612,7 +612,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = s.get_gate_indices(group_name, data1_sample.original_filename, 'ScaleRange1c')
+        result = s.get_gate_membership(group_name, data1_sample.original_filename, 'ScaleRange1c')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -629,7 +629,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = s.get_gate_indices(group_name, data1_sample.original_filename, 'ScaleRange2c')
+        result = s.get_gate_membership(group_name, data1_sample.original_filename, 'ScaleRange2c')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -646,7 +646,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = s.get_gate_indices(group_name, data1_sample.original_filename, 'ScaleRange3c')
+        result = s.get_gate_membership(group_name, data1_sample.original_filename, 'ScaleRange3c')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -663,7 +663,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = s.get_gate_indices(group_name, data1_sample.original_filename, 'ScaleRange4c')
+        result = s.get_gate_membership(group_name, data1_sample.original_filename, 'ScaleRange4c')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -680,7 +680,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = s.get_gate_indices(group_name, data1_sample.original_filename, 'ScaleRange5c')
+        result = s.get_gate_membership(group_name, data1_sample.original_filename, 'ScaleRange5c')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -697,7 +697,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = s.get_gate_indices(group_name, data1_sample.original_filename, 'ScaleRange6c')
+        result = s.get_gate_membership(group_name, data1_sample.original_filename, 'ScaleRange6c')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -714,7 +714,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = s.get_gate_indices(group_name, data1_sample.original_filename, 'ScaleRange7c')
+        result = s.get_gate_membership(group_name, data1_sample.original_filename, 'ScaleRange7c')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -731,7 +731,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = s.get_gate_indices(group_name, data1_sample.original_filename, 'ScaleRange8c')
+        result = s.get_gate_membership(group_name, data1_sample.original_filename, 'ScaleRange8c')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -748,7 +748,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = s.get_gate_indices(group_name, data1_sample.original_filename, 'ScaleRect1')
+        result = s.get_gate_membership(group_name, data1_sample.original_filename, 'ScaleRect1')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -765,7 +765,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = s.get_gate_indices(group_name, data1_sample.original_filename, 'ParAnd2')
+        result = s.get_gate_membership(group_name, data1_sample.original_filename, 'ParAnd2')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -782,7 +782,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = s.get_gate_indices(group_name, data1_sample.original_filename, 'ParAnd3')
+        result = s.get_gate_membership(group_name, data1_sample.original_filename, 'ParAnd3')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -799,7 +799,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = s.get_gate_indices(group_name, data1_sample.original_filename, 'ScalePar1')
+        result = s.get_gate_membership(group_name, data1_sample.original_filename, 'ScalePar1')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -816,7 +816,7 @@ class GatingMLTestCase(unittest.TestCase):
         s.analyze_samples(group_name=group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = s.get_gate_indices(group_name, data1_sample.original_filename, 'ParRectangle1')
+        result = s.get_gate_membership(group_name, data1_sample.original_filename, 'ParRectangle1')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -891,5 +891,5 @@ class GatingMLTestCase(unittest.TestCase):
         for row in results.report.itertuples():
             np.testing.assert_array_equal(
                 truth_dict[row.gate_id],
-                results.get_gate_indices(row.gate_id)
+                results.get_gate_membership(row.gate_id)
             )

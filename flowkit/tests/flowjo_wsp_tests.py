@@ -191,7 +191,7 @@ class FlowJoWSPTestCase(unittest.TestCase):
         fks.import_flowjo_workspace(wsp_path, ignore_missing_files=True)
 
         fks.analyze_samples(sample_grp)
-        gate_indices = fks.get_gate_indices(sample_grp, sample_id, gate_id, gate_path=gate_path)
+        gate_indices = fks.get_gate_membership(sample_grp, sample_id, gate_id, gate_path=gate_path)
 
         self.assertIsInstance(gate_indices, np.ndarray)
         self.assertEqual(np.sum(gate_indices), 21)

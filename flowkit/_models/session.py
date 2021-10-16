@@ -593,7 +593,7 @@ class Session(object):
     def analyze_samples(self, group_name='default', sample_id=None, cache_events=False, use_mp=True, verbose=False):
         """
         Process gates for samples in a sample group. After running, results can be
-        retrieved using the `get_gating_results`, `get_group_report`, and  `get_gate_indices`,
+        retrieved using the `get_gating_results`, `get_group_report`, and  `get_gate_membership`,
         methods.
 
         :param group_name: a text string representing the sample group
@@ -679,8 +679,7 @@ class Session(object):
 
         return copy.deepcopy(pd.concat(all_group_reports))
 
-    # TODO: this needs to be renamed to get_gate_membership b/c it does not return a list of indices
-    def get_gate_indices(self, group_name, sample_id, gate_id, gate_path=None):
+    def get_gate_membership(self, group_name, sample_id, gate_id, gate_path=None):
         """
         Retrieve a boolean array indicating gate membership for the events in the
         specified sample. Note, the same gate ID may be found in multiple gate paths,
@@ -695,7 +694,7 @@ class Session(object):
         :return: NumPy boolean array (length of sample event count)
         """
         gating_result = self._results_lut[group_name][sample_id]
-        return gating_result.get_gate_indices(gate_id, gate_path=gate_path)
+        return gating_result.get_gate_membership(gate_id, gate_path=gate_path)
 
     def get_gate_events(self, group_name, sample_id, gate_id=None, gate_path=None, matrix=None, transform=None):
         """
@@ -729,7 +728,7 @@ class Session(object):
         events_df = sample.as_dataframe(source=event_source)
 
         if gate_id is not None:
-            gate_idx = self.get_gate_indices(group_name, sample_id, gate_id, gate_path)
+            gate_idx = self.get_gate_membership(group_name, sample_id, gate_id, gate_path)
             events_df = events_df[gate_idx]
 
         return events_df
@@ -881,7 +880,7 @@ class Session(object):
         if gate.parent is not None:
             # TODO:  make it clear to call analyze_samples prior to calling this method
             gating_results = self.get_gating_results(group_name, sample_id)
-            is_parent_event = gating_results.get_gate_indices(gate.parent)
+            is_parent_event = gating_results.get_gate_membership(gate.parent)
             is_subsample = np.zeros(sample_to_plot.event_count, dtype=bool)
             is_subsample[sample_to_plot.subsample_indices] = True
             idx_to_plot = np.logical_and(is_parent_event, is_subsample)
@@ -1102,7 +1101,7 @@ class Session(object):
 
         if gate_id is not None:
             gate_results = self.get_gating_results(group_name, sample_id=sample_id)
-            is_gate_event = gate_results.get_gate_indices(gate_id)
+            is_gate_event = gate_results.get_gate_membership(gate_id)
             if subsample:
                 is_subsample = np.zeros(sample.event_count, dtype=bool)
                 is_subsample[sample.subsample_indices] = True

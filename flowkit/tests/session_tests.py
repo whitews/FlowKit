@@ -188,7 +188,7 @@ class SessionTestCase(unittest.TestCase):
         res_path = 'examples/data/gate_ref/truth/Results_Polygon1.txt'
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('Polygon1'))
+        np.testing.assert_array_equal(truth, result.get_gate_membership('Polygon1'))
 
     def test_get_gate_from_template(self):
         fks = Session(fcs_samples=data1_sample)
@@ -217,7 +217,7 @@ class SessionTestCase(unittest.TestCase):
         fks.analyze_samples()
         result = fks.get_gating_results('default', data1_sample.original_filename)
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('Polygon4'))
+        np.testing.assert_array_equal(truth, result.get_gate_membership('Polygon4'))
 
     @staticmethod
     def test_add_transform_asinh_range1_gate():
@@ -236,7 +236,7 @@ class SessionTestCase(unittest.TestCase):
         fks.analyze_samples()
         result = fks.get_gating_results('default', data1_sample.original_filename)
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange1'))
+        np.testing.assert_array_equal(truth, result.get_gate_membership('ScaleRange1'))
 
     def test_wsp_export_simple_poly50(self):
         wsp_path = "examples/data/simple_line_example/simple_poly_and_rect_v2_poly50.wsp"
@@ -314,7 +314,7 @@ class SessionTestCase(unittest.TestCase):
 
         fks.analyze_samples(sample_grp)
 
-        gate_membership = fks.get_gate_indices(sample_grp, sample_id, gate_id)
+        gate_membership = fks.get_gate_membership(sample_grp, sample_id, gate_id)
 
         self.assertEqual(gate_membership.sum(), 133670)
 
