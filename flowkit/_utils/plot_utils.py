@@ -5,7 +5,6 @@ import numpy as np
 from scipy.interpolate import interpn
 import colorsys
 from matplotlib import cm, colors
-import matplotlib.pyplot as plt
 from bokeh.plotting import figure
 from bokeh.models import Ellipse, Patch, Span, BoxAnnotation, Rect, ColumnDataSource
 
@@ -61,13 +60,23 @@ def _get_false_bounds(bool_array):
 
 
 # TODO: integrate functionality into Sample class, change xform to accept/use Sample instance xform
-def plot_channel(channel_events, label, subplot_ax, xform=False, bad_events=None):
-    if xform:
-        # TODO: change to accept a Transform sub-class instance
-        channel_events = np.arcsinh(channel_events * 0.003)
+def plot_channel(channel_events, label, subplot_ax, xform=None, flagged_events=None):
+    """
+    Plots a single-channel of FCS event data with the x-axis as the event number (similar to having
+    time on the x-axis, but events are equally spaced). This function takes a Matplotlib Axes object
+    to enable embedding multiple channel plots within the same figure (created outside this function).
 
-    my_colormap = plt.cm.get_cmap('jet')
-    my_colormap.set_under('w', alpha=0)
+    :param channel_events: 1-D NumPy array of event data
+    :param label: string to use as the plot title
+    :param subplot_ax: Matplotlib Axes instance used to render the plot
+    :param xform: an optional Transform instance used to transform the given event data. channel_events can
+        be given already pre-processed (commpensated and/or transformed), in this case set xform to None.
+    :param flagged_events: optional Boolean array of "flagged" events, regions of flagged events will
+        be highlighted in red if flagged_events is given.
+    :return: None
+    """
+    if xform:
+        channel_events = xform.apply(channel_events)
 
     bins = int(np.sqrt(channel_events.shape[0]))
     event_range = range(0, channel_events.shape[0])
@@ -78,13 +87,13 @@ def plot_channel(channel_events, label, subplot_ax, xform=False, bad_events=None
     subplot_ax.hist2d(
         event_range,
         channel_events,
-        bins=[bins, bins],
-        cmap=my_colormap,
-        vmin=0.9
+        bins=[bins, 128],
+        cmap='rainbow',
+        cmin=1
     )
 
-    if bad_events is not None:
-        starts, ends = _get_false_bounds(bad_events)
+    if flagged_events is not None:
+        starts, ends = _get_false_bounds(flagged_events)
 
         for i, s in enumerate(starts):
             subplot_ax.axvspan(
