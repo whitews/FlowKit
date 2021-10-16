@@ -69,7 +69,7 @@ def plot_channel(channel_events, label, subplot_ax, xform=None, flagged_events=N
     :param label: string to use as the plot title
     :param subplot_ax: Matplotlib Axes instance used to render the plot
     :param xform: an optional Transform instance used to transform the given event data. channel_events can
-        be given already pre-processed (commpensated and/or transformed), in this case set xform to None.
+        be given already pre-processed (compensated and/or transformed), in this case set xform to None.
     :param flagged_events: optional Boolean array of "flagged" events, regions of flagged events will
         be highlighted in red if flagged_events is given.
     :return: None
