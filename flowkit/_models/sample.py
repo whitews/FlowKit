@@ -297,6 +297,17 @@ class Sample(object):
         if reapply_subsample and self._subsample_count is not None:
             self.subsample_events(self._subsample_count, self._subsample_seed)
 
+    def set_flagged_events(self, event_indices):
+        """
+        Flags the given event indices. Can be useful for flagging anomalous time events for quality control or
+        for any other purpose. Flagged indices do not affect analysis, it is only used as an option when
+        exporting Sample event data.
+
+        :param event_indices: list of event indices to flag
+        :return: None
+        """
+        self.flagged_indices = event_indices
+
     def subsample_events(
             self,
             subsample_count=10000,
@@ -622,6 +633,37 @@ class Sample(object):
         self._transformed_events = self._transform(transform, include_scatter=include_scatter)
         self._include_scatter_option = include_scatter
         self.transform = transform
+
+    def plot_channel(self, channel_label_or_number, source='xform', flag_events=False):
+        """
+
+        :param channel_label_or_number: A channel's PnN label or number
+        :param source: 'raw', 'comp', 'xform' for whether the raw, compensated
+            or transformed events are used for plotting
+        :param flag_events: whether to flag events using stored flagged_event indices.
+            Flagged event regions will be highlighted in red. Default is False.
+        :return: Matplotlib Figure instance
+        """
+        channel_index = self.get_channel_index(channel_label_or_number)
+        channel_data = self.get_channel_data(channel_index, source=source, subsample=False)
+
+        pnn_label = self.pnn_labels[channel_index]
+        pns_label = self.pns_labels[channel_index]
+
+        plot_title = " - ".join([pnn_label, pns_label]) if pns_label != '' else pnn_label
+
+        if flag_events and self.flagged_indices is not None:
+            flagged_events = np.zeros(self.event_count)
+            flagged_events[self.flagged_indices] = 1
+        else:
+            flagged_events = None
+
+        fig = plt.figure(figsize=(16, 4))
+        ax = fig.add_subplot(1, 1, 1)
+
+        plot_utils.plot_channel(channel_data, plot_title, ax, xform=None, flagged_events=flagged_events)
+
+        return fig
 
     def plot_contour(
             self,
