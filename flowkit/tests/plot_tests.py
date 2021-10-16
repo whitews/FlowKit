@@ -36,6 +36,23 @@ class PlotTestCase(unittest.TestCase):
 
         self.assertIsInstance(p, bk_Figure)
 
+    def test_sample_plot_channel(self):
+        sample = copy.deepcopy(test_sample)
+        xform_logicle = fk.transforms.LogicleTransform('logicle', param_t=1024, param_w=0.5, param_m=4.5, param_a=0)
+        sample.apply_transform(xform_logicle)
+
+        flagged_events = list(range(1000))
+        flagged_events.extend(list(range(8000, 9000)))
+        sample.set_flagged_events(flagged_events)
+
+        fig = sample.plot_channel(
+            'FSC-H',
+            source='xform',
+            flag_events=True
+        )
+
+        self.assertIsInstance(fig, mpl_Figure)
+
     def test_plot_sample_contour(self):
         sample = copy.deepcopy(test_sample)
         xform_logicle = fk.transforms.LogicleTransform('logicle', param_t=10000, param_w=0.5, param_m=4.5, param_a=0)
