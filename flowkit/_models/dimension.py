@@ -1,5 +1,5 @@
 """
-Dimension class
+Module defining the Dimension, RatioDimension, and QuadrantDivider classes
 """
 
 
@@ -53,6 +53,17 @@ class Dimension(object):
 
 
 class RatioDimension(object):
+    """
+    Represents a ratio of two FCS dimensions (specified by a RatioTransform).
+
+    :param ratio_ref: A string referencing the ID of a RatioTransform instance
+    :param compensation_ref: A string referencing the ID of a Matrix instance
+    :param transformation_ref: A string referencing the ID of an instance of a Transform sub-class
+    :param range_min: For use in defining the boundaries of a RectangleGate. A float defining the minimum boundary
+        for the dimension. If None, the minimum is unbounded.
+    :param range_max: For use in defining the boundaries of a RectangleGate. A float defining the maximum boundary
+        for the dimension. If None, the maximum is unbounded.
+    """
     def __init__(
             self,
             ratio_ref,
@@ -87,6 +98,15 @@ class RatioDimension(object):
 
 
 class QuadrantDivider(object):
+    """
+    Represents a divider for a single Dimension, used as part of a QuadrantGate definition.
+
+    :param divider_id: A string identifying the divider
+    :param dimension_ref: A string referencing the ID of an instance of the Dimension class
+    :param compensation_ref: A string referencing the ID of a Matrix instance
+    :param values: One or more values used for partitioning the given Dimension
+    :param transformation_ref: A string referencing the ID of an instance of a Transform sub-class
+    """
     def __init__(
             self,
             divider_id,
