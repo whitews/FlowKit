@@ -9,7 +9,6 @@ from ._models.dimension import Dimension, RatioDimension, QuadrantDivider
 from ._models.vertex import Vertex
 from ._utils.xml_utils import parse_gating_xml, export_gatingml
 from ._utils.wsp_utils import parse_wsp
-from ._utils.plot_utils import plot_channel
 from ._utils.sample_utils import load_samples, calculate_compensation_from_beads
 
 __all__ = [
@@ -26,7 +25,6 @@ __all__ = [
     'parse_gating_xml',
     'export_gatingml',
     'parse_wsp',
-    'plot_channel',
     'load_samples',
     'calculate_compensation_from_beads'
 ]
