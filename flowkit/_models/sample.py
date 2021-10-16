@@ -914,8 +914,9 @@ class Sample(object):
         :param subsample: Whether to use all events for plotting or just the
             sub-sampled events. Default is False (all events). Plotting
             sub-sampled events can be much faster.
-        :param bins: Number of bins to use for the histogram. If None, the
-            number of bins is determined by the Freedman-Diaconis rule.
+        :param bins: Number of bins to use for the histogram or a string compatible
+            with the NumPy histogram function. If None, the number of bins is
+            determined by the square root rule.
         :return: Matplotlib figure of the histogram plot with KDE curve.
         """
 
