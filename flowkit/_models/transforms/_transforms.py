@@ -1,7 +1,6 @@
 """
 Basic Transform sub-classes
 """
-import numpy as np
 import flowutils
 from ._base_transform import Transform
 
