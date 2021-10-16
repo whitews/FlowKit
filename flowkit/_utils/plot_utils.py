@@ -104,7 +104,7 @@ def plot_channel(channel_events, label, subplot_ax, xform=None, flagged_events=N
             )
 
 
-def calculate_extent(data_1d, d_min=None, d_max=None, pad=0.0):
+def _calculate_extent(data_1d, d_min=None, d_max=None, pad=0.0):
     data_min = data_1d.min()
     data_max = data_1d.max()
 
@@ -279,9 +279,9 @@ def plot_scatter(
         color_density=True
 ):
     if len(x) > 0:
-        x_min, x_max = calculate_extent(x, d_min=x_min, d_max=x_max, pad=0.02)
+        x_min, x_max = _calculate_extent(x, d_min=x_min, d_max=x_max, pad=0.02)
     if len(y) > 0:
-        y_min, y_max = calculate_extent(y, d_min=y_min, d_max=y_max, pad=0.02)
+        y_min, y_max = _calculate_extent(y, d_min=y_min, d_max=y_max, pad=0.02)
 
     if y_max > x_max:
         radius_dimension = 'y'

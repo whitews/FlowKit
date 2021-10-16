@@ -716,8 +716,10 @@ class Sample(object):
         x = self.get_channel_data(x_index, source=source, subsample=subsample)
         y = self.get_channel_data(y_index, source=source, subsample=subsample)
 
-        x_min, x_max = plot_utils.calculate_extent(x, d_min=x_min, d_max=x_max, pad=0.02)
-        y_min, y_max = plot_utils.calculate_extent(y, d_min=y_min, d_max=y_max, pad=0.02)
+        # noinspection PyProtectedMember
+        x_min, x_max = plot_utils._calculate_extent(x, d_min=x_min, d_max=x_max, pad=0.02)
+        # noinspection PyProtectedMember
+        y_min, y_max = plot_utils._calculate_extent(y, d_min=y_min, d_max=y_max, pad=0.02)
 
         fig, ax = plt.subplots(figsize=fig_size)
         ax.set_title(self.original_filename)
