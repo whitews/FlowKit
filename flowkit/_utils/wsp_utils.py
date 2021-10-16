@@ -772,7 +772,7 @@ def _recurse_add_sub_populations(parent_el, gate_id, gate_path, gating_strategy,
             )
 
 
-def _add_sample_node_to_wsp(parent_el, sample_name, sample_id, group_name, gating_strategy, comp_prefix_lut, ns_map):
+def _add_sample_node_to_wsp(parent_el, sample_name, sample_id, gating_strategy, comp_prefix_lut, ns_map):
     sample_node_el = etree.SubElement(parent_el, "SampleNode")
     sample_node_el.set('name', sample_name)
     sample_node_el.set('annotation', "")
@@ -950,8 +950,7 @@ def export_flowjo_wsp(group_gating_strategies, group_name, samples, file_handle)
             sample_el,
             sample.original_filename,
             sample_id,
-            group_name,
-            sample_strat,
+            sample_strategy,
             comp_prefix_lut,
             ns_map
         )
