@@ -17,14 +17,14 @@ fill_color = 'lime'
 fill_alpha = 0.08
 
 
-def _generate_custom_colormap(cmap_sample_indices, base_cmap):
-    x = np.linspace(0, np.pi, base_cmap.N)
+def _generate_custom_colormap(colormap_sample_indices, base_colormap):
+    x = np.linspace(0, np.pi, base_colormap.N)
     new_lum = (np.sin(x) * 0.75) + .25
 
     new_color_list = []
 
-    for i in cmap_sample_indices:
-        (r, g, b, a) = base_cmap(i)
+    for i in colormap_sample_indices:
+        (r, g, b, a) = base_colormap(i)
         (h, s, v) = colorsys.rgb_to_hsv(r, g, b)
 
         mod_v = (v * ((196 - abs(i - 196)) / 196) + new_lum[i]) / 2.
@@ -35,7 +35,7 @@ def _generate_custom_colormap(cmap_sample_indices, base_cmap):
         new_color_list.append((new_r, new_g, new_b))
 
     return colors.LinearSegmentedColormap.from_list(
-        'custom_' + base_cmap.name,
+        'custom_' + base_colormap.name,
         new_color_list,
         256
     )
@@ -61,25 +61,25 @@ def _get_false_bounds(bool_array):
 
 
 # TODO: integrate functionality into Sample class, change xform to accept/use Sample instance xform
-def plot_channel(chan_events, label, subplot_ax, xform=False, bad_events=None):
+def plot_channel(channel_events, label, subplot_ax, xform=False, bad_events=None):
     if xform:
         # TODO: change to accept a Transform sub-class instance
-        chan_events = np.arcsinh(chan_events * 0.003)
+        channel_events = np.arcsinh(channel_events * 0.003)
 
-    my_cmap = plt.cm.get_cmap('jet')
-    my_cmap.set_under('w', alpha=0)
+    my_colormap = plt.cm.get_cmap('jet')
+    my_colormap.set_under('w', alpha=0)
 
-    bins = int(np.sqrt(chan_events.shape[0]))
-    event_range = range(0, chan_events.shape[0])
+    bins = int(np.sqrt(channel_events.shape[0]))
+    event_range = range(0, channel_events.shape[0])
 
     subplot_ax.set_title(label, fontsize=16)
     subplot_ax.set_xlabel("Events", fontsize=14)
 
     subplot_ax.hist2d(
         event_range,
-        chan_events,
+        channel_events,
         bins=[bins, bins],
-        cmap=my_cmap,
+        cmap=my_colormap,
         vmin=0.9
     )
 
@@ -128,31 +128,31 @@ def render_polygon(vertices):
     return source, poly
 
 
-def render_ranges(dim_mins, dim_maxes):
+def render_ranges(dim_minimums, dim_maximums):
     renderers = []
     left = None
     right = None
     bottom = None
     top = None
 
-    if dim_mins[0] is not None:
-        left = dim_mins[0]
+    if dim_minimums[0] is not None:
+        left = dim_minimums[0]
         renderers.append(
             Span(location=left, dimension='height', line_width=line_width, line_color=line_color)
         )
-    if dim_maxes[0] is not None:
-        right = dim_maxes[0]
+    if dim_maximums[0] is not None:
+        right = dim_maximums[0]
         renderers.append(
             Span(location=right, dimension='height', line_width=line_width, line_color=line_color)
         )
-    if len(dim_mins) > 1:
-        if dim_mins[1] is not None:
-            bottom = dim_mins[1]
+    if len(dim_minimums) > 1:
+        if dim_minimums[1] is not None:
+            bottom = dim_minimums[1]
             renderers.append(
                 Span(location=bottom, dimension='width', line_width=line_width, line_color=line_color)
             )
-        if dim_maxes[1] is not None:
-            top = dim_maxes[1]
+        if dim_maximums[1] is not None:
+            top = dim_maximums[1]
             renderers.append(
                 Span(location=top, dimension='width', line_width=line_width, line_color=line_color)
             )
@@ -170,11 +170,11 @@ def render_ranges(dim_mins, dim_maxes):
     return renderers
 
 
-def render_rectangle(dim_mins, dim_maxes):
-    x_center = (dim_mins[0] + dim_maxes[0]) / 2.0
-    y_center = (dim_mins[1] + dim_maxes[1]) / 2.0
-    x_width = dim_maxes[0] - dim_mins[0]
-    y_height = dim_maxes[1] - dim_mins[1]
+def render_rectangle(dim_minimums, dim_maximums):
+    x_center = (dim_minimums[0] + dim_maximums[0]) / 2.0
+    y_center = (dim_minimums[1] + dim_maximums[1]) / 2.0
+    x_width = dim_maximums[0] - dim_minimums[0]
+    y_height = dim_maximums[1] - dim_minimums[1]
     rect = Rect(
         x=x_center,
         y=y_center,
