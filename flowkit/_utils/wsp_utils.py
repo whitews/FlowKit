@@ -497,7 +497,9 @@ def parse_wsp(workspace_file_or_path, ignore_transforms=False):
                 if group_gate_name in sample_dict['custom_gate_ids']:
                     group_gate_path = group_gate['gate_path']
                     for sample_gate_dict in sample_dict['custom_gates']:
+                        # noinspection PyTypeChecker
                         tmp_sample_gate = sample_gate_dict['gate']
+                        # noinspection PyTypeChecker
                         tmp_sample_gate_path = sample_gate_dict['gate_path']
                         if group_gate_path == tmp_sample_gate_path and tmp_sample_gate.id == group_gate_name:
                             # found a match, overwrite tmp_gate
@@ -523,10 +525,14 @@ def parse_wsp(workspace_file_or_path, ignore_transforms=False):
             # found the custom sample gates, but we don't want to replicate
             # them.
             for sample_gate_dict in sample_dict['custom_gates']:
+                # noinspection PyTypeChecker
                 sample_gate = sample_gate_dict['gate']
+                # noinspection PyTypeChecker
                 sample_gate_path = sample_gate_dict['gate_path']
 
+                # noinspection PyTypeChecker
                 if sample_gate.id not in group_sample_gate_ids:
+                    # noinspection PyTypeChecker
                     tmp_gate = _convert_wsp_gate(
                         sample_gate,
                         sample_dict['comp'],
