@@ -235,7 +235,7 @@ def calculate_ellipse(center_x, center_y, covariance_matrix, distance_square):
     return ellipse
 
 
-def plot_histogram(x, x_label='x', bins=None, title=None):
+def plot_histogram(x, x_label='x', bins=None):
     if bins is None:
         bins = 'sqrt'
 
