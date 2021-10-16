@@ -962,7 +962,7 @@ class Session(object):
             source, glyph = plot_utils.render_polygon(gate.vertices)
             p.add_glyph(source, glyph)
         elif isinstance(gate, gates.EllipsoidGate):
-            ellipse = plot_utils.calculate_ellipse(
+            ellipse = plot_utils.render_ellipse(
                 gate.coordinates[0],
                 gate.coordinates[1],
                 gate.covariance_matrix,

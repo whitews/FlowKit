@@ -217,7 +217,16 @@ def render_dividers(x_locs, y_locs):
     return renderers
 
 
-def calculate_ellipse(center_x, center_y, covariance_matrix, distance_square):
+def render_ellipse(center_x, center_y, covariance_matrix, distance_square):
+    """
+    Renders a Bokeh Ellipse object given the ellipse center point, covariance, and distance square
+
+    :param center_x: x-coordinate of ellipse center
+    :param center_y: y-coordinate of ellipse center
+    :param covariance_matrix: NumPy array containing the covariance matrix of the ellipse
+    :param distance_square: value for distance square of ellipse
+    :return: Bokeh Ellipse object
+    """
     values, vectors = np.linalg.eigh(covariance_matrix)
     order = values.argsort()[::-1]
     values = values[order]
