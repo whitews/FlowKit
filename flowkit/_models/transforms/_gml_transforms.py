@@ -1,5 +1,7 @@
 """
 Transform sub-classes for parsing GatingML-2.0 XML gates
+These classes are not exposed in the public API, they are
+intended for internal use when parsing GatingML-2.0 documents.
 """
 from ..._utils import xml_utils
 from ._transforms import \
@@ -12,6 +14,14 @@ from ._transforms import \
 
 
 class RatioGMLTransform(RatioTransform):
+    """
+    This class parses an XML element from from a GatingML-2.0 document and creates an
+    instance compatible with the RatioTransform (see RatioTransform docs for more info).
+
+    :param xform_element: ratio transform XML element from a GatingML-2.0 document
+    :param xform_namespace: XML namespace for transform elements/attributes
+    :param data_type_namespace: XML namespace for data type elements/attributes
+    """
     def __init__(
             self,
             xform_element,
@@ -69,6 +79,13 @@ class RatioGMLTransform(RatioTransform):
 
 
 class LinearGMLTransform(LinearTransform):
+    """
+    This class parses an XML element from from a GatingML-2.0 document and creates an
+    instance compatible with the LinearTransform (see LinearTransform docs for more info).
+
+    :param xform_element: linear transform XML element from a GatingML-2.0 document
+    :param xform_namespace: XML namespace for transform elements/attributes
+    """
     def __init__(
             self,
             xform_element,
@@ -105,6 +122,13 @@ class LinearGMLTransform(LinearTransform):
 
 
 class LogGMLTransform(LogTransform):
+    """
+    This class parses an XML element from from a GatingML-2.0 document and creates an
+    instance compatible with the LogTransform (see LogTransform docs for more info).
+
+    :param xform_element: log transform XML element from a GatingML-2.0 document
+    :param xform_namespace: XML namespace for transform elements/attributes
+    """
     def __init__(
             self,
             xform_element,
@@ -141,6 +165,13 @@ class LogGMLTransform(LogTransform):
 
 
 class HyperlogGMLTransform(HyperlogTransform):
+    """
+    This class parses an XML element from from a GatingML-2.0 document and creates an
+    instance compatible with the HyperlogTransform (see HyperlogTransform docs for more info).
+
+    :param xform_element: hyperlog transform XML element from a GatingML-2.0 document
+    :param xform_namespace: XML namespace for transform elements/attributes
+    """
     def __init__(
             self,
             xform_element,
@@ -182,6 +213,13 @@ class HyperlogGMLTransform(HyperlogTransform):
 
 
 class LogicleGMLTransform(LogicleTransform):
+    """
+    This class parses an XML element from from a GatingML-2.0 document and creates an
+    instance compatible with the LogicleTransform (see LogicleTransform docs for more info).
+
+    :param xform_element: logicle transform XML element from a GatingML-2.0 document
+    :param xform_namespace: XML namespace for transform elements/attributes
+    """
     def __init__(
             self,
             xform_element,
@@ -223,6 +261,13 @@ class LogicleGMLTransform(LogicleTransform):
 
 
 class AsinhGMLTransform(AsinhTransform):
+    """
+    This class parses an XML element from from a GatingML-2.0 document and creates an
+    instance compatible with the AsinhTransform (see AsinhTransform docs for more info).
+
+    :param xform_element: asinh transform XML element from a GatingML-2.0 document
+    :param xform_namespace: XML namespace for transform elements/attributes
+    """
     def __init__(
             self,
             xform_element,
