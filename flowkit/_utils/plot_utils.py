@@ -120,6 +120,11 @@ def _calculate_extent(data_1d, d_min=None, d_max=None, pad=0.0):
 
 
 def render_polygon(vertices):
+    """
+    Renders a Bokeh polygon for plotting
+    :param vertices: list of 2-D coordinates representing vertices of the polygon
+    :return: tuple containing the Bokeh ColumnDataSource and polygon glyphs (as Patch object)
+    """
     x_coords, y_coords = list(zip(*[v.coordinates for v in vertices]))
 
     source = ColumnDataSource(dict(x=x_coords, y=y_coords))
@@ -137,6 +142,15 @@ def render_polygon(vertices):
 
 
 def render_ranges(dim_minimums, dim_maximums):
+    """
+    Renders Bokeh Span & BoxAnnotation objects for plotting simple range gates, essentially divider lines.
+    There should be no more than 3 items total between dim_minimums & dim_maximums, else the object should
+    be rendered as a rectangle.
+
+    :param dim_minimums: list of minimum divider values (max of 2)
+    :param dim_maximums: list of maximum divider values (max of 2)
+    :return: tuple of Span objects for every item in dim_minimums & dim_maximums
+    """
     renderers = []
     left = None
     right = None
@@ -179,6 +193,13 @@ def render_ranges(dim_minimums, dim_maximums):
 
 
 def render_rectangle(dim_minimums, dim_maximums):
+    """
+    Renders Bokeh Rect object for plotting a rectangle gate.
+
+    :param dim_minimums: list of 2 values representing the lower left corner of a rectangle
+    :param dim_maximums: list of 2 values representing the upper right corner of a rectangle
+    :return: Bokeh Rect object
+    """
     x_center = (dim_minimums[0] + dim_maximums[0]) / 2.0
     y_center = (dim_minimums[1] + dim_maximums[1]) / 2.0
     x_width = dim_maximums[0] - dim_minimums[0]
@@ -253,6 +274,16 @@ def render_ellipse(center_x, center_y, covariance_matrix, distance_square):
 
 
 def plot_histogram(x, x_label='x', bins=None):
+    """
+    Creates a Bokeh histogram plot of the given 1-D data array.
+
+    :param x: 1-D array of data values
+    :param x_label: Label to use for the x-axis
+    :param bins: Number of bins to use for the histogram or a string compatible
+            with the NumPy histogram function. If None, the number of bins is
+            determined by the square root rule.
+    :return: Bokeh Figure object containing the histogram
+    """
     if bins is None:
         bins = 'sqrt'
 
@@ -287,6 +318,24 @@ def plot_scatter(
         y_max=None,
         color_density=True
 ):
+    """
+    Creates a Bokeh scatter plot from the two 1-D data arrays.
+
+    :param x: 1-D array of data values for the x-axis
+    :param y: 1-D array of data values for the y-axis
+    :param dim_ids: Labels to use for the x-axis & y-axis, respectively
+    :param x_min: Lower bound of x-axis. If None, channel's min value will
+        be used with some padding to keep events off the edge of the plot.
+    :param x_max: Upper bound of x-axis. If None, channel's max value will
+        be used with some padding to keep events off the edge of the plot.
+    :param y_min: Lower bound of y-axis. If None, channel's min value will
+        be used with some padding to keep events off the edge of the plot.
+    :param y_max: Upper bound of y-axis. If None, channel's max value will
+        be used with some padding to keep events off the edge of the plot.
+    :param color_density: Whether to color the events by density, similar
+        to a heat map. Default is True.
+    :return: A Bokeh Figure object containing the interactive scatter plot.
+    """
     if len(x) > 0:
         x_min, x_max = _calculate_extent(x, d_min=x_min, d_max=x_max, pad=0.02)
     if len(y) > 0:
