@@ -1,3 +1,6 @@
+"""
+Transform sub-classes for parsing GatingML-2.0 XML gates
+"""
 from ..._utils import xml_utils
 from ._transforms import \
     RatioTransform, \
@@ -64,10 +67,6 @@ class RatioGMLTransform(RatioTransform):
             float(param_c)
         )
 
-    def apply(self, sample):
-        events = RatioTransform.apply(self, sample)
-        return events
-
 
 class LinearGMLTransform(LinearTransform):
     def __init__(
@@ -104,10 +103,6 @@ class LinearGMLTransform(LinearTransform):
             float(param_a)
         )
 
-    def apply(self, events):
-        events = LinearTransform.apply(self, events)
-        return events
-
 
 class LogGMLTransform(LogTransform):
     def __init__(
@@ -143,10 +138,6 @@ class LogGMLTransform(LogTransform):
             float(param_t),
             float(param_m)
         )
-
-    def apply(self, events):
-        events = LogTransform.apply(self, events)
-        return events
 
 
 class HyperlogGMLTransform(HyperlogTransform):
@@ -189,10 +180,6 @@ class HyperlogGMLTransform(HyperlogTransform):
             float(param_a)
         )
 
-    def apply(self, events):
-        events = HyperlogTransform.apply(self, events)
-        return events
-
 
 class LogicleGMLTransform(LogicleTransform):
     def __init__(
@@ -234,10 +221,6 @@ class LogicleGMLTransform(LogicleTransform):
             float(param_a)
         )
 
-    def apply(self, events):
-        events = LogicleTransform.apply(self, events)
-        return events
-
 
 class AsinhGMLTransform(AsinhTransform):
     def __init__(
@@ -275,7 +258,3 @@ class AsinhGMLTransform(AsinhTransform):
             float(param_m),
             float(param_a)
         )
-
-    def apply(self, events):
-        events = AsinhTransform.apply(self, events)
-        return events
