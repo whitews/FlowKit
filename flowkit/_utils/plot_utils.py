@@ -59,7 +59,6 @@ def _get_false_bounds(bool_array):
     return start[0], end[0]
 
 
-# TODO: integrate functionality into Sample class, change xform to accept/use Sample instance xform
 def plot_channel(channel_events, label, subplot_ax, xform=None, flagged_events=None):
     """
     Plots a single-channel of FCS event data with the x-axis as the event number (similar to having
