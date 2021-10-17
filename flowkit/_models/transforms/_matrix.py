@@ -76,7 +76,7 @@ class Matrix(object):
         indices = [
             sample.get_channel_index(d) for d in self.detectors
         ]
-        events = sample.get_raw_events()
+        events = sample.get_events(source='raw')
 
         return flowutils.compensate.compensate(
             events,
@@ -93,7 +93,7 @@ class Matrix(object):
         indices = [
             sample.get_channel_index(d) for d in self.detectors
         ]
-        events = sample.get_comp_events()
+        events = sample.get_events(source='comp')
 
         return flowutils.compensate.inverse_compensate(
             events,

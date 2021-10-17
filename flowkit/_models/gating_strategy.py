@@ -427,7 +427,7 @@ class GatingStrategy(object):
         dim_comp_ref_count = len(dim_comp_refs)
 
         if dim_comp_ref_count == 0:
-            events = sample.get_raw_events()
+            events = sample.get_events(source='raw')
             return events.copy()
         elif dim_comp_ref_count > 1:
             raise NotImplementedError(
@@ -454,7 +454,7 @@ class GatingStrategy(object):
 
             if 'spill' not in meta or 'spillover' not in meta:
                 # GML 2.0 spec states if 'FCS' is specified but no spill is present, treat as uncompensated
-                events = sample.get_raw_events()
+                events = sample.get_events(source='raw')
                 return events.copy()
 
             try:

@@ -69,7 +69,7 @@ class Sample(object):
         meaning they have not been scaled according to channel gain, corrected for proper lin/log display,
         or had the time channel scaled by the 'timestep' keyword value (if present). By default, these
         events are not retained by the Sample class as they are typically not useful. To retrieve the
-        original events, set this to True and call the get_orig_events() method.
+        original events, set this to True and call the get_events() method with source='orig'.
     :param subsample: The number of events to use for sub-sampling. The number of sub-sampled events
         can be changed after instantiation using the `subsample_events` method. The random seed can
         also be specified using that method. Sub-sampled events are used predominantly for speeding
@@ -375,7 +375,7 @@ class Sample(object):
         Applies given compensation matrix to Sample events. If any
         transformation has been applied, it will be re-applied after
         compensation. Compensated events can be retrieved afterward
-        by calling `get_comp_events`.
+        by calling `get_events` with `source='comp'`.
 
         :param compensation: Compensation matrix, which can be a:
 
@@ -416,7 +416,7 @@ class Sample(object):
         """
         return self.metadata
 
-    def get_orig_events(self, subsample=False):
+    def _get_orig_events(self, subsample=False):
         """
         Returns 'original' events, i.e. not pre-processed, compensated,
         or transformed.
@@ -438,7 +438,7 @@ class Sample(object):
         else:
             return self._orig_events
 
-    def get_raw_events(self, subsample=False):
+    def _get_raw_events(self, subsample=False):
         """
         Returns 'raw' events that have been pre-processed to adjust for channel
         gain and lin/log display, but have not been compensated or transformed.
@@ -453,7 +453,7 @@ class Sample(object):
             return self._raw_events
 
     # TODO: make event type names/references consistent across the API...is it xform/transform comp/compensated, etc.
-    def get_comp_events(self, subsample=False):
+    def _get_comp_events(self, subsample=False):
         """
         Returns compensated events, (not transformed)
 
@@ -474,7 +474,7 @@ class Sample(object):
         else:
             return self._comp_events
 
-    def get_transformed_events(self, subsample=False):
+    def _get_transformed_events(self, subsample=False):
         """
         Returns transformed events. Note, if a compensation matrix has been
         applied then the events returned will be compensated and transformed.
@@ -496,6 +496,31 @@ class Sample(object):
         else:
             return self._transformed_events
 
+    def get_events(self, source='xform', subsample=False):
+        """
+        Returns a NumPy array of event data.
+
+        :param source: 'orig', 'raw', 'comp', 'xform' for whether the original (no gain applied),
+            raw (orig + gain), compensated (raw + comp), or transformed (comp + xform) events will
+            be returned
+        :param subsample: Whether to return all events or just the sub-sampled
+            events. Default is False (all events)
+        :return: NumPy array of event data
+        """
+        if source == 'xform':
+            events = self._get_transformed_events(subsample=subsample)
+        elif source == 'comp':
+            events = self._get_comp_events(subsample=subsample)
+        elif source == 'raw':
+            events = self._get_raw_events(subsample=subsample)
+        elif source == 'orig':
+            events = self._get_orig_events(subsample=subsample)
+        else:
+            raise ValueError("source must be one of 'orig', 'raw', 'comp', or 'xform'")
+
+        return events
+
+
     def as_dataframe(self, source='xform', subsample=False, col_order=None, col_names=None):
         """
         Returns a Pandas DataFrame of event data
@@ -511,16 +536,7 @@ class Sample(object):
             columns will be a MultiIndex of the PnN / PnS labels.
         :return: Pandas DataFrame of event data
         """
-        if source == 'xform':
-            events = self.get_transformed_events(subsample=subsample)
-        elif source == 'comp':
-            events = self.get_comp_events(subsample=subsample)
-        elif source == 'raw':
-            events = self.get_raw_events(subsample=subsample)
-        elif source == 'orig':
-            events = self.get_orig_events(subsample=subsample)
-        else:
-            raise ValueError("source must be one of 'orig', 'raw', 'comp', or 'xform'")
+        events = self.get_events(source=source, subsample=subsample)
 
         multi_cols = pd.MultiIndex.from_arrays([self.pnn_labels, self.pns_labels], names=['pnn', 'pns'])
         events_df = pd.DataFrame(data=events, columns=multi_cols)
@@ -578,23 +594,10 @@ class Sample(object):
             events. Default is False (all events)
         :return: NumPy array of event data for the specified channel index
         """
-        if subsample:
-            if not isinstance(self.subsample_indices, np.ndarray):
-                raise ValueError("Subsampling requested, but sample hasn't been sub-sampled: call `subsample_events`")
-            idx = self.subsample_indices
-        else:
-            idx = np.arange(self.event_count)
+        events = self.get_events(source=source, subsample=subsample)
+        events = events[:, channel_index]
 
-        if source == 'xform':
-            channel_data = self._transformed_events[idx, channel_index]
-        elif source == 'comp':
-            channel_data = self._comp_events[idx, channel_index]
-        elif source == 'raw':
-            channel_data = self._raw_events[idx, channel_index]
-        else:
-            raise ValueError("source must be one of 'raw', 'comp', or 'xform'")
-
-        return channel_data
+        return events
 
     def _transform(self, transform, include_scatter=False):
         if isinstance(transform, _transforms.RatioTransform):
@@ -1019,13 +1022,10 @@ class Sample(object):
 
         extra_dict = {}
 
-        if source == 'xform':
-            events = self._transformed_events[idx, :]
-        elif source == 'comp':
-            events = self._comp_events[idx, :]
-        elif source == 'raw':
-            events = self._raw_events[idx, :]
-        elif source == 'orig':
+        events = self.get_events(source=source)
+        events = events[idx, :]
+
+        if source == 'orig':
             if 'timestep' in self.metadata and self.time_index is not None:
                 extra_dict['TIMESTEP'] = self.metadata['timestep']
 
@@ -1043,13 +1043,6 @@ class Sample(object):
                 gain_value = channel_row['png']
                 if gain_value != 1.0:
                     extra_dict[gain_keyword] = gain_value
-
-            events = self.get_orig_events()
-
-            if events is not None:
-                events = events[idx, :]
-        else:
-            raise ValueError("source must be one of 'orig', 'raw', 'comp', or 'xform'")
 
         # TODO: support exporting to HDF5 format, but as optional dependency/import
         if ext == '.csv':

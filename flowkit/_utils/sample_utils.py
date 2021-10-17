@@ -193,7 +193,7 @@ def calculate_compensation_from_beads(comp_bead_samples, matrix_id='comp_bead'):
         fluorochromes.append(bead_lut[channel_idx]['pns_label'])
         bead_idx = bead_lut[channel_idx]['bead_index']
 
-        x = bead_samples[bead_idx].get_raw_events()[:, channel_idx]
+        x = bead_samples[bead_idx].get_events(source='raw')[:, channel_idx]
         good_events = x < (2 ** 18) - 1
         x = x[good_events]
 
@@ -202,7 +202,7 @@ def calculate_compensation_from_beads(comp_bead_samples, matrix_id='comp_bead'):
             if channel_idx == channel_idx2:
                 comp_row_values.append(1.0)
             else:
-                y = bead_samples[bead_idx].get_raw_events()[:, channel_idx2]
+                y = bead_samples[bead_idx].get_events(source='raw')[:, channel_idx2]
                 y = y[good_events]
                 rlm_res = sm.RLM(y, x).fit()
 

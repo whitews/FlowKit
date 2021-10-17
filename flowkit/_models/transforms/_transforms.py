@@ -62,7 +62,7 @@ class RatioTransform(Transform):
         :param sample: Sample instance from which event data should be extracted
         :return: NumPy array of transformed events
         """
-        events = sample.get_raw_events()
+        events = sample.get_events(source='raw')
 
         dim_x_idx = sample.pnn_labels.index(self.dimensions[0])
         dim_y_idx = sample.pnn_labels.index(self.dimensions[1])
