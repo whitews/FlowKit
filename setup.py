@@ -1,3 +1,6 @@
+"""
+Setup script for the FlowKit package
+"""
 from setuptools import dist, setup, find_packages, Extension
 
 # read in version string
@@ -12,7 +15,9 @@ if __version__ is None:
 # This retrieves a version at build time compatible with run time version
 dist.Distribution().fetch_build_eggs(['numpy>=1.19'])
 
-import numpy as np
+# override inspection for import not at top of file
+# this has to be imported here, after fetching the NumPy egg
+import numpy as np  # noqa: E402
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
