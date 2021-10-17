@@ -595,8 +595,8 @@ def _add_matrix_to_gml(root, matrix, ns_map):
     for row in matrix.matrix:
         row_ml = etree.SubElement(xform_ml, "{%s}spectrum" % ns_map['transforms'])
         for val in row:
-            coeff_ml = etree.SubElement(row_ml, "{%s}coefficient" % ns_map['transforms'])
-            coeff_ml.set('{%s}value' % ns_map['transforms'], str(val))
+            coefficient_ml = etree.SubElement(row_ml, "{%s}coefficient" % ns_map['transforms'])
+            coefficient_ml.set('{%s}value' % ns_map['transforms'], str(val))
 
 
 def _add_transform_to_gml(root, transform, ns_map):
@@ -628,11 +628,11 @@ def _add_transform_to_gml(root, transform, ns_map):
         logicle_ml.set('{%s}M' % ns_map['transforms'], str(transform.param_m))
         logicle_ml.set('{%s}A' % ns_map['transforms'], str(transform.param_a))
     elif isinstance(transform, _transforms.HyperlogTransform):
-        hlog_ml = etree.SubElement(xform_ml, "{%s}hyperlog" % ns_map['transforms'])
-        hlog_ml.set('{%s}T' % ns_map['transforms'], str(transform.param_t))
-        hlog_ml.set('{%s}W' % ns_map['transforms'], str(transform.param_w))
-        hlog_ml.set('{%s}M' % ns_map['transforms'], str(transform.param_m))
-        hlog_ml.set('{%s}A' % ns_map['transforms'], str(transform.param_a))
+        hyperlog_ml = etree.SubElement(xform_ml, "{%s}hyperlog" % ns_map['transforms'])
+        hyperlog_ml.set('{%s}T' % ns_map['transforms'], str(transform.param_t))
+        hyperlog_ml.set('{%s}W' % ns_map['transforms'], str(transform.param_w))
+        hyperlog_ml.set('{%s}M' % ns_map['transforms'], str(transform.param_m))
+        hyperlog_ml.set('{%s}A' % ns_map['transforms'], str(transform.param_a))
     elif isinstance(transform, _transforms.LinearTransform):
         lin_ml = etree.SubElement(xform_ml, "{%s}flin" % ns_map['transforms'])
         lin_ml.set('{%s}T' % ns_map['transforms'], str(transform.param_t))
