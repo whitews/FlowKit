@@ -402,7 +402,6 @@ class GatingStrategy(object):
         """
         self._cached_preprocessed_events = {}
 
-    # TODO: create method for clearing cache (per sample or everything)
     def _cache_preprocessed_events(self, preprocessed_events, sample_id, comp_ref, xform_ref, dim_idx=None):
         """
         Cache pre-processed events for a Sample instance
