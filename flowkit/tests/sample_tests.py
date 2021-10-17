@@ -196,15 +196,6 @@ class SampleTestCase(unittest.TestCase):
 
         np.testing.assert_equal(sample._transformed_events[:, 6], data_idx_6)
 
-    def test_get_channel_data_subsample_fails(self):
-        self.assertRaises(
-            ValueError,
-            data1_sample.get_channel_data,
-            0,
-            source='raw',
-            subsample=True
-        )
-
     def test_get_channel_data_subsample(self):
         sample = Sample(data1_fcs_path)
         sample.subsample_events(500)
