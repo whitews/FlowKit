@@ -336,6 +336,14 @@ def parse_gate_element(
         gating_namespace,
         data_type_namespace
 ):
+    """
+    This class parses a GatingML-2.0 compatible gate XML element and extracts the gate ID,
+     parent gate ID, and dimensions.
+
+    :param gate_element: gate XML element from a GatingML-2.0 document
+    :param gating_namespace: XML namespace for gating elements/attributes
+    :param data_type_namespace: XML namespace for data type elements/attributes
+    """
     gate_id = find_attribute_value(gate_element, gating_namespace, 'id')
     parent_id = find_attribute_value(gate_element, gating_namespace, 'parent_id')
 
@@ -473,17 +481,25 @@ def _parse_divider_element(divider_element, gating_namespace, data_type_namespac
     return divider
 
 
-def parse_vertex_element(vert_element, gating_namespace, data_type_namespace):
+def parse_vertex_element(vertex_element, gating_namespace, data_type_namespace):
+    """
+    This class parses a GatingML-2.0 compatible vertex XML element and returns a Vertex object
+     parent gate ID, and dimensions.
+
+    :param vertex_element: vertex XML element from a GatingML-2.0 document
+    :param gating_namespace: XML namespace for gating elements/attributes
+    :param data_type_namespace: XML namespace for data type elements/attributes
+    """
     coordinates = []
 
-    coord_els = vert_element.findall(
+    coord_els = vertex_element.findall(
         '%s:coordinate' % gating_namespace,
-        namespaces=vert_element.nsmap
+        namespaces=vertex_element.nsmap
     )
 
     if len(coord_els) != 2:
         raise ValueError(
-            'Vertex must contain 2 coordinate values (line %d)' % vert_element.sourceline
+            'Vertex must contain 2 coordinate values (line %d)' % vertex_element.sourceline
         )
 
     # should be 0 or only 1 'min' attribute,
