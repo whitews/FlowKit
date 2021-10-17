@@ -65,6 +65,10 @@ class Sample(object):
         or had the time channel scaled by the 'timestep' keyword value (if present). By default, these
         events are not retained by the Sample class as they are typically not useful. To retrieve the
         original events, set this to True and call the get_orig_events() method.
+    :param subsample: The number of events to use for sub-sampling. The number of sub-sampled events
+        can be changed after instantiation using the `subsample_events` method. The random seed can
+        also be specified using that method. Sub-sampled events are used predominantly for speeding
+        up plotting methods.
     """
     def __init__(
             self,
@@ -73,7 +77,8 @@ class Sample(object):
             compensation=None,
             null_channel_list=None,
             ignore_offset_error=False,
-            cache_original_events=False
+            cache_original_events=False,
+            subsample=10000
     ):
         """
         Create a Sample instance
@@ -271,6 +276,9 @@ class Sample(object):
                 self.original_filename = os.path.basename(fcs_path_or_data)
             else:
                 self.original_filename = None
+
+        # finally, store initial sub-sampled event indices
+        self.subsample_events(subsample)
 
     def __repr__(self):
         return (
