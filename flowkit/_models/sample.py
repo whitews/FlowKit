@@ -27,6 +27,11 @@ class Sample(object):
     Represents a single FCS sample from an FCS file, NumPy array or Pandas
     DataFrame.
 
+    For Sample plot methods, pay attention the the defaults for the subsample
+    arguments, as most will use the sub-sampled events by default for better
+    performance. For compensation and transformation routines, all events are
+    always processed.
+
     Note:
         Some FCS files incorrectly report the location of the last data byte
         as the last byte exclusive of the data section rather than the last
@@ -644,6 +649,9 @@ class Sample(object):
 
     def plot_channel(self, channel_label_or_number, source='xform', flag_events=False):
         """
+        Plot a 2-D histogram of the specified channel data with the x-axis as the event index.
+        This is similar to plotting a channel vs Time, except the events are equally
+        distributed along the x-axis.
 
         :param channel_label_or_number: A channel's PnN label or number
         :param source: 'raw', 'comp', 'xform' for whether the raw, compensated
@@ -678,7 +686,7 @@ class Sample(object):
             x_label_or_number,
             y_label_or_number,
             source='xform',
-            subsample=False,
+            subsample=True,
             plot_contour=True,
             plot_events=False,
             x_min=None,
@@ -699,8 +707,9 @@ class Sample(object):
         :param source: 'raw', 'comp', 'xform' for whether the raw, compensated
             or transformed events are used for plotting
         :param subsample: Whether to use all events for plotting or just the
-            sub-sampled events. Default is False (all events). Plotting
-            sub-sampled events can be much faster.
+            sub-sampled events. Default is True (sub-sampled events). It is
+            not recommended to run with all events, as the Kernel Density
+            Estimation is computationally demanding.
         :param plot_contour: Whether to display the contour lines. Default is True.
         :param plot_events: Whether to display the event data points in
             addition to the contours. Default is False.
@@ -766,7 +775,7 @@ class Sample(object):
             x_label_or_number,
             y_label_or_number,
             source='xform',
-            subsample=False,
+            subsample=True,
             color_density=True,
             x_min=None,
             x_max=None,
@@ -783,8 +792,8 @@ class Sample(object):
         :param source: 'raw', 'comp', 'xform' for whether the raw, compensated
             or transformed events are used for plotting
         :param subsample: Whether to use all events for plotting or just the
-            sub-sampled events. Default is False (all events). Plotting
-            sub-sampled events can be much faster.
+            sub-sampled events. Default is True (sub-sampled events). Plotting
+            sub-sampled events is much faster.
         :param color_density: Whether to color the events by density, similar
             to a heat map. Default is True.
         :param x_min: Lower bound of x-axis. If None, channel's min value will
@@ -841,7 +850,7 @@ class Sample(object):
     def plot_scatter_matrix(
             self,
             source='xform',
-            subsample=False,
+            subsample=True,
             channel_labels_or_numbers=None,
             color_density=False,
             plot_height=256,
@@ -854,8 +863,8 @@ class Sample(object):
         :param source: 'raw', 'comp', 'xform' for whether the raw, compensated
             or transformed events are used for plotting
         :param subsample: Whether to use all events for plotting or just the
-            sub-sampled events. Default is False (all events). Plotting
-            sub-sampled events can be much faster.
+            sub-sampled events. Default is True (sub-sampled events). Plotting
+            sub-sampled events is be much faster.
         :param channel_labels_or_numbers: List of channel PnN labels or channel
             numbers to use for the scatter plot matrix. If None, then all
             channels will be plotted (except Time).
@@ -920,8 +929,7 @@ class Sample(object):
         :param source: 'raw', 'comp', 'xform' for whether the raw, compensated
             or transformed events are used for plotting
         :param subsample: Whether to use all events for plotting or just the
-            sub-sampled events. Default is False (all events). Plotting
-            sub-sampled events can be much faster.
+            sub-sampled events. Default is False (all events).
         :param bins: Number of bins to use for the histogram or a string compatible
             with the NumPy histogram function. If None, the number of bins is
             determined by the square root rule.
