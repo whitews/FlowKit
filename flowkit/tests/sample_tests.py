@@ -197,32 +197,28 @@ class SampleTestCase(unittest.TestCase):
         np.testing.assert_equal(sample._transformed_events[:, 6], data_idx_6)
 
     def test_get_channel_data_subsample(self):
-        sample = Sample(data1_fcs_path)
-        sample.subsample_events(500)
+        sample = Sample(data1_fcs_path, subsample=500)
 
         data_idx_6 = sample.get_channel_data(6, source='raw', subsample=True)
 
         self.assertEqual(len(data_idx_6), 500)
 
     def test_get_subsampled_orig_events(self):
-        sample = Sample(data1_fcs_path, cache_original_events=True)
-        sample.subsample_events(500)
+        sample = Sample(data1_fcs_path, cache_original_events=True, subsample=500)
 
         events = sample.get_orig_events(subsample=True)
 
         self.assertEqual(events.shape[0], 500)
 
     def test_get_subsampled_orig_events_not_cached(self):
-        sample = Sample(data1_fcs_path, cache_original_events=False)
-        sample.subsample_events(500)
+        sample = Sample(data1_fcs_path, cache_original_events=False, subsample=500)
 
         events = sample.get_orig_events(subsample=True)
 
         self.assertIsNone(events, None)
 
     def test_get_subsampled_raw_events(self):
-        sample = Sample(data1_fcs_path)
-        sample.subsample_events(500)
+        sample = Sample(data1_fcs_path, subsample=500)
 
         events = sample.get_raw_events(subsample=True)
 
@@ -235,9 +231,9 @@ class SampleTestCase(unittest.TestCase):
         sample = Sample(
             fcs_path_or_data=fcs_file_path,
             compensation=comp_file_path,
-            ignore_offset_error=True  # sample has off by 1 data offset
+            ignore_offset_error=True,  # sample has off by 1 data offset
+            subsample=500
         )
-        sample.subsample_events(500)
 
         events = sample.get_comp_events(subsample=True)
 
@@ -250,11 +246,10 @@ class SampleTestCase(unittest.TestCase):
         sample = Sample(
             fcs_path_or_data=fcs_file_path,
             compensation=comp_file_path,
-            ignore_offset_error=True  # sample has off by 1 data offset
+            ignore_offset_error=True,  # sample has off by 1 data offset
+            subsample=500
         )
         sample.apply_transform(xform_logicle)
-
-        sample.subsample_events(500)
 
         events = sample.get_transformed_events(subsample=True)
 
@@ -548,8 +543,7 @@ class SampleTestCase(unittest.TestCase):
     def test_filter_negative_scatter(self):
         # there are 2 negative SSC-A events in this file (of 65016 total events)
         fcs_file_path = "examples/data/100715.fcs"
-        sample = Sample(fcs_path_or_data=fcs_file_path)
-        sample.subsample_events(50000)
+        sample = Sample(fcs_path_or_data=fcs_file_path, subsample=50000)
         sample.filter_negative_scatter(reapply_subsample=False)
 
         # using the default seed, the 2 negative events are in the subsample

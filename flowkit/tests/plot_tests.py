@@ -9,8 +9,7 @@ import flowkit as fk
 
 fcs_path = 'examples/data/gate_ref/data1.fcs'
 gml_path = 'examples/data/gate_ref/gml/gml_all_gates.xml'
-test_sample = fk.Sample(fcs_path)
-test_sample.subsample_events(2000)
+test_sample = fk.Sample(fcs_path, subsample=2000)
 test_gating_strategy = fk.parse_gating_xml(gml_path)
 
 
