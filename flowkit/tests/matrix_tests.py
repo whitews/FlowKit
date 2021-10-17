@@ -107,7 +107,7 @@ class MatrixTestCase(unittest.TestCase):
         )
         matrix = sample.compensation
 
-        data_raw = sample.get_raw_events()
+        data_raw = sample.get_events(source='raw')
         inv_data = matrix.inverse(sample)
 
         np.testing.assert_almost_equal(inv_data, data_raw, 10)

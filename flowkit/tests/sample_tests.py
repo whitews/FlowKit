@@ -206,21 +206,21 @@ class SampleTestCase(unittest.TestCase):
     def test_get_subsampled_orig_events(self):
         sample = Sample(data1_fcs_path, cache_original_events=True, subsample=500)
 
-        events = sample.get_orig_events(subsample=True)
+        events = sample.get_events(source='orig', subsample=True)
 
         self.assertEqual(events.shape[0], 500)
 
     def test_get_subsampled_orig_events_not_cached(self):
         sample = Sample(data1_fcs_path, cache_original_events=False, subsample=500)
 
-        events = sample.get_orig_events(subsample=True)
+        events = sample.get_events(source='orig', subsample=True)
 
         self.assertIsNone(events, None)
 
     def test_get_subsampled_raw_events(self):
         sample = Sample(data1_fcs_path, subsample=500)
 
-        events = sample.get_raw_events(subsample=True)
+        events = sample.get_events(source='raw', subsample=True)
 
         self.assertEqual(events.shape[0], 500)
 
@@ -235,7 +235,7 @@ class SampleTestCase(unittest.TestCase):
             subsample=500
         )
 
-        events = sample.get_comp_events(subsample=True)
+        events = sample.get_events(source='comp', subsample=True)
 
         self.assertEqual(events.shape[0], 500)
 
@@ -251,11 +251,11 @@ class SampleTestCase(unittest.TestCase):
         )
         sample.apply_transform(xform_logicle)
 
-        events = sample.get_transformed_events(subsample=True)
+        events = sample.get_events(source='xform', subsample=True)
 
         self.assertEqual(events.shape[0], 500)
 
-    def test_get_comp_events_if_no_comp(self):
+    def test_get_compensated_events_if_no_comp(self):
         fcs_file_path = "examples/data/test_comp_example.fcs"
 
         sample = Sample(
@@ -263,7 +263,7 @@ class SampleTestCase(unittest.TestCase):
             ignore_offset_error=True  # sample has off by 1 data offset
         )
 
-        comp_events = sample.get_comp_events()
+        comp_events = sample.get_events(source='comp')
 
         self.assertIsNone(comp_events)
 
@@ -275,7 +275,7 @@ class SampleTestCase(unittest.TestCase):
             ignore_offset_error=True  # sample has off by 1 data offset
         )
 
-        xform_events = sample.get_transformed_events()
+        xform_events = sample.get_events(source='xform')
 
         self.assertIsNone(xform_events)
 
@@ -320,7 +320,7 @@ class SampleTestCase(unittest.TestCase):
         df = data1_sample.as_dataframe(source='xform')
 
         self.assertIsInstance(df, pd.DataFrame)
-        np.testing.assert_equal(df.values, data1_sample.get_transformed_events())
+        np.testing.assert_equal(df.values, data1_sample.get_events(source='xform'))
 
     def test_get_events_as_data_frame_comp(self):
         fcs_file_path = "examples/data/test_comp_example.fcs"
@@ -335,19 +335,19 @@ class SampleTestCase(unittest.TestCase):
         df = sample.as_dataframe(source='comp')
 
         self.assertIsInstance(df, pd.DataFrame)
-        np.testing.assert_equal(df.values, sample.get_comp_events())
+        np.testing.assert_equal(df.values, sample.get_events(source='comp'))
 
     def test_get_events_as_data_frame_raw(self):
         df = data1_sample.as_dataframe(source='raw')
 
         self.assertIsInstance(df, pd.DataFrame)
-        np.testing.assert_equal(df.values, data1_sample.get_raw_events())
+        np.testing.assert_equal(df.values, data1_sample.get_events(source='raw'))
 
     def test_get_events_as_data_frame_orig(self):
         df = data1_sample.as_dataframe(source='orig')
 
         self.assertIsInstance(df, pd.DataFrame)
-        np.testing.assert_equal(df.values, data1_sample.get_orig_events())
+        np.testing.assert_equal(df.values, data1_sample.get_events(source='orig'))
 
     def test_get_events_as_data_frame_column_order(self):
         orig_col_order = ['FSC-H', 'SSC-H', 'FL1-H', 'FL2-H', 'FL3-H', 'FL2-A', 'FL4-H', 'Time']
