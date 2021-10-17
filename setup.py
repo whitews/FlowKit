@@ -1,5 +1,15 @@
 from setuptools import dist, setup, find_packages, Extension
 
+# read in version string
+VERSION_FILE = 'flowkit/_version.py'
+__version__ = None  # to avoid inspection warning and check if __version__ was loaded
+exec(open(VERSION_FILE).read())
+
+if __version__ is None:
+    raise RuntimeError("__version__ string not found in file %s" % VERSION_FILE)
+
+# NumPy is needed to build
+# This retrieves a version at build time compatible with run time version
 dist.Distribution().fetch_build_eggs(['numpy>=1.19'])
 
 import numpy as np
@@ -34,7 +44,7 @@ reqs = [
 
 setup(
     name='FlowKit',
-    version='0.7.90b1',
+    version=__version__,
     packages=find_packages(exclude=["flowkit/tests/"]),
     package_data={'': ['_resources/*.xsd']},
     include_package_data=True,

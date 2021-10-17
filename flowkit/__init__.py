@@ -1,3 +1,6 @@
+"""
+Defines the public API for FlowKit
+"""
 from ._models.sample import Sample
 # noinspection PyProtectedMember
 from ._models.transforms._matrix import Matrix
@@ -10,6 +13,8 @@ from ._models.vertex import Vertex
 from ._utils.xml_utils import parse_gating_xml, export_gatingml
 from ._utils.wsp_utils import parse_wsp
 from ._utils.sample_utils import load_samples, calculate_compensation_from_beads
+
+from ._version import __version__
 
 __all__ = [
     'Sample',
