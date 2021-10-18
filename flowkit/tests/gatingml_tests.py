@@ -890,6 +890,6 @@ class GatingMLTestCase(unittest.TestCase):
 
         for row in results.report.itertuples():
             np.testing.assert_array_equal(
-                truth_dict[row.gate_id],
-                results.get_gate_membership(row.gate_id)
+                truth_dict[row.gate_name],
+                results.get_gate_membership(row.gate_name)
             )

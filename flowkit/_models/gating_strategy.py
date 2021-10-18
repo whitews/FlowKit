@@ -200,11 +200,11 @@ class GatingStrategy(object):
         """
         return self.comp_matrices[matrix_id]
 
-    def _get_gate_node(self, gate_id, gate_path=None):
+    def _get_gate_node(self, gate_name, gate_path=None):
         # It's not safe to just look at the gates dictionary as
         # QuadrantGate IDs cannot be parents themselves, only their component
         # Quadrant IDs can be parents.
-        node_matches = anytree.findall_by_attr(self._gate_tree, gate_id)
+        node_matches = anytree.findall_by_attr(self._gate_tree, gate_name)
         node_match_count = len(node_matches)
 
         if node_match_count == 1:
@@ -213,7 +213,7 @@ class GatingStrategy(object):
             # need to match on full gate path
             if gate_path is None:
                 raise ValueError(
-                    "Found multiple gates with ID %s. Provide full 'gate_path' to disambiguate." % gate_id
+                    "Found multiple gates with name %s. Provide full 'gate_path' to disambiguate." % gate_name
                 )
 
             gate_matches = []
@@ -228,7 +228,7 @@ class GatingStrategy(object):
             if len(gate_matches) == 1:
                 node = gate_matches[0]
             elif len(gate_matches) > 1:
-                raise ValueError("Report as bug: Found multiple gates with ID %s and given gate path." % gate_id)
+                raise ValueError("Report as bug: Found multiple gates with ID %s and given gate path." % gate_name)
             else:
                 node = None
         else:
@@ -238,11 +238,11 @@ class GatingStrategy(object):
             # may be in a Quadrant gate
             for d in self._gate_tree.descendants:
                 if isinstance(d.gate, fk_gates.QuadrantGate):
-                    if gate_id in d.gate.quadrants:
+                    if gate_name in d.gate.quadrants:
                         node = d
                         break
         if node is None:
-            raise ValueError("Gate ID %s was not found in gating strategy" % gate_id)
+            raise ValueError("Gate name %s was not found in gating strategy" % gate_name)
 
         return node
 
@@ -262,44 +262,44 @@ class GatingStrategy(object):
 
         return root_gates
 
-    def get_gate(self, gate_id, gate_path=None):
+    def get_gate(self, gate_name, gate_path=None):
         """
         Retrieve a gate instance by its gate ID.
 
-        :param gate_id: text string of a gate ID
-        :param gate_path: complete tuple of gate IDs for unique set of gate ancestors. Required if gate_id is ambiguous
+        :param gate_name: text string of a gate name
+        :param gate_path: complete tuple of gate IDs for unique set of gate ancestors. Required if gate_name is ambiguous
         :return: Subclass of a Gate object
         :raises KeyError: if gate ID is not found in gating strategy
         """
-        node = self._get_gate_node(gate_id, gate_path)
+        node = self._get_gate_node(gate_name, gate_path)
 
         return node.gate
 
-    def get_parent_gate(self, gate_id, gate_path=None):
+    def get_parent_gate(self, gate_name, gate_path=None):
         """
         Retrieve the parent Gate instance for the given gate ID.
 
-        :param gate_id: text string of a gate ID
-        :param gate_path: complete tuple of gate IDs for unique set of gate ancestors. Required if gate_id is ambiguous
+        :param gate_name: text string of a gate name
+        :param gate_path: complete tuple of gate IDs for unique set of gate ancestors. Required if gate_name is ambiguous
         :return: Subclassed Gate instance
         """
-        node = self._get_gate_node(gate_id, gate_path)
+        node = self._get_gate_node(gate_name, gate_path)
 
         if node.parent.name == 'root':
             return None
 
         return node.parent.gate
 
-    def get_child_gates(self, gate_id, gate_path=None):
+    def get_child_gates(self, gate_name, gate_path=None):
         """
         Retrieve list of child gate instances by their parent's gate ID.
 
-        :param gate_id: text string of a gate ID
-        :param gate_path: complete tuple of gate IDs for unique set of gate ancestors. Required if gate_id is ambiguous
+        :param gate_name: text string of a gate name
+        :param gate_path: complete tuple of gate IDs for unique set of gate ancestors. Required if gate_name is ambiguous
         :return: list of Gate instances
         :raises KeyError: if gate ID is not found in gating strategy
         """
-        node = self._get_gate_node(gate_id, gate_path)
+        node = self._get_gate_node(gate_name, gate_path)
 
         child_gates = []
 
@@ -311,8 +311,8 @@ class GatingStrategy(object):
     def get_gate_ids(self):
         """
         Retrieve the list of gate IDs (with ancestors) for the gating strategy
-        :return: list of tuples where the 1st item is the gate ID string and 2nd item is
-                 a list of ancestor gates
+        :return: list of tuples where the 1st item is the gate name string and 2nd item is
+                 a list of ancestor gate names
         """
         gates = []
         for node in self._gate_tree.descendants:
@@ -716,9 +716,9 @@ class GatingStrategy(object):
                     parent_results = results[p_uid]
                 elif isinstance(parent_gate, fk_gates.Quadrant):
                     # need to check for quadrant results in a quadrant gate
-                    q_gate_id = p_path[-1]
+                    q_gate_name = p_path[-1]
                     q_gate_path = p_path[:-1]
-                    q_gate_res_key = (q_gate_id, "/".join(q_gate_path))
+                    q_gate_res_key = (q_gate_name, "/".join(q_gate_path))
                     if q_gate_res_key in results:
                         parent_results = results[q_gate_res_key][p_id]
 
@@ -731,9 +731,9 @@ class GatingStrategy(object):
                     gate_ref_res_key = (gate_ref['ref'], "/".join(gate_ref['path']))
 
                     if isinstance(gate_ref_gate, fk_gates.Quadrant):
-                        quad_gate_id = gate_ref['path'][-1]
+                        quad_gate_name = gate_ref['path'][-1]
                         quad_gate_path_str = "/".join(gate_ref['path'][:-1])
-                        quad_gate_res_key = (quad_gate_id, quad_gate_path_str)
+                        quad_gate_res_key = (quad_gate_name, quad_gate_path_str)
                         quad_gate_results = results[quad_gate_res_key]
 
                         # but the quadrant result is what we're after
