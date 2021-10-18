@@ -500,6 +500,9 @@ class Sample(object):
         """
         Returns a NumPy array of event data.
 
+        Note: This method returns the array directly, not a copy of the array. Be careful if you
+        are planning to modify returned event data, and make a copy of the array when appropriate.
+
         :param source: 'orig', 'raw', 'comp', 'xform' for whether the original (no gain applied),
             raw (orig + gain), compensated (raw + comp), or transformed (comp + xform) events will
             be returned
@@ -583,9 +586,12 @@ class Sample(object):
 
         return index
 
-    def get_channel_data(self, channel_index, source='xform', subsample=False):
+    def get_channel_events(self, channel_index, source='xform', subsample=False):
         """
         Returns a NumPy array of event data for the specified channel index.
+
+        Note: This method returns the array directly, not a copy of the array. Be careful if you
+        are planning to modify returned event data, and make a copy of the array when appropriate.
 
         :param channel_index: Channel index for which data is returned
         :param source: 'raw', 'comp', 'xform' for whether the raw, compensated
@@ -664,7 +670,7 @@ class Sample(object):
         :return: Matplotlib Figure instance
         """
         channel_index = self.get_channel_index(channel_label_or_number)
-        channel_data = self.get_channel_data(channel_index, source=source, subsample=False)
+        channel_data = self.get_channel_events(channel_index, source=source, subsample=False)
 
         pnn_label = self.pnn_labels[channel_index]
         pns_label = self.pns_labels[channel_index]
@@ -733,8 +739,8 @@ class Sample(object):
         x_index = self.get_channel_index(x_label_or_number)
         y_index = self.get_channel_index(y_label_or_number)
 
-        x = self.get_channel_data(x_index, source=source, subsample=subsample)
-        y = self.get_channel_data(y_index, source=source, subsample=subsample)
+        x = self.get_channel_events(x_index, source=source, subsample=subsample)
+        y = self.get_channel_events(y_index, source=source, subsample=subsample)
 
         # noinspection PyProtectedMember
         x_min, x_max = plot_utils._calculate_extent(x, d_min=x_min, d_max=x_max, pad=0.02)
@@ -820,8 +826,8 @@ class Sample(object):
         x_index = self.get_channel_index(x_label_or_number)
         y_index = self.get_channel_index(y_label_or_number)
 
-        x = self.get_channel_data(x_index, source=source, subsample=subsample)
-        y = self.get_channel_data(y_index, source=source, subsample=subsample)
+        x = self.get_channel_events(x_index, source=source, subsample=subsample)
+        y = self.get_channel_events(y_index, source=source, subsample=subsample)
 
         dim_ids = []
 
@@ -940,7 +946,7 @@ class Sample(object):
         """
 
         channel_index = self.get_channel_index(channel_label_or_number)
-        channel_data = self.get_channel_data(channel_index, source=source, subsample=subsample)
+        channel_data = self.get_channel_events(channel_index, source=source, subsample=subsample)
 
         p = plot_utils.plot_histogram(
             channel_data,

@@ -1080,7 +1080,7 @@ class Session(object):
             x = comp_events[:, x_index]
         else:
             # not doing sub-sample here, will do later with bool AND
-            x = sample.get_channel_data(x_index, source='raw', subsample=False)
+            x = sample.get_channel_events(x_index, source='raw', subsample=False)
 
         if y_comp_ref is not None and x_comp_ref != 'uncompensated':
             # this is likely unnecessary as the x & y comp should be the same,
@@ -1090,7 +1090,7 @@ class Session(object):
             y = comp_events[:, y_index]
         else:
             # not doing sub-sample here, will do later with bool AND
-            y = sample.get_channel_data(y_index, source='raw', subsample=False)
+            y = sample.get_channel_events(y_index, source='raw', subsample=False)
 
         if x_xform_ref is not None:
             x_xform = gating_strategy.get_transform(x_xform_ref)
