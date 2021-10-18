@@ -10,12 +10,12 @@ class Gate(ABC):
     """
     def __init__(
             self,
-            gate_id,
-            parent_id,
+            gate_name,
+            parent_gate_name,
             dimensions
     ):
-        self.id = gate_id
-        self.parent = parent_id
+        self.id = gate_name
+        self.parent = parent_gate_name
         if dimensions is None:
             self.dimensions = []
         else:

@@ -19,13 +19,13 @@ class RectangleGate(Gate):
     """
     def __init__(
             self,
-            gate_id,
-            parent_id,
+            gate_name,
+            parent_gate_name,
             dimensions
     ):
         super().__init__(
-            gate_id,
-            parent_id,
+            gate_name,
+            parent_gate_name,
             dimensions
         )
         self.gate_type = "RectangleGate"
@@ -65,14 +65,14 @@ class PolygonGate(Gate):
     """
     def __init__(
             self,
-            gate_id,
-            parent_id,
+            gate_name,
+            parent_gate_name,
             dimensions,
             vertices
     ):
         super().__init__(
-            gate_id,
-            parent_id,
+            gate_name,
+            parent_gate_name,
             dimensions
         )
         self.vertices = vertices
@@ -115,16 +115,16 @@ class EllipsoidGate(Gate):
     """
     def __init__(
             self,
-            gate_id,
-            parent_id,
+            gate_name,
+            parent_gate_name,
             dimensions,
             coordinates,
             covariance_matrix,
             distance_square
     ):
         super().__init__(
-            gate_id,
-            parent_id,
+            gate_name,
+            parent_gate_name,
             dimensions
         )
         self.gate_type = "EllipsoidGate"
@@ -216,14 +216,14 @@ class QuadrantGate(Gate):
     """
     def __init__(
             self,
-            gate_id,
-            parent_id,
+            gate_name,
+            parent_gate_name,
             dividers,
             quadrants
     ):
         super().__init__(
-            gate_id,
-            parent_id,
+            gate_name,
+            parent_gate_name,
             dividers
         )
         self.gate_type = "QuadrantGate"
@@ -301,14 +301,14 @@ class BooleanGate(Gate):
     """
     def __init__(
             self,
-            gate_id,
-            parent_id,
+            gate_name,
+            parent_gate_name,
             bool_type,
             gate_refs
     ):
         super().__init__(
-            gate_id,
-            parent_id,
+            gate_name,
+            parent_gate_name,
             None
         )
         self.gate_type = "BooleanGate"
