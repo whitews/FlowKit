@@ -91,13 +91,13 @@ class PlotTestCase(unittest.TestCase):
         gate_tuples = fks.get_gate_ids(group_name)
         fks.analyze_samples(group_name, sample_id=sample_name)
 
-        for gate_id, ancestors in gate_tuples:
-            gate = fks.get_gate(group_name, gate_id, sample_id=sample_name)
+        for gate_name, ancestors in gate_tuples:
+            gate = fks.get_gate(group_name, gate_name, sample_id=sample_name)
             if isinstance(gate, fk.gates.Quadrant):
                 # cannot plot single quadrants of a quadrant gate
                 continue
             try:
-                p = fks.plot_gate('my_group', sample_name, gate_id)
+                p = fks.plot_gate('my_group', sample_name, gate_name)
             except NotImplementedError:
                 continue
 
@@ -120,7 +120,7 @@ class PlotTestCase(unittest.TestCase):
             x_dim,
             y_dim,
             group_name=group_name,
-            gate_id='ScaleRect1',
+            gate_name='ScaleRect1',
             subsample=True
         )
 

@@ -131,7 +131,7 @@ class SessionTestCase(unittest.TestCase):
         wsp_path = "examples/data/8_color_data_set/8_color_ICS_simple.wsp"
         sample_grp = 'DEN'
         sample_id = '101_DEN084Y5_15_E01_008_clean.fcs'
-        gate_id = 'CD3+'
+        gate_name = 'CD3+'
 
         fks = Session(copy.deepcopy(test_samples_8c_full_set))
         fks.import_flowjo_workspace(wsp_path, ignore_missing_files=True)
@@ -150,7 +150,7 @@ class SessionTestCase(unittest.TestCase):
         df_gated_events = fks.get_gate_events(
             sample_grp,
             sample_id,
-            gate_id,
+            gate_name,
             matrix=sample_comp,
             transform=sample_xform
         )
@@ -162,7 +162,7 @@ class SessionTestCase(unittest.TestCase):
         wsp_path = "examples/data/8_color_data_set/8_color_ICS_simple.wsp"
         sample_grp = 'DEN'
         sample_id = '101_DEN084Y5_15_E01_008_clean.fcs'
-        gate_id = 'CD3+'
+        gate_name = 'CD3+'
 
         fks = Session(copy.deepcopy(test_samples_8c_full_set))
         fks.import_flowjo_workspace(wsp_path, ignore_missing_files=True)
@@ -172,7 +172,7 @@ class SessionTestCase(unittest.TestCase):
         df_gated_events = fks.get_wsp_gated_events(
             sample_grp,
             [sample_id],
-            gate_id
+            gate_name
         )
 
         self.assertIsInstance(df_gated_events, list)
@@ -196,7 +196,7 @@ class SessionTestCase(unittest.TestCase):
 
         template_gate = fks.get_gate('default', 'Polygon1')
 
-        self.assertEqual(template_gate.id, 'Polygon1')
+        self.assertEqual(template_gate.gate_name, 'Polygon1')
 
     @staticmethod
     def test_add_matrix_poly4_gate():
@@ -307,14 +307,14 @@ class SessionTestCase(unittest.TestCase):
         wsp_path = "examples/data/8_color_data_set/8_color_ICS_simple.wsp"
         sample_grp = 'DEN'
         sample_id = '101_DEN084Y5_15_E01_008_clean.fcs'
-        gate_id = 'CD3+'
+        gate_name = 'CD3+'
 
         fks = Session(copy.deepcopy(test_samples_8c_full_set))
         fks.import_flowjo_workspace(wsp_path, ignore_missing_files=True)
 
         fks.analyze_samples(sample_grp)
 
-        gate_membership = fks.get_gate_membership(sample_grp, sample_id, gate_id)
+        gate_membership = fks.get_gate_membership(sample_grp, sample_id, gate_name)
 
         self.assertEqual(gate_membership.sum(), 133670)
 

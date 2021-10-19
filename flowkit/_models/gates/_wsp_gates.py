@@ -22,7 +22,7 @@ class WSPEllipsoidGate(gates.EllipsoidGate):
             gating_namespace,
             data_type_namespace
     ):
-        gate_id, parent_id, dimensions = xml_utils.parse_gate_element(
+        gate_name, parent_gate_name, dimensions = xml_utils.parse_gate_element(
             gate_element,
             gating_namespace,
             data_type_namespace
@@ -152,8 +152,8 @@ class WSPEllipsoidGate(gates.EllipsoidGate):
         distance_square = 1.
 
         super().__init__(
-            gate_id,
-            parent_id,
+            gate_name,
+            parent_gate_name,
             dimensions,
             center,
             cov_mat,

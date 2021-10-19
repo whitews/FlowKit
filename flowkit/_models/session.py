@@ -458,28 +458,28 @@ class Session(object):
         comp_mat = gating_strategy.get_comp_matrix(matrix_id)
         return comp_mat
 
-    def get_parent_gate_id(self, group_name, gate_id):
+    def get_parent_gate_name(self, group_name, gate_name):
         """
         Retrieve a parent gate instance by the child gate ID, sample group, and sample ID.
 
         :param group_name: a text string representing the sample group
-        :param gate_id: text string of a gate ID
+        :param gate_name: text string of a gate name
         :return: Subclass of a Gate object
         """
         # this method doesn't need to lookup sample specific gates, as the gate names
         # and hierarchy must be the same for all samples in a group
         group = self._sample_group_lut[group_name]
         template = group['template']
-        gate = template.get_gate(gate_id)
+        gate = template.get_gate(gate_name)
         return gate.parent
 
-    def get_gate(self, group_name, gate_id, gate_path=None, sample_id=None):
+    def get_gate(self, group_name, gate_name, gate_path=None, sample_id=None):
         """
         Retrieve a gate instance by its group, sample, and gate ID.
 
         :param group_name: a text string representing the sample group
-        :param gate_id: text string of a gate ID
-        :param gate_path: tuple of gate IDs for unique set of gate ancestors. Required if gate_id is ambiguous
+        :param gate_name: text string of a gate ID
+        :param gate_path: tuple of gate IDs for unique set of gate ancestors. Required if gate_name is ambiguous
         :param sample_id: a text string representing a Sample instance. If None, the template gate is returned.
         :return: Subclass of a Gate object
         """
@@ -490,7 +490,7 @@ class Session(object):
         else:
             # get the custom sample gate
             gating_strategy = group['samples'][sample_id]
-        gate = gating_strategy.get_gate(gate_id, gate_path=gate_path)
+        gate = gating_strategy.get_gate(gate_name, gate_path=gate_path)
         return gate
 
     def get_sample_gates(self, group_name, sample_id):
@@ -507,8 +507,8 @@ class Session(object):
 
         sample_gates = []
 
-        for gate_id, ancestors in gate_tuples:
-            gate = gating_strategy.get_gate(gate_id, gate_path=ancestors)
+        for gate_name, ancestors in gate_tuples:
+            gate = gating_strategy.get_gate(gate_name, gate_path=ancestors)
             sample_gates.append(gate)
 
         return sample_gates
@@ -679,7 +679,7 @@ class Session(object):
 
         return copy.deepcopy(pd.concat(all_group_reports))
 
-    def get_gate_membership(self, group_name, sample_id, gate_id, gate_path=None):
+    def get_gate_membership(self, group_name, sample_id, gate_name, gate_path=None):
         """
         Retrieve a boolean array indicating gate membership for the events in the
         specified sample. Note, the same gate ID may be found in multiple gate paths,
@@ -688,15 +688,15 @@ class Session(object):
 
         :param group_name: a text string representing the sample group
         :param sample_id: a text string representing a Sample instance
-        :param gate_id: text string of a gate ID
+        :param gate_name: text string of a gate name
         :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
-            Required if gate_id is ambiguous
+            Required if gate_name is ambiguous
         :return: NumPy boolean array (length of sample event count)
         """
         gating_result = self._results_lut[group_name][sample_id]
-        return gating_result.get_gate_membership(gate_id, gate_path=gate_path)
+        return gating_result.get_gate_membership(gate_name, gate_path=gate_path)
 
-    def get_gate_events(self, group_name, sample_id, gate_id=None, gate_path=None, matrix=None, transform=None):
+    def get_gate_events(self, group_name, sample_id, gate_name=None, gate_path=None, matrix=None, transform=None):
         """
         Retrieve a Pandas DataFrame containing only the events within the specified gate.
         If an optional compensation matrix and/or a transform is provided, the returned
@@ -705,9 +705,9 @@ class Session(object):
 
         :param group_name: a text string representing the sample group
         :param sample_id: a text string representing a Sample instance
-        :param gate_id: text string of a gate ID. If None, all Sample events will be returned (i.e. un-gated)
+        :param gate_name: text string of a gate name. If None, all Sample events will be returned (i.e. un-gated)
         :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
-            Required if gate_id is ambiguous
+            Required if gate_name is ambiguous
         :param matrix: an instance of the Matrix class
         :param transform: an instance of a Transform sub-class
         :return: Pandas DataFrame containing only the events within the specified gate
@@ -727,22 +727,22 @@ class Session(object):
 
         events_df = sample.as_dataframe(source=event_source)
 
-        if gate_id is not None:
-            gate_idx = self.get_gate_membership(group_name, sample_id, gate_id, gate_path)
+        if gate_name is not None:
+            gate_idx = self.get_gate_membership(group_name, sample_id, gate_name, gate_path)
             events_df = events_df[gate_idx]
 
         return events_df
 
-    def get_wsp_gated_events(self, group_name, sample_ids=None, gate_id=None, gate_path=None):
+    def get_wsp_gated_events(self, group_name, sample_ids=None, gate_name=None, gate_path=None):
         """
         Convert gated events in FlowJo WSP sample group to
         list of compensated and transformed DataFrames.
 
         :param group_name: a text string representing the sample group
         :param sample_ids: a list of Sample ID strings
-        :param gate_id: text string of a gate ID. If None, all Sample events will be returned (i.e. un-gated)
+        :param gate_name: text string of a gate ID. If None, all Sample events will be returned (i.e. un-gated)
         :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
-            Required if gate_id is ambiguous
+            Required if gate_name is ambiguous
         :return: a list of Pandas DataFrames with the gated events, compensated & transformed according
             to the group's compensation matrix and transforms
         """
@@ -779,7 +779,7 @@ class Session(object):
             df = self.get_gate_events(
                 group_name=group_name,
                 sample_id=sample_id,
-                gate_id=gate_id,
+                gate_name=gate_name,
                 gate_path=gate_path,
                 matrix=ref_cm,
                 transform=xform_lut,
@@ -799,7 +799,7 @@ class Session(object):
             self,
             group_name,
             sample_id,
-            gate_id,
+            gate_name,
             gate_path=None,
             x_min=None,
             x_max=None,
@@ -814,9 +814,9 @@ class Session(object):
 
         :param group_name: The sample group containing the sample ID (and, optionally the gate ID)
         :param sample_id: The sample ID for the FCS sample to plot
-        :param gate_id: Gate ID to filter events (only events within the given gate will be plotted)
-        :param gate_path: tuple of gate IDs for full set of gate ancestors.
-            Required if gate_id is ambiguous
+        :param gate_name: Gate name to filter events (only events within the given gate will be plotted)
+        :param gate_path: tuple of gate namess for full set of gate ancestors.
+            Required if gate_name is ambiguous
         :param x_min: Lower bound of x-axis. If None, channel's min value will
             be used with some padding to keep events off the edge of the plot.
         :param x_max: Upper bound of x-axis. If None, channel's max value will
@@ -831,7 +831,7 @@ class Session(object):
         """
         group = self._sample_group_lut[group_name]
         gating_strategy = group['samples'][sample_id]
-        gate = gating_strategy.get_gate(gate_id, gate_path)
+        gate = gating_strategy.get_gate(gate_name, gate_path)
 
         dim_ids_ordered = []
         dim_is_ratio = []
@@ -1000,7 +1000,7 @@ class Session(object):
 
         if gate_path is not None:
             full_gate_path = gate_path[1:]  # omit 'root'
-            full_gate_path = full_gate_path + (gate_id,)
+            full_gate_path = full_gate_path + (gate_name,)
             sub_title = ' > '.join(full_gate_path)
 
             # truncate beginning of long gate paths
@@ -1012,7 +1012,7 @@ class Session(object):
             )
         else:
             p.add_layout(
-                Title(text=gate_id, text_font_style="italic", text_font_size="1em", align='center'),
+                Title(text=gate_name, text_font_style="italic", text_font_size="1em", align='center'),
                 'above'
             )
 
@@ -1030,7 +1030,7 @@ class Session(object):
             x_dim,
             y_dim,
             group_name='default',
-            gate_id=None,
+            gate_name=None,
             subsample=False,
             color_density=True,
             x_min=None,
@@ -1045,7 +1045,7 @@ class Session(object):
         :param x_dim:  Dimension instance to use for the x-axis data
         :param y_dim: Dimension instance to use for the y-axis data
         :param group_name: The sample group containing the sample ID (and, optionally the gate ID)
-        :param gate_id: Gate ID to filter events (only events within the given gate will be plotted)
+        :param gate_name: Gate name to filter events (only events within the given gate will be plotted)
         :param subsample: Whether to use all events for plotting or just the
             sub-sampled events. Default is False (all events). Plotting
             sub-sampled events can be much faster.
@@ -1099,9 +1099,9 @@ class Session(object):
             y_xform = gating_strategy.get_transform(y_xform_ref)
             y = y_xform.apply(y.reshape(-1, 1))[:, 0]
 
-        if gate_id is not None:
+        if gate_name is not None:
             gate_results = self.get_gating_results(group_name, sample_id=sample_id)
-            is_gate_event = gate_results.get_gate_membership(gate_id)
+            is_gate_event = gate_results.get_gate_membership(gate_name)
             if subsample:
                 is_subsample = np.zeros(sample.event_count, dtype=bool)
                 is_subsample[sample.subsample_indices] = True

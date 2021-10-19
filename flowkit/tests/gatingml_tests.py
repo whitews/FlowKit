@@ -828,11 +828,11 @@ class GatingMLTestCase(unittest.TestCase):
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
         s.assign_samples(data1_sample.original_filename, group_name)
-        parent_id = s.get_parent_gate_id(group_name, 'ScalePar1')
+        parent_gate_name = s.get_parent_gate_name(group_name, 'ScalePar1')
 
-        self.assertEqual(parent_id, 'ScaleRect1')
+        self.assertEqual(parent_gate_name, 'ScaleRect1')
 
-        parent_gate = s.get_gate(group_name, parent_id, sample_id=data1_sample.original_filename)
+        parent_gate = s.get_gate(group_name, parent_gate_name, sample_id=data1_sample.original_filename)
 
         self.assertIsInstance(parent_gate, gates.RectangleGate)
 
@@ -844,11 +844,11 @@ class GatingMLTestCase(unittest.TestCase):
         s.add_sample_group(group_name, gating_strategy=gml_path)
         s.add_samples(data1_sample)
         s.assign_samples(data1_sample.original_filename, group_name)
-        parent_id = s.get_parent_gate_id(group_name, 'ParRectangle1')
+        parent_gate_name = s.get_parent_gate_name(group_name, 'ParRectangle1')
 
-        self.assertEqual(parent_id, 'FL2P-FL4P')
+        self.assertEqual(parent_gate_name, 'FL2P-FL4P')
 
-        parent_gate = s.get_gate(group_name, parent_id, sample_id=data1_sample.original_filename)
+        parent_gate = s.get_gate(group_name, parent_gate_name, sample_id=data1_sample.original_filename)
 
         self.assertIsInstance(parent_gate, gates.Quadrant)
 

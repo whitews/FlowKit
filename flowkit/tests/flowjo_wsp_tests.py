@@ -27,10 +27,10 @@ class FlowJoWSPTestCase(unittest.TestCase):
             gates.PolygonGate
         )
 
-        gate_ids = {'rect1', 'poly1'}
+        gate_names = {'rect1', 'poly1'}
         wsp_gates_tuple = fks.get_gate_ids('my_group')
-        wsp_gate_ids = set([g[0] for g in wsp_gates_tuple])
-        self.assertSetEqual(wsp_gate_ids, gate_ids)
+        wsp_gate_names = set([g[0] for g in wsp_gates_tuple])
+        self.assertSetEqual(wsp_gate_names, gate_names)
 
     def test_load_wsp_single_ellipse(self):
         wsp_path = "examples/data/simple_line_example/single_ellipse_51_events.wsp"
@@ -184,14 +184,14 @@ class FlowJoWSPTestCase(unittest.TestCase):
         fcs_path = "examples/data/8_color_data_set/fcs_files/101_DEN084Y5_15_E01_008_clean.fcs"
         sample_id = '101_DEN084Y5_15_E01_008_clean.fcs'
         sample_grp = 'DEN'
-        gate_id = 'TNFa+'
+        gate_name = 'TNFa+'
         gate_path = ('root', 'Time', 'Singlets', 'aAmine-', 'CD3+', 'CD4+')
 
         fks = Session(fcs_samples=fcs_path)
         fks.import_flowjo_workspace(wsp_path, ignore_missing_files=True)
 
         fks.analyze_samples(sample_grp)
-        gate_indices = fks.get_gate_membership(sample_grp, sample_id, gate_id, gate_path=gate_path)
+        gate_indices = fks.get_gate_membership(sample_grp, sample_id, gate_name, gate_path=gate_path)
 
         self.assertIsInstance(gate_indices, np.ndarray)
         self.assertEqual(np.sum(gate_indices), 21)
@@ -217,7 +217,7 @@ class FlowJoWSPTestCase(unittest.TestCase):
         sample_grp = 'DEN'
 
         # use a leaf gate to test if the new WSP session is created correctly
-        gate_id = 'TNFa+'
+        gate_name = 'TNFa+'
         gate_path = ('root', 'Time', 'Singlets', 'aAmine-', 'CD3+', 'CD4+')
 
         fks = Session(copy.deepcopy(test_samples_8c_full_set))
@@ -232,11 +232,11 @@ class FlowJoWSPTestCase(unittest.TestCase):
 
         self.assertIsInstance(fks_out, Session)
 
-        fks_gate = fks.get_gate(sample_grp, gate_id, gate_path)
-        fks_out_gate = fks_out.get_gate(sample_grp, gate_id, gate_path)
+        fks_gate = fks.get_gate(sample_grp, gate_name, gate_path)
+        fks_out_gate = fks_out.get_gate(sample_grp, gate_name, gate_path)
 
         self.assertIsInstance(fks_gate, gates.RectangleGate)
         self.assertIsInstance(fks_out_gate, gates.RectangleGate)
 
-        self.assertEqual(fks_gate.id, gate_id)
-        self.assertEqual(fks_out_gate.id, gate_id)
+        self.assertEqual(fks_gate.gate_name, gate_name)
+        self.assertEqual(fks_out_gate.gate_name, gate_name)

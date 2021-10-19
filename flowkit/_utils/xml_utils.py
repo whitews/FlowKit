@@ -177,12 +177,12 @@ def _construct_gates(root_gml, gating_ns, data_type_ns):
                 data_type_ns
             )
 
-            if g.id in gates_dict:
+            if g.gate_name in gates_dict:
                 raise ValueError(
                     "Gate '%s' already exists. "
-                    "Duplicate gate IDs are not allowed." % g.id
+                    "Duplicate gate names are not allowed." % g.gate_name
                 )
-            gates_dict[g.id] = g
+            gates_dict[g.gate_name] = g
 
     return gates_dict
 
@@ -722,9 +722,9 @@ def _add_gate_to_gml(root, gate, ns_map):
                 
                 pos_ml.set('{%s}location' % ns_map['gating'], str(loc_coord))
     else:
-        raise ValueError("Gate %s is not a valid GatingML 2.0 element" % gate.id)
+        raise ValueError("Gate %s is not a valid GatingML 2.0 element" % gate.gate_name)
 
-    gate_ml.set('{%s}id' % ns_map['gating'], gate.id)
+    gate_ml.set('{%s}id' % ns_map['gating'], gate.gate_name)
 
     for i, dim in enumerate(gate.dimensions):
         dim_type = 'dim'

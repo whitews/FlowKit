@@ -263,7 +263,7 @@ def _convert_wsp_gate(wsp_gate, comp_matrix, xform_lut, ignore_transforms=False)
                 if xforms[i] is not None:
                     v.coordinates[i] = xforms[i].apply(np.array([[float(c)]]))[0][0]
 
-        gate = PolygonGate(wsp_gate.id, wsp_gate.parent, new_dims, vertices)
+        gate = PolygonGate(wsp_gate.gate_name, wsp_gate.parent, new_dims, vertices)
     elif isinstance(wsp_gate, GMLRectangleGate):
         gate = copy.deepcopy(wsp_gate)
         gate.dimensions = new_dims
@@ -317,7 +317,7 @@ def _recurse_wsp_sub_populations(sub_pop_el, gate_path, gating_ns, data_type_ns)
         #       though it isn't always the case. However, it seems the ID is reliably included
         #       in the parent "Gate" element, saved here in the 'gate_el' variable.
         #       Likewise for parent_id
-        g.id = pop_name
+        g.gate_name = pop_name
         g.parent = parent_id
 
         gates.append(
@@ -424,7 +424,7 @@ def _parse_wsp_samples(sample_els, ns_map, gating_ns, transform_ns, data_type_ns
                 # sample has a custom gate then that custom gate cannot be further customized.
                 # Since there is only a single custom gate per gate name per sample, then we
                 # can create a LUT of custom gates per sample
-                wsp_samples[sample_id]['custom_gate_ids'].add(sample_gate['gate'].id)
+                wsp_samples[sample_id]['custom_gate_ids'].add(sample_gate['gate'].gate_name)
                 wsp_samples[sample_id]['custom_gates'].append(
                     {
                         'gate': sample_gate['gate'],
@@ -486,11 +486,11 @@ def parse_wsp(workspace_file_or_path, ignore_transforms=False):
             sample_dict = wsp_samples[group_sample_id]
             sample_name = sample_dict['sample_name']
 
-            group_sample_gate_ids = []
+            group_sample_gate_names = []
             group_sample_gates = []
 
             for group_gate in group_dict['gates']:
-                group_gate_name = group_gate['gate'].id
+                group_gate_name = group_gate['gate'].gate_name
 
                 tmp_gate = copy.deepcopy(group_gate['gate'])
 
@@ -501,7 +501,7 @@ def parse_wsp(workspace_file_or_path, ignore_transforms=False):
                         tmp_sample_gate = sample_gate_dict['gate']
                         # noinspection PyTypeChecker
                         tmp_sample_gate_path = sample_gate_dict['gate_path']
-                        if group_gate_path == tmp_sample_gate_path and tmp_sample_gate.id == group_gate_name:
+                        if group_gate_path == tmp_sample_gate_path and tmp_sample_gate.gate_name == group_gate_name:
                             # found a match, overwrite tmp_gate
                             tmp_gate = tmp_sample_gate
 
@@ -512,7 +512,7 @@ def parse_wsp(workspace_file_or_path, ignore_transforms=False):
                     ignore_transforms=ignore_transforms
                 )
 
-                group_sample_gate_ids.append(group_gate_name)
+                group_sample_gate_names.append(group_gate_name)
                 group_sample_gates.append(
                     {
                         'gate': tmp_gate,
@@ -531,7 +531,7 @@ def parse_wsp(workspace_file_or_path, ignore_transforms=False):
                 sample_gate_path = sample_gate_dict['gate_path']
 
                 # noinspection PyTypeChecker
-                if sample_gate.id not in group_sample_gate_ids:
+                if sample_gate.gate_name not in group_sample_gate_names:
                     # noinspection PyTypeChecker
                     tmp_gate = _convert_wsp_gate(
                         sample_gate,
@@ -769,7 +769,7 @@ def _recurse_add_sub_populations(parent_el, gate_id, gate_path, gating_strategy,
         for child_gate in child_gates:
             _recurse_add_sub_populations(
                 sub_pops_el,
-                child_gate.id,
+                child_gate.gate_name,
                 child_gate_path,
                 gating_strategy,
                 gate_fj_id_lut,
@@ -808,7 +808,7 @@ def _add_sample_node_to_wsp(parent_el, sample_name, sample_id, gating_strategy, 
     for gate in root_gates:
         _recurse_add_sub_populations(
             sub_pops_el,
-            gate.id,
+            gate.gate_name,
             ('root',),
             gating_strategy,
             gate_fj_id_lut,

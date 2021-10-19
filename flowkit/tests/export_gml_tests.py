@@ -1112,11 +1112,11 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
-        parent_id = sess_out.get_parent_gate_id(group_name, 'ScalePar1')
+        parent_gate_name = sess_out.get_parent_gate_name(group_name, 'ScalePar1')
 
-        self.assertEqual(parent_id, 'ScaleRect1')
+        self.assertEqual(parent_gate_name, 'ScaleRect1')
 
-        parent_gate = sess_out.get_gate(group_name, parent_id, sample_id=data1_sample.original_filename)
+        parent_gate = sess_out.get_gate(group_name, parent_gate_name, sample_id=data1_sample.original_filename)
 
         self.assertIsInstance(parent_gate, gates.RectangleGate)
 
@@ -1137,11 +1137,11 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
-        parent_id = sess_out.get_parent_gate_id(group_name, 'ParRectangle1')
+        parent_gate_name = sess_out.get_parent_gate_name(group_name, 'ParRectangle1')
 
-        self.assertEqual(parent_id, 'FL2P-FL4P')
+        self.assertEqual(parent_gate_name, 'FL2P-FL4P')
 
-        parent_gate = sess_out.get_gate(group_name, parent_id, sample_id=data1_sample.original_filename)
+        parent_gate = sess_out.get_gate(group_name, parent_gate_name, sample_id=data1_sample.original_filename)
 
         self.assertIsInstance(parent_gate, gates.Quadrant)
 
