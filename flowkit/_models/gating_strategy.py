@@ -55,7 +55,7 @@ class GatingStrategy(object):
 
         :param gate: instance from a sub-class of the Gate class
         :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
-            Required if gate.id and gate.parent combination is ambiguous
+            Required if gate.gate_name and gate.parent combination is ambiguous
 
         :return: None
         """

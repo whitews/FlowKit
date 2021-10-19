@@ -349,7 +349,7 @@ class Session(object):
 
         :param gate: an instance of a Gate sub-class
         :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
-            Required if gate.id and gate.parent combination is ambiguous
+            Required if gate.gate_name and gate.parent combination is ambiguous
         :param group_name: a text string representing the sample group
         :return: None
         """
