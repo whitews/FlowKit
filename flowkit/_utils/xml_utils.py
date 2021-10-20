@@ -775,9 +775,10 @@ def _add_gates_from_gate_dict(gating_strategy, gate_dict, ns_map, parent_ml):
         skip = False
 
         gate = gating_strategy.get_gate(gate_id)
-        if isinstance(gate, Quadrant):
-            # single quadrants will be handled in the owning quadrant gate
-            skip = True
+        if isinstance(gate, QuadrantGate):
+            if gate_id in gate.quadrants.keys():
+                # single quadrants will be handled in the owning quadrant gate
+                skip = True
 
         if not skip:
             child_ml = _add_gate_to_gml(parent_ml, gate, ns_map)
