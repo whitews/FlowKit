@@ -117,13 +117,16 @@ class Session(object):
     groups, and each sample group has a single gating strategy template. The gates in a template can be customized
     per sample.
 
-    :param fcs_samples: a list of either file paths or Sample instances
-    :param subsample_count: Number of events to use as a sub-sample. If the number of
+    :param fcs_samples: str or list. If given a string, it can be a directory path or a file path.
+            If a directory, any .fcs files in the directory will be loaded. If a list, then it must
+            be a list of file paths or a list of Sample instances. Lists of mixed types are not
+            supported.
+    :param subsample: Number of events to use as a sub-sample. If the number of
         events in the Sample is less than the requested sub-sample count, then the
         maximum number of available events is used for the sub-sample.
     """
-    def __init__(self, fcs_samples=None, subsample_count=10000):
-        self.subsample_count = subsample_count
+    def __init__(self, fcs_samples=None, subsample=10000):
+        self.subsample_count = subsample
         self.sample_lut = {}
         self._results_lut = {}
         self._sample_group_lut = {}
@@ -223,16 +226,20 @@ class Session(object):
 
                 self._sample_group_lut[group_name]['samples'][sample] = gs
 
-    def add_samples(self, samples, group_name=None):
+    def add_samples(self, fcs_samples, group_name=None):
         """
-        Adds FCS samples to the session. All added samples will be added to the 'default' sample group.
+        Adds FCS samples to the session. All added samples will be added to the 'default' sample group unless
+        an existing sample group is specified for the group_name.
 
-        :param samples: a list of Sample instances
+        :param fcs_samples: str or list. If given a string, it can be a directory path or a file path.
+            If a directory, any .fcs files in the directory will be loaded. If a list, then it must
+            be a list of file paths or a list of Sample instances. Lists of mixed types are not
+            supported.
         :param group_name: a text string representing the sample group to which to assign samples. If None,
             samples are only added to the 'default' group.
         :return: None
         """
-        new_samples = sample_utils.load_samples(samples)
+        new_samples = sample_utils.load_samples(fcs_samples)
         for s in new_samples:
             s.subsample_events(self.subsample_count)
             if s.original_filename in self.sample_lut:
