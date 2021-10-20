@@ -1143,7 +1143,8 @@ class ExportGMLTestCase(unittest.TestCase):
 
         parent_gate = sess_out.get_gate(group_name, parent_gate_name, sample_id=data1_sample.original_filename)
 
-        self.assertIsInstance(parent_gate, gates.Quadrant)
+        self.assertIsInstance(parent_gate, gates.QuadrantGate)
+        self.assertIn('FL2P-FL4P', parent_gate.quadrants.keys())
 
     @staticmethod
     def test_all_gates():

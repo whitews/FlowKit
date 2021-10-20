@@ -850,7 +850,8 @@ class GatingMLTestCase(unittest.TestCase):
 
         parent_gate = s.get_gate(group_name, parent_gate_name, sample_id=data1_sample.original_filename)
 
-        self.assertIsInstance(parent_gate, gates.Quadrant)
+        self.assertIsInstance(parent_gate, gates.QuadrantGate)
+        self.assertIn('FL2P-FL4P', parent_gate.quadrants.keys())
 
     def test_gate_gating_hierarchy(self):
         gml_path = 'examples/data/gate_ref/gml/gml_all_gates.xml'

@@ -55,6 +55,12 @@ class GatingStrategyTestCase(unittest.TestCase):
 
         self.assertRaises(KeyError, gs.add_gate, poly1_gate)
 
+    def test_get_gate_raises_ValueError(self):
+        gs = fk.GatingStrategy()
+        gs.add_gate(poly1_gate)
+
+        self.assertRaises(ValueError, gs.get_gate, 'nonexistent-gate')
+
     def test_get_parent_gate_is_none(self):
         gs = fk.GatingStrategy()
         gs.add_gate(poly1_gate)
