@@ -201,9 +201,6 @@ class GatingStrategy(object):
         return self.comp_matrices[matrix_id]
 
     def _get_gate_node(self, gate_name, gate_path=None):
-        # It's not safe to just look at the gates dictionary as
-        # QuadrantGate IDs cannot be parents themselves, only their component
-        # Quadrant IDs can be parents.
         node_matches = anytree.findall_by_attr(self._gate_tree, gate_name)
         node_match_count = len(node_matches)
 
@@ -211,6 +208,7 @@ class GatingStrategy(object):
             node = node_matches[0]
         elif node_match_count > 1:
             # need to match on full gate path
+            # TODO: what if QuadrantGate is re-used, does this still work for that case
             if gate_path is None:
                 raise ValueError(
                     "Found multiple gates with name %s. Provide full 'gate_path' to disambiguate." % gate_name
@@ -234,13 +232,6 @@ class GatingStrategy(object):
         else:
             node = None
 
-        if node is None:
-            # may be in a Quadrant gate
-            for d in self._gate_tree.descendants:
-                if isinstance(d.gate, fk_gates.QuadrantGate):
-                    if gate_name in d.gate.quadrants:
-                        node = d
-                        break
         if node is None:
             raise ValueError("Gate name %s was not found in gating strategy" % gate_name)
 
@@ -267,11 +258,16 @@ class GatingStrategy(object):
         Retrieve a gate instance by its gate ID.
 
         :param gate_name: text string of a gate name
-        :param gate_path: complete tuple of gate IDs for unique set of gate ancestors. Required if gate_name is ambiguous
+        :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
+            Required if gate_name is ambiguous
         :return: Subclass of a Gate object
         :raises KeyError: if gate ID is not found in gating strategy
         """
         node = self._get_gate_node(gate_name, gate_path)
+
+        if isinstance(node.gate, fk_gates.Quadrant):
+            # return the full QuadrantGate b/c a Quadrant by itself has no parent reference
+            node = node.parent
 
         return node.gate
 
@@ -280,7 +276,8 @@ class GatingStrategy(object):
         Retrieve the parent Gate instance for the given gate ID.
 
         :param gate_name: text string of a gate name
-        :param gate_path: complete tuple of gate IDs for unique set of gate ancestors. Required if gate_name is ambiguous
+        :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
+            Required if gate_name is ambiguous
         :return: Subclassed Gate instance
         """
         node = self._get_gate_node(gate_name, gate_path)
@@ -295,7 +292,8 @@ class GatingStrategy(object):
         Retrieve list of child gate instances by their parent's gate ID.
 
         :param gate_name: text string of a gate name
-        :param gate_path: complete tuple of gate IDs for unique set of gate ancestors. Required if gate_name is ambiguous
+        :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
+            Required if gate_name is ambiguous
         :return: list of Gate instances
         :raises KeyError: if gate ID is not found in gating strategy
         """
@@ -700,10 +698,13 @@ class GatingStrategy(object):
 
             gate = self.get_gate(g_id, g_path)
 
-            if isinstance(gate, fk_gates.Quadrant):
-                # This is a quadrant sub-gate, we'll process the quadrant sub-gates
-                # all at once with the main QuadrantGate ID
-                continue
+            # get_gate returns QuadrantGate when given on of its quadrant, let's check if we have
+            # just a quadrant or the full QuadrantGate
+            if isinstance(gate, fk_gates.QuadrantGate):
+                if g_id in gate.quadrants.keys():
+                    # This is a quadrant sub-gate, we'll process the quadrant sub-gates
+                    # all at once with the main QuadrantGate ID
+                    continue
 
             if verbose:
                 print("%s: processing gate %s" % (sample.original_filename, g_id))
@@ -714,7 +715,7 @@ class GatingStrategy(object):
                 parent_gate = self.get_gate(p_id, p_path)
                 if p_uid in results:
                     parent_results = results[p_uid]
-                elif isinstance(parent_gate, fk_gates.Quadrant):
+                elif isinstance(parent_gate, fk_gates.QuadrantGate):
                     # need to check for quadrant results in a quadrant gate
                     q_gate_name = p_path[-1]
                     q_gate_path = p_path[:-1]
@@ -730,10 +731,11 @@ class GatingStrategy(object):
                     gate_ref_gate = self.get_gate(gate_ref['ref'], gate_ref['path'])
                     gate_ref_res_key = (gate_ref['ref'], "/".join(gate_ref['path']))
 
-                    if isinstance(gate_ref_gate, fk_gates.Quadrant):
-                        quad_gate_name = gate_ref['path'][-1]
-                        quad_gate_path_str = "/".join(gate_ref['path'][:-1])
-                        quad_gate_res_key = (quad_gate_name, quad_gate_path_str)
+                    if isinstance(gate_ref_gate, fk_gates.QuadrantGate):
+                        quad_gate_name = gate_ref_gate.gate_name
+                        quad_gate_path = gate_ref['path'][:-1]
+
+                        quad_gate_res_key = (quad_gate_name, "/".join(quad_gate_path))
                         quad_gate_results = results[quad_gate_res_key]
 
                         # but the quadrant result is what we're after
