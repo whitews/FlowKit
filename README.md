@@ -87,16 +87,17 @@ Required Python dependencies:
 
 * [flowio](https://github.com/whitews/flowio) == 0.9.12
 * [flowutils](https://github.com/whitews/flowutils) == 0.9.5
-* numpy >= 1.19
-* scipy >= 1.3
-* statsmodels
-* pandas >= 1.1
-* matplotlib >= 3.1
-* seaborn >= 0.11
+* anytree >= 2.6
 * bokeh >= 1.4
 * lxml >= 4.4
-* anytree >= 2.6
+* matplotlib >= 3.1
 * networkx >= 2.3
+* numpy >= 1.19
+* pandas >= 1.1
+* psutils ~= 5.8
+* scipy >= 1.3
+* seaborn >= 0.11
+* statsmodels
 
 ## Installation
 
@@ -119,12 +120,19 @@ python setup.py install
 
 Below are a few Jupyter notebooks demonstrating basic usage of the library. Note, the interactive scatterplots do not render on GitHub. Clone the repo (or download the example notebooks), and run them locally to see the fully interactive plots.
 
-* [General Overview](https://github.com/whitews/FlowKit/blob/master/examples/flowkit-tutorial.ipynb)
-* [Applying transforms to a Sample](https://github.com/whitews/FlowKit/blob/master/examples/sample_transforms.ipynb)
-* [Compensating events using spillover matrix](https://github.com/whitews/FlowKit/blob/master/examples/sample_compensation.ipynb)
+### Tutorials
+
+* [Part 1 - Sample Class](https://github.com/whitews/FlowKit/blob/master/examples/flowkit-tutorial-part01-sample-class.ipynb)
+* [Part 2 - transforms Module & Matrix Class](https://github.com/whitews/FlowKit/blob/master/examples/flowkit-tutorial-part02-transforms-module-matrix-class.ipynb)
+* [Part 3 - GatingStrategy & GatingResults Classes](https://github.com/whitews/FlowKit/blob/master/examples/flowkit-tutorial-part03-gating-strategy-and-gating-results-classes.ipynb)
+* [Part 4 - gates Module](https://github.com/whitews/FlowKit/blob/master/examples/flowkit-tutorial-part04-gates-module.ipynb)
+* [Part 5 - Session Class](https://github.com/whitews/FlowKit/blob/master/examples/flowkit-tutorial-part05-session-class.ipynb)
+
+### Advanced Examples
+
+* [Compare mean fluorescence intensity (MFI) in gated populations](https://github.com/whitews/FlowKit/blob/master/examples/flowkit-session-compare-mfi-of-gated-events.ipynb)
 * [Customize gate for a single Sample in a Session sample group](https://github.com/whitews/FlowKit/blob/master/examples/flowkit-session-create-custom-sample-gate.ipynb)
 * [Importing a FlowJo 10 WSP file & replicating analysis in FlowKit](https://github.com/whitews/FlowKit/blob/master/examples/flowkit-session-replicate-flowjo-wsp.ipynb)
-* [Compare mean fluorescence intensity (MFI) in gated populations](https://github.com/whitews/FlowKit/blob/master/examples/flowkit-session-compare-mfi-of-gated-events.ipynb)
 * [Dimension reduction on gated populations](https://github.com/whitews/FlowKit/blob/master/examples/dimension_reduction_on_gated_populations.ipynb)
 * [Comparison between Leiden & Louvain clustering](https://github.com/whitews/FlowKit/blob/master/examples/clustering_comparison_leiden_vs_louvain.ipynb)
 
