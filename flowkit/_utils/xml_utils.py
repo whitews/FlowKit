@@ -23,7 +23,6 @@ from .._models.gates._gml_gates import \
 from .._models.gates._gates import \
     BooleanGate, \
     EllipsoidGate, \
-    Quadrant, \
     QuadrantGate, \
     PolygonGate, \
     RectangleGate
