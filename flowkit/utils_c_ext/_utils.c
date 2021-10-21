@@ -48,7 +48,7 @@ static PyObject *wrap_points_in_polygon(PyObject *self, PyObject *args) {
     Py_DECREF(poly_vert_array);
     Py_DECREF(points_array);
 
-    long int dims[1];
+    npy_intp dims[1];
     dims[0] = point_count;
 
     PyObject *arr = PyArray_SimpleNewFromData(1, dims, NPY_INT32, is_in_polygon);
