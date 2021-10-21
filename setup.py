@@ -44,7 +44,8 @@ reqs = [
     'lxml',
     'bokeh',
     'anytree',
-    'networkx'
+    'networkx',
+    'psutil'
 ]
 
 setup(
