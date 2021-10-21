@@ -24,7 +24,7 @@ from .._utils import plot_utils
 
 class Sample(object):
     """
-    Represents a single FCS sample from an FCS file, NumPy array or Pandas
+    Represents a single FCS sample from an FCS file, NumPy array or pandas
     DataFrame.
 
     For Sample plot methods, pay attention the the defaults for the subsample
@@ -45,7 +45,7 @@ class Sample(object):
         - a pathlib Path object
         - a FlowIO FlowData object
         - a NumPy array of FCS event data (must provide channel_labels)
-        - a Pandas DataFrame containing FCS event data (channel labels as column labels)
+        - a pandas DataFrame containing FCS event data (channel labels as column labels)
 
     :param channel_labels: A list of strings or a list of tuples to use for the channel
         labels. Required if fcs_path_or_data is a NumPy array
@@ -522,10 +522,9 @@ class Sample(object):
 
         return events
 
-
     def as_dataframe(self, source='xform', subsample=False, col_order=None, col_names=None):
         """
-        Returns a Pandas DataFrame of event data
+        Returns a pandas DataFrame of event data
 
         :param source: 'orig', 'raw', 'comp', 'xform' for whether the original (no gain applied),
             raw (orig + gain), compensated (raw + comp), or transformed (comp + xform) events will
@@ -536,7 +535,7 @@ class Sample(object):
             in the output DataFrame. If None, the column order will match the FCS file.
         :param col_names: list of new column labels. If None (default), the DataFrame
             columns will be a MultiIndex of the PnN / PnS labels.
-        :return: Pandas DataFrame of event data
+        :return: pandas DataFrame of event data
         """
         events = self.get_events(source=source, subsample=subsample)
 

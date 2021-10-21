@@ -37,7 +37,7 @@ class Gate(ABC):
     def apply(self, df_events):
         """
         Abstract method to apply gate to given DataFrame of events
-        :param df_events: Pandas DataFrame containing event data
+        :param df_events: pandas DataFrame containing event data
         :return:
         """
         pass
