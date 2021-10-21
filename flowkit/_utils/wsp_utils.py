@@ -501,6 +501,7 @@ def parse_wsp(workspace_file_or_path, ignore_transforms=False):
                         tmp_sample_gate = sample_gate_dict['gate']
                         # noinspection PyTypeChecker
                         tmp_sample_gate_path = sample_gate_dict['gate_path']
+                        # noinspection PyUnresolvedReferences
                         if group_gate_path == tmp_sample_gate_path and tmp_sample_gate.gate_name == group_gate_name:
                             # found a match, overwrite tmp_gate
                             tmp_gate = tmp_sample_gate
@@ -530,7 +531,7 @@ def parse_wsp(workspace_file_or_path, ignore_transforms=False):
                 # noinspection PyTypeChecker
                 sample_gate_path = sample_gate_dict['gate_path']
 
-                # noinspection PyTypeChecker
+                # noinspection PyUnresolvedReferences
                 if sample_gate.gate_name not in group_sample_gate_names:
                     # noinspection PyTypeChecker
                     tmp_gate = _convert_wsp_gate(
