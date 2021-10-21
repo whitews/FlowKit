@@ -14,7 +14,9 @@
 * [Features](#features)
 * [Requirements](#requirements)
 * [Installation](#installation)
-* [Usage](#usage)
+* [Documentation](#documentation)
+  * [Tutorials](#tutorials)
+  * [Advanced Examples](#advanced-examples)
 * [Contributing](#contributing)
 
 ## Overview
@@ -30,7 +32,7 @@ FlowKit is an intuitive Python toolkit for flow cytometry analysis and visualiza
 * Read / Write FCS Files
   * Read FCS files, supporting FCS versions 2.0, 3.0, and 3.1
   * Export FCS data as:
-    * A new FCS 3.1 file, with modified metadata and/or filtered events
+    * A new FCS 3.1 file
     * NumPy array
     * Pandas DataFrame
     * CSV text file
@@ -42,14 +44,13 @@ FlowKit is an intuitive Python toolkit for flow cytometry analysis and visualiza
     * GatingML 2.0 spectrumMatrix XML element
   * Create a compensation matrix from a set of compensation bead files
 * Transformation
-  * Support for a variety of transformations used in the flow community:
-    * Logicle
-    * Inverse hyperbolic sine (ArcSinh)
-    * FlowJo Bi-exponential
-    * Hyperlog
-    * Logarithmic
-    * Channel ratios
-    * Linear
+  * Logicle
+  * Inverse hyperbolic sine (ArcSinh)
+  * FlowJo Bi-exponential
+  * Hyperlog
+  * Logarithmic
+  * Channel ratios
+  * Linear
 * Gating
   * Full support for the GatingML 2.0 specification
     * Import GatingML XML documents as gating strategies
@@ -57,16 +58,9 @@ FlowKit is an intuitive Python toolkit for flow cytometry analysis and visualiza
   * Limited support for importing FlowJo 10 workspace files. Workspace files are currently limited to the following features:
     * Linear, logarithmic, bi-exponential, and logicle transforms
     * Polygon, rectangle, ellipse, and quadrant gates
+    * Export a Session's sample group analysis as a FlowJo 10 workspace file
   * Programmatically create gating strategies including polygon, rectangle, range, ellipsoid, quadrant, and boolean gates
-  * Easily retrieve gating results from a gating strategy as a Pandas DataFrame. Results include:
-    * FCS sample ID
-    * Gate name
-    * Parent gate
-    * Gate path
-    * Gate level (depth in gate hierarchy tree)  
-    * Absolute event count
-    * Relative percentage
-    * Absolute percentage
+  * Retrieve gating results as a Pandas DataFrame 
 * Visualization
   * Histogram of single channel data
   * Contour density plot of two channels
@@ -116,11 +110,14 @@ cd flowkit
 python setup.py install
 ```
 
-## Usage
+## Documentation
 
-Below are a few Jupyter notebooks demonstrating basic usage of the library. Note, the interactive scatterplots do not render on GitHub. Clone the repo (or download the example notebooks), and run them locally to see the fully interactive plots.
+The FlowKit API documentation is available [on ReadTheDocs here](https://flowkit.readthedocs.io/en/latest/?badge=latest). The tutorial notebooks in the examples directory are a great place to get started with FlowKit, and are linked below.
+If you have any questions about FlowKit, find any bugs, or feel something is missing from the tutorials below [please submit an issue to the GitHub repository here](https://github.com/whitews/FlowKit/issues/new/).
 
 ### Tutorials
+
+The series of Jupyter notebook tutorials can be found in the `examples` directory of this repository. Note, the interactive scatterplots do not render on GitHub. Clone the repo (or download the example notebooks), and run them locally to see the fully interactive plots.
 
 * [Part 1 - Sample Class](https://github.com/whitews/FlowKit/blob/master/examples/flowkit-tutorial-part01-sample-class.ipynb)
 * [Part 2 - transforms Module & Matrix Class](https://github.com/whitews/FlowKit/blob/master/examples/flowkit-tutorial-part02-transforms-module-matrix-class.ipynb)
@@ -129,6 +126,8 @@ Below are a few Jupyter notebooks demonstrating basic usage of the library. Note
 * [Part 5 - Session Class](https://github.com/whitews/FlowKit/blob/master/examples/flowkit-tutorial-part05-session-class.ipynb)
 
 ### Advanced Examples
+
+Below are more advanced and practical examples for using FlowKit. If you have an example you would like to submit for consideration in this list (preferably with data), please [submit an issue](https://github.com/whitews/FlowKit/issues/new/).
 
 * [Compare mean fluorescence intensity (MFI) in gated populations](https://github.com/whitews/FlowKit/blob/master/examples/flowkit-session-compare-mfi-of-gated-events.ipynb)
 * [Customize gate for a single Sample in a Session sample group](https://github.com/whitews/FlowKit/blob/master/examples/flowkit-session-create-custom-sample-gate.ipynb)
