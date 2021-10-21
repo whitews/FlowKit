@@ -452,7 +452,6 @@ class Sample(object):
         else:
             return self._raw_events
 
-    # TODO: make event type names/references consistent across the API...is it xform/transform comp/compensated, etc.
     def _get_comp_events(self, subsample=False):
         """
         Returns compensated events, (not transformed)
