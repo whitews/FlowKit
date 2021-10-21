@@ -36,7 +36,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = sess_out.get_gate_indices(group_name, data1_sample.original_filename, 'Range1')
+        result = sess_out.get_gate_membership(group_name, data1_sample.original_filename, 'Range1')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -60,7 +60,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = sess_out.get_gate_indices(group_name, data1_sample.original_filename, 'Rectangle1')
+        result = sess_out.get_gate_membership(group_name, data1_sample.original_filename, 'Rectangle1')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -84,7 +84,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = sess_out.get_gate_indices(group_name, data1_sample.original_filename, 'Rectangle2')
+        result = sess_out.get_gate_membership(group_name, data1_sample.original_filename, 'Rectangle2')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -108,7 +108,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = sess_out.get_gate_indices(group_name, data1_sample.original_filename, 'Polygon1')
+        result = sess_out.get_gate_membership(group_name, data1_sample.original_filename, 'Polygon1')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -132,7 +132,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = sess_out.get_gate_indices(group_name, data1_sample.original_filename, 'Polygon2')
+        result = sess_out.get_gate_membership(group_name, data1_sample.original_filename, 'Polygon2')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -156,7 +156,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = sess_out.get_gate_indices(group_name, data1_sample.original_filename, 'Polygon3NS')
+        result = sess_out.get_gate_membership(group_name, data1_sample.original_filename, 'Polygon3NS')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -180,7 +180,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = sess_out.get_gate_indices(group_name, data1_sample.original_filename, 'Ellipse1')
+        result = sess_out.get_gate_membership(group_name, data1_sample.original_filename, 'Ellipse1')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -204,7 +204,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = sess_out.get_gate_indices(group_name, data1_sample.original_filename, 'Ellipsoid3D')
+        result = sess_out.get_gate_membership(group_name, data1_sample.original_filename, 'Ellipsoid3D')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -228,7 +228,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = sess_out.get_gate_indices(group_name, data1_sample.original_filename, 'Range2')
+        result = sess_out.get_gate_membership(group_name, data1_sample.original_filename, 'Range2')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -261,10 +261,10 @@ class ExportGMLTestCase(unittest.TestCase):
 
         result = sess_out.get_gating_results(group_name, data1_sample.original_filename)
 
-        np.testing.assert_array_equal(truth1, result.get_gate_indices('FL2N-FL4N'))
-        np.testing.assert_array_equal(truth2, result.get_gate_indices('FL2N-FL4P'))
-        np.testing.assert_array_equal(truth3, result.get_gate_indices('FL2P-FL4N'))
-        np.testing.assert_array_equal(truth4, result.get_gate_indices('FL2P-FL4P'))
+        np.testing.assert_array_equal(truth1, result.get_gate_membership('FL2N-FL4N'))
+        np.testing.assert_array_equal(truth2, result.get_gate_membership('FL2N-FL4P'))
+        np.testing.assert_array_equal(truth3, result.get_gate_membership('FL2P-FL4N'))
+        np.testing.assert_array_equal(truth4, result.get_gate_membership('FL2P-FL4P'))
 
     @staticmethod
     def test_quadrant2_gate():
@@ -297,11 +297,11 @@ class ExportGMLTestCase(unittest.TestCase):
 
         result = sess_out.get_gating_results(group_name, data1_sample.original_filename)
 
-        np.testing.assert_array_equal(truth1, result.get_gate_indices('FSCN-SSCN'))
-        np.testing.assert_array_equal(truth2, result.get_gate_indices('FSCD-SSCN-FL1N'))
-        np.testing.assert_array_equal(truth3, result.get_gate_indices('FSCP-SSCN-FL1N'))
-        np.testing.assert_array_equal(truth4, result.get_gate_indices('FSCD-FL1P'))
-        np.testing.assert_array_equal(truth5, result.get_gate_indices('FSCN-SSCP-FL1P'))
+        np.testing.assert_array_equal(truth1, result.get_gate_membership('FSCN-SSCN'))
+        np.testing.assert_array_equal(truth2, result.get_gate_membership('FSCD-SSCN-FL1N'))
+        np.testing.assert_array_equal(truth3, result.get_gate_membership('FSCP-SSCN-FL1N'))
+        np.testing.assert_array_equal(truth4, result.get_gate_membership('FSCD-FL1P'))
+        np.testing.assert_array_equal(truth5, result.get_gate_membership('FSCN-SSCP-FL1P'))
 
     @staticmethod
     def test_ratio_range1_gate():
@@ -323,7 +323,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = sess_out.get_gate_indices(group_name, data1_sample.original_filename, 'RatRange1')
+        result = sess_out.get_gate_membership(group_name, data1_sample.original_filename, 'RatRange1')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -347,7 +347,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = sess_out.get_gate_indices(group_name, data1_sample.original_filename, 'RatRange2')
+        result = sess_out.get_gate_membership(group_name, data1_sample.original_filename, 'RatRange2')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -371,7 +371,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = sess_out.get_gate_indices(group_name, data1_sample.original_filename, 'RatRange1a')
+        result = sess_out.get_gate_membership(group_name, data1_sample.original_filename, 'RatRange1a')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -395,7 +395,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = sess_out.get_gate_indices(group_name, data1_sample.original_filename, 'And1')
+        result = sess_out.get_gate_membership(group_name, data1_sample.original_filename, 'And1')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -419,7 +419,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = sess_out.get_gate_indices(group_name, data1_sample.original_filename, 'And2')
+        result = sess_out.get_gate_membership(group_name, data1_sample.original_filename, 'And2')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -443,7 +443,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = sess_out.get_gate_indices(group_name, data1_sample.original_filename, 'Or1')
+        result = sess_out.get_gate_membership(group_name, data1_sample.original_filename, 'Or1')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -467,7 +467,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = sess_out.get_gate_indices(group_name, data1_sample.original_filename, 'And3')
+        result = sess_out.get_gate_membership(group_name, data1_sample.original_filename, 'And3')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -491,7 +491,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = sess_out.get_gate_indices(group_name, data1_sample.original_filename, 'Not1')
+        result = sess_out.get_gate_membership(group_name, data1_sample.original_filename, 'Not1')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -515,7 +515,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = sess_out.get_gate_indices(group_name, data1_sample.original_filename, 'And4')
+        result = sess_out.get_gate_membership(group_name, data1_sample.original_filename, 'And4')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -539,7 +539,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = sess_out.get_gate_indices(group_name, data1_sample.original_filename, 'Or2')
+        result = sess_out.get_gate_membership(group_name, data1_sample.original_filename, 'Or2')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -563,7 +563,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = sess_out.get_gate_indices(group_name, data1_sample.original_filename, 'Polygon4')
+        result = sess_out.get_gate_membership(group_name, data1_sample.original_filename, 'Polygon4')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -587,7 +587,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = sess_out.get_gate_indices(group_name, data1_sample.original_filename, 'Rectangle3')
+        result = sess_out.get_gate_membership(group_name, data1_sample.original_filename, 'Rectangle3')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -611,7 +611,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = sess_out.get_gate_indices(group_name, data1_sample.original_filename, 'Rectangle4')
+        result = sess_out.get_gate_membership(group_name, data1_sample.original_filename, 'Rectangle4')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -635,7 +635,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = sess_out.get_gate_indices(group_name, data1_sample.original_filename, 'Rectangle5')
+        result = sess_out.get_gate_membership(group_name, data1_sample.original_filename, 'Rectangle5')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -661,7 +661,7 @@ class ExportGMLTestCase(unittest.TestCase):
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
         result = sess_out.get_gating_results(group_name, data1_sample.original_filename)
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange1'))
+        np.testing.assert_array_equal(truth, result.get_gate_membership('ScaleRange1'))
 
     @staticmethod
     def test_transform_hyperlog_range2_gate():
@@ -683,7 +683,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = sess_out.get_gate_indices(group_name, data1_sample.original_filename, 'ScaleRange2')
+        result = sess_out.get_gate_membership(group_name, data1_sample.original_filename, 'ScaleRange2')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -707,7 +707,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = sess_out.get_gate_indices(group_name, data1_sample.original_filename, 'ScaleRange3')
+        result = sess_out.get_gate_membership(group_name, data1_sample.original_filename, 'ScaleRange3')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -731,7 +731,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = sess_out.get_gate_indices(group_name, data1_sample.original_filename, 'ScaleRange4')
+        result = sess_out.get_gate_membership(group_name, data1_sample.original_filename, 'ScaleRange4')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -755,7 +755,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = sess_out.get_gate_indices(group_name, data1_sample.original_filename, 'ScaleRange5')
+        result = sess_out.get_gate_membership(group_name, data1_sample.original_filename, 'ScaleRange5')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -779,7 +779,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.analyze_samples(group_name)
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
-        result = sess_out.get_gate_indices(group_name, data1_sample.original_filename, 'ScaleRange6')
+        result = sess_out.get_gate_membership(group_name, data1_sample.original_filename, 'ScaleRange6')
 
         np.testing.assert_array_equal(truth, result)
 
@@ -805,7 +805,7 @@ class ExportGMLTestCase(unittest.TestCase):
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
         result = sess_out.get_gating_results(group_name, data1_sample.original_filename)
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange1c'))
+        np.testing.assert_array_equal(truth, result.get_gate_membership('ScaleRange1c'))
 
     @staticmethod
     def test_matrix_transform_hyperlog_range2c_gate():
@@ -829,7 +829,7 @@ class ExportGMLTestCase(unittest.TestCase):
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
         result = sess_out.get_gating_results(group_name, data1_sample.original_filename)
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange2c'))
+        np.testing.assert_array_equal(truth, result.get_gate_membership('ScaleRange2c'))
 
     @staticmethod
     def test_matrix_transform_linear_range3c_gate():
@@ -853,7 +853,7 @@ class ExportGMLTestCase(unittest.TestCase):
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
         result = sess_out.get_gating_results(group_name, data1_sample.original_filename)
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange3c'))
+        np.testing.assert_array_equal(truth, result.get_gate_membership('ScaleRange3c'))
 
     @staticmethod
     def test_matrix_transform_logicle_range4c_gate():
@@ -877,7 +877,7 @@ class ExportGMLTestCase(unittest.TestCase):
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
         result = sess_out.get_gating_results(group_name, data1_sample.original_filename)
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange4c'))
+        np.testing.assert_array_equal(truth, result.get_gate_membership('ScaleRange4c'))
 
     @staticmethod
     def test_matrix_transform_logicle_range5c_gate():
@@ -901,7 +901,7 @@ class ExportGMLTestCase(unittest.TestCase):
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
         result = sess_out.get_gating_results(group_name, data1_sample.original_filename)
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange5c'))
+        np.testing.assert_array_equal(truth, result.get_gate_membership('ScaleRange5c'))
 
     @staticmethod
     def test_matrix_transform_asinh_range6c_gate():
@@ -925,7 +925,7 @@ class ExportGMLTestCase(unittest.TestCase):
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
         result = sess_out.get_gating_results(group_name, data1_sample.original_filename)
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange6c'))
+        np.testing.assert_array_equal(truth, result.get_gate_membership('ScaleRange6c'))
 
     @staticmethod
     def test_matrix_transform_hyperlog_range7c_gate():
@@ -949,7 +949,7 @@ class ExportGMLTestCase(unittest.TestCase):
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
         result = sess_out.get_gating_results(group_name, data1_sample.original_filename)
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange7c'))
+        np.testing.assert_array_equal(truth, result.get_gate_membership('ScaleRange7c'))
 
     @staticmethod
     def test_matrix_transform_logicle_range8c_gate():
@@ -973,7 +973,7 @@ class ExportGMLTestCase(unittest.TestCase):
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
         result = sess_out.get_gating_results(group_name, data1_sample.original_filename)
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange8c'))
+        np.testing.assert_array_equal(truth, result.get_gate_membership('ScaleRange8c'))
 
     @staticmethod
     def test_matrix_transform_logicle_rect1_gate():
@@ -997,7 +997,7 @@ class ExportGMLTestCase(unittest.TestCase):
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
         result = sess_out.get_gating_results(group_name, data1_sample.original_filename)
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRect1'))
+        np.testing.assert_array_equal(truth, result.get_gate_membership('ScaleRect1'))
 
     @staticmethod
     def test_parent_poly1_boolean_and2_gate():
@@ -1021,7 +1021,7 @@ class ExportGMLTestCase(unittest.TestCase):
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
         result = sess_out.get_gating_results(group_name, data1_sample.original_filename)
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('ParAnd2'))
+        np.testing.assert_array_equal(truth, result.get_gate_membership('ParAnd2'))
 
     @staticmethod
     def test_parent_range1_boolean_and3_gate():
@@ -1045,7 +1045,7 @@ class ExportGMLTestCase(unittest.TestCase):
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
         result = sess_out.get_gating_results(group_name, data1_sample.original_filename)
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('ParAnd3'))
+        np.testing.assert_array_equal(truth, result.get_gate_membership('ParAnd3'))
 
     @staticmethod
     def test_parent_rect1_rect_par1_gate():
@@ -1069,7 +1069,7 @@ class ExportGMLTestCase(unittest.TestCase):
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
         result = sess_out.get_gating_results(group_name, data1_sample.original_filename)
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('ScalePar1'))
+        np.testing.assert_array_equal(truth, result.get_gate_membership('ScalePar1'))
 
     @staticmethod
     def test_parent_quadrant_rect_gate():
@@ -1093,7 +1093,7 @@ class ExportGMLTestCase(unittest.TestCase):
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
         result = sess_out.get_gating_results(group_name, data1_sample.original_filename)
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('ParRectangle1'))
+        np.testing.assert_array_equal(truth, result.get_gate_membership('ParRectangle1'))
 
     def test_get_parent_rect_gate(self):
         gml_path = 'examples/data/gate_ref/gml/gml_parent_rect1_rect_par1_gate.xml'
@@ -1112,11 +1112,11 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
-        parent_id = sess_out.get_parent_gate_id(group_name, 'ScalePar1')
+        parent_gate_name = sess_out.get_parent_gate_name(group_name, 'ScalePar1')
 
-        self.assertEqual(parent_id, 'ScaleRect1')
+        self.assertEqual(parent_gate_name, 'ScaleRect1')
 
-        parent_gate = sess_out.get_gate(group_name, parent_id, sample_id=data1_sample.original_filename)
+        parent_gate = sess_out.get_gate(group_name, parent_gate_name, sample_id=data1_sample.original_filename)
 
         self.assertIsInstance(parent_gate, gates.RectangleGate)
 
@@ -1137,13 +1137,14 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
-        parent_id = sess_out.get_parent_gate_id(group_name, 'ParRectangle1')
+        parent_gate_name = sess_out.get_parent_gate_name(group_name, 'ParRectangle1')
 
-        self.assertEqual(parent_id, 'FL2P-FL4P')
+        self.assertEqual(parent_gate_name, 'FL2P-FL4P')
 
-        parent_gate = sess_out.get_gate(group_name, parent_id, sample_id=data1_sample.original_filename)
+        parent_gate = sess_out.get_gate(group_name, parent_gate_name, sample_id=data1_sample.original_filename)
 
-        self.assertIsInstance(parent_gate, gates.Quadrant)
+        self.assertIsInstance(parent_gate, gates.QuadrantGate)
+        self.assertIn('FL2P-FL4P', parent_gate.quadrants.keys())
 
     @staticmethod
     def test_all_gates():
@@ -1179,6 +1180,6 @@ class ExportGMLTestCase(unittest.TestCase):
 
         for row in gs_results.report.itertuples():
             np.testing.assert_array_equal(
-                truth_dict[row.gate_id],
-                gs_results.get_gate_indices(row.gate_id)
+                truth_dict[row.gate_name],
+                gs_results.get_gate_membership(row.gate_name)
             )

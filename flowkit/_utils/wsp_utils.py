@@ -42,9 +42,11 @@ def _parse_wsp_compensation(sample_el, transform_ns, data_type_ns):
         namespaces=sample_el.nsmap
     )
 
-    if len(matrix_els) > 1:
+    matrix_els_cnt = len(matrix_els)
+
+    if matrix_els_cnt > 1:
         raise ValueError("Multiple spillover matrices per sample are not supported.")
-    elif len(matrix_els) == 0:
+    elif matrix_els_cnt == 0:
         return None
 
     matrix_el = matrix_els[0]
@@ -208,27 +210,27 @@ def _convert_wsp_gate(wsp_gate, comp_matrix, xform_lut, ignore_transforms=False)
         if comp_matrix is not None:
             pre = comp_matrix['prefix']
             suf = comp_matrix['suffix']
-            dim_label = dim.label
+            dim_id = dim.id
 
-            if dim_label.startswith(pre):
-                dim_label = re.sub(r'^%s' % pre, '', dim_label)
-            if dim_label.endswith(suf):
-                dim_label = re.sub(r'%s$' % suf, '', dim_label)
+            if dim_id.startswith(pre):
+                dim_id = re.sub(r'^%s' % pre, '', dim_id)
+            if dim_id.endswith(suf):
+                dim_id = re.sub(r'%s$' % suf, '', dim_id)
 
-            if dim_label in comp_matrix['detectors']:
+            if dim_id in comp_matrix['detectors']:
                 comp_ref = comp_matrix['matrix_name']
             else:
                 comp_ref = None
         else:
-            dim_label = dim.label
+            dim_id = dim.id
             comp_ref = None
 
         xform_id = None
         new_dim_min = None
         new_dim_max = None
 
-        if dim_label in xform_lut and not ignore_transforms:
-            xform = xform_lut[dim_label]
+        if dim_id in xform_lut and not ignore_transforms:
+            xform = xform_lut[dim_id]
             xforms.append(xform)  # need these later for vertices, coordinates, etc.
             xform_id = xform.id
             if dim.min is not None:
@@ -245,7 +247,7 @@ def _convert_wsp_gate(wsp_gate, comp_matrix, xform_lut, ignore_transforms=False)
                 new_dim_max = float(dim.max)
 
         new_dim = Dimension(
-            dim_label,
+            dim_id,
             comp_ref,
             xform_id,
             range_min=new_dim_min,
@@ -261,7 +263,7 @@ def _convert_wsp_gate(wsp_gate, comp_matrix, xform_lut, ignore_transforms=False)
                 if xforms[i] is not None:
                     v.coordinates[i] = xforms[i].apply(np.array([[float(c)]]))[0][0]
 
-        gate = PolygonGate(wsp_gate.id, wsp_gate.parent, new_dims, vertices)
+        gate = PolygonGate(wsp_gate.gate_name, wsp_gate.parent, new_dims, vertices)
     elif isinstance(wsp_gate, GMLRectangleGate):
         gate = copy.deepcopy(wsp_gate)
         gate.dimensions = new_dims
@@ -315,7 +317,7 @@ def _recurse_wsp_sub_populations(sub_pop_el, gate_path, gating_ns, data_type_ns)
         #       though it isn't always the case. However, it seems the ID is reliably included
         #       in the parent "Gate" element, saved here in the 'gate_el' variable.
         #       Likewise for parent_id
-        g.id = pop_name
+        g.gate_name = pop_name
         g.parent = parent_id
 
         gates.append(
@@ -422,7 +424,7 @@ def _parse_wsp_samples(sample_els, ns_map, gating_ns, transform_ns, data_type_ns
                 # sample has a custom gate then that custom gate cannot be further customized.
                 # Since there is only a single custom gate per gate name per sample, then we
                 # can create a LUT of custom gates per sample
-                wsp_samples[sample_id]['custom_gate_ids'].add(sample_gate['gate'].id)
+                wsp_samples[sample_id]['custom_gate_ids'].add(sample_gate['gate'].gate_name)
                 wsp_samples[sample_id]['custom_gates'].append(
                     {
                         'gate': sample_gate['gate'],
@@ -484,20 +486,23 @@ def parse_wsp(workspace_file_or_path, ignore_transforms=False):
             sample_dict = wsp_samples[group_sample_id]
             sample_name = sample_dict['sample_name']
 
-            group_sample_gate_ids = []
+            group_sample_gate_names = []
             group_sample_gates = []
 
             for group_gate in group_dict['gates']:
-                group_gate_name = group_gate['gate'].id
+                group_gate_name = group_gate['gate'].gate_name
 
                 tmp_gate = copy.deepcopy(group_gate['gate'])
 
                 if group_gate_name in sample_dict['custom_gate_ids']:
                     group_gate_path = group_gate['gate_path']
                     for sample_gate_dict in sample_dict['custom_gates']:
+                        # noinspection PyTypeChecker
                         tmp_sample_gate = sample_gate_dict['gate']
+                        # noinspection PyTypeChecker
                         tmp_sample_gate_path = sample_gate_dict['gate_path']
-                        if group_gate_path == tmp_sample_gate_path and tmp_sample_gate.id == group_gate_name:
+                        # noinspection PyUnresolvedReferences
+                        if group_gate_path == tmp_sample_gate_path and tmp_sample_gate.gate_name == group_gate_name:
                             # found a match, overwrite tmp_gate
                             tmp_gate = tmp_sample_gate
 
@@ -508,7 +513,7 @@ def parse_wsp(workspace_file_or_path, ignore_transforms=False):
                     ignore_transforms=ignore_transforms
                 )
 
-                group_sample_gate_ids.append(group_gate_name)
+                group_sample_gate_names.append(group_gate_name)
                 group_sample_gates.append(
                     {
                         'gate': tmp_gate,
@@ -521,10 +526,14 @@ def parse_wsp(workspace_file_or_path, ignore_transforms=False):
             # found the custom sample gates, but we don't want to replicate
             # them.
             for sample_gate_dict in sample_dict['custom_gates']:
+                # noinspection PyTypeChecker
                 sample_gate = sample_gate_dict['gate']
+                # noinspection PyTypeChecker
                 sample_gate_path = sample_gate_dict['gate_path']
 
-                if sample_gate.id not in group_sample_gate_ids:
+                # noinspection PyUnresolvedReferences
+                if sample_gate.gate_name not in group_sample_gate_names:
+                    # noinspection PyTypeChecker
                     tmp_gate = _convert_wsp_gate(
                         sample_gate,
                         sample_dict['comp'],
@@ -642,14 +651,14 @@ def _add_polygon_gate(parent_el, gate, fj_gate_id, fj_parent_gate_id, gating_str
     xform_refs = []
     for dim in gate.dimensions:
         # use comp prefix for label except for scatter and time channels
-        if dim.label[:4] in ['FSC-', 'SSC-', 'Time']:
-            dim_label = dim.label
+        if dim.id[:4] in ['FSC-', 'SSC-', 'Time']:
+            dim_id = dim.id
         else:
-            dim_label = comp_prefix + dim.label
+            dim_id = comp_prefix + dim.id
 
         dim_el = etree.SubElement(gate_instance_el, "{%s}dimension" % ns_map['gating'])
         fcs_dim_el = etree.SubElement(dim_el, "{%s}fcs-dimension" % ns_map['data-type'])
-        fcs_dim_el.set("{%s}name" % ns_map['data-type'], dim_label)
+        fcs_dim_el.set("{%s}name" % ns_map['data-type'], dim_id)
 
         xform_refs.append(dim.transformation_ref)
 
@@ -676,14 +685,14 @@ def _add_rectangle_gate(parent_el, gate, fj_gate_id, fj_parent_gate_id, gating_s
 
     for dim in gate.dimensions:
         # use comp prefix for label except for scatter and time channels
-        if dim.label[:4] in ['FSC-', 'SSC-', 'Time']:
-            dim_label = dim.label
+        if dim.id[:4] in ['FSC-', 'SSC-', 'Time']:
+            dim_id = dim.id
         else:
-            dim_label = comp_prefix + dim.label
+            dim_id = comp_prefix + dim.id
 
         dim_el = etree.SubElement(gate_instance_el, "{%s}dimension" % ns_map['gating'])
         fcs_dim_el = etree.SubElement(dim_el, "{%s}fcs-dimension" % ns_map['data-type'])
-        fcs_dim_el.set("{%s}name" % ns_map['data-type'], dim_label)
+        fcs_dim_el.set("{%s}name" % ns_map['data-type'], dim_id)
 
         xform_ref = dim.transformation_ref
 
@@ -757,11 +766,11 @@ def _recurse_add_sub_populations(parent_el, gate_id, gate_path, gating_strategy,
 
         # child gate path will be the parent's gate path plus the parent ID
         child_gate_path = copy.deepcopy(gate_path)
-        child_gate_path.append(gate_id)
+        child_gate_path = child_gate_path + (gate_id,)
         for child_gate in child_gates:
             _recurse_add_sub_populations(
                 sub_pops_el,
-                child_gate.id,
+                child_gate.gate_name,
                 child_gate_path,
                 gating_strategy,
                 gate_fj_id_lut,
@@ -770,7 +779,7 @@ def _recurse_add_sub_populations(parent_el, gate_id, gate_path, gating_strategy,
             )
 
 
-def _add_sample_node_to_wsp(parent_el, sample_name, sample_id, group_name, gating_strategy, comp_prefix_lut, ns_map):
+def _add_sample_node_to_wsp(parent_el, sample_name, sample_id, gating_strategy, comp_prefix_lut, ns_map):
     sample_node_el = etree.SubElement(parent_el, "SampleNode")
     sample_node_el.set('name', sample_name)
     sample_node_el.set('annotation', "")
@@ -798,13 +807,21 @@ def _add_sample_node_to_wsp(parent_el, sample_name, sample_id, group_name, gatin
             break
 
     for gate in root_gates:
-        _recurse_add_sub_populations(sub_pops_el, gate.id, ['root'], gating_strategy, gate_fj_id_lut, comp_prefix, ns_map)
+        _recurse_add_sub_populations(
+            sub_pops_el,
+            gate.gate_name,
+            ('root',),
+            gating_strategy,
+            gate_fj_id_lut,
+            comp_prefix,
+            ns_map
+        )
 
 
 def export_flowjo_wsp(group_gating_strategies, group_name, samples, file_handle):
     """
     Exports a FlowJo 10 workspace file (.wsp) from the given GatingStrategy instance
-    :param gating_strategy: A GatingStrategy instance
+    :param group_gating_strategies: dictionary of Session sample group GatingStrategy instances
     :param group_name: text string label for sample group
     :param samples: list of Sample instances associated with the sample group
     :param file_handle: File handle for exported FlowJo workspace file
@@ -841,13 +858,13 @@ def export_flowjo_wsp(group_gating_strategies, group_name, samples, file_handle)
     groups_el = etree.SubElement(root, "Groups")
     sample_list_el = etree.SubElement(root, "SampleList")
 
-    template_strat = group_gating_strategies['template']
-    sample_strats = group_gating_strategies['samples']
+    template_strategy = group_gating_strategies['template']
+    sample_strategies = group_gating_strategies['samples']
 
     # For now, we'll assume all the comps are in the template
     comp_prefix_counter = 0
     comp_prefix_lut = {}
-    for matrix_id, matrix in template_strat.comp_matrices.items():
+    for matrix_id, matrix in template_strategy.comp_matrices.items():
         if comp_prefix_counter == 0:
             comp_prefix = 'Comp-'
         else:
@@ -869,20 +886,20 @@ def export_flowjo_wsp(group_gating_strategies, group_name, samples, file_handle)
 
     _add_group_node_to_wsp(groups_el, group_name, sample_id_lut.values())
 
-    gate_ids = template_strat.get_gate_ids()
+    gate_ids = template_strategy.get_gate_ids()
     gates = []
     dim_xform_lut = {}  # keys are dim label, value is a set of xform refs
 
     # Also assume the xforms for all samples are the sam
     for g_id, g_path in gate_ids:
-        gate = template_strat.get_gate(g_id, g_path)
+        gate = template_strategy.get_gate(g_id, g_path)
         gates.append(gate)
 
         for dim in gate.dimensions:
-            if dim.label not in dim_xform_lut.keys():
-                dim_xform_lut[dim.label] = set()
+            if dim.id not in dim_xform_lut.keys():
+                dim_xform_lut[dim.id] = set()
 
-            dim_xform_lut[dim.label].add(dim.transformation_ref)
+            dim_xform_lut[dim.id].add(dim.transformation_ref)
 
     for dim in dim_xform_lut:
         xform_refs = list(dim_xform_lut[dim])
@@ -906,7 +923,7 @@ def export_flowjo_wsp(group_gating_strategies, group_name, samples, file_handle)
     #     - SampleNode
     for sample in samples:
         sample_id = sample_id_lut[sample.original_filename]
-        sample_strat = sample_strats[sample.original_filename]
+        sample_strategy = sample_strategies[sample.original_filename]
 
         sample_el = etree.SubElement(sample_list_el, "Sample")
 
@@ -930,14 +947,14 @@ def export_flowjo_wsp(group_gating_strategies, group_name, samples, file_handle)
         for dim, xform in dim_xform_lut.items():
             if xform is None:
                 continue
-            _add_transform_to_wsp(xforms_el, dim, sample_strat.get_transform(xform), ns_map)
+            _add_transform_to_wsp(xforms_el, dim, sample_strategy.get_transform(xform), ns_map)
 
             # We also need to add comp-prefixed param transforms (excluding scatter and Time channels)
             if dim[:4] in ['FSC-', 'SSC-', 'Time']:
                 continue
 
             for comp_prefix in comp_prefix_lut.values():
-                _add_transform_to_wsp(xforms_el, comp_prefix + dim, sample_strat.get_transform(xform), ns_map)
+                _add_transform_to_wsp(xforms_el, comp_prefix + dim, sample_strategy.get_transform(xform), ns_map)
 
         # Add Keywords sub-element using the Sample metadata
         keywords_el = etree.SubElement(sample_el, "Keywords")
@@ -948,8 +965,7 @@ def export_flowjo_wsp(group_gating_strategies, group_name, samples, file_handle)
             sample_el,
             sample.original_filename,
             sample_id,
-            group_name,
-            sample_strat,
+            sample_strategy,
             comp_prefix_lut,
             ns_map
         )

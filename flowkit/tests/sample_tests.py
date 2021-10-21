@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import numpy as np
 import pandas as pd
+import flowio
 
 sys.path.append(os.path.abspath('../..'))
 
@@ -30,11 +31,31 @@ class SampleTestCase(unittest.TestCase):
 
         self.assertIsInstance(sample, Sample)
 
+    def test_load_from_flowio_flowdata_object(self):
+        """Test creating Sample object from an FCS file path"""
+        fcs_file_path = "examples/data/test_data_2d_01.fcs"
+        flow_data = flowio.FlowData(fcs_file_path)
+
+        self.assertIsInstance(flow_data, flowio.FlowData)
+
+        sample = Sample(flow_data)
+
+        self.assertIsInstance(sample, Sample)
+
     def test_load_from_pathlib(self):
         """Test creating Sample object from a pathlib Path object"""
         fcs_file_path = "examples/data/test_data_2d_01.fcs"
         path = Path(fcs_file_path)
         sample = Sample(fcs_path_or_data=path)
+
+        self.assertIsInstance(sample, Sample)
+
+    def test_load_from_io_base(self):
+        """Test creating Sample object from a IOBase object"""
+        fcs_file_path = "examples/data/test_data_2d_01.fcs"
+        f = open(fcs_file_path, 'rb')
+        sample = Sample(fcs_path_or_data=f)
+        f.close()
 
         self.assertIsInstance(sample, Sample)
 
@@ -59,7 +80,7 @@ class SampleTestCase(unittest.TestCase):
         self.assertIsInstance(sample, Sample)
 
     def test_load_from_pandas_multi_index(self):
-        sample_orig = Sample("examples/data/100715.fcs")
+        sample_orig = Sample("examples/data/100715.fcs", cache_original_events=True)
         pnn_orig = sample_orig.pnn_labels
         pns_orig = sample_orig.pns_labels
 
@@ -139,13 +160,13 @@ class SampleTestCase(unittest.TestCase):
         self.assertRaises(ValueError, data1_sample.get_channel_index, [0, 1])
 
     @staticmethod
-    def test_get_channel_data_raw():
-        data_idx_0 = data1_sample.get_channel_data(0, source='raw')
+    def test_get_channel_events_raw():
+        data_idx_0 = data1_sample.get_channel_events(0, source='raw')
 
         np.testing.assert_equal(data1_sample._raw_events[:, 0], data_idx_0)
 
     @staticmethod
-    def test_get_channel_data_comp():
+    def test_get_channel_events_comp():
         fcs_file_path = "examples/data/test_comp_example.fcs"
         comp_file_path = Path("examples/data/comp_complete_example.csv")
 
@@ -155,12 +176,12 @@ class SampleTestCase(unittest.TestCase):
             ignore_offset_error=True  # sample has off by 1 data offset
         )
 
-        data_idx_6 = sample.get_channel_data(6, source='comp')
+        data_idx_6 = sample.get_channel_events(6, source='comp')
 
         np.testing.assert_equal(sample._comp_events[:, 6], data_idx_6)
 
     @staticmethod
-    def test_get_channel_data_xform():
+    def test_get_channel_events_xform():
         fcs_file_path = "examples/data/test_comp_example.fcs"
         comp_file_path = Path("examples/data/comp_complete_example.csv")
 
@@ -171,40 +192,35 @@ class SampleTestCase(unittest.TestCase):
         )
         sample.apply_transform(xform_logicle)
 
-        data_idx_6 = sample.get_channel_data(6, source='xform')
+        data_idx_6 = sample.get_channel_events(6, source='xform')
 
         np.testing.assert_equal(sample._transformed_events[:, 6], data_idx_6)
 
-    def test_get_channel_data_subsample_fails(self):
-        self.assertRaises(
-            ValueError,
-            data1_sample.get_channel_data,
-            0,
-            source='raw',
-            subsample=True
-        )
+    def test_get_channel_events_subsample(self):
+        sample = Sample(data1_fcs_path, subsample=500)
 
-    def test_get_channel_data_subsample(self):
-        sample = Sample(data1_fcs_path)
-        sample.subsample_events(500)
-
-        data_idx_6 = sample.get_channel_data(6, source='raw', subsample=True)
+        data_idx_6 = sample.get_channel_events(6, source='raw', subsample=True)
 
         self.assertEqual(len(data_idx_6), 500)
 
     def test_get_subsampled_orig_events(self):
-        sample = Sample(data1_fcs_path)
-        sample.subsample_events(500)
+        sample = Sample(data1_fcs_path, cache_original_events=True, subsample=500)
 
-        events = sample.get_orig_events(subsample=True)
+        events = sample.get_events(source='orig', subsample=True)
 
         self.assertEqual(events.shape[0], 500)
 
-    def test_get_subsampled_raw_events(self):
-        sample = Sample(data1_fcs_path)
-        sample.subsample_events(500)
+    def test_get_subsampled_orig_events_not_cached(self):
+        sample = Sample(data1_fcs_path, cache_original_events=False, subsample=500)
 
-        events = sample.get_raw_events(subsample=True)
+        events = sample.get_events(source='orig', subsample=True)
+
+        self.assertIsNone(events, None)
+
+    def test_get_subsampled_raw_events(self):
+        sample = Sample(data1_fcs_path, subsample=500)
+
+        events = sample.get_events(source='raw', subsample=True)
 
         self.assertEqual(events.shape[0], 500)
 
@@ -215,11 +231,11 @@ class SampleTestCase(unittest.TestCase):
         sample = Sample(
             fcs_path_or_data=fcs_file_path,
             compensation=comp_file_path,
-            ignore_offset_error=True  # sample has off by 1 data offset
+            ignore_offset_error=True,  # sample has off by 1 data offset
+            subsample=500
         )
-        sample.subsample_events(500)
 
-        events = sample.get_comp_events(subsample=True)
+        events = sample.get_events(source='comp', subsample=True)
 
         self.assertEqual(events.shape[0], 500)
 
@@ -230,17 +246,16 @@ class SampleTestCase(unittest.TestCase):
         sample = Sample(
             fcs_path_or_data=fcs_file_path,
             compensation=comp_file_path,
-            ignore_offset_error=True  # sample has off by 1 data offset
+            ignore_offset_error=True,  # sample has off by 1 data offset
+            subsample=500
         )
         sample.apply_transform(xform_logicle)
 
-        sample.subsample_events(500)
-
-        events = sample.get_transformed_events(subsample=True)
+        events = sample.get_events(source='xform', subsample=True)
 
         self.assertEqual(events.shape[0], 500)
 
-    def test_get_comp_events_if_no_comp(self):
+    def test_get_compensated_events_if_no_comp(self):
         fcs_file_path = "examples/data/test_comp_example.fcs"
 
         sample = Sample(
@@ -248,7 +263,7 @@ class SampleTestCase(unittest.TestCase):
             ignore_offset_error=True  # sample has off by 1 data offset
         )
 
-        comp_events = sample.get_comp_events()
+        comp_events = sample.get_events(source='comp')
 
         self.assertIsNone(comp_events)
 
@@ -260,7 +275,7 @@ class SampleTestCase(unittest.TestCase):
             ignore_offset_error=True  # sample has off by 1 data offset
         )
 
-        xform_events = sample.get_transformed_events()
+        xform_events = sample.get_events(source='xform')
 
         self.assertIsNone(xform_events)
 
@@ -277,7 +292,7 @@ class SampleTestCase(unittest.TestCase):
         sample.apply_transform(xform_logicle, include_scatter=False)
 
         fsc_a_index = sample.get_channel_index('FSC-A')
-        data_fsc_a = sample.get_channel_data(fsc_a_index, source='xform')
+        data_fsc_a = sample.get_channel_events(fsc_a_index, source='xform')
 
         np.testing.assert_equal(sample._raw_events[:, fsc_a_index], data_fsc_a)
 
@@ -293,8 +308,8 @@ class SampleTestCase(unittest.TestCase):
         sample.apply_transform(xform_logicle, include_scatter=True)
 
         fsc_a_index = sample.get_channel_index('FSC-A')
-        data_fsc_a_xform = sample.get_channel_data(fsc_a_index, source='xform')
-        data_fsc_a_raw = sample.get_channel_data(fsc_a_index, source='raw')
+        data_fsc_a_xform = sample.get_channel_events(fsc_a_index, source='xform')
+        data_fsc_a_raw = sample.get_channel_events(fsc_a_index, source='raw')
 
         np.testing.assert_equal(sample._transformed_events[:, fsc_a_index], data_fsc_a_xform)
         self.assertEqual(data_fsc_a_raw[0], 118103.25)
@@ -305,7 +320,7 @@ class SampleTestCase(unittest.TestCase):
         df = data1_sample.as_dataframe(source='xform')
 
         self.assertIsInstance(df, pd.DataFrame)
-        np.testing.assert_equal(df.values, data1_sample.get_transformed_events())
+        np.testing.assert_equal(df.values, data1_sample.get_events(source='xform'))
 
     def test_get_events_as_data_frame_comp(self):
         fcs_file_path = "examples/data/test_comp_example.fcs"
@@ -320,19 +335,19 @@ class SampleTestCase(unittest.TestCase):
         df = sample.as_dataframe(source='comp')
 
         self.assertIsInstance(df, pd.DataFrame)
-        np.testing.assert_equal(df.values, sample.get_comp_events())
+        np.testing.assert_equal(df.values, sample.get_events(source='comp'))
 
     def test_get_events_as_data_frame_raw(self):
         df = data1_sample.as_dataframe(source='raw')
 
         self.assertIsInstance(df, pd.DataFrame)
-        np.testing.assert_equal(df.values, data1_sample.get_raw_events())
+        np.testing.assert_equal(df.values, data1_sample.get_events(source='raw'))
 
     def test_get_events_as_data_frame_orig(self):
         df = data1_sample.as_dataframe(source='orig')
 
         self.assertIsInstance(df, pd.DataFrame)
-        np.testing.assert_equal(df.values, data1_sample.get_orig_events())
+        np.testing.assert_equal(df.values, data1_sample.get_events(source='orig'))
 
     def test_get_events_as_data_frame_column_order(self):
         orig_col_order = ['FSC-H', 'SSC-H', 'FL1-H', 'FL2-H', 'FL3-H', 'FL2-A', 'FL4-H', 'Time']
@@ -373,15 +388,15 @@ class SampleTestCase(unittest.TestCase):
         fl2_idx = sample1.get_channel_index('FL2-H')
         fl3_idx = sample1.get_channel_index('FL3-H')
 
-        s1_fl2 = sample1.get_channel_data(fl2_idx, source='xform')
-        s2_fl2 = sample2.get_channel_data(fl2_idx, source='xform')
-        s1_fl3 = sample1.get_channel_data(fl3_idx, source='xform')
-        s2_fl3 = sample2.get_channel_data(fl3_idx, source='xform')
+        s1_fl2 = sample1.get_channel_events(fl2_idx, source='xform')
+        s2_fl2 = sample2.get_channel_events(fl2_idx, source='xform')
+        s1_fl3 = sample1.get_channel_events(fl3_idx, source='xform')
+        s2_fl3 = sample2.get_channel_events(fl3_idx, source='xform')
 
         np.testing.assert_equal(s1_fl2, s2_fl2)
         np.testing.assert_raises(AssertionError, np.testing.assert_equal, s1_fl3, s2_fl3)
 
-    def test_create_fcs(self):
+    def test_export_as_fcs(self):
         fcs_file_path = "examples/data/test_comp_example.fcs"
         comp_file_path = Path("examples/data/comp_complete_example.csv")
 
@@ -399,11 +414,105 @@ class SampleTestCase(unittest.TestCase):
 
         self.assertIsInstance(exported_sample, Sample)
 
-        # TODO: Excluding time channel here, as the difference was nearly 0.01. Need to investigate why the
-        #       exported comp data isn't exactly equal
-        np.testing.assert_almost_equal(sample._comp_events[:, :-1], exported_sample._raw_events[:, :-1], decimal=3)
+        # When the comp events are exported, they are saved as single precision (32-bit). We'll test the
+        # arrays with the original sample comp data converted to 32-bit float. The original sample data
+        # was also originally in 32-bit but the compensation calculation results in 64-bit data. Comparing
+        # both in single precision is then the most "correct" thing to do here.
+        np.testing.assert_array_equal(
+            sample._comp_events.astype(np.float32),
+            exported_sample._raw_events.astype(np.float32)
+        )
 
-    def test_create_csv(self):
+    def test_export_fcs_as_orig_with_timestep(self):
+        # This test uses a file where the preprocessing makes the orig & raw events different.
+        # File 100715.fcs has a timestep value of 0.08.
+        # The purpose here is to verify that importing the exported file has the same raw events
+        # as the original file's raw events. Here we export the 'orig' events.
+        fcs_file_path = "examples/data/100715.fcs"
+
+        sample = Sample(fcs_path_or_data=fcs_file_path, cache_original_events=True)
+
+        sample.export("test_fcs_export.fcs", source='orig', directory="examples")
+
+        exported_fcs_file = "examples/test_fcs_export.fcs"
+        exported_sample = Sample(fcs_path_or_data=exported_fcs_file)
+        os.unlink(exported_fcs_file)
+
+        self.assertIsInstance(exported_sample, Sample)
+
+        # When the events are exported, they are saved as single precision (32-bit). We'll test the
+        # arrays with the original sample data converted to 32-bit float. The original sample data
+        # was also originally in 32-bit. Comparing both in single precision is then the most
+        # "correct" thing to do here.
+        np.testing.assert_array_equal(
+            sample._raw_events.astype(np.float32),
+            exported_sample._raw_events.astype(np.float32)
+        )
+
+    def test_export_fcs_as_orig_with_pne_log_raises_error(self):
+        # This test uses a file where some PnE values specify log scale
+        # FlowIO does not currently support creating FCS files with log scale PnE values
+        # Test that the Sample class raises a NotImplementedError for this case.
+        sample = Sample(fcs_path_or_data=data1_fcs_path, cache_original_events=True)
+
+        self.assertRaises(
+            NotImplementedError,
+            sample.export,
+            "test_fcs_export.fcs",
+            source='orig',
+            directory="examples"
+        )
+
+    def test_export_fcs_as_raw_with_gain(self):
+        # This test uses a file where the preprocessing makes the orig & raw events different.
+        # File data1.fcs has 2 channels that specify a gain value other than 1.0.
+        # The purpose here is to verify that importing the exported file has the same raw events
+        # as the original file's raw events.
+        sample = Sample(fcs_path_or_data=data1_fcs_path, cache_original_events=True)
+
+        sample.export("test_fcs_export.fcs", source='raw', directory="examples")
+
+        exported_fcs_file = "examples/test_fcs_export.fcs"
+        exported_sample = Sample(fcs_path_or_data=exported_fcs_file)
+        os.unlink(exported_fcs_file)
+
+        self.assertIsInstance(exported_sample, Sample)
+
+        # When the events are exported, they are saved as single precision (32-bit). We'll test the
+        # arrays with the original sample data converted to 32-bit float. The original sample data
+        # was also originally in 32-bit. Comparing both in single precision is then the most
+        # "correct" thing to do here.
+        np.testing.assert_array_equal(
+            sample._raw_events.astype(np.float32),
+            exported_sample._raw_events.astype(np.float32)
+        )
+
+    def test_export_fcs_as_raw(self):
+        # This test uses a file where the preprocessing makes the orig & raw events different.
+        # The purpose here is to verify that importing the exported file has the same raw events
+        # as the original file's raw events.
+        fcs_file_path = "examples/data/8_color_data_set/fcs_files/101_DEN084Y5_15_E01_008_clean.fcs"
+
+        sample = Sample(fcs_path_or_data=fcs_file_path)
+
+        sample.export("test_fcs_export.fcs", source='raw', directory="examples")
+
+        exported_fcs_file = "examples/test_fcs_export.fcs"
+        exported_sample = Sample(fcs_path_or_data=exported_fcs_file)
+        os.unlink(exported_fcs_file)
+
+        self.assertIsInstance(exported_sample, Sample)
+
+        # When the events are exported, they are saved as single precision (32-bit). We'll test the
+        # arrays with the original sample data converted to 32-bit float. The original sample data
+        # was also originally in 32-bit. Comparing both in single precision is then the most
+        # "correct" thing to do here.
+        np.testing.assert_array_equal(
+            sample._raw_events.astype(np.float32),
+            exported_sample._raw_events.astype(np.float32)
+        )
+
+    def test_export_as_csv(self):
         fcs_file_path = "examples/data/test_comp_example.fcs"
         comp_file_path = Path("examples/data/comp_complete_example.csv")
 
@@ -422,14 +531,19 @@ class SampleTestCase(unittest.TestCase):
 
         self.assertIsInstance(exported_sample, Sample)
 
-        # TODO: Need to investigate why the exported comp data isn't exactly equal
-        np.testing.assert_almost_equal(sample._comp_events[:, :], exported_sample._raw_events[:, :], decimal=3)
+        # When the comp events are exported, they are saved as single precision (32-bit). We'll test the
+        # arrays with the original sample comp data converted to 32-bit float. The original sample data
+        # was also originally in 32-bit but the compensation calculation results in 64-bit data. Comparing
+        # both in single precision is then the most "correct" thing to do here.
+        np.testing.assert_array_equal(
+            sample._comp_events.astype(np.float32),
+            exported_sample._raw_events.astype(np.float32)
+        )
 
     def test_filter_negative_scatter(self):
         # there are 2 negative SSC-A events in this file (of 65016 total events)
         fcs_file_path = "examples/data/100715.fcs"
-        sample = Sample(fcs_path_or_data=fcs_file_path)
-        sample.subsample_events(50000)
+        sample = Sample(fcs_path_or_data=fcs_file_path, subsample=50000)
         sample.filter_negative_scatter(reapply_subsample=False)
 
         # using the default seed, the 2 negative events are in the subsample
@@ -442,19 +556,20 @@ class SampleTestCase(unittest.TestCase):
 
         self.assertEqual(sample.negative_scatter_indices.shape[0], 2)
 
-    def test_filter_anomalous_events(self):
+    def test_export_exclude_negative_scatter(self):
         # there are 2 negative SSC-A events in this file (of 65016 total events)
         fcs_file_path = "examples/data/100715.fcs"
         sample = Sample(fcs_path_or_data=fcs_file_path)
-        sample.subsample_events(50000)
-        sample.filter_anomalous_events(reapply_subsample=False)
+        sample.filter_negative_scatter()
 
-        # using the default seed, the 2 negative events are in the subsample
-        common_idx = np.intersect1d(sample.subsample_indices, sample.anomalous_indices)
-        self.assertGreater(len(common_idx), 0)
+        neg_scatter_count = len(sample.negative_scatter_indices)
 
-        sample.filter_anomalous_events(reapply_subsample=True)
-        common_idx = np.intersect1d(sample.subsample_indices, sample.anomalous_indices)
-        self.assertEqual(len(common_idx), 0)
+        exported_fcs_file = "examples/test_fcs_export.fcs"
+        sample.export(exported_fcs_file, source='raw', exclude_neg_scatter=True)
+        exported_sample = Sample(exported_fcs_file)
+        os.unlink(exported_fcs_file)
 
-        self.assertGreater(sample.anomalous_indices.shape[0], 0)
+        orig_event_count = sample.event_count
+        exp_event_count = exported_sample.event_count
+
+        self.assertEqual(exp_event_count, orig_event_count - neg_scatter_count)

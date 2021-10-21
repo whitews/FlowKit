@@ -55,6 +55,20 @@ class GatingStrategyTestCase(unittest.TestCase):
 
         self.assertRaises(KeyError, gs.add_gate, poly1_gate)
 
+    def test_get_gate_raises_ValueError(self):
+        gs = fk.GatingStrategy()
+        gs.add_gate(poly1_gate)
+
+        self.assertRaises(ValueError, gs.get_gate, 'nonexistent-gate')
+
+    def test_get_parent_gate_is_none(self):
+        gs = fk.GatingStrategy()
+        gs.add_gate(poly1_gate)
+
+        parent_gate = gs.get_parent_gate('Polygon1')
+
+        self.assertIsNone(parent_gate)
+
     def test_add_transform_non_transform_class(self):
         gs = fk.GatingStrategy()
         self.assertRaises(ValueError, gs.add_transform, "not a transform class")
@@ -99,11 +113,11 @@ class GatingStrategyTestCase(unittest.TestCase):
         gs.add_gate(rect_gate2)
 
         result = gs.gate_sample(data1_sample)
-        parent_gate = gs.get_parent_gate(rect_gate2.id)
-        parent_gate_count = result.get_gate_count(parent_gate.id)
-        gate_count = result.get_gate_count(rect_gate2.id)
-        gate_abs_pct = result.get_gate_absolute_percent(rect_gate2.id)
-        gate_rel_pct = result.get_gate_relative_percent(rect_gate2.id)
+        parent_gate = gs.get_parent_gate(rect_gate2.gate_name)
+        parent_gate_count = result.get_gate_count(parent_gate.gate_name)
+        gate_count = result.get_gate_count(rect_gate2.gate_name)
+        gate_abs_pct = result.get_gate_absolute_percent(rect_gate2.gate_name)
+        gate_rel_pct = result.get_gate_relative_percent(rect_gate2.gate_name)
 
         true_count = 558
         true_abs_pct = (558 / data1_sample.event_count) * 100
@@ -112,6 +126,83 @@ class GatingStrategyTestCase(unittest.TestCase):
         self.assertEqual(true_count, gate_count)
         self.assertEqual(true_abs_pct, gate_abs_pct)
         self.assertEqual(true_rel_pct, gate_rel_pct)
+
+    def test_clear_cache(self):
+        gs = fk.GatingStrategy()
+
+        gs.add_comp_matrix(comp_matrix_01)
+
+        gs.add_transform(logicle_xform1)
+        gs.add_transform(hyperlog_xform1)
+
+        gs.add_gate(poly1_gate)
+
+        dim1 = fk.Dimension('PE', 'MySpill', 'Logicle_10000_0.5_4.5_0', range_min=0.31, range_max=0.69)
+        dim2 = fk.Dimension('PerCP', 'MySpill', 'Logicle_10000_0.5_4.5_0', range_min=0.27, range_max=0.73)
+        dims1 = [dim1, dim2]
+
+        rect_gate1 = fk.gates.RectangleGate('ScaleRect1', None, dims1)
+        gs.add_gate(rect_gate1)
+
+        dim3 = fk.Dimension('FITC', 'MySpill', 'Hyperlog_10000_1_4.5_0', range_min=0.12, range_max=0.43)
+        dims2 = [dim3]
+
+        rect_gate2 = fk.gates.RectangleGate('ScalePar1', 'ScaleRect1', dims2)
+        gs.add_gate(rect_gate2)
+
+        _ = gs.gate_sample(data1_sample, cache_events=True)
+
+        pre_proc_events = gs._cached_preprocessed_events
+
+        truth_key_set = {
+            ('MySpill', None, None),
+            ('MySpill', 'Logicle_10000_0.5_4.5_0', 3),
+            ('MySpill', 'Logicle_10000_0.5_4.5_0', 4),
+            ('MySpill', 'Hyperlog_10000_1_4.5_0', 2)
+        }
+
+        self.assertSetEqual(set(pre_proc_events['B07'].keys()), truth_key_set)
+
+        gs.clear_cache()
+        pre_proc_events = gs._cached_preprocessed_events
+
+        self.assertEqual(pre_proc_events, {})
+
+    def test_cache_preprocessed_events(self):
+        gs = fk.GatingStrategy()
+
+        gs.add_comp_matrix(comp_matrix_01)
+
+        gs.add_transform(logicle_xform1)
+        gs.add_transform(hyperlog_xform1)
+
+        gs.add_gate(poly1_gate)
+
+        dim1 = fk.Dimension('PE', 'MySpill', 'Logicle_10000_0.5_4.5_0', range_min=0.31, range_max=0.69)
+        dim2 = fk.Dimension('PerCP', 'MySpill', 'Logicle_10000_0.5_4.5_0', range_min=0.27, range_max=0.73)
+        dims1 = [dim1, dim2]
+
+        rect_gate1 = fk.gates.RectangleGate('ScaleRect1', None, dims1)
+        gs.add_gate(rect_gate1)
+
+        dim3 = fk.Dimension('FITC', 'MySpill', 'Hyperlog_10000_1_4.5_0', range_min=0.12, range_max=0.43)
+        dims2 = [dim3]
+
+        rect_gate2 = fk.gates.RectangleGate('ScalePar1', 'ScaleRect1', dims2)
+        gs.add_gate(rect_gate2)
+
+        _ = gs.gate_sample(data1_sample, cache_events=True)
+
+        pre_proc_events = gs._cached_preprocessed_events
+
+        truth_key_set = {
+            ('MySpill', None, None),
+            ('MySpill', 'Logicle_10000_0.5_4.5_0', 3),
+            ('MySpill', 'Logicle_10000_0.5_4.5_0', 4),
+            ('MySpill', 'Hyperlog_10000_1_4.5_0', 2)
+        }
+
+        self.assertSetEqual(set(pre_proc_events['B07'].keys()), truth_key_set)
 
 
 class GatingStrategyReusedGatesTestCase(unittest.TestCase):
@@ -152,7 +243,7 @@ class GatingStrategyReusedGatesTestCase(unittest.TestCase):
             fk.Vertex([0.3359375, 0.1875])
         ]
         gate_b = fk.gates.PolygonGate(
-            'Gate_B', parent_id=gate_a.id, dimensions=[dim_fsc_w, dim_fsc_h], vertices=gate_b_vertices
+            'Gate_B', parent_gate_name=gate_a.gate_name, dimensions=[dim_fsc_w, dim_fsc_h], vertices=gate_b_vertices
         )
         self.gs.add_gate(gate_b)
 
@@ -164,7 +255,7 @@ class GatingStrategyReusedGatesTestCase(unittest.TestCase):
             fk.Vertex([0.3359375, 0.1875])
         ]
         gate_c = fk.gates.PolygonGate(
-            'Gate_C', parent_id=gate_a.id, dimensions=[dim_fsc_h, dim_fsc_w], vertices=gate_c_vertices
+            'Gate_C', parent_gate_name=gate_a.gate_name, dimensions=[dim_fsc_h, dim_fsc_w], vertices=gate_c_vertices
         )
         self.gs.add_gate(gate_c)
 
@@ -177,10 +268,10 @@ class GatingStrategyReusedGatesTestCase(unittest.TestCase):
         ]
 
         reused_parent_gate_1 = fk.gates.PolygonGate(
-            'ReusedParent', gate_b.id, [dim_amine_a, dim_ssc_a], reused_parent_vertices
+            'ReusedParent', gate_b.gate_name, [dim_amine_a, dim_ssc_a], reused_parent_vertices
         )
         reused_parent_gate_2 = fk.gates.PolygonGate(
-            'ReusedParent', gate_c.id, [dim_amine_a, dim_ssc_a], reused_parent_vertices
+            'ReusedParent', gate_c.gate_name, [dim_amine_a, dim_ssc_a], reused_parent_vertices
         )
         self.gs.add_gate(reused_parent_gate_1)
         self.gs.add_gate(reused_parent_gate_2)
@@ -197,19 +288,19 @@ class GatingStrategyReusedGatesTestCase(unittest.TestCase):
             'ReusedChild', 'ReusedParent', [dim_cd3_a, dim_ssc_a], reused_child_vertices
         )
 
-        gate_path_1 = ['root', 'Gate_A', 'Gate_B', 'ReusedParent']
-        gate_path_2 = ['root', 'Gate_A', 'Gate_C', 'ReusedParent']
+        gate_path_1 = ('root', 'Gate_A', 'Gate_B', 'ReusedParent')
+        gate_path_2 = ('root', 'Gate_A', 'Gate_C', 'ReusedParent')
         self.gs.add_gate(reused_child_gate, gate_path=gate_path_1)
         self.gs.add_gate(reused_child_gate, gate_path=gate_path_2)
 
         self.all_gate_ids = [
-            ('Gate_A', ['root']),
-            ('Gate_B', ['root', 'Gate_A']),
-            ('ReusedParent', ['root', 'Gate_A', 'Gate_B']),
-            ('ReusedChild', ['root', 'Gate_A', 'Gate_B', 'ReusedParent']),
-            ('Gate_C', ['root', 'Gate_A']),
-            ('ReusedParent', ['root', 'Gate_A', 'Gate_C']),
-            ('ReusedChild', ['root', 'Gate_A', 'Gate_C', 'ReusedParent'])
+            ('Gate_A', ('root',)),
+            ('Gate_B', ('root', 'Gate_A')),
+            ('ReusedParent', ('root', 'Gate_A', 'Gate_B')),
+            ('ReusedChild', ('root', 'Gate_A', 'Gate_B', 'ReusedParent')),
+            ('Gate_C', ('root', 'Gate_A')),
+            ('ReusedParent', ('root', 'Gate_A', 'Gate_C')),
+            ('ReusedChild', ('root', 'Gate_A', 'Gate_C', 'ReusedParent'))
         ]
 
     def test_gate_reuse_with_reused_parent(self):
@@ -219,20 +310,20 @@ class GatingStrategyReusedGatesTestCase(unittest.TestCase):
         # test getting all individual gates
         for gate_item in self.all_gate_ids:
             gate = self.gs.get_gate(gate_item[0], gate_item[1])
-            self.assertEqual(gate.id, gate_item[0])
+            self.assertEqual(gate.gate_name, gate_item[0])
 
     def test_get_child_gates(self):
-        parent_gate_id = 'Gate_A'
+        parent_gate_name = 'Gate_A'
         parent_gate_path = ['root']
-        child_gate_ids = ['Gate_B', 'Gate_C']
-        child_gates = self.gs.get_child_gates(parent_gate_id, parent_gate_path)
+        child_gate_names = ['Gate_B', 'Gate_C']
+        child_gates = self.gs.get_child_gates(parent_gate_name, parent_gate_path)
 
-        retrieved_gate_ids = []
+        retrieved_gate_names = []
         for child_gate in child_gates:
             self.assertIsInstance(child_gate, fk.gates._gates.Gate)
-            retrieved_gate_ids.append(child_gate.id)
+            retrieved_gate_names.append(child_gate.gate_name)
 
-        self.assertListEqual(child_gate_ids, sorted(retrieved_gate_ids))
+        self.assertListEqual(child_gate_names, sorted(retrieved_gate_names))
 
     def test_get_gate_fails_without_path(self):
         self.assertRaises(ValueError, self.gs.get_gate, 'ReusedParent')

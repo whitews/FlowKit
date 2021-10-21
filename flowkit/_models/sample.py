@@ -2,6 +2,7 @@
 Sample class
 """
 
+import copy
 import flowio
 import os
 from pathlib import Path
@@ -18,13 +19,25 @@ import warnings
 from .._models.transforms import _transforms
 # noinspection PyProtectedMember
 from .._models.transforms._matrix import Matrix
-from .._utils import plot_utils, qc_utils
+from .._utils import plot_utils
 
 
 class Sample(object):
     """
-    Represents a single FCS sample from an FCS file, NumPy array or Pandas
+    Represents a single FCS sample from an FCS file, NumPy array or pandas
     DataFrame.
+
+    For Sample plot methods, pay attention the the defaults for the subsample
+    arguments, as most will use the sub-sampled events by default for better
+    performance. For compensation and transformation routines, all events are
+    always processed.
+
+    Note:
+        Some FCS files incorrectly report the location of the last data byte
+        as the last byte exclusive of the data section rather than the last
+        byte inclusive of the data section. Technically, these are invalid
+        FCS files but these are not corrupted data files. To attempt to read
+        in these files, set the `ignore_offset_error` option to True.
 
     :param fcs_path_or_data: FCS data, can be either:
 
@@ -32,7 +45,7 @@ class Sample(object):
         - a pathlib Path object
         - a FlowIO FlowData object
         - a NumPy array of FCS event data (must provide channel_labels)
-        - a Pandas DataFrame containing FCS event data (channel labels as column labels)
+        - a pandas DataFrame containing FCS event data (channel labels as column labels)
 
     :param channel_labels: A list of strings or a list of tuples to use for the channel
         labels. Required if fcs_path_or_data is a NumPy array
@@ -49,6 +62,18 @@ class Sample(object):
         but do not contain useful data. Note, this should only be used if there were
         truly no fluorochromes used targeting those detectors and the channels
         do not contribute to compensation.
+
+    :param ignore_offset_error: option to ignore data offset error (see above note), default is False
+
+    :param cache_original_events: Original events are the unprocessed events as stored in the FCS binary,
+        meaning they have not been scaled according to channel gain, corrected for proper lin/log display,
+        or had the time channel scaled by the 'timestep' keyword value (if present). By default, these
+        events are not retained by the Sample class as they are typically not useful. To retrieve the
+        original events, set this to True and call the get_events() method with source='orig'.
+    :param subsample: The number of events to use for sub-sampling. The number of sub-sampled events
+        can be changed after instantiation using the `subsample_events` method. The random seed can
+        also be specified using that method. Sub-sampled events are used predominantly for speeding
+        up plotting methods.
     """
     def __init__(
             self,
@@ -56,7 +81,9 @@ class Sample(object):
             channel_labels=None,
             compensation=None,
             null_channel_list=None,
-            ignore_offset_error=False
+            ignore_offset_error=False,
+            cache_original_events=False,
+            subsample=10000
     ):
         """
         Create a Sample instance
@@ -118,7 +145,9 @@ class Sample(object):
 
         self.null_channels = null_channel_list
         self.event_count = flow_data.event_count
-        self.channels = flow_data.channels
+
+        # make a temp channels dict, self.channels will be a DataFrame built from it
+        tmp_channels = flow_data.channels
         self.pnn_labels = list()
         self.pns_labels = list()
         self.fluoro_indices = list()
@@ -126,12 +155,12 @@ class Sample(object):
         self.time_index = None
 
         channel_gain = []
-        channel_lin_log = []
+        self.channel_lin_log = []
         channel_range = []
         self.metadata = flow_data.text
 
-        for n in sorted([int(k) for k in self.channels.keys()]):
-            channel_label = self.channels[str(n)]['PnN']
+        for n in sorted([int(k) for k in tmp_channels.keys()]):
+            channel_label = tmp_channels[str(n)]['PnN']
             self.pnn_labels.append(channel_label)
 
             if 'p%dg' % n in self.metadata:
@@ -139,20 +168,26 @@ class Sample(object):
             else:
                 channel_gain.append(1.0)
 
-            if 'p%dr' % n in self.metadata:
-                channel_range.append(float(self.metadata['p%dr' % n]))
-            else:
-                channel_range.append(None)
+            # PnR range values are required for all channels
+            channel_range.append(float(self.metadata['p%dr' % n]))
 
+            # PnE specifies whether the parameter data is stored in on linear or log scale
+            # and includes 2 values: (f1, f2)
+            # where:
+            #     f1 is the number of log decades (valid values are f1 >= 0)
+            #     f2 is the value to use for log(0) (valid values are f2 >= 0)
+            # Note for log scale, both values must be > 0
+            # linear = (0, 0)
+            # log    = (f1 > 0, f2 > 0)
             if 'p%de' % n in self.metadata:
                 (decades, log0) = [
                     float(x) for x in self.metadata['p%de' % n].split(',')
                 ]
                 if log0 == 0 and decades != 0:
                     log0 = 1.0  # FCS std states to use 1.0 for invalid 0 value
-                channel_lin_log.append((decades, log0))
+                self.channel_lin_log.append((decades, log0))
             else:
-                channel_lin_log.append((0.0, 0.0))
+                self.channel_lin_log.append((0.0, 0.0))
 
             if channel_label.lower()[:4] not in ['fsc-', 'ssc-', 'time']:
                 self.fluoro_indices.append(n - 1)
@@ -161,24 +196,41 @@ class Sample(object):
             elif channel_label.lower() == 'time':
                 self.time_index = n - 1
 
-            if 'PnS' in self.channels[str(n)]:
-                self.pns_labels.append(self.channels[str(n)]['PnS'])
+            if 'PnS' in tmp_channels[str(n)]:
+                self.pns_labels.append(tmp_channels[str(n)]['PnS'])
             else:
                 self.pns_labels.append('')
 
         self._flowjo_pnn_labels = [label.replace('/', '_') for label in self.pnn_labels]
 
-        # Start processing the event data. First, we'll save the unprocessed events
-        self._orig_events = np.reshape(
-            np.array(flow_data.events, dtype=float),
+        # build the self.channels DataFrame
+        self.channels = pd.DataFrame()
+        self.channels['channel_number'] = sorted([int(k) for k in tmp_channels.keys()])
+        self.channels['pnn'] = self.pnn_labels
+        self.channels['pns'] = self.pns_labels
+        self.channels['png'] = channel_gain
+        self.channels['pnr'] = channel_range
+
+        # Start processing the event data. First, we'll get the unprocessed events
+        # This is the main entry point for event data into FlowKit, and we ensure
+        # the events are double precision because of the pre-processing that will
+        # make even integer FCS data types floating point. The precision is needed
+        # for accurate gating results.
+        tmp_orig_events = np.reshape(
+            np.array(flow_data.events, dtype=np.float64),
             (-1, flow_data.channel_count)
         )
+
+        if cache_original_events:
+            self._orig_events = tmp_orig_events
+        else:
+            self._orig_events = None
 
         # Event data must be scaled according to channel gain, as well
         # as corrected for proper lin/log display, and the time channel
         # scaled by the 'timestep' keyword value (if present).
         # This is the only pre-processing we will do on raw events
-        raw_events = self._orig_events.copy()
+        raw_events = copy.deepcopy(tmp_orig_events)
 
         # Note: The time channel is scaled by the timestep (if present),
         # but should not be scaled by any gain value present in PnG.
@@ -193,7 +245,7 @@ class Sample(object):
             time_step = float(self.metadata['timestep'])
             raw_events[:, self.time_index] = raw_events[:, self.time_index] * time_step
 
-        for i, (decades, log0) in enumerate(channel_lin_log):
+        for i, (decades, log0) in enumerate(self.channel_lin_log):
             if decades > 0:
                 raw_events[:, i] = (10 ** (decades * raw_events[:, i] / channel_range[i])) * log0
 
@@ -204,13 +256,14 @@ class Sample(object):
         self.transform = None
         self._subsample_count = None
         self._subsample_seed = None
+        self._include_scatter_option = False  # stores user option from transform_events method
 
         if compensation is not None:
             self.apply_compensation(compensation)
 
         # if filtering any events, save those in case they want to be retrieved
         self.negative_scatter_indices = None
-        self.anomalous_indices = None
+        self.flagged_indices = None
         self.subsample_indices = None
 
         try:
@@ -228,6 +281,9 @@ class Sample(object):
                 self.original_filename = os.path.basename(fcs_path_or_data)
             else:
                 self.original_filename = None
+
+        # finally, store initial sub-sampled event indices
+        self.subsample_events(subsample)
 
     def __repr__(self):
         return (
@@ -254,67 +310,16 @@ class Sample(object):
         if reapply_subsample and self._subsample_count is not None:
             self.subsample_events(self._subsample_count, self._subsample_seed)
 
-    def filter_anomalous_events(
-            self,
-            random_seed=1,
-            p_value_threshold=0.03,
-            ref_size=10000,
-            channel_labels_or_numbers=None,
-            reapply_subsample=True,
-            plot=False
-    ):
+    def set_flagged_events(self, event_indices):
         """
-        Anomalous events are determined via Kolmogorov-Smirnov (KS) statistical
-        test performed on each channel. The reference distribution is chosen based on
-        the difference from the median.
+        Flags the given event indices. Can be useful for flagging anomalous time events for quality control or
+        for any other purpose. Flagged indices do not affect analysis, it is only used as an option when
+        exporting Sample event data.
 
-        :param random_seed: Random seed used for initializing the anomaly detection routine. Default is 1
-        :param p_value_threshold: Controls the sensitivity for anomalous event detection. The value is the p-value
-            threshold for the KS test. A higher value will filter more events. Default is 0.03
-        :param ref_size: The number of reference groups to sample from the 'stable' regions. Default is 3
-        :param channel_labels_or_numbers: List of fluorescent channel labels or numbers (not indices)
-            to evaluate for anomalous events. If None, then all fluorescent channels will be evaluated.
-            Default is None
-        :param reapply_subsample: Whether to re-subsample the Sample events after filtering. Default is True
-        :param plot: Whether to plot the intermediate data for the provided channel labels
+        :param event_indices: list of event indices to flag
         :return: None
         """
-        rng = np.random.RandomState(seed=random_seed)
-
-        logicle_xform = _transforms.LogicleTransform(
-            'my_xform',
-            param_t=262144,
-            param_w=1.0,
-            param_m=4.5,
-            param_a=0
-        )
-        xform_events = self._transform(logicle_xform)
-
-        eval_indices = []
-        eval_labels = []
-        if channel_labels_or_numbers is not None:
-            for label_or_num in channel_labels_or_numbers:
-                c_idx = self.get_channel_index(label_or_num)
-                eval_indices.append(c_idx)
-        else:
-            eval_indices = self.fluoro_indices
-
-        for idx in eval_indices:
-            eval_labels.append(self.pnn_labels[idx])
-
-        anomalous_idx = qc_utils.filter_anomalous_events(
-            xform_events[:, eval_indices],
-            eval_labels,
-            rng=rng,
-            ref_set_count=3,
-            p_value_threshold=p_value_threshold,
-            ref_size=ref_size,
-            plot=plot
-        )
-        self.anomalous_indices = anomalous_idx
-
-        if reapply_subsample and self._subsample_count is not None:
-            self.subsample_events(self._subsample_count, self._subsample_seed)
+        self.flagged_indices = event_indices
 
     def subsample_events(
             self,
@@ -345,8 +350,8 @@ class Sample(object):
         if self.negative_scatter_indices is not None:
             bad_idx = self.negative_scatter_indices
 
-        if self.anomalous_indices is not None:
-            bad_idx = np.unique(np.concatenate([bad_idx, self.anomalous_indices]))
+        if self.flagged_indices is not None:
+            bad_idx = np.unique(np.concatenate([bad_idx, self.flagged_indices]))
 
         bad_count = bad_idx.shape[0]
         if bad_count > 0:
@@ -368,9 +373,9 @@ class Sample(object):
     def apply_compensation(self, compensation, comp_id='custom_spill'):
         """
         Applies given compensation matrix to Sample events. If any
-        transformation has been applied, those events will be deleted.
-        Compensated events can be retrieved afterward by calling
-        `get_comp_events`.
+        transformation has been applied, it will be re-applied after
+        compensation. Compensated events can be retrieved afterward
+        by calling `get_events` with `source='comp'`.
 
         :param compensation: Compensation matrix, which can be a:
 
@@ -383,7 +388,7 @@ class Sample(object):
             If a string, both multi-line traditional CSV, and the single
             line FCS spill formats are supported. If a NumPy array, we
             assume the columns are in the same order as the channel labels.
-        :param comp_id: text ID for identifying compensation matrix
+        :param comp_id: text ID for identifying compensation matrix (not used if compensation was a Matrix instance)
         :return: None
         """
         if isinstance(compensation, Matrix):
@@ -399,9 +404,9 @@ class Sample(object):
             self.compensation = None
             self._comp_events = None
 
-        # Clear any previously transformed events
-        # TODO: Consider caching the transform and re-applying
-        self._transformed_events = None
+        # Re-apply transform if set
+        if self.transform is not None:
+            self._transformed_events = self._transform(self.transform, self._include_scatter_option)
 
     def get_metadata(self):
         """
@@ -411,7 +416,7 @@ class Sample(object):
         """
         return self.metadata
 
-    def get_orig_events(self, subsample=False):
+    def _get_orig_events(self, subsample=False):
         """
         Returns 'original' events, i.e. not pre-processed, compensated,
         or transformed.
@@ -420,12 +425,20 @@ class Sample(object):
             events. Default is False (all events)
         :return: NumPy array of original events
         """
+        if self._orig_events is None:
+            warnings.warn(
+                "Original events were not cached, to retrieve them create a "
+                "Sample instance with cache_original_events=True",
+                UserWarning
+            )
+            return None
+
         if subsample:
             return self._orig_events[self.subsample_indices]
         else:
             return self._orig_events
 
-    def get_raw_events(self, subsample=False):
+    def _get_raw_events(self, subsample=False):
         """
         Returns 'raw' events that have been pre-processed to adjust for channel
         gain and lin/log display, but have not been compensated or transformed.
@@ -439,8 +452,7 @@ class Sample(object):
         else:
             return self._raw_events
 
-    # TODO: make event type names/references consistent across the API...is it xform/transform comp/compensated, etc.
-    def get_comp_events(self, subsample=False):
+    def _get_comp_events(self, subsample=False):
         """
         Returns compensated events, (not transformed)
 
@@ -461,7 +473,7 @@ class Sample(object):
         else:
             return self._comp_events
 
-    def get_transformed_events(self, subsample=False):
+    def _get_transformed_events(self, subsample=False):
         """
         Returns transformed events. Note, if a compensation matrix has been
         applied then the events returned will be compensated and transformed.
@@ -483,9 +495,36 @@ class Sample(object):
         else:
             return self._transformed_events
 
+    def get_events(self, source='xform', subsample=False):
+        """
+        Returns a NumPy array of event data.
+
+        Note: This method returns the array directly, not a copy of the array. Be careful if you
+        are planning to modify returned event data, and make a copy of the array when appropriate.
+
+        :param source: 'orig', 'raw', 'comp', 'xform' for whether the original (no gain applied),
+            raw (orig + gain), compensated (raw + comp), or transformed (comp + xform) events will
+            be returned
+        :param subsample: Whether to return all events or just the sub-sampled
+            events. Default is False (all events)
+        :return: NumPy array of event data
+        """
+        if source == 'xform':
+            events = self._get_transformed_events(subsample=subsample)
+        elif source == 'comp':
+            events = self._get_comp_events(subsample=subsample)
+        elif source == 'raw':
+            events = self._get_raw_events(subsample=subsample)
+        elif source == 'orig':
+            events = self._get_orig_events(subsample=subsample)
+        else:
+            raise ValueError("source must be one of 'orig', 'raw', 'comp', or 'xform'")
+
+        return events
+
     def as_dataframe(self, source='xform', subsample=False, col_order=None, col_names=None):
         """
-        Returns a Pandas DataFrame of event data
+        Returns a pandas DataFrame of event data
 
         :param source: 'orig', 'raw', 'comp', 'xform' for whether the original (no gain applied),
             raw (orig + gain), compensated (raw + comp), or transformed (comp + xform) events will
@@ -496,18 +535,9 @@ class Sample(object):
             in the output DataFrame. If None, the column order will match the FCS file.
         :param col_names: list of new column labels. If None (default), the DataFrame
             columns will be a MultiIndex of the PnN / PnS labels.
-        :return: Pandas DataFrame of event data
+        :return: pandas DataFrame of event data
         """
-        if source == 'xform':
-            events = self.get_transformed_events(subsample=subsample)
-        elif source == 'comp':
-            events = self.get_comp_events(subsample=subsample)
-        elif source == 'raw':
-            events = self.get_raw_events(subsample=subsample)
-        elif source == 'orig':
-            events = self.get_orig_events(subsample=subsample)
-        else:
-            raise ValueError("source must be one of 'orig', 'raw', 'comp', or 'xform'")
+        events = self.get_events(source=source, subsample=subsample)
 
         multi_cols = pd.MultiIndex.from_arrays([self.pnn_labels, self.pns_labels], names=['pnn', 'pns'])
         events_df = pd.DataFrame(data=events, columns=multi_cols)
@@ -554,9 +584,12 @@ class Sample(object):
 
         return index
 
-    def get_channel_data(self, channel_index, source='xform', subsample=False):
+    def get_channel_events(self, channel_index, source='xform', subsample=False):
         """
         Returns a NumPy array of event data for the specified channel index.
+
+        Note: This method returns the array directly, not a copy of the array. Be careful if you
+        are planning to modify returned event data, and make a copy of the array when appropriate.
 
         :param channel_index: Channel index for which data is returned
         :param source: 'raw', 'comp', 'xform' for whether the raw, compensated
@@ -565,23 +598,10 @@ class Sample(object):
             events. Default is False (all events)
         :return: NumPy array of event data for the specified channel index
         """
-        if subsample:
-            if not isinstance(self.subsample_indices, np.ndarray):
-                raise ValueError("Subsampling requested, but sample hasn't been sub-sampled: call `subsample_events`")
-            idx = self.subsample_indices
-        else:
-            idx = np.arange(self.event_count)
+        events = self.get_events(source=source, subsample=subsample)
+        events = events[:, channel_index]
 
-        if source == 'xform':
-            channel_data = self._transformed_events[idx, channel_index]
-        elif source == 'comp':
-            channel_data = self._comp_events[idx, channel_index]
-        elif source == 'raw':
-            channel_data = self._raw_events[idx, channel_index]
-        else:
-            raise ValueError("source must be one of 'raw', 'comp', or 'xform'")
-
-        return channel_data
+        return events
 
     def _transform(self, transform, include_scatter=False):
         if isinstance(transform, _transforms.RatioTransform):
@@ -630,22 +650,57 @@ class Sample(object):
         :param include_scatter: Whether to transform the scatter channel in addition to the
             fluorescent channels. Default is False.
         """
-
         self._transformed_events = self._transform(transform, include_scatter=include_scatter)
+        self._include_scatter_option = include_scatter
         self.transform = transform
+
+    def plot_channel(self, channel_label_or_number, source='xform', flag_events=False):
+        """
+        Plot a 2-D histogram of the specified channel data with the x-axis as the event index.
+        This is similar to plotting a channel vs Time, except the events are equally
+        distributed along the x-axis.
+
+        :param channel_label_or_number: A channel's PnN label or number
+        :param source: 'raw', 'comp', 'xform' for whether the raw, compensated
+            or transformed events are used for plotting
+        :param flag_events: whether to flag events using stored flagged_event indices.
+            Flagged event regions will be highlighted in red. Default is False.
+        :return: Matplotlib Figure instance
+        """
+        channel_index = self.get_channel_index(channel_label_or_number)
+        channel_data = self.get_channel_events(channel_index, source=source, subsample=False)
+
+        pnn_label = self.pnn_labels[channel_index]
+        pns_label = self.pns_labels[channel_index]
+
+        plot_title = " - ".join([pnn_label, pns_label]) if pns_label != '' else pnn_label
+
+        if flag_events and self.flagged_indices is not None:
+            flagged_events = np.zeros(self.event_count)
+            flagged_events[self.flagged_indices] = 1
+        else:
+            flagged_events = None
+
+        fig = plt.figure(figsize=(16, 4))
+        ax = fig.add_subplot(1, 1, 1)
+
+        plot_utils.plot_channel(channel_data, plot_title, ax, xform=None, flagged_events=flagged_events)
+
+        return fig
 
     def plot_contour(
             self,
             x_label_or_number,
             y_label_or_number,
             source='xform',
-            subsample=False,
+            subsample=True,
             plot_contour=True,
             plot_events=False,
             x_min=None,
             x_max=None,
             y_min=None,
             y_max=None,
+            fill=False,
             fig_size=(8, 8)
     ):
         """
@@ -659,8 +714,9 @@ class Sample(object):
         :param source: 'raw', 'comp', 'xform' for whether the raw, compensated
             or transformed events are used for plotting
         :param subsample: Whether to use all events for plotting or just the
-            sub-sampled events. Default is False (all events). Plotting
-            sub-sampled events can be much faster.
+            sub-sampled events. Default is True (sub-sampled events). It is
+            not recommended to run with all events, as the Kernel Density
+            Estimation is computationally demanding.
         :param plot_contour: Whether to display the contour lines. Default is True.
         :param plot_events: Whether to display the event data points in
             addition to the contours. Default is False.
@@ -672,6 +728,8 @@ class Sample(object):
             be used with some padding to keep events off the edge of the plot.
         :param y_max: Upper bound of y-axis. If None, channel's max value will
             be used with some padding to keep events off the edge of the plot.
+        :param fill: Whether to fill in color between contour lines. D default
+            is False.
         :param fig_size: Tuple of 2 values specifying the size of the returned
             figure. Values are in Matplotlib size units.
         :return: Matplotlib figure of the contour plot
@@ -679,11 +737,13 @@ class Sample(object):
         x_index = self.get_channel_index(x_label_or_number)
         y_index = self.get_channel_index(y_label_or_number)
 
-        x = self.get_channel_data(x_index, source=source, subsample=subsample)
-        y = self.get_channel_data(y_index, source=source, subsample=subsample)
+        x = self.get_channel_events(x_index, source=source, subsample=subsample)
+        y = self.get_channel_events(y_index, source=source, subsample=subsample)
 
-        x_min, x_max = plot_utils.calculate_extent(x, d_min=x_min, d_max=x_max, pad=0.02)
-        y_min, y_max = plot_utils.calculate_extent(y, d_min=y_min, d_max=y_max, pad=0.02)
+        # noinspection PyProtectedMember
+        x_min, x_max = plot_utils._calculate_extent(x, d_min=x_min, d_max=x_max, pad=0.02)
+        # noinspection PyProtectedMember
+        y_min, y_max = plot_utils._calculate_extent(y, d_min=y_min, d_max=y_max, pad=0.02)
 
         fig, ax = plt.subplots(figsize=fig_size)
         ax.set_title(self.original_filename)
@@ -699,7 +759,7 @@ class Sample(object):
                 y=y,
                 palette=plot_utils.new_jet,
                 legend=False,
-                s=5,
+                s=6,
                 linewidth=0,
                 alpha=0.4
             )
@@ -710,8 +770,9 @@ class Sample(object):
                 y=y,
                 bw_method='scott',
                 cmap=plot_utils.new_jet,
-                linewidths=2,
-                alpha=1
+                linewidths=2 if not fill else None,
+                alpha=0.6,
+                fill=fill
             )
 
         return fig
@@ -721,7 +782,7 @@ class Sample(object):
             x_label_or_number,
             y_label_or_number,
             source='xform',
-            subsample=False,
+            subsample=True,
             color_density=True,
             x_min=None,
             x_max=None,
@@ -738,8 +799,8 @@ class Sample(object):
         :param source: 'raw', 'comp', 'xform' for whether the raw, compensated
             or transformed events are used for plotting
         :param subsample: Whether to use all events for plotting or just the
-            sub-sampled events. Default is False (all events). Plotting
-            sub-sampled events can be much faster.
+            sub-sampled events. Default is True (sub-sampled events). Plotting
+            sub-sampled events is much faster.
         :param color_density: Whether to color the events by density, similar
             to a heat map. Default is True.
         :param x_min: Lower bound of x-axis. If None, channel's min value will
@@ -763,25 +824,25 @@ class Sample(object):
         x_index = self.get_channel_index(x_label_or_number)
         y_index = self.get_channel_index(y_label_or_number)
 
-        x = self.get_channel_data(x_index, source=source, subsample=subsample)
-        y = self.get_channel_data(y_index, source=source, subsample=subsample)
+        x = self.get_channel_events(x_index, source=source, subsample=subsample)
+        y = self.get_channel_events(y_index, source=source, subsample=subsample)
 
-        dim_labels = []
+        dim_ids = []
 
         if self.pns_labels[x_index] != '':
-            dim_labels.append('%s (%s)' % (self.pns_labels[x_index], self.pnn_labels[x_index]))
+            dim_ids.append('%s (%s)' % (self.pns_labels[x_index], self.pnn_labels[x_index]))
         else:
-            dim_labels.append(self.pnn_labels[x_index])
+            dim_ids.append(self.pnn_labels[x_index])
 
         if self.pns_labels[y_index] != '':
-            dim_labels.append('%s (%s)' % (self.pns_labels[y_index], self.pnn_labels[y_index]))
+            dim_ids.append('%s (%s)' % (self.pns_labels[y_index], self.pnn_labels[y_index]))
         else:
-            dim_labels.append(self.pnn_labels[y_index])
+            dim_ids.append(self.pnn_labels[y_index])
 
         p = plot_utils.plot_scatter(
             x,
             y,
-            dim_labels,
+            dim_ids,
             x_min=x_min,
             x_max=x_max,
             y_min=y_min,
@@ -796,7 +857,7 @@ class Sample(object):
     def plot_scatter_matrix(
             self,
             source='xform',
-            subsample=False,
+            subsample=True,
             channel_labels_or_numbers=None,
             color_density=False,
             plot_height=256,
@@ -809,8 +870,8 @@ class Sample(object):
         :param source: 'raw', 'comp', 'xform' for whether the raw, compensated
             or transformed events are used for plotting
         :param subsample: Whether to use all events for plotting or just the
-            sub-sampled events. Default is False (all events). Plotting
-            sub-sampled events can be much faster.
+            sub-sampled events. Default is True (sub-sampled events). Plotting
+            sub-sampled events is be much faster.
         :param channel_labels_or_numbers: List of channel PnN labels or channel
             numbers to use for the scatter plot matrix. If None, then all
             channels will be plotted (except Time).
@@ -875,15 +936,15 @@ class Sample(object):
         :param source: 'raw', 'comp', 'xform' for whether the raw, compensated
             or transformed events are used for plotting
         :param subsample: Whether to use all events for plotting or just the
-            sub-sampled events. Default is False (all events). Plotting
-            sub-sampled events can be much faster.
-        :param bins: Number of bins to use for the histogram. If None, the
-            number of bins is determined by the Freedman-Diaconis rule.
+            sub-sampled events. Default is False (all events).
+        :param bins: Number of bins to use for the histogram or a string compatible
+            with the NumPy histogram function. If None, the number of bins is
+            determined by the square root rule.
         :return: Matplotlib figure of the histogram plot with KDE curve.
         """
 
         channel_index = self.get_channel_index(channel_label_or_number)
-        channel_data = self.get_channel_data(channel_index, source=source, subsample=subsample)
+        channel_data = self.get_channel_events(channel_index, source=source, subsample=subsample)
 
         p = plot_utils.plot_histogram(
             channel_data,
@@ -899,25 +960,43 @@ class Sample(object):
             self,
             filename,
             source='xform',
-            exclude=None,
+            exclude_neg_scatter=False,
+            exclude_flagged=False,
+            exclude_normal=False,
             subsample=False,
             directory=None
     ):
         """
         Export Sample event data to either a new FCS file or a CSV file. Format determined by filename extension.
 
-        :param filename: Text string to use for the exported file name.
+        :param filename: Text string to use for the exported file name. File type is determined by
+            the filename extension (supported types are .fcs & .csv).
         :param source: 'orig', 'raw', 'comp', 'xform' for whether the original (no gain applied),
             raw (orig + gain), compensated (raw + comp), or transformed (comp + xform) events  are
             used for exporting
-        :param exclude: Specifies whether to exclude events. Options are 'good', 'bad', or None.
-            'bad' excludes neg. scatter or anomalous, 'good' will export the bad events.
-            Default is None (exports all events)
-        :param subsample: Whether to export all events or just the
-            sub-sampled events. Default is False (all events).
-        :param directory: Directory path where the CSV will be saved
+        :param exclude_neg_scatter: Whether to exclude negative scatter events. Default is False.
+        :param exclude_flagged: Whether to exclude flagged events. Default is False.
+        :param exclude_normal: Whether to exclude "normal" events. This is useful for retrieving all
+             the "bad" events (neg scatter and/or flagged events). Default is False.
+        :param subsample: Whether to export all events or just the sub-sampled events.
+            Default is False (all events).
+        :param directory: Directory path where the exported file will be saved. If None, the file
+            will be saved in the current working directory.
         :return: None
         """
+        # get the requested file type (either .fcs or .csv)
+        ext = os.path.splitext(filename)[-1].lower()
+
+        # Next, check if exporting as CSV, and issue a warning if so.
+        # Exporting original events to CSV doesn't allow for the
+        # inclusion of the proper metadata (PnG, PnE, PnR) for the
+        # exported event values to be interpreted correctly.
+        if ext == '.csv' and source == 'orig':
+            warnings.warn(
+                "Exporting original events as CSV will not include the metadata (gain, timestep, etc.) "
+                "to properly interpret the exported event values."
+            )
+
         if directory is not None:
             output_path = os.path.join(directory, filename)
         else:
@@ -930,25 +1009,44 @@ class Sample(object):
             # include all events to start with
             idx = np.ones(self.event_count, bool)
 
-        if exclude == 'bad':
-            idx[self.anomalous_indices] = False
-        elif exclude == 'good':
-            good_idx = np.zeros(self.event_count, bool)
-            good_idx[self.anomalous_indices] = True
-            idx = np.logical_and(idx, good_idx)
+        if exclude_flagged:
+            idx[self.flagged_indices] = False
+        if exclude_neg_scatter:
+            idx[self.negative_scatter_indices] = False
+        if exclude_normal:
+            # start with all events marked normal
+            normal_idx = np.zeros(self.event_count, bool)
 
-        if source == 'xform':
-            events = self._transformed_events[idx, :]
-        elif source == 'comp':
-            events = self._comp_events[idx, :]
-        elif source == 'raw':
-            events = self._raw_events[idx, :]
-        elif source == 'orig':
-            events = self._orig_events[idx, :]
-        else:
-            raise ValueError("source must be one of 'orig', 'raw', 'comp', or 'xform'")
+            # set neg scatter and flagged events to False
+            normal_idx[self.negative_scatter_indices] = False
+            normal_idx[self.flagged_indices] = False
 
-        ext = os.path.splitext(filename)[-1]
+            # then filter out the inverse normal indices
+            idx = np.logical_and(idx, ~normal_idx)
+
+        extra_dict = {}
+
+        events = self.get_events(source=source)
+        events = events[idx, :]
+
+        if source == 'orig':
+            if 'timestep' in self.metadata and self.time_index is not None:
+                extra_dict['TIMESTEP'] = self.metadata['timestep']
+
+            # check for channel scale for each channel, log scale is not supported yet by FlowIO
+            for (decades, log0) in self.channel_lin_log:
+                if decades > 0:
+                    raise NotImplementedError(
+                        "Export of FCS files with original events containing PnE instructions "
+                        "for log scale is not yet supported"
+                    )
+
+            # check for channel gain values != 1.0
+            for _, channel_row in self.channels.iterrows():
+                gain_keyword = 'p%dg' % channel_row['channel_number']
+                gain_value = channel_row['png']
+                if gain_value != 1.0:
+                    extra_dict[gain_keyword] = gain_value
 
         # TODO: support exporting to HDF5 format, but as optional dependency/import
         if ext == '.csv':
@@ -966,6 +1064,7 @@ class Sample(object):
                 events.flatten().tolist(),
                 channel_names=self.pnn_labels,
                 opt_channel_names=self.pns_labels,
-                file_handle=fh
+                file_handle=fh,
+                extra=extra_dict
             )
             fh.close()

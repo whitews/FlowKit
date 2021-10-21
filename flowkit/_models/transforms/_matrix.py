@@ -8,19 +8,18 @@ import flowutils
 
 class Matrix(object):
     """
-    Represents a single compensation matrix from a CSV/TSV file, NumPy array or Pandas
+    Represents a single compensation matrix from a CSV/TSV file, NumPy array or pandas
     DataFrame.
 
     :param matrix_id: Text string used to identify the matrix (cannot be 'uncompensated' or 'fcs')
     :param spill_data_or_file: matrix data array, can be either:
+            - text string from FCS $SPILL or $SPILLOVER metadata value
             - a file path or file handle to a CSV/TSF file
             - a pathlib Path object to a CSV/TSF file
             - a NumPy array of spill data
-            - a Pandas DataFrame (channel labels as headers)
-    :param detectors: A list of strings or a list of tuples to use for the detector
-        labels.
-    :param fluorochromes: A list of strings or a list of tuples to use for the detector
-        labels.
+            - a pandas DataFrame (channel labels as headers)
+    :param detectors: A list of strings or a list of tuples to use for the detector labels.
+    :param fluorochromes: A list of strings or a list of tuples to use for the detector labels.
     :param null_channels: List of PnN labels for channels that were collected
         but do not contain useful data. Note, this should only be used if there were
         truly no fluorochromes used targeting those detectors and the channels
@@ -77,8 +76,7 @@ class Matrix(object):
         indices = [
             sample.get_channel_index(d) for d in self.detectors
         ]
-        events = sample.get_raw_events()
-        events = events.copy()
+        events = sample.get_events(source='raw')
 
         return flowutils.compensate.compensate(
             events,
@@ -86,13 +84,30 @@ class Matrix(object):
             indices
         )
 
+    def inverse(self, sample):
+        """
+        Apply compensation matrix to given Sample instance.
+        :param sample: Sample instance with matching set of detectors
+        :return: NumPy array of compensated events
+        """
+        indices = [
+            sample.get_channel_index(d) for d in self.detectors
+        ]
+        events = sample.get_events(source='comp')
+
+        return flowutils.compensate.inverse_compensate(
+            events,
+            self.matrix,
+            indices
+        )
+
     def as_dataframe(self, fluoro_labels=False):
         """
-        Returns the compensation matrix as a Pandas DataFrame.
+        Returns the compensation matrix as a pandas DataFrame.
 
         :param fluoro_labels: If True, the fluorochrome names are used as the column headers & row indices, else
             the detector names are used (default).
-        :return: Pandas DataFrame
+        :return: pandas DataFrame
         """
         if fluoro_labels:
             labels = self.fluorochomes

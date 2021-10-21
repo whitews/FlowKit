@@ -8,7 +8,7 @@ from flowkit import Sample, transforms
 
 data1_fcs_path = 'examples/data/gate_ref/data1.fcs'
 data1_sample = Sample(data1_fcs_path)
-data1_raw_events = data1_sample.get_raw_events()
+data1_raw_events = data1_sample.get_events(source='raw')
 
 test_data_range1 = np.linspace(0.0, 10.0, 101)
 
@@ -46,8 +46,8 @@ class TransformsTestCase(unittest.TestCase):
         xform = transforms.AsinhTransform('asinh', param_t=10000, param_m=4.5, param_a=0)
         data1_sample.apply_transform(xform)
 
-        raw_events = data1_sample.get_raw_events()
-        xform_events = data1_sample.get_transformed_events()
+        raw_events = data1_sample.get_events(source='raw')
+        xform_events = data1_sample.get_events(source='xform')
 
         self.assertIsInstance(xform_events, np.ndarray)
         self.assertRaises(AssertionError, np.testing.assert_array_equal, raw_events, xform_events)
@@ -75,7 +75,7 @@ class TransformsTestCase(unittest.TestCase):
 
         self.assertRaises(NotImplementedError, data1_sample.apply_transform, xform)
 
-    def test_transform_ratio_raises_bad_dim_labels(self):
+    def test_transform_ratio_raises_bad_dim_ids(self):
         ratio_dims = ['FL1-H', 'FL2-H', 'FL3-H']
 
         self.assertRaises(
@@ -176,4 +176,12 @@ class TransformsTestCase(unittest.TestCase):
         data1_sample.apply_transform(xform_lut)
 
         self.assertIsInstance(data1_sample._transformed_events, np.ndarray)
+
+    @staticmethod
+    def test_inverse_wsp_biex_transform():
+        xform = transforms.WSPBiexTransform('biex')
+        y = xform.apply(test_data_range1)
+        x = xform.inverse(y)
+
+        np.testing.assert_array_almost_equal(test_data_range1, x, decimal=10)
 

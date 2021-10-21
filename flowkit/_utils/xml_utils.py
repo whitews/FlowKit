@@ -3,23 +3,26 @@ Utility functions for parsing & exporting gating related XML documents
 """
 import numpy as np
 from lxml import etree
-import anytree
+import networkx as nx
 from .._resources import gml_schema
 from .._models.dimension import Dimension, RatioDimension, QuadrantDivider
 from .._models.vertex import Vertex
 from .._models.gating_strategy import GatingStrategy
+# noinspection PyProtectedMember
 from .._models.transforms import _transforms, _gml_transforms
+# noinspection PyProtectedMember
 from .._models.transforms._matrix import Matrix
+# noinspection PyProtectedMember
 from .._models.gates._gml_gates import \
     GMLBooleanGate, \
     GMLEllipsoidGate, \
     GMLQuadrantGate, \
     GMLPolygonGate, \
     GMLRectangleGate
+# noinspection PyProtectedMember
 from .._models.gates._gates import \
     BooleanGate, \
     EllipsoidGate, \
-    Quadrant, \
     QuadrantGate, \
     PolygonGate, \
     RectangleGate
@@ -35,87 +38,13 @@ gate_constructor_lut = {
 }
 
 
-def _build_hierarchy_tree(gates_dict):
-    nodes = {}
-
-    root = anytree.Node('root')
-    parent_gates = set()
-
-    for g_id, gate in gates_dict.items():
-        if gate.parent is not None:
-            # record the set of parents so we can find the leaves later
-            parent_gates.add(gate.parent)
-
-            # we'll get children nodes after
-            continue
-
-        # use g_id for lookup (for uid), gate.id for Node name
-        nodes[g_id] = anytree.Node(
-            g_id,
-            parent=root,
-            gate=gate
-        )
-
-        if isinstance(gate, QuadrantGate):
-            for q_id, quad in gate.quadrants.items():
-                nodes[q_id] = anytree.Node(
-                    q_id,
-                    parent=nodes[gate.id],
-                    gate=quad
-                )
-
-    parent_gates.difference_update(set(nodes.keys()))
-    # Now we have all the root-level nodes and the set of parents.
-    # Process the parent gates
-    parents_remaining = len(parent_gates)
-    while parents_remaining > 0:
-        discard = []
-        for gate_id in parent_gates:
-            gate = gates_dict[gate_id]
-            parent_id = gate.parent
-
-            if parent_id in nodes or parent_id is None:
-                nodes[gate_id] = anytree.Node(
-                    gate_id,
-                    parent=root if parent_id is None else nodes[parent_id],
-                    gate=gate
-                )
-
-                if isinstance(gate, QuadrantGate):
-                    for q_id, quad in gate.quadrants.items():
-                        nodes[q_id] = anytree.Node(
-                            q_id,
-                            parent=nodes[gate.id],
-                            gate=quad
-                        )
-                discard.append(gate_id)
-        parent_gates.difference_update(set(discard))
-        parents_remaining = len(parent_gates)
-
-    # Process remaining leaves
-    for g_id, gate in gates_dict.items():
-        if g_id in nodes:
-            continue
-
-        nodes[g_id] = anytree.Node(
-            g_id,
-            parent=nodes[gate.parent],
-            gate=gate
-        )
-
-        # TODO: this conditional isn't covered in tests
-        if isinstance(gate, QuadrantGate):
-            for q_id, quad in gate.quadrants.items():
-                nodes[q_id] = anytree.Node(
-                    q_id,
-                    parent=nodes[g_id],
-                    gate=quad
-                )
-
-    return root
-
-
 def parse_gating_xml(xml_file_or_path):
+    """
+    Parse a GatingML 20 document and return as a GatingStrategy.
+
+    :param xml_file_or_path: file handle or file path to a GatingML 2.0 document
+    :return: GatingStrategy instance
+    """
     doc_type, root_gml, gating_ns, data_type_ns, xform_ns = _get_xml_type(xml_file_or_path)
 
     gating_strategy = GatingStrategy()
@@ -134,12 +63,62 @@ def parse_gating_xml(xml_file_or_path):
     for t_id, t in transformations.items():
         gating_strategy.add_transform(t)
 
-    root = _build_hierarchy_tree(gates)
+    deps = []
+    quadrants = []
+    bool_edges = []
 
-    for n in root.descendants:
-        if isinstance(n.gate, Quadrant):
+    for g_id, gate in gates.items():
+        if gate.parent is None:
+            parent = 'root'
+        else:
+            parent = gate.parent
+
+        deps.append((parent, g_id))
+
+        if isinstance(gate, QuadrantGate):
+            for q_id in gate.quadrants:
+                deps.append((g_id, q_id))
+                quadrants.append(q_id)
+
+        if isinstance(gate, BooleanGate):
+            for g_ref in gate.gate_refs:
+                deps.append((g_ref['ref'], g_id))
+
+                bool_edges.append((g_ref['ref'], g_id))
+
+    dag = nx.DiGraph()
+    dag.add_edges_from(deps)
+
+    is_acyclic = nx.is_directed_acyclic_graph(dag)
+
+    if not is_acyclic:
+        raise ValueError("The given GatingML 2.0 file is invalid, cyclic gate dependencies are not allowed.")
+
+    process_order = list(nx.algorithms.topological_sort(dag))
+
+    for q_id in quadrants:
+        process_order.remove(q_id)
+
+    # remove boolean edges to create a true ancestor graph
+    dag.remove_edges_from(bool_edges)
+
+    for g_id in process_order:
+        # skip 'root' node
+        if g_id == 'root':
             continue
-        gating_strategy.add_gate(n.gate)
+        gate = gates[g_id]
+
+        # For Boolean gates we need to add gate paths to the
+        # referenced gates via 'gate_path' key in the gate_refs dict
+        if isinstance(gate, BooleanGate):
+            bool_gate_refs = gate.gate_refs
+            for gate_ref in bool_gate_refs:
+                # since we're parsing GML, all gate IDs must be unique
+                # so safe to lookup in our graph
+                gate_ref_path = list(nx.all_simple_paths(dag, 'root', gate_ref['ref']))[0]
+                gate_ref['path'] = tuple(gate_ref_path[:-1])  # don't repeat the gate name
+
+        gating_strategy.add_gate(gate)
 
     return gating_strategy
 
@@ -197,12 +176,12 @@ def _construct_gates(root_gml, gating_ns, data_type_ns):
                 data_type_ns
             )
 
-            if g.id in gates_dict:
+            if g.gate_name in gates_dict:
                 raise ValueError(
                     "Gate '%s' already exists. "
-                    "Duplicate gate IDs are not allowed." % g.id
+                    "Duplicate gate names are not allowed." % g.gate_name
                 )
-            gates_dict[g.id] = g
+            gates_dict[g.gate_name] = g
 
     return gates_dict
 
@@ -311,7 +290,7 @@ def _construct_matrices(root_gml, transform_ns, data_type_ns):
         )
 
         for matrix_el in matrix_els:
-            matrix = parse_matrix_element(
+            matrix = _parse_matrix_element(
                 matrix_el,
                 transform_ns,
                 data_type_ns
@@ -323,21 +302,32 @@ def _construct_matrices(root_gml, transform_ns, data_type_ns):
 
 
 def find_attribute_value(xml_el, namespace, attribute_name):
+    """
+    Extract the value from an XML element attribute.
+
+    :param xml_el: lxml etree Element
+    :param namespace: string for the XML element's namespace prefix
+    :param attribute_name: attribute string to retrieve the value from
+    :return: value string for the given attribute_name
+    """
     attribs = xml_el.xpath(
         '@%s:%s' % (namespace, attribute_name),
-        namespaces=xml_el.nsmap
+        namespaces=xml_el.nsmap,
+        smart_strings=False
     )
+    attribs_cnt = len(attribs)
 
-    if len(attribs) > 1:
+    if attribs_cnt > 1:
         raise ValueError(
             "Multiple %s attributes found (line %d)" % (
                 attribute_name, xml_el.sourceline
             )
         )
-    elif len(attribs) == 0:
+    elif attribs_cnt == 0:
         return None
 
-    return attribs[0]
+    # return as pure str to save memory (otherwise it's an _ElementUnicodeResult from lxml)
+    return str(attribs[0])
 
 
 def parse_gate_element(
@@ -345,6 +335,14 @@ def parse_gate_element(
         gating_namespace,
         data_type_namespace
 ):
+    """
+    This class parses a GatingML-2.0 compatible gate XML element and extracts the gate ID,
+     parent gate ID, and dimensions.
+
+    :param gate_element: gate XML element from a GatingML-2.0 document
+    :param gating_namespace: XML namespace for gating elements/attributes
+    :param data_type_namespace: XML namespace for data type elements/attributes
+    """
     gate_id = find_attribute_value(gate_element, gating_namespace, 'id')
     parent_id = find_attribute_value(gate_element, gating_namespace, 'parent_id')
 
@@ -366,17 +364,17 @@ def parse_gate_element(
         dimensions = []
 
         for dim_el in dim_els:
-            dim = parse_dimension_element(dim_el, gating_namespace, data_type_namespace)
+            dim = _parse_dimension_element(dim_el, gating_namespace, data_type_namespace)
             dimensions.append(dim)
     else:
         for div_el in div_els:
-            dim = parse_divider_element(div_el, gating_namespace, data_type_namespace)
+            dim = _parse_divider_element(div_el, gating_namespace, data_type_namespace)
             dimensions.append(dim)
 
     return gate_id, parent_id, dimensions
 
 
-def parse_dimension_element(
+def _parse_dimension_element(
         dim_element,
         gating_namespace,
         data_type_namespace
@@ -396,7 +394,7 @@ def parse_dimension_element(
     if _max is not None:
         range_max = float(_max)
 
-    # label be here
+    # ID be here
     fcs_dim_el = dim_element.find(
         '%s:fcs-dimension' % data_type_namespace,
         namespaces=dim_element.nsmap
@@ -420,7 +418,7 @@ def parse_dimension_element(
 
         if ratio_xform_ref is None:
             raise ValueError(
-                "New dimensions must provid a transform reference (line %d)" % dim_element.sourceline
+                "New dimensions must provide a transform reference (line %d)" % dim_element.sourceline
             )
         dimension = RatioDimension(
             ratio_xform_ref,
@@ -430,14 +428,14 @@ def parse_dimension_element(
             range_max=range_max
         )
     else:
-        label = find_attribute_value(fcs_dim_el, data_type_namespace, 'name')
-        if label is None:
+        dim_id = find_attribute_value(fcs_dim_el, data_type_namespace, 'name')
+        if dim_id is None:
             raise ValueError(
                 'Dimension name not found (line %d)' % fcs_dim_el.sourceline
             )
 
         dimension = Dimension(
-            label,
+            dim_id,
             compensation_ref,
             transformation_ref,
             range_min=range_min,
@@ -447,21 +445,21 @@ def parse_dimension_element(
     return dimension
 
 
-def parse_divider_element(divider_element, gating_namespace, data_type_namespace):
-    # Get'id' (present in quad gate dividers)
-    dimension_id = find_attribute_value(divider_element, gating_namespace, 'id')
+def _parse_divider_element(divider_element, gating_namespace, data_type_namespace):
+    # Get 'id' (present in quad gate dividers)
+    divider_id = find_attribute_value(divider_element, gating_namespace, 'id')
 
     compensation_ref = find_attribute_value(divider_element, gating_namespace, 'compensation-ref')
     transformation_ref = find_attribute_value(divider_element, gating_namespace, 'transformation-ref')
 
-    # label be here
+    # ID be here
     fcs_dim_el = divider_element.find(
         '%s:fcs-dimension' % data_type_namespace,
         namespaces=divider_element.nsmap
     )
 
-    label = find_attribute_value(fcs_dim_el, data_type_namespace, 'name')
-    if label is None:
+    dim_id = find_attribute_value(fcs_dim_el, data_type_namespace, 'name')
+    if dim_id is None:
         raise ValueError(
             'Divider dimension name not found (line %d)' % fcs_dim_el.sourceline
         )
@@ -477,22 +475,30 @@ def parse_divider_element(divider_element, gating_namespace, data_type_namespace
     for value in value_els:
         values.append(float(value.text))
 
-    divider = QuadrantDivider(dimension_id, label, compensation_ref, values, transformation_ref)
+    divider = QuadrantDivider(divider_id, dim_id, compensation_ref, values, transformation_ref)
 
     return divider
 
 
-def parse_vertex_element(vert_element, gating_namespace, data_type_namespace):
+def parse_vertex_element(vertex_element, gating_namespace, data_type_namespace):
+    """
+    This class parses a GatingML-2.0 compatible vertex XML element and returns a Vertex object
+     parent gate ID, and dimensions.
+
+    :param vertex_element: vertex XML element from a GatingML-2.0 document
+    :param gating_namespace: XML namespace for gating elements/attributes
+    :param data_type_namespace: XML namespace for data type elements/attributes
+    """
     coordinates = []
 
-    coord_els = vert_element.findall(
+    coord_els = vertex_element.findall(
         '%s:coordinate' % gating_namespace,
-        namespaces=vert_element.nsmap
+        namespaces=vertex_element.nsmap
     )
 
     if len(coord_els) != 2:
         raise ValueError(
-            'Vertex must contain 2 coordinate values (line %d)' % vert_element.sourceline
+            'Vertex must contain 2 coordinate values (line %d)' % vertex_element.sourceline
         )
 
     # should be 0 or only 1 'min' attribute,
@@ -508,7 +514,7 @@ def parse_vertex_element(vert_element, gating_namespace, data_type_namespace):
     return Vertex(coordinates)
 
 
-def parse_matrix_element(
+def _parse_matrix_element(
     matrix_element,
     xform_namespace,
     data_type_namespace
@@ -604,8 +610,8 @@ def _add_matrix_to_gml(root, matrix, ns_map):
     for row in matrix.matrix:
         row_ml = etree.SubElement(xform_ml, "{%s}spectrum" % ns_map['transforms'])
         for val in row:
-            coeff_ml = etree.SubElement(row_ml, "{%s}coefficient" % ns_map['transforms'])
-            coeff_ml.set('{%s}value' % ns_map['transforms'], str(val))
+            coefficient_ml = etree.SubElement(row_ml, "{%s}coefficient" % ns_map['transforms'])
+            coefficient_ml.set('{%s}value' % ns_map['transforms'], str(val))
 
 
 def _add_transform_to_gml(root, transform, ns_map):
@@ -637,11 +643,11 @@ def _add_transform_to_gml(root, transform, ns_map):
         logicle_ml.set('{%s}M' % ns_map['transforms'], str(transform.param_m))
         logicle_ml.set('{%s}A' % ns_map['transforms'], str(transform.param_a))
     elif isinstance(transform, _transforms.HyperlogTransform):
-        hlog_ml = etree.SubElement(xform_ml, "{%s}hyperlog" % ns_map['transforms'])
-        hlog_ml.set('{%s}T' % ns_map['transforms'], str(transform.param_t))
-        hlog_ml.set('{%s}W' % ns_map['transforms'], str(transform.param_w))
-        hlog_ml.set('{%s}M' % ns_map['transforms'], str(transform.param_m))
-        hlog_ml.set('{%s}A' % ns_map['transforms'], str(transform.param_a))
+        hyperlog_ml = etree.SubElement(xform_ml, "{%s}hyperlog" % ns_map['transforms'])
+        hyperlog_ml.set('{%s}T' % ns_map['transforms'], str(transform.param_t))
+        hyperlog_ml.set('{%s}W' % ns_map['transforms'], str(transform.param_w))
+        hyperlog_ml.set('{%s}M' % ns_map['transforms'], str(transform.param_m))
+        hyperlog_ml.set('{%s}A' % ns_map['transforms'], str(transform.param_a))
     elif isinstance(transform, _transforms.LinearTransform):
         lin_ml = etree.SubElement(xform_ml, "{%s}flin" % ns_map['transforms'])
         lin_ml.set('{%s}T' % ns_map['transforms'], str(transform.param_t))
@@ -715,9 +721,9 @@ def _add_gate_to_gml(root, gate, ns_map):
                 
                 pos_ml.set('{%s}location' % ns_map['gating'], str(loc_coord))
     else:
-        raise ValueError("Gate %s is not a valid GatingML 2.0 element" % gate.id)
+        raise ValueError("Gate %s is not a valid GatingML 2.0 element" % gate.gate_name)
 
-    gate_ml.set('{%s}id' % ns_map['gating'], gate.id)
+    gate_ml.set('{%s}id' % ns_map['gating'], gate.gate_name)
 
     for i, dim in enumerate(gate.dimensions):
         dim_type = 'dim'
@@ -751,7 +757,7 @@ def _add_gate_to_gml(root, gate, ns_map):
         else:
             fcs_dim_ml = etree.SubElement(dim_ml, '{%s}fcs-dimension' % ns_map['data-type'])
             if dim_type == 'dim':
-                fcs_dim_ml.set('{%s}name' % ns_map['data-type'], dim.label)
+                fcs_dim_ml.set('{%s}name' % ns_map['data-type'], dim.id)
             elif dim_type == 'quad':
                 fcs_dim_ml.set('{%s}name' % ns_map['data-type'], dim.dimension_ref)
                 for val in dim.values:
@@ -768,9 +774,10 @@ def _add_gates_from_gate_dict(gating_strategy, gate_dict, ns_map, parent_ml):
         skip = False
 
         gate = gating_strategy.get_gate(gate_id)
-        if isinstance(gate, Quadrant):
-            # single quadrants will be handled in the owning quadrant gate
-            skip = True
+        if isinstance(gate, QuadrantGate):
+            if gate_id in gate.quadrants.keys():
+                # single quadrants will be handled in the owning quadrant gate
+                skip = True
 
         if not skip:
             child_ml = _add_gate_to_gml(parent_ml, gate, ns_map)

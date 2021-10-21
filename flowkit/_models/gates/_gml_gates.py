@@ -24,15 +24,15 @@ class GMLRectangleGate(gates.RectangleGate):
             gating_namespace,
             data_type_namespace
     ):
-        gate_id, parent_id, dimensions = xml_utils.parse_gate_element(
+        gate_name, parent_gate_name, dimensions = xml_utils.parse_gate_element(
             gate_element,
             gating_namespace,
             data_type_namespace
         )
 
         super().__init__(
-            gate_id,
-            parent_id,
+            gate_name,
+            parent_gate_name,
             dimensions
         )
 
@@ -52,7 +52,7 @@ class GMLPolygonGate(gates.PolygonGate):
             gating_namespace,
             data_type_namespace
     ):
-        gate_id, parent_id, dimensions = xml_utils.parse_gate_element(
+        gate_name, parent_gate_name, dimensions = xml_utils.parse_gate_element(
             gate_element,
             gating_namespace,
             data_type_namespace
@@ -70,8 +70,8 @@ class GMLPolygonGate(gates.PolygonGate):
             vertices.append(vert)
 
         super().__init__(
-            gate_id,
-            parent_id,
+            gate_name,
+            parent_gate_name,
             dimensions,
             vertices
         )
@@ -91,7 +91,7 @@ class GMLEllipsoidGate(gates.EllipsoidGate):
             gating_namespace,
             data_type_namespace
     ):
-        gate_id, parent_id, dimensions = xml_utils.parse_gate_element(
+        gate_name, parent_gate_name, dimensions = xml_utils.parse_gate_element(
             gate_element,
             gating_namespace,
             data_type_namespace
@@ -168,8 +168,8 @@ class GMLEllipsoidGate(gates.EllipsoidGate):
         distance_square = float(dist_square_value)
 
         super().__init__(
-            gate_id,
-            parent_id,
+            gate_name,
+            parent_gate_name,
             dimensions,
             coordinates,
             covariance_matrix,
@@ -181,7 +181,7 @@ class GMLQuadrantGate(gates.QuadrantGate):
     """
     Represents a GatingML Quadrant Gate
 
-    A QuadrantGate must have at least 1 divider, and must specify the labels
+    A QuadrantGate must have at least 1 divider, and must specify the IDs
     of the resulting quadrants the dividers produce. Quadrant gates are
     different from other gate types in that they are actually a collection of
     gates (quadrants), though even the term quadrant is misleading as they can
@@ -197,7 +197,7 @@ class GMLQuadrantGate(gates.QuadrantGate):
             gating_namespace,
             data_type_namespace
     ):
-        gate_id, parent_id, dividers = xml_utils.parse_gate_element(
+        gate_name, parent_gate_name, dividers = xml_utils.parse_gate_element(
             gate_element,
             gating_namespace,
             data_type_namespace
@@ -236,13 +236,13 @@ class GMLQuadrantGate(gates.QuadrantGate):
                 location = float(location)
                 q_min = None
                 q_max = None
-                dim_label = None
+                dim_id = None
 
                 for div in dividers:
                     if div.id != divider_ref:
                         continue
                     else:
-                        dim_label = div.dimension_ref
+                        dim_id = div.dimension_ref
 
                     for v in sorted(div.values):
                         if v > location:
@@ -253,7 +253,7 @@ class GMLQuadrantGate(gates.QuadrantGate):
                         elif v <= location:
                             q_min = v
 
-                if dim_label is None:
+                if dim_id is None:
                     raise ValueError(
                         'Quadrant must define a divider reference (line %d)' % pos_el.sourceline
                     )
@@ -270,8 +270,8 @@ class GMLQuadrantGate(gates.QuadrantGate):
             )
 
         super().__init__(
-            gate_id,
-            parent_id,
+            gate_name,
+            parent_gate_name,
             dividers,
             quadrants
         )
@@ -292,7 +292,7 @@ class GMLBooleanGate(gates.BooleanGate):
             gating_namespace,
             data_type_namespace
     ):
-        gate_id, parent_id, dimensions = xml_utils.parse_gate_element(
+        gate_name, parent_gate_name, dimensions = xml_utils.parse_gate_element(
             gate_element,
             gating_namespace,
             data_type_namespace
@@ -356,8 +356,8 @@ class GMLBooleanGate(gates.BooleanGate):
             )
 
         super().__init__(
-            gate_id,
-            parent_id,
+            gate_name,
+            parent_gate_name,
             bool_type,
             gate_refs
         )

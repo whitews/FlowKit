@@ -43,15 +43,20 @@ static PyObject *wrap_points_in_polygon(PyObject *self, PyObject *args) {
     // now we can call our function!
     int *is_in_polygon = malloc(point_count * sizeof(int));
 
-    is_in_polygon = points_in_polygon(poly_vertices_c, vert_count, points_c, point_count);
+    points_in_polygon(is_in_polygon, poly_vertices_c, vert_count, points_c, point_count);
 
     Py_DECREF(poly_vert_array);
     Py_DECREF(points_array);
 
-    long int dims[1];
+    npy_intp dims[1];
     dims[0] = point_count;
 
-    return PyArray_SimpleNewFromData(1, dims, NPY_INT32, is_in_polygon);
+    PyObject *arr = PyArray_SimpleNewFromData(1, dims, NPY_INT32, is_in_polygon);
+
+    // enable our array to free the memory we allocated for is_in_polygon
+    PyArray_ENABLEFLAGS((PyArrayObject*) arr, NPY_ARRAY_OWNDATA);
+
+    return arr;
 }
 
 static PyMethodDef module_methods[] = {

@@ -136,9 +136,9 @@ class GatingTestCase(unittest.TestCase):
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
 
-        result = gs.gate_sample(data1_sample, 'Range1')
+        result = gs.gate_sample(data1_sample)
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('Range1'))
+        np.testing.assert_array_equal(truth, result.get_gate_membership('Range1'))
 
     @staticmethod
     def test_add_rect1_gate():
@@ -154,9 +154,9 @@ class GatingTestCase(unittest.TestCase):
         res_path = 'examples/data/gate_ref/truth/Results_Rectangle1.txt'
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
 
-        result = gs.gate_sample(data1_sample, 'Rectangle1')
+        result = gs.gate_sample(data1_sample)
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('Rectangle1'))
+        np.testing.assert_array_equal(truth, result.get_gate_membership('Rectangle1'))
 
     @staticmethod
     def test_add_rect2_gate():
@@ -172,9 +172,9 @@ class GatingTestCase(unittest.TestCase):
         res_path = 'examples/data/gate_ref/truth/Results_Rectangle2.txt'
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
 
-        result = gs.gate_sample(data1_sample, 'Rectangle2')
+        result = gs.gate_sample(data1_sample)
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('Rectangle2'))
+        np.testing.assert_array_equal(truth, result.get_gate_membership('Rectangle2'))
 
     @staticmethod
     def test_add_poly1_gate():
@@ -185,9 +185,9 @@ class GatingTestCase(unittest.TestCase):
         res_path = 'examples/data/gate_ref/truth/Results_Polygon1.txt'
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
 
-        result = gs.gate_sample(data1_sample, 'Polygon1')
+        result = gs.gate_sample(data1_sample)
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('Polygon1'))
+        np.testing.assert_array_equal(truth, result.get_gate_membership('Polygon1'))
 
     @staticmethod
     def test_add_poly2_gate():
@@ -210,9 +210,9 @@ class GatingTestCase(unittest.TestCase):
         res_path = 'examples/data/gate_ref/truth/Results_Polygon2.txt'
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
 
-        result = gs.gate_sample(data1_sample, 'Polygon2')
+        result = gs.gate_sample(data1_sample)
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('Polygon2'))
+        np.testing.assert_array_equal(truth, result.get_gate_membership('Polygon2'))
 
     @staticmethod
     def test_add_poly3_non_solid_gate():
@@ -239,9 +239,9 @@ class GatingTestCase(unittest.TestCase):
         res_path = 'examples/data/gate_ref/truth/Results_Polygon3NS.txt'
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
 
-        result = gs.gate_sample(data1_sample, 'Polygon3NS')
+        result = gs.gate_sample(data1_sample)
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('Polygon3NS'))
+        np.testing.assert_array_equal(truth, result.get_gate_membership('Polygon3NS'))
 
     @staticmethod
     def test_add_ellipse1_gate():
@@ -252,9 +252,9 @@ class GatingTestCase(unittest.TestCase):
         res_path = 'examples/data/gate_ref/truth/Results_Ellipse1.txt'
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
 
-        result = gs.gate_sample(data1_sample, 'Ellipse1')
+        result = gs.gate_sample(data1_sample)
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('Ellipse1'))
+        np.testing.assert_array_equal(truth, result.get_gate_membership('Ellipse1'))
 
     @staticmethod
     def test_add_ellipsoid_3d_gate():
@@ -275,9 +275,9 @@ class GatingTestCase(unittest.TestCase):
         res_path = 'examples/data/gate_ref/truth/Results_Ellipsoid3D.txt'
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
 
-        result = gs.gate_sample(data1_sample, 'Ellipsoid3D')
+        result = gs.gate_sample(data1_sample)
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('Ellipsoid3D'))
+        np.testing.assert_array_equal(truth, result.get_gate_membership('Ellipsoid3D'))
 
     @staticmethod
     def test_add_time_range_gate():
@@ -289,9 +289,9 @@ class GatingTestCase(unittest.TestCase):
 
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
 
-        result = gs.gate_sample(data1_sample, 'Range2')
+        result = gs.gate_sample(data1_sample)
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('Range2'))
+        np.testing.assert_array_equal(truth, result.get_gate_membership('Range2'))
 
     @staticmethod
     def test_add_quadrant1_gate():
@@ -311,10 +311,10 @@ class GatingTestCase(unittest.TestCase):
 
         result = gs.gate_sample(data1_sample)
 
-        np.testing.assert_array_equal(truth1, result.get_gate_indices('FL2N-FL4N'))
-        np.testing.assert_array_equal(truth2, result.get_gate_indices('FL2N-FL4P'))
-        np.testing.assert_array_equal(truth3, result.get_gate_indices('FL2P-FL4N'))
-        np.testing.assert_array_equal(truth4, result.get_gate_indices('FL2P-FL4P'))
+        np.testing.assert_array_equal(truth1, result.get_gate_membership('FL2N-FL4N'))
+        np.testing.assert_array_equal(truth2, result.get_gate_membership('FL2N-FL4P'))
+        np.testing.assert_array_equal(truth3, result.get_gate_membership('FL2P-FL4N'))
+        np.testing.assert_array_equal(truth4, result.get_gate_membership('FL2P-FL4P'))
 
     def test_add_quadrant_gate_relative_percent(self):
         gs = fk.GatingStrategy()
@@ -385,11 +385,11 @@ class GatingTestCase(unittest.TestCase):
 
         result = gs.gate_sample(data1_sample)
 
-        np.testing.assert_array_equal(truth1, result.get_gate_indices('FSCN-SSCN'))
-        np.testing.assert_array_equal(truth2, result.get_gate_indices('FSCD-SSCN-FL1N'))
-        np.testing.assert_array_equal(truth3, result.get_gate_indices('FSCP-SSCN-FL1N'))
-        np.testing.assert_array_equal(truth4, result.get_gate_indices('FSCD-FL1P'))
-        np.testing.assert_array_equal(truth5, result.get_gate_indices('FSCN-SSCP-FL1P'))
+        np.testing.assert_array_equal(truth1, result.get_gate_membership('FSCN-SSCN'))
+        np.testing.assert_array_equal(truth2, result.get_gate_membership('FSCD-SSCN-FL1N'))
+        np.testing.assert_array_equal(truth3, result.get_gate_membership('FSCP-SSCN-FL1N'))
+        np.testing.assert_array_equal(truth4, result.get_gate_membership('FSCD-FL1P'))
+        np.testing.assert_array_equal(truth5, result.get_gate_membership('FSCN-SSCP-FL1P'))
 
     @staticmethod
     def test_add_ratio_range1_gate():
@@ -418,9 +418,9 @@ class GatingTestCase(unittest.TestCase):
         res_path = 'examples/data/gate_ref/truth/Results_RatRange1.txt'
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
 
-        result = gs.gate_sample(data1_sample, 'RatRange1')
+        result = gs.gate_sample(data1_sample)
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('RatRange1'))
+        np.testing.assert_array_equal(truth, result.get_gate_membership('RatRange1'))
 
     @staticmethod
     def test_add_ratio_range2_gate():
@@ -449,9 +449,9 @@ class GatingTestCase(unittest.TestCase):
         res_path = 'examples/data/gate_ref/truth/Results_RatRange2.txt'
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
 
-        result = gs.gate_sample(data1_sample, 'RatRange2')
+        result = gs.gate_sample(data1_sample)
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('RatRange2'))
+        np.testing.assert_array_equal(truth, result.get_gate_membership('RatRange2'))
 
     @staticmethod
     def test_add_log_ratio_range1_gate():
@@ -484,9 +484,9 @@ class GatingTestCase(unittest.TestCase):
         res_path = 'examples/data/gate_ref/truth/Results_RatRange1a.txt'
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
 
-        result = gs.gate_sample(data1_sample, 'RatRange1a')
+        result = gs.gate_sample(data1_sample)
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('RatRange1a'))
+        np.testing.assert_array_equal(truth, result.get_gate_membership('RatRange1a'))
 
     @staticmethod
     def test_add_boolean_and1_gate():
@@ -498,10 +498,12 @@ class GatingTestCase(unittest.TestCase):
         gate_refs = [
             {
                 'ref': 'Polygon1',
+                'path': ('root',),
                 'complement': False
             },
             {
                 'ref': 'Range2',
+                'path': ('root',),
                 'complement': False
             }
         ]
@@ -512,9 +514,9 @@ class GatingTestCase(unittest.TestCase):
         res_path = 'examples/data/gate_ref/truth/Results_And1.txt'
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
 
-        result = gs.gate_sample(data1_sample, 'And1')
+        result = gs.gate_sample(data1_sample)
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('And1'))
+        np.testing.assert_array_equal(truth, result.get_gate_membership('And1'))
 
     @staticmethod
     def test_add_boolean_and2_gate():
@@ -527,14 +529,17 @@ class GatingTestCase(unittest.TestCase):
         gate_refs = [
             {
                 'ref': 'Range1',
+                'path': ('root',),
                 'complement': False
             },
             {
                 'ref': 'Ellipse1',
+                'path': ('root',),
                 'complement': False
             },
             {
                 'ref': 'Polygon1',
+                'path': ('root',),
                 'complement': False
             }
         ]
@@ -545,9 +550,9 @@ class GatingTestCase(unittest.TestCase):
         res_path = 'examples/data/gate_ref/truth/Results_And2.txt'
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
 
-        result = gs.gate_sample(data1_sample, 'And2')
+        result = gs.gate_sample(data1_sample)
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('And2'))
+        np.testing.assert_array_equal(truth, result.get_gate_membership('And2'))
 
     @staticmethod
     def test_add_boolean_or1_gate():
@@ -560,14 +565,17 @@ class GatingTestCase(unittest.TestCase):
         gate_refs = [
             {
                 'ref': 'Range1',
+                'path': ('root',),
                 'complement': False
             },
             {
                 'ref': 'Ellipse1',
+                'path': ('root',),
                 'complement': False
             },
             {
                 'ref': 'Polygon1',
+                'path': ('root',),
                 'complement': False
             }
         ]
@@ -578,9 +586,9 @@ class GatingTestCase(unittest.TestCase):
         res_path = 'examples/data/gate_ref/truth/Results_Or1.txt'
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
 
-        result = gs.gate_sample(data1_sample, 'Or1')
+        result = gs.gate_sample(data1_sample)
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('Or1'))
+        np.testing.assert_array_equal(truth, result.get_gate_membership('Or1'))
 
     @staticmethod
     def test_add_boolean_and3_complement_gate():
@@ -593,14 +601,17 @@ class GatingTestCase(unittest.TestCase):
         gate_refs = [
             {
                 'ref': 'Range1',
+                'path': ('root',),
                 'complement': False
             },
             {
                 'ref': 'Ellipse1',
+                'path': ('root',),
                 'complement': True
             },
             {
                 'ref': 'Polygon1',
+                'path': ('root',),
                 'complement': False
             }
         ]
@@ -611,9 +622,9 @@ class GatingTestCase(unittest.TestCase):
         res_path = 'examples/data/gate_ref/truth/Results_And3.txt'
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
 
-        result = gs.gate_sample(data1_sample, 'And3')
+        result = gs.gate_sample(data1_sample)
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('And3'))
+        np.testing.assert_array_equal(truth, result.get_gate_membership('And3'))
 
     @staticmethod
     def test_add_boolean_not1_gate():
@@ -624,6 +635,7 @@ class GatingTestCase(unittest.TestCase):
         gate_refs = [
             {
                 'ref': 'Ellipse1',
+                'path': ('root',),
                 'complement': False
             }
         ]
@@ -634,9 +646,9 @@ class GatingTestCase(unittest.TestCase):
         res_path = 'examples/data/gate_ref/truth/Results_Not1.txt'
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
 
-        result = gs.gate_sample(data1_sample, 'Not1')
+        result = gs.gate_sample(data1_sample)
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('Not1'))
+        np.testing.assert_array_equal(truth, result.get_gate_membership('Not1'))
 
     @staticmethod
     def test_add_boolean_and4_not_gate():
@@ -649,6 +661,7 @@ class GatingTestCase(unittest.TestCase):
         gate1_refs = [
             {
                 'ref': 'Ellipse1',
+                'path': ('root',),
                 'complement': False
             }
         ]
@@ -659,14 +672,17 @@ class GatingTestCase(unittest.TestCase):
         gate2_refs = [
             {
                 'ref': 'Range1',
+                'path': ('root',),
                 'complement': False
             },
             {
                 'ref': 'Not1',
+                'path': ('root',),
                 'complement': False
             },
             {
                 'ref': 'Polygon1',
+                'path': ('root',),
                 'complement': False
             }
         ]
@@ -677,9 +693,9 @@ class GatingTestCase(unittest.TestCase):
         res_path = 'examples/data/gate_ref/truth/Results_And4.txt'
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
 
-        result = gs.gate_sample(data1_sample, 'And4')
+        result = gs.gate_sample(data1_sample)
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('And4'))
+        np.testing.assert_array_equal(truth, result.get_gate_membership('And4'))
 
     @staticmethod
     def test_add_boolean_or2_complement_gate():
@@ -696,10 +712,12 @@ class GatingTestCase(unittest.TestCase):
         gate1_refs = [
             {
                 'ref': 'Rectangle2',
+                'path': ('root',),
                 'complement': False
             },
             {
                 'ref': 'FL2N-FL4N',
+                'path': ('root', 'Quadrant1'),
                 'complement': True
             }
         ]
@@ -710,9 +728,9 @@ class GatingTestCase(unittest.TestCase):
         res_path = 'examples/data/gate_ref/truth/Results_Or2.txt'
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
 
-        result = gs.gate_sample(data1_sample, 'Or2')
+        result = gs.gate_sample(data1_sample)
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('Or2'))
+        np.testing.assert_array_equal(truth, result.get_gate_membership('Or2'))
 
     @staticmethod
     def test_add_matrix_poly4_gate():
@@ -730,9 +748,9 @@ class GatingTestCase(unittest.TestCase):
         res_path = 'examples/data/gate_ref/truth/Results_Polygon4.txt'
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
 
-        result = gs.gate_sample(data1_sample, 'Polygon4')
+        result = gs.gate_sample(data1_sample)
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('Polygon4'))
+        np.testing.assert_array_equal(truth, result.get_gate_membership('Polygon4'))
 
     @staticmethod
     def test_add_matrix_rect3_gate():
@@ -750,9 +768,9 @@ class GatingTestCase(unittest.TestCase):
         res_path = 'examples/data/gate_ref/truth/Results_Rectangle3.txt'
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
 
-        result = gs.gate_sample(data1_sample, 'Rectangle3')
+        result = gs.gate_sample(data1_sample)
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('Rectangle3'))
+        np.testing.assert_array_equal(truth, result.get_gate_membership('Rectangle3'))
 
     @staticmethod
     def test_add_matrix_rect4_gate():
@@ -770,9 +788,9 @@ class GatingTestCase(unittest.TestCase):
         res_path = 'examples/data/gate_ref/truth/Results_Rectangle4.txt'
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
 
-        result = gs.gate_sample(data1_sample, 'Rectangle4')
+        result = gs.gate_sample(data1_sample)
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('Rectangle4'))
+        np.testing.assert_array_equal(truth, result.get_gate_membership('Rectangle4'))
 
     @staticmethod
     def test_add_matrix_rect5_gate():
@@ -790,9 +808,9 @@ class GatingTestCase(unittest.TestCase):
         res_path = 'examples/data/gate_ref/truth/Results_Rectangle5.txt'
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
 
-        result = gs.gate_sample(data1_sample, 'Rectangle5')
+        result = gs.gate_sample(data1_sample)
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('Rectangle5'))
+        np.testing.assert_array_equal(truth, result.get_gate_membership('Rectangle5'))
 
     @staticmethod
     def test_add_transform_asinh_range1_gate():
@@ -809,9 +827,9 @@ class GatingTestCase(unittest.TestCase):
         res_path = 'examples/data/gate_ref/truth/Results_ScaleRange1.txt'
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
 
-        result = gs.gate_sample(data1_sample, 'ScaleRange1')
+        result = gs.gate_sample(data1_sample)
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange1'))
+        np.testing.assert_array_equal(truth, result.get_gate_membership('ScaleRange1'))
 
     @staticmethod
     def test_add_transform_hyperlog_range2_gate():
@@ -828,9 +846,9 @@ class GatingTestCase(unittest.TestCase):
         res_path = 'examples/data/gate_ref/truth/Results_ScaleRange2.txt'
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
 
-        result = gs.gate_sample(data1_sample, 'ScaleRange2')
+        result = gs.gate_sample(data1_sample)
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange2'))
+        np.testing.assert_array_equal(truth, result.get_gate_membership('ScaleRange2'))
 
     @staticmethod
     def test_add_transform_linear_range3_gate():
@@ -847,9 +865,9 @@ class GatingTestCase(unittest.TestCase):
         res_path = 'examples/data/gate_ref/truth/Results_ScaleRange3.txt'
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
 
-        result = gs.gate_sample(data1_sample, 'ScaleRange3')
+        result = gs.gate_sample(data1_sample)
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange3'))
+        np.testing.assert_array_equal(truth, result.get_gate_membership('ScaleRange3'))
 
     @staticmethod
     def test_add_transform_logicle_range4_gate():
@@ -866,9 +884,9 @@ class GatingTestCase(unittest.TestCase):
         res_path = 'examples/data/gate_ref/truth/Results_ScaleRange4.txt'
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
 
-        result = gs.gate_sample(data1_sample, 'ScaleRange4')
+        result = gs.gate_sample(data1_sample)
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange4'))
+        np.testing.assert_array_equal(truth, result.get_gate_membership('ScaleRange4'))
 
     @staticmethod
     def test_add_transform_logicle_range5_gate():
@@ -885,9 +903,9 @@ class GatingTestCase(unittest.TestCase):
         res_path = 'examples/data/gate_ref/truth/Results_ScaleRange5.txt'
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
 
-        result = gs.gate_sample(data1_sample, 'ScaleRange5')
+        result = gs.gate_sample(data1_sample)
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange5'))
+        np.testing.assert_array_equal(truth, result.get_gate_membership('ScaleRange5'))
 
     @staticmethod
     def test_add_transform_log_range6_gate():
@@ -909,9 +927,9 @@ class GatingTestCase(unittest.TestCase):
         res_path = 'examples/data/gate_ref/truth/Results_ScaleRange6.txt'
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
 
-        result = gs.gate_sample(data1_sample, 'ScaleRange6')
+        result = gs.gate_sample(data1_sample)
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange6'))
+        np.testing.assert_array_equal(truth, result.get_gate_membership('ScaleRange6'))
 
     @staticmethod
     def test_add_matrix_transform_asinh_range1c_gate():
@@ -930,9 +948,9 @@ class GatingTestCase(unittest.TestCase):
         res_path = 'examples/data/gate_ref/truth/Results_ScaleRange1c.txt'
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
 
-        result = gs.gate_sample(data1_sample, 'ScaleRange1c')
+        result = gs.gate_sample(data1_sample)
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange1c'))
+        np.testing.assert_array_equal(truth, result.get_gate_membership('ScaleRange1c'))
 
     @staticmethod
     def test_add_matrix_transform_hyperlog_range2c_gate():
@@ -951,9 +969,9 @@ class GatingTestCase(unittest.TestCase):
         res_path = 'examples/data/gate_ref/truth/Results_ScaleRange2c.txt'
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
 
-        result = gs.gate_sample(data1_sample, 'ScaleRange2c')
+        result = gs.gate_sample(data1_sample)
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange2c'))
+        np.testing.assert_array_equal(truth, result.get_gate_membership('ScaleRange2c'))
 
     @staticmethod
     def test_add_matrix_transform_linear_range3c_gate():
@@ -972,9 +990,9 @@ class GatingTestCase(unittest.TestCase):
         res_path = 'examples/data/gate_ref/truth/Results_ScaleRange3c.txt'
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
 
-        result = gs.gate_sample(data1_sample, 'ScaleRange3c')
+        result = gs.gate_sample(data1_sample)
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange3c'))
+        np.testing.assert_array_equal(truth, result.get_gate_membership('ScaleRange3c'))
 
     @staticmethod
     def test_add_matrix_transform_logicle_range4c_gate():
@@ -993,9 +1011,9 @@ class GatingTestCase(unittest.TestCase):
         res_path = 'examples/data/gate_ref/truth/Results_ScaleRange4c.txt'
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
 
-        result = gs.gate_sample(data1_sample, 'ScaleRange4c')
+        result = gs.gate_sample(data1_sample)
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange4c'))
+        np.testing.assert_array_equal(truth, result.get_gate_membership('ScaleRange4c'))
 
     @staticmethod
     def test_add_matrix_transform_logicle_range5c_gate():
@@ -1014,9 +1032,9 @@ class GatingTestCase(unittest.TestCase):
         res_path = 'examples/data/gate_ref/truth/Results_ScaleRange5c.txt'
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
 
-        result = gs.gate_sample(data1_sample, 'ScaleRange5c')
+        result = gs.gate_sample(data1_sample)
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange5c'))
+        np.testing.assert_array_equal(truth, result.get_gate_membership('ScaleRange5c'))
 
     @staticmethod
     def test_add_matrix_transform_asinh_range6c_gate():
@@ -1035,9 +1053,9 @@ class GatingTestCase(unittest.TestCase):
         res_path = 'examples/data/gate_ref/truth/Results_ScaleRange6c.txt'
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
 
-        result = gs.gate_sample(data1_sample, 'ScaleRange6c')
+        result = gs.gate_sample(data1_sample)
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange6c'))
+        np.testing.assert_array_equal(truth, result.get_gate_membership('ScaleRange6c'))
 
     @staticmethod
     def test_add_matrix_transform_hyperlog_range7c_gate():
@@ -1056,9 +1074,9 @@ class GatingTestCase(unittest.TestCase):
         res_path = 'examples/data/gate_ref/truth/Results_ScaleRange7c.txt'
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
 
-        result = gs.gate_sample(data1_sample, 'ScaleRange7c')
+        result = gs.gate_sample(data1_sample)
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange7c'))
+        np.testing.assert_array_equal(truth, result.get_gate_membership('ScaleRange7c'))
 
     @staticmethod
     def test_add_matrix_transform_logicle_range8c_gate():
@@ -1077,9 +1095,9 @@ class GatingTestCase(unittest.TestCase):
         res_path = 'examples/data/gate_ref/truth/Results_ScaleRange8c.txt'
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
 
-        result = gs.gate_sample(data1_sample, 'ScaleRange8c')
+        result = gs.gate_sample(data1_sample)
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRange8c'))
+        np.testing.assert_array_equal(truth, result.get_gate_membership('ScaleRange8c'))
 
     @staticmethod
     def test_add_matrix_transform_logicle_rect1_gate():
@@ -1099,9 +1117,9 @@ class GatingTestCase(unittest.TestCase):
         res_path = 'examples/data/gate_ref/truth/Results_ScaleRect1.txt'
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
 
-        result = gs.gate_sample(data1_sample, 'ScaleRect1')
+        result = gs.gate_sample(data1_sample)
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('ScaleRect1'))
+        np.testing.assert_array_equal(truth, result.get_gate_membership('ScaleRect1'))
 
     @staticmethod
     def test_add_parent_poly1_boolean_and2_gate():
@@ -1120,10 +1138,12 @@ class GatingTestCase(unittest.TestCase):
         gate_refs = [
             {
                 'ref': 'Range1',
+                'path': ('root',),
                 'complement': False
             },
             {
                 'ref': 'Ellipse1',
+                'path': ('root',),
                 'complement': False
             }
         ]
@@ -1134,9 +1154,9 @@ class GatingTestCase(unittest.TestCase):
         res_path = 'examples/data/gate_ref/truth/Results_ParAnd2.txt'
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
 
-        result = gs.gate_sample(data1_sample, 'ParAnd2')
+        result = gs.gate_sample(data1_sample)
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('ParAnd2'))
+        np.testing.assert_array_equal(truth, result.get_gate_membership('ParAnd2'))
 
     @staticmethod
     def test_add_parent_range1_boolean_and3_gate():
@@ -1149,10 +1169,12 @@ class GatingTestCase(unittest.TestCase):
         gate_refs = [
             {
                 'ref': 'Polygon1',
+                'path': ('root',),
                 'complement': False
             },
             {
                 'ref': 'Ellipse1',
+                'path': ('root',),
                 'complement': True
             }
         ]
@@ -1163,9 +1185,9 @@ class GatingTestCase(unittest.TestCase):
         res_path = 'examples/data/gate_ref/truth/Results_ParAnd3.txt'
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
 
-        result = gs.gate_sample(data1_sample, 'ParAnd3')
+        result = gs.gate_sample(data1_sample)
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('ParAnd3'))
+        np.testing.assert_array_equal(truth, result.get_gate_membership('ParAnd3'))
 
     @staticmethod
     def test_add_parent_rect1_rect_par1_gate():
@@ -1194,9 +1216,9 @@ class GatingTestCase(unittest.TestCase):
         res_path = 'examples/data/gate_ref/truth/Results_ScalePar1.txt'
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
 
-        result = gs.gate_sample(data1_sample, 'ScalePar1')
+        result = gs.gate_sample(data1_sample)
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('ScalePar1'))
+        np.testing.assert_array_equal(truth, result.get_gate_membership('ScalePar1'))
 
     @staticmethod
     def test_add_parent_quadrant_rect_gate():
@@ -1213,6 +1235,6 @@ class GatingTestCase(unittest.TestCase):
         res_path = 'examples/data/gate_ref/truth/Results_ParQuadRect.txt'
         truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
 
-        result = gs.gate_sample(data1_sample, 'ParRectangle1')
+        result = gs.gate_sample(data1_sample)
 
-        np.testing.assert_array_equal(truth, result.get_gate_indices('ParRectangle1'))
+        np.testing.assert_array_equal(truth, result.get_gate_membership('ParRectangle1'))

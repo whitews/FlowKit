@@ -1,4 +1,5 @@
 import unittest
+import numpy as np
 import pandas as pd
 import flowkit as fk
 
@@ -60,6 +61,11 @@ fluorochromes_8c = [
 
 class MatrixTestCase(unittest.TestCase):
     """Tests related to compensation matrices and the Matrix class"""
+    def test_matrix_from_fcs_spill(self):
+        comp_mat = fk.Matrix('my_spill', fcs_spill, fcs_spill_header)
+
+        self.assertIsInstance(comp_mat, fk.Matrix)
+
     def test_parse_csv_file(self):
         comp_mat = fk.Matrix(
             'my_spill',
@@ -88,3 +94,20 @@ class MatrixTestCase(unittest.TestCase):
 
     def test_reserved_matrix_id_uncompensated(self):
         self.assertRaises(ValueError, fk.Matrix, 'uncompensated', fcs_spill, fcs_spill_header)
+
+    @staticmethod
+    def test_matrix_inverse():
+        fcs_file_path = "examples/data/test_comp_example.fcs"
+        comp_file_path = "examples/data/comp_complete_example.csv"
+
+        sample = fk.Sample(
+            fcs_path_or_data=fcs_file_path,
+            compensation=comp_file_path,
+            ignore_offset_error=True  # sample has off by 1 data offset
+        )
+        matrix = sample.compensation
+
+        data_raw = sample.get_events(source='raw')
+        inv_data = matrix.inverse(sample)
+
+        np.testing.assert_almost_equal(inv_data, data_raw, 10)

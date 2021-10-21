@@ -5,7 +5,6 @@ import numpy as np
 from scipy.interpolate import interpn
 import colorsys
 from matplotlib import cm, colors
-import matplotlib.pyplot as plt
 from bokeh.plotting import figure
 from bokeh.models import Ellipse, Patch, Span, BoxAnnotation, Rect, ColumnDataSource
 
@@ -17,14 +16,14 @@ fill_color = 'lime'
 fill_alpha = 0.08
 
 
-def _generate_custom_colormap(cmap_sample_indices, base_cmap):
-    x = np.linspace(0, np.pi, base_cmap.N)
+def _generate_custom_colormap(colormap_sample_indices, base_colormap):
+    x = np.linspace(0, np.pi, base_colormap.N)
     new_lum = (np.sin(x) * 0.75) + .25
 
     new_color_list = []
 
-    for i in cmap_sample_indices:
-        (r, g, b, a) = base_cmap(i)
+    for i in colormap_sample_indices:
+        (r, g, b, a) = base_colormap(i)
         (h, s, v) = colorsys.rgb_to_hsv(r, g, b)
 
         mod_v = (v * ((196 - abs(i - 196)) / 196) + new_lum[i]) / 2.
@@ -35,7 +34,7 @@ def _generate_custom_colormap(cmap_sample_indices, base_cmap):
         new_color_list.append((new_r, new_g, new_b))
 
     return colors.LinearSegmentedColormap.from_list(
-        'custom_' + base_cmap.name,
+        'custom_' + base_colormap.name,
         new_color_list,
         256
     )
@@ -60,31 +59,40 @@ def _get_false_bounds(bool_array):
     return start[0], end[0]
 
 
-# TODO: integrate functionality into Sample class, change xform to accept/use Sample instance xform
-def plot_channel(chan_events, label, subplot_ax, xform=False, bad_events=None):
+def plot_channel(channel_events, label, subplot_ax, xform=None, flagged_events=None):
+    """
+    Plots a single-channel of FCS event data with the x-axis as the event number (similar to having
+    time on the x-axis, but events are equally spaced). This function takes a Matplotlib Axes object
+    to enable embedding multiple channel plots within the same figure (created outside this function).
+
+    :param channel_events: 1-D NumPy array of event data
+    :param label: string to use as the plot title
+    :param subplot_ax: Matplotlib Axes instance used to render the plot
+    :param xform: an optional Transform instance used to transform the given event data. channel_events can
+        be given already pre-processed (compensated and/or transformed), in this case set xform to None.
+    :param flagged_events: optional Boolean array of "flagged" events, regions of flagged events will
+        be highlighted in red if flagged_events is given.
+    :return: None
+    """
     if xform:
-        # TODO: change to accept a Transform sub-class instance
-        chan_events = np.arcsinh(chan_events * 0.003)
+        channel_events = xform.apply(channel_events)
 
-    my_cmap = plt.cm.get_cmap('jet')
-    my_cmap.set_under('w', alpha=0)
-
-    bins = int(np.sqrt(chan_events.shape[0]))
-    event_range = range(0, chan_events.shape[0])
+    bins = int(np.sqrt(channel_events.shape[0]))
+    event_range = range(0, channel_events.shape[0])
 
     subplot_ax.set_title(label, fontsize=16)
     subplot_ax.set_xlabel("Events", fontsize=14)
 
     subplot_ax.hist2d(
         event_range,
-        chan_events,
-        bins=[bins, bins],
-        cmap=my_cmap,
-        vmin=0.9
+        channel_events,
+        bins=[bins, 128],
+        cmap='rainbow',
+        cmin=1
     )
 
-    if bad_events is not None:
-        starts, ends = _get_false_bounds(bad_events)
+    if flagged_events is not None:
+        starts, ends = _get_false_bounds(flagged_events)
 
         for i, s in enumerate(starts):
             subplot_ax.axvspan(
@@ -96,7 +104,7 @@ def plot_channel(chan_events, label, subplot_ax, xform=False, bad_events=None):
             )
 
 
-def calculate_extent(data_1d, d_min=None, d_max=None, pad=0.0):
+def _calculate_extent(data_1d, d_min=None, d_max=None, pad=0.0):
     data_min = data_1d.min()
     data_max = data_1d.max()
 
@@ -112,6 +120,11 @@ def calculate_extent(data_1d, d_min=None, d_max=None, pad=0.0):
 
 
 def render_polygon(vertices):
+    """
+    Renders a Bokeh polygon for plotting
+    :param vertices: list of 2-D coordinates representing vertices of the polygon
+    :return: tuple containing the Bokeh ColumnDataSource and polygon glyphs (as Patch object)
+    """
     x_coords, y_coords = list(zip(*[v.coordinates for v in vertices]))
 
     source = ColumnDataSource(dict(x=x_coords, y=y_coords))
@@ -128,31 +141,40 @@ def render_polygon(vertices):
     return source, poly
 
 
-def render_ranges(dim_mins, dim_maxes):
+def render_ranges(dim_minimums, dim_maximums):
+    """
+    Renders Bokeh Span & BoxAnnotation objects for plotting simple range gates, essentially divider lines.
+    There should be no more than 3 items total between dim_minimums & dim_maximums, else the object should
+    be rendered as a rectangle.
+
+    :param dim_minimums: list of minimum divider values (max of 2)
+    :param dim_maximums: list of maximum divider values (max of 2)
+    :return: tuple of Span objects for every item in dim_minimums & dim_maximums
+    """
     renderers = []
     left = None
     right = None
     bottom = None
     top = None
 
-    if dim_mins[0] is not None:
-        left = dim_mins[0]
+    if dim_minimums[0] is not None:
+        left = dim_minimums[0]
         renderers.append(
             Span(location=left, dimension='height', line_width=line_width, line_color=line_color)
         )
-    if dim_maxes[0] is not None:
-        right = dim_maxes[0]
+    if dim_maximums[0] is not None:
+        right = dim_maximums[0]
         renderers.append(
             Span(location=right, dimension='height', line_width=line_width, line_color=line_color)
         )
-    if len(dim_mins) > 1:
-        if dim_mins[1] is not None:
-            bottom = dim_mins[1]
+    if len(dim_minimums) > 1:
+        if dim_minimums[1] is not None:
+            bottom = dim_minimums[1]
             renderers.append(
                 Span(location=bottom, dimension='width', line_width=line_width, line_color=line_color)
             )
-        if dim_maxes[1] is not None:
-            top = dim_maxes[1]
+        if dim_maximums[1] is not None:
+            top = dim_maximums[1]
             renderers.append(
                 Span(location=top, dimension='width', line_width=line_width, line_color=line_color)
             )
@@ -170,11 +192,18 @@ def render_ranges(dim_mins, dim_maxes):
     return renderers
 
 
-def render_rectangle(dim_mins, dim_maxes):
-    x_center = (dim_mins[0] + dim_maxes[0]) / 2.0
-    y_center = (dim_mins[1] + dim_maxes[1]) / 2.0
-    x_width = dim_maxes[0] - dim_mins[0]
-    y_height = dim_maxes[1] - dim_mins[1]
+def render_rectangle(dim_minimums, dim_maximums):
+    """
+    Renders Bokeh Rect object for plotting a rectangle gate.
+
+    :param dim_minimums: list of 2 values representing the lower left corner of a rectangle
+    :param dim_maximums: list of 2 values representing the upper right corner of a rectangle
+    :return: Bokeh Rect object
+    """
+    x_center = (dim_minimums[0] + dim_maximums[0]) / 2.0
+    y_center = (dim_minimums[1] + dim_maximums[1]) / 2.0
+    x_width = dim_maximums[0] - dim_minimums[0]
+    y_height = dim_maximums[1] - dim_minimums[1]
     rect = Rect(
         x=x_center,
         y=y_center,
@@ -209,7 +238,16 @@ def render_dividers(x_locs, y_locs):
     return renderers
 
 
-def calculate_ellipse(center_x, center_y, covariance_matrix, distance_square):
+def render_ellipse(center_x, center_y, covariance_matrix, distance_square):
+    """
+    Renders a Bokeh Ellipse object given the ellipse center point, covariance, and distance square
+
+    :param center_x: x-coordinate of ellipse center
+    :param center_y: y-coordinate of ellipse center
+    :param covariance_matrix: NumPy array containing the covariance matrix of the ellipse
+    :param distance_square: value for distance square of ellipse
+    :return: Bokeh Ellipse object
+    """
     values, vectors = np.linalg.eigh(covariance_matrix)
     order = values.argsort()[::-1]
     values = values[order]
@@ -235,7 +273,17 @@ def calculate_ellipse(center_x, center_y, covariance_matrix, distance_square):
     return ellipse
 
 
-def plot_histogram(x, x_label='x', bins=None, title=None):
+def plot_histogram(x, x_label='x', bins=None):
+    """
+    Creates a Bokeh histogram plot of the given 1-D data array.
+
+    :param x: 1-D array of data values
+    :param x_label: Label to use for the x-axis
+    :param bins: Number of bins to use for the histogram or a string compatible
+            with the NumPy histogram function. If None, the number of bins is
+            determined by the square root rule.
+    :return: Bokeh Figure object containing the histogram
+    """
     if bins is None:
         bins = 'sqrt'
 
@@ -263,17 +311,35 @@ def plot_histogram(x, x_label='x', bins=None, title=None):
 def plot_scatter(
         x,
         y,
-        dim_labels=None,
+        dim_ids=None,
         x_min=None,
         x_max=None,
         y_min=None,
         y_max=None,
         color_density=True
 ):
+    """
+    Creates a Bokeh scatter plot from the two 1-D data arrays.
+
+    :param x: 1-D array of data values for the x-axis
+    :param y: 1-D array of data values for the y-axis
+    :param dim_ids: Labels to use for the x-axis & y-axis, respectively
+    :param x_min: Lower bound of x-axis. If None, channel's min value will
+        be used with some padding to keep events off the edge of the plot.
+    :param x_max: Upper bound of x-axis. If None, channel's max value will
+        be used with some padding to keep events off the edge of the plot.
+    :param y_min: Lower bound of y-axis. If None, channel's min value will
+        be used with some padding to keep events off the edge of the plot.
+    :param y_max: Upper bound of y-axis. If None, channel's max value will
+        be used with some padding to keep events off the edge of the plot.
+    :param color_density: Whether to color the events by density, similar
+        to a heat map. Default is True.
+    :return: A Bokeh Figure object containing the interactive scatter plot.
+    """
     if len(x) > 0:
-        x_min, x_max = calculate_extent(x, d_min=x_min, d_max=x_max, pad=0.02)
+        x_min, x_max = _calculate_extent(x, d_min=x_min, d_max=x_max, pad=0.02)
     if len(y) > 0:
-        y_min, y_max = calculate_extent(y, d_min=y_min, d_max=y_max, pad=0.02)
+        y_min, y_max = _calculate_extent(y, d_min=y_min, d_max=y_max, pad=0.02)
 
     if y_max > x_max:
         radius_dimension = 'y'
@@ -312,8 +378,8 @@ def plot_scatter(
         y_range=(y_min, y_max)
     )
 
-    p.xaxis.axis_label = dim_labels[0]
-    p.yaxis.axis_label = dim_labels[1]
+    p.xaxis.axis_label = dim_ids[0]
+    p.yaxis.axis_label = dim_ids[1]
 
     p.scatter(
         x,

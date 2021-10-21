@@ -1,7 +1,6 @@
 """
 Basic Transform sub-classes
 """
-import numpy as np
 import flowutils
 from ._base_transform import Transform
 
@@ -16,9 +15,9 @@ class RatioTransform(Transform):
     Note: The RatioTransform does not have an inverse method.
 
     :param transform_id: A string identifying the transform
-    :param dim_labels: A list of length 2 specifying which dimension labels to
-        use for the ratio transformation. The 1st label indicates the dimension
-        to use for the numerator, the 2nd label will be the dimension used for
+    :param dim_ids: A list of length 2 specifying which dimension IDs to
+        use for the ratio transformation. The 1st ID indicates the dimension
+        to use for the numerator, the 2nd ID will be the dimension used for
         the denominator.
     :param param_a: parameter for scaling the ratio transform
     :param param_b: parameter for the numerator dimension offset
@@ -27,17 +26,17 @@ class RatioTransform(Transform):
     def __init__(
             self,
             transform_id,
-            dim_labels,
+            dim_ids,
             param_a,
             param_b,
             param_c
     ):
         Transform.__init__(self, transform_id)
 
-        if len(dim_labels) != 2:
-            raise ValueError("RatioTransform takes exactly 2 dimension labels but received %d" % len(dim_labels))
+        if len(dim_ids) != 2:
+            raise ValueError("RatioTransform takes exactly 2 dimension IDs but received %d" % len(dim_ids))
 
-        self.dimensions = dim_labels
+        self.dimensions = dim_ids
 
         self.param_a = param_a
         self.param_b = param_b
@@ -63,7 +62,7 @@ class RatioTransform(Transform):
         :param sample: Sample instance from which event data should be extracted
         :return: NumPy array of transformed events
         """
-        events = sample.get_raw_events()
+        events = sample.get_events(source='raw')
 
         dim_x_idx = sample.pnn_labels.index(self.dimensions[0])
         dim_y_idx = sample.pnn_labels.index(self.dimensions[1])

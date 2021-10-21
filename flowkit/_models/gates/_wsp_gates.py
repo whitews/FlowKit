@@ -1,3 +1,6 @@
+"""
+Module containing FlowJo compatible versions of gate classes
+"""
 import numpy as np
 from .. import gates
 from ..._utils import gate_utils, xml_utils
@@ -19,7 +22,7 @@ class WSPEllipsoidGate(gates.EllipsoidGate):
             gating_namespace,
             data_type_namespace
     ):
-        gate_id, parent_id, dimensions = xml_utils.parse_gate_element(
+        gate_name, parent_gate_name, dimensions = xml_utils.parse_gate_element(
             gate_element,
             gating_namespace,
             data_type_namespace
@@ -30,9 +33,9 @@ class WSPEllipsoidGate(gates.EllipsoidGate):
         # Currently, only supporting linear transformation or None
         for dim in dimensions:
             if dim.transformation_ref is not None:
-                raise NotImplementedError("FlowJo ellipses with tranformations is not yet supported")
+                raise NotImplementedError("FlowJo ellipses with transformations is not yet supported")
 
-        inv_disp_scale = 262144. / 256.
+        inv_display_scale = 262144. / 256.
 
         # Get the foci points of the ellipse, contained in
         # a 'foci' element, that holds 2 'vertex' elements
@@ -68,7 +71,7 @@ class WSPEllipsoidGate(gates.EllipsoidGate):
                         'A coordinate must have only 1 value (line %d)' % coord_el.sourceline
                     )
 
-                coordinates.append(float(value) * inv_disp_scale)
+                coordinates.append(float(value) * inv_display_scale)
 
             foci.append(np.array(coordinates))
 
@@ -105,7 +108,7 @@ class WSPEllipsoidGate(gates.EllipsoidGate):
                         'A coordinate must have only 1 value (line %d)' % coord_el.sourceline
                     )
 
-                coordinates.append(float(value) * inv_disp_scale)
+                coordinates.append(float(value) * inv_display_scale)
 
             edge_vertices.append(np.array(coordinates))
 
@@ -149,8 +152,8 @@ class WSPEllipsoidGate(gates.EllipsoidGate):
         distance_square = 1.
 
         super().__init__(
-            gate_id,
-            parent_id,
+            gate_name,
+            parent_gate_name,
             dimensions,
             center,
             cov_mat,

@@ -95,33 +95,25 @@ def generate_biex_lut(channel_range=4096, pos=4.418540, neg=0.0, width_basis=-10
 
     step = (max_channel_value - 1) / (n_points - 1)
 
-    values = []
-    positive = []
-    negative = []
-    for i in range(n_points):
-        values.append(i * step)
-        i_pos = np.exp(i / float(n_points) * positive_range)
-        positive.append(i_pos)
-        i_neg = np.exp(i / float(n_points) * -negative_range)
-        negative.append(i_neg)
+    values = np.arange(n_points)
+    positive = np.exp(values / float(n_points) * positive_range)
+    negative = np.exp(values / float(n_points) * -negative_range)
+
+    # apply step to values
+    values = values * step
 
     s = np.exp((positive_range + negative_range) * (width + extra / decades))
 
-    for i in range(n_points):
-        negative[i] *= s
-
+    negative *= s
     s = positive[zero_point] - negative[zero_point]
 
-    for i in range(zero_point, n_points):
-        positive[i] = minimum * (positive[i] - negative[i] - s)
+    positive[zero_point:n_points] = positive[zero_point:n_points] - negative[zero_point:n_points]
+    positive[zero_point:n_points] = minimum * (positive[zero_point:n_points] - s)
 
-    for i in range(zero_point):
-        m = 2 * zero_point - i
+    neg_range = np.arange(zero_point)
+    m = 2 * zero_point - neg_range
 
-        positive[i] = -positive[m]
-
-    positive = np.array(positive)
-    values = np.array(values)
+    positive[neg_range] = -positive[m]
 
     return positive, values
 
@@ -172,9 +164,40 @@ class WSPBiexTransform(Transform):
     of parameter values. See the supported values in the BIEX_NEG_VALUES and
     BIEX_WIDTH_VALUES arrays within the `transforms` module.
 
+    Information on the input parameters from the FlowJo docs:
+
+    Adjusting width:
+    The value for w will determine the amount of channels to be  compressed into
+    linear space around zero. The space of linear does not change, but rather the
+    number of channels or bins being compressed into the linear space.
+
+    Width should be set high enough that all of the data in the histogram is visible
+    on screen, but not so high that extra white space is seen to the left hand side
+    of your dimmest distribution. For most practical uses, once all events have been
+    shifted off the axis and there is no more axis ‘pile-up’, then the optimal width
+    basis value has been reached.
+
+    Negative:
+    Another component in the biexponential transform calculation is the negative
+    decades or negative space. This is the only other value you will probably ever
+    need to adjust. In cases where a high width basis may start compressing dim events
+    into the negative cluster, you may want to lower the width basis (less compression
+    around zero) and instead, increase the negative space by 0.5 – 1.0. Doing this
+    will expand the space around zero so the dim events are still visible, but also
+    expand the negative space to remove the cells from the axis and allow you to see
+    the full distribution.
+
+    Positive:
+    The presence of the positive decade adjustment is due to the algorithm used for
+    logicle transformation, but is not useful in 99.9% of the cases that require
+    adjusting the biexponential transform. It may be appropriate to adjust this value
+    only if you use data that displays data with a data range greater than 5 decades.
+
     :param transform_id: A string identifying the transform
     :param negative: Value for the FlowJo biex option 'negative' (float)
     :param width: Value for the FlowJo biex option 'width' (float)
+    :param positive: Value for the FlowJo biex option 'positive' (float)
+    :param max_value: parameter for the top of the linear scale (default=262144.000029)
     """
     def __init__(
         self,
@@ -195,6 +218,9 @@ class WSPBiexTransform(Transform):
         self._lut_func = interpolate.interp1d(
             x, y, kind='linear', bounds_error=False, fill_value=(np.min(y), np.max(y))
         )
+        self._inverse_lut_func = interpolate.interp1d(
+            y, x, kind='linear', bounds_error=False, fill_value=(np.min(x), np.max(x))
+        )
 
     def __repr__(self):
         return (
@@ -210,5 +236,16 @@ class WSPBiexTransform(Transform):
         :return: NumPy array of transformed events
         """
         new_events = self._lut_func(events)
+
+        return new_events
+
+    def inverse(self, events):
+        """
+        Apply the inverse transform to given events.
+
+        :param events: NumPy array of FCS event data
+        :return: NumPy array of inversely transformed events
+        """
+        new_events = self._inverse_lut_func(events)
 
         return new_events

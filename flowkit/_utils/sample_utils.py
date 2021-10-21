@@ -7,7 +7,6 @@ import numpy as np
 import statsmodels.api as sm
 import warnings
 from .. import Sample, Matrix
-from .._utils.gate_utils import multi_proc, mp
 
 
 # FCS 3.1 reserves certain keywords as being part of the FCS standard. Some
@@ -64,34 +63,21 @@ FCS_STANDARD_KEYWORDS = [
 ]
 
 
-def _get_samples_from_paths(sample_paths, use_mp=True):
+def _get_samples_from_paths(sample_paths):
     """
     Load multiple Sample instances from a list of file paths
 
     :param sample_paths: list of file paths containing FCS files
-    :param use_mp: Controls whether multiprocessing is used to load samples.
     :return: list of Sample instances
     """
-    sample_count = len(sample_paths)
-    if multi_proc and sample_count > 1 and use_mp:
-        if sample_count < mp.cpu_count():
-            proc_count = sample_count
-        else:
-            proc_count = mp.cpu_count() - 1  # leave a CPU free just to be nice
-
-        with mp.get_context().Pool(processes=proc_count) as pool:
-            samples = pool.map(Sample, sample_paths)
-            pool.close()
-            pool.join()
-    else:
-        samples = []
-        for path in sample_paths:
-            samples.append(Sample(path))
+    samples = []
+    for path in sample_paths:
+        samples.append(Sample(path))
 
     return samples
 
 
-def load_samples(fcs_samples, use_mp=True):
+def load_samples(fcs_samples):
     """
     Returns a list of Sample instances from a variety of input types (fcs_samples), such as file or
         directory paths, a Sample instance, or lists of the previous types.
@@ -100,7 +86,6 @@ def load_samples(fcs_samples, use_mp=True):
             If a directory, any .fcs files in the directory will be loaded. If a list, then it must
             be a list of file paths or a list of Sample instances. Lists of mixed types are not
             supported.
-    :param use_mp: Controls whether multiprocessing is used to load samples.
     :return: list of Sample instances
     """
     sample_list = []
@@ -120,7 +105,7 @@ def load_samples(fcs_samples, use_mp=True):
         if Sample in sample_types:
             sample_list = fcs_samples
         elif str in sample_types:
-            sample_list = _get_samples_from_paths(fcs_samples, use_mp=use_mp)
+            sample_list = _get_samples_from_paths(fcs_samples)
     elif isinstance(fcs_samples, Sample):
         # 'fcs_samples' is a single Sample instance
         sample_list = [fcs_samples]
@@ -130,9 +115,9 @@ def load_samples(fcs_samples, use_mp=True):
         if os.path.isdir(fcs_samples):
             fcs_paths = glob(os.path.join(fcs_samples, '*.fcs'))
             if len(fcs_paths) > 0:
-                sample_list = _get_samples_from_paths(fcs_paths, use_mp=use_mp)
+                sample_list = _get_samples_from_paths(fcs_paths)
         elif os.path.isfile(fcs_samples):
-            sample_list = _get_samples_from_paths([fcs_samples], use_mp=False)
+            sample_list = _get_samples_from_paths([fcs_samples])
 
     return sample_list
 
@@ -208,7 +193,7 @@ def calculate_compensation_from_beads(comp_bead_samples, matrix_id='comp_bead'):
         fluorochromes.append(bead_lut[channel_idx]['pns_label'])
         bead_idx = bead_lut[channel_idx]['bead_index']
 
-        x = bead_samples[bead_idx].get_raw_events()[:, channel_idx]
+        x = bead_samples[bead_idx].get_events(source='raw')[:, channel_idx]
         good_events = x < (2 ** 18) - 1
         x = x[good_events]
 
@@ -217,7 +202,7 @@ def calculate_compensation_from_beads(comp_bead_samples, matrix_id='comp_bead'):
             if channel_idx == channel_idx2:
                 comp_row_values.append(1.0)
             else:
-                y = bead_samples[bead_idx].get_raw_events()[:, channel_idx2]
+                y = bead_samples[bead_idx].get_events(source='raw')[:, channel_idx2]
                 y = y[good_events]
                 rlm_res = sm.RLM(y, x).fit()
 

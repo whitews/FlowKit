@@ -1,29 +1,22 @@
 """
 Session class
 """
+import gc
+import math
+import psutil
 import io
-import sys
 import copy
 import numpy as np
 import pandas as pd
 from bokeh.models import Title
+from .._conf import debug, multi_proc, mp, mp_context
 from .._models.gating_strategy import GatingStrategy
 # noinspection PyProtectedMember
 from .._models.transforms._matrix import Matrix
-from .._models import gates
+from .._models import gates, dimension
 from .._models.sample import Sample
-from .._utils.gate_utils import multi_proc, mp
 from .._utils import plot_utils, xml_utils, wsp_utils, sample_utils
 import warnings
-
-
-# Used to detect PyCharm's debugging mode to turn off multi-processing for debugging with tests
-get_trace = getattr(sys, 'gettrace', lambda: None)
-
-if get_trace() is None:
-    debug = True
-else:
-    debug = False
 
 
 # _gate_sample & _gate_samples are multi-proc wrappers for GatingStrategy _gate_sample method
@@ -31,29 +24,84 @@ else:
 def _gate_sample(data):
     gating_strategy = data[0]
     sample = data[1]
-    verbose = data[2]
-    return gating_strategy.gate_sample(sample, verbose=verbose)
+    cache_events = data[2]
+    verbose = data[3]
+
+    gating_results = gating_strategy.gate_sample(sample, cache_events=cache_events, verbose=verbose)
+
+    gc.collect()
+
+    return gating_results
 
 
-def _gate_samples(gating_strategies, samples, verbose, use_mp=False):
-    # TODO: Multiprocessing can fail for very large workloads (lots of gates), maybe due
-    #       to running out of memory. Will investigate further, but for now setting an
-    #       option to control whether mp is used (default is True)
-    #       Needs further investigation, as this is still causing problems.
+def _estimate_cpu_count_for_workload(sample_count, total_event_count):
+    # gather system resource info
+    vm = psutil.virtual_memory()
+    mem_available = vm.available
+    proc_count = mp.cpu_count() - 1  # always start by leaving 1 cpu free to be nice
+
+    # But workload is just the total number of values in the array for all samples.
+    # Each value is 64-bit double, so multiply by 8 bytes for total byte size
+    # AND we'll multiply by 4 because processing will almost certainly require
+    # at least an additional copy for:
+    #   +1 for preprocessed comp events
+    #   +1 for preprocessed xform events
+    #   +1 for carrying over parent populations
+    #   +1 for space for the boolean results and other machinery.
+    workload_in_bytes = total_event_count * 8 * 4
+
+    # Now, determine how many samples we can run while staying at or below 80% mem usage.
+    # We'll assume equal distribution of events per sample...not the most accurate way,
+    # but it's easy
+    workload_per_sample = workload_in_bytes / sample_count
+
+    max_concurrent_samples = math.floor((mem_available * .8) / workload_per_sample)
+
+    if max_concurrent_samples <= 2:
+        # best we can do is run each sample separate
+        proc_count = 1
+    elif proc_count > max_concurrent_samples:
+        # and leave one cpu free just for good measure
+        proc_count = max_concurrent_samples - 1
+
+    return proc_count
+
+
+def _gate_samples(gating_strategies, samples, cache_events, verbose, use_mp=False):
+    # NOTE: Multiprocessing can fail for very large workloads (lots of gates) due
+    #       to running out of memory. For those cases setting use_mp should be set
+    #       to False in the Session.analyze_samples() method
     sample_count = len(samples)
-    if multi_proc and sample_count > 1 and use_mp:
-        if sample_count < mp.cpu_count():
-            proc_count = sample_count
-        else:
-            proc_count = mp.cpu_count() - 1  # leave a CPU free just to be nice
 
-        with mp.get_context("spawn").Pool(processes=proc_count) as pool:
-            data = [(gating_strategies[i], sample, verbose) for i, sample in enumerate(samples)]
-            all_results = pool.map(_gate_sample, data)
+    # get total number of data values for all samples
+    event_dim_info = [(s.event_count, len(s.pnn_labels)) for s in samples]
+    total_data_size = sum([event_count * dim_count for event_count, dim_count in event_dim_info])
+
+    proc_count = _estimate_cpu_count_for_workload(sample_count, total_data_size)
+
+    if multi_proc and sample_count > 1 and use_mp and proc_count > 1:
+        if sample_count < proc_count:
+            proc_count = sample_count
+
+        with mp.get_context(mp_context).Pool(processes=proc_count, maxtasksperchild=1) as pool:
+            if True:
+                print(
+                    '#### Processing gates for %d samples (multiprocessing is enabled - %d cpus) ####'
+                    % (sample_count, proc_count)
+                )
+            data = [(gating_strategies[i], sample, cache_events, verbose) for i, sample in enumerate(samples)]
+
+            async_results = [pool.apply_async(_gate_sample, args=(d,)) for d in data]
+            # all_results = pool.map_async(_gate_sample, data).get()
 
             pool.close()
             pool.join()
+
+            all_results = [result.get() for result in async_results]
     else:
+        if verbose:
+            print('#### Processing gates for %d samples (multiprocessing is disabled) ####' % sample_count)
+
         all_results = []
         for i, sample in enumerate(samples):
             results = gating_strategies[i].gate_sample(sample, verbose=verbose)
@@ -69,13 +117,16 @@ class Session(object):
     groups, and each sample group has a single gating strategy template. The gates in a template can be customized
     per sample.
 
-    :param fcs_samples: a list of either file paths or Sample instances
-    :param subsample_count: Number of events to use as a sub-sample. If the number of
+    :param fcs_samples: str or list. If given a string, it can be a directory path or a file path.
+            If a directory, any .fcs files in the directory will be loaded. If a list, then it must
+            be a list of file paths or a list of Sample instances. Lists of mixed types are not
+            supported.
+    :param subsample: Number of events to use as a sub-sample. If the number of
         events in the Sample is less than the requested sub-sample count, then the
         maximum number of available events is used for the sub-sample.
     """
-    def __init__(self, fcs_samples=None, subsample_count=10000):
-        self.subsample_count = subsample_count
+    def __init__(self, fcs_samples=None, subsample=10000):
+        self.subsample_count = subsample
         self.sample_lut = {}
         self._results_lut = {}
         self._sample_group_lut = {}
@@ -175,17 +226,20 @@ class Session(object):
 
                 self._sample_group_lut[group_name]['samples'][sample] = gs
 
-    def add_samples(self, samples, group_name=None):
+    def add_samples(self, fcs_samples, group_name=None):
         """
-        Adds FCS samples to the session. All added samples will be added to the 'default' sample group.
+        Adds FCS samples to the session. All added samples will be added to the 'default' sample group unless
+        an existing sample group is specified for the group_name.
 
-        :param samples: a list of Sample instances
+        :param fcs_samples: str or list. If given a string, it can be a directory path or a file path.
+            If a directory, any .fcs files in the directory will be loaded. If a list, then it must
+            be a list of file paths or a list of Sample instances. Lists of mixed types are not
+            supported.
         :param group_name: a text string representing the sample group to which to assign samples. If None,
             samples are only added to the 'default' group.
         :return: None
         """
-        # TODO: Using mp here causes problems when running tests in debug mode. Needs further investigation.
-        new_samples = sample_utils.load_samples(samples, use_mp=debug)
+        new_samples = sample_utils.load_samples(fcs_samples)
         for s in new_samples:
             s.subsample_events(self.subsample_count)
             if s.original_filename in self.sample_lut:
@@ -301,8 +355,8 @@ class Session(object):
         the 'default' sample group by default.
 
         :param gate: an instance of a Gate sub-class
-        :param gate_path: complete list of gate IDs for unique set of gate ancestors.
-            Required if gate.id and gate.parent combination is ambiguous
+        :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
+            Required if gate.gate_name and gate.parent combination is ambiguous
         :param group_name: a text string representing the sample group
         :return: None
         """
@@ -411,28 +465,28 @@ class Session(object):
         comp_mat = gating_strategy.get_comp_matrix(matrix_id)
         return comp_mat
 
-    def get_parent_gate_id(self, group_name, gate_id):
+    def get_parent_gate_name(self, group_name, gate_name):
         """
         Retrieve a parent gate instance by the child gate ID, sample group, and sample ID.
 
         :param group_name: a text string representing the sample group
-        :param gate_id: text string of a gate ID
+        :param gate_name: text string of a gate name
         :return: Subclass of a Gate object
         """
         # this method doesn't need to lookup sample specific gates, as the gate names
         # and hierarchy must be the same for all samples in a group
         group = self._sample_group_lut[group_name]
         template = group['template']
-        gate = template.get_gate(gate_id)
+        gate = template.get_gate(gate_name)
         return gate.parent
 
-    def get_gate(self, group_name, gate_id, gate_path=None, sample_id=None):
+    def get_gate(self, group_name, gate_name, gate_path=None, sample_id=None):
         """
         Retrieve a gate instance by its group, sample, and gate ID.
 
         :param group_name: a text string representing the sample group
-        :param gate_id: text string of a gate ID
-        :param gate_path: complete list of gate IDs for unique set of gate ancestors. Required if gate_id is ambiguous
+        :param gate_name: text string of a gate ID
+        :param gate_path: tuple of gate IDs for unique set of gate ancestors. Required if gate_name is ambiguous
         :param sample_id: a text string representing a Sample instance. If None, the template gate is returned.
         :return: Subclass of a Gate object
         """
@@ -443,7 +497,7 @@ class Session(object):
         else:
             # get the custom sample gate
             gating_strategy = group['samples'][sample_id]
-        gate = gating_strategy.get_gate(gate_id, gate_path=gate_path)
+        gate = gating_strategy.get_gate(gate_name, gate_path=gate_path)
         return gate
 
     def get_sample_gates(self, group_name, sample_id):
@@ -460,8 +514,8 @@ class Session(object):
 
         sample_gates = []
 
-        for gate_id, ancestors in gate_tuples:
-            gate = gating_strategy.get_gate(gate_id, gate_path=ancestors)
+        for gate_name, ancestors in gate_tuples:
+            gate = gating_strategy.get_gate(gate_name, gate_path=ancestors)
             sample_gates.append(gate)
 
         return sample_gates
@@ -543,14 +597,22 @@ class Session(object):
         """
         return self.sample_lut[sample_id]
 
-    def analyze_samples(self, group_name='default', sample_id=None, verbose=False):
+    def analyze_samples(self, group_name='default', sample_id=None, cache_events=False, use_mp=True, verbose=False):
         """
         Process gates for samples in a sample group. After running, results can be
-        retrieved using the `get_gating_results`, `get_group_report`, and  `get_gate_indices`,
+        retrieved using the `get_gating_results`, `get_group_report`, and  `get_gate_membership`,
         methods.
 
         :param group_name: a text string representing the sample group
         :param sample_id: optional sample ID, if specified only this sample will be processed
+        :param cache_events: Whether to cache pre-processed events (compensated and transformed). This can
+            be useful to speed up processing of gates that share the same pre-processing instructions for
+            the same channel data, but can consume significantly more memory space. See the related
+            clear_cache method for additional information. Default is False.
+        :param use_mp: Controls whether multiprocessing is used to gate samples (default is True).
+            Multiprocessing can fail for large workloads (lots of samples & gates) due to running out of
+            memory. For those cases setting use_mp should be set to False (processing will take longer,
+            but will use significantly less memory).
         :param verbose: if True, print a line for every gate processed (default is False)
         :return: None
         """
@@ -579,16 +641,24 @@ class Session(object):
             gating_strategies.append(self._sample_group_lut[group_name]['samples'][s.original_filename])
             samples_to_run.append(s)
 
-        results = _gate_samples(gating_strategies, samples_to_run, verbose, use_mp=debug)
+            # clear any existing results
+            if group_name in self._results_lut:
+                if sample_id in self._results_lut[group_name]:
+                    del self._results_lut[group_name][sample_id]
+                    gc.collect()
 
-        all_reports = [res.report for res in results]
+        results = _gate_samples(
+            gating_strategies,
+            samples_to_run,
+            cache_events,
+            verbose, use_mp=False if debug else use_mp
+        )
 
-        self._results_lut[group_name] = {
-            'report': pd.concat(all_reports),
-            'samples': {}  # dict will have sample ID keys and results values
-        }
+        if group_name not in self._results_lut:
+            self._results_lut[group_name] = {}
+
         for r in results:
-            self._results_lut[group_name]['samples'][r.sample_id] = r
+            self._results_lut[group_name][r.sample_id] = r
 
     def get_gating_results(self, group_name, sample_id):
         """
@@ -599,20 +669,24 @@ class Session(object):
             assigned to the specified group
         :return: GatingResults instance
         """
-
-        gating_result = self._results_lut[group_name]['samples'][sample_id]
+        gating_result = self._results_lut[group_name][sample_id]
         return copy.deepcopy(gating_result)
 
     def get_group_report(self, group_name):
         """
-        Retrieve the report of an analyzed sample group as a Pandas DataFrame.
+        Retrieve the report of an analyzed sample group as a pandas DataFrame.
 
         :param group_name: a text string representing the sample group
-        :return: Pandas DataFrame
+        :return: pandas DataFrame
         """
-        return self._results_lut[group_name]['report']
+        all_group_reports = []
 
-    def get_gate_indices(self, group_name, sample_id, gate_id, gate_path=None):
+        for s_id, result in self._results_lut[group_name].items():
+            all_group_reports.append(result.report)
+
+        return copy.deepcopy(pd.concat(all_group_reports))
+
+    def get_gate_membership(self, group_name, sample_id, gate_name, gate_path=None):
         """
         Retrieve a boolean array indicating gate membership for the events in the
         specified sample. Note, the same gate ID may be found in multiple gate paths,
@@ -621,31 +695,30 @@ class Session(object):
 
         :param group_name: a text string representing the sample group
         :param sample_id: a text string representing a Sample instance
-        :param gate_id: text string of a gate ID
-        :param gate_path: complete list of gate IDs for unique set of gate ancestors.
-            Required if gate_id is ambiguous
+        :param gate_name: text string of a gate name
+        :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
+            Required if gate_name is ambiguous
         :return: NumPy boolean array (length of sample event count)
         """
-        gating_result = self._results_lut[group_name]['samples'][sample_id]
-        return gating_result.get_gate_indices(gate_id, gate_path=gate_path)
+        gating_result = self._results_lut[group_name][sample_id]
+        return gating_result.get_gate_membership(gate_name, gate_path=gate_path)
 
-    def get_gate_events(self, group_name, sample_id, gate_id, gate_path=None, matrix=None, transform=None):
+    def get_gate_events(self, group_name, sample_id, gate_name=None, gate_path=None, matrix=None, transform=None):
         """
-        Retrieve a Pandas DataFrame containing only the events within the specified gate.
+        Retrieve a pandas DataFrame containing only the events within the specified gate.
         If an optional compensation matrix and/or a transform is provided, the returned
         event data will be compensated or transformed. If both a compensation matrix and
         a transform is provided the event data will be both compensated and transformed.
 
         :param group_name: a text string representing the sample group
         :param sample_id: a text string representing a Sample instance
-        :param gate_id: text string of a gate ID
-        :param gate_path: complete list of gate IDs for unique set of gate ancestors.
-            Required if gate_id is ambiguous
+        :param gate_name: text string of a gate name. If None, all Sample events will be returned (i.e. un-gated)
+        :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
+            Required if gate_name is ambiguous
         :param matrix: an instance of the Matrix class
         :param transform: an instance of a Transform sub-class
-        :return: Pandas DataFrame containing only the events within the specified gate
+        :return: pandas DataFrame containing only the events within the specified gate
         """
-        gate_idx = self.get_gate_indices(group_name, sample_id, gate_id, gate_path)
         sample = self.get_sample(sample_id)
         sample = copy.deepcopy(sample)
 
@@ -660,33 +733,29 @@ class Session(object):
             event_source = 'xform'
 
         events_df = sample.as_dataframe(source=event_source)
-        gated_event_data = events_df[gate_idx]
 
-        return gated_event_data
+        if gate_name is not None:
+            gate_idx = self.get_gate_membership(group_name, sample_id, gate_name, gate_path)
+            events_df = events_df[gate_idx]
 
-    def get_wsp_gated_events(self, group_name, sample_ids=None, gate_id=None):
+        return events_df
+
+    def get_wsp_gated_events(self, group_name, sample_ids=None, gate_name=None, gate_path=None):
         """
         Convert gated events in FlowJo WSP sample group to
         list of compensated and transformed DataFrames.
 
         :param group_name: a text string representing the sample group
         :param sample_ids: a list of Sample ID strings
-        :param gate_id: optional text string of a gate ID. If None, the first gate will be evaluated.
-
-        :return: a list of Pandas DataFrames with the gated events, compensated & transformed according
+        :param gate_name: text string of a gate ID. If None, all Sample events will be returned (i.e. un-gated)
+        :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
+            Required if gate_name is ambiguous
+        :return: a list of pandas DataFrames with the gated events, compensated & transformed according
             to the group's compensation matrix and transforms
         """
 
         if sample_ids is None:
             sample_ids = self.get_group_sample_ids(group_name)
-
-        if gate_id is None:
-            gate_ids = self.get_gate_ids(group_name)
-            gate_name, gate_path = gate_ids[0]
-        elif isinstance(gate_id, tuple):
-            gate_name, gate_path = gate_id
-        else:
-            gate_name, gate_path = gate_id, None
 
         df_events_list = []
 
@@ -717,14 +786,14 @@ class Session(object):
             df = self.get_gate_events(
                 group_name=group_name,
                 sample_id=sample_id,
-                gate_id=gate_name,
+                gate_name=gate_name,
                 gate_path=gate_path,
                 matrix=ref_cm,
                 transform=xform_lut,
             )
 
             # TODO: not sure if this column merging is best to do here
-            df.columns = [' '.join(col).strip() for col in df.columns.values]
+            df.columns = [' '.join(col).strip() for col in df.columns]
 
             df.insert(0, 'sample_group', group_name)
             df.insert(1, 'sample_id', sample_id)
@@ -737,7 +806,7 @@ class Session(object):
             self,
             group_name,
             sample_id,
-            gate_id,
+            gate_name,
             gate_path=None,
             x_min=None,
             x_max=None,
@@ -752,9 +821,9 @@ class Session(object):
 
         :param group_name: The sample group containing the sample ID (and, optionally the gate ID)
         :param sample_id: The sample ID for the FCS sample to plot
-        :param gate_id: Gate ID to filter events (only events within the given gate will be plotted)
-        :param gate_path: list of gate IDs for full set of gate ancestors.
-            Required if gate_id is ambiguous
+        :param gate_name: Gate name to filter events (only events within the given gate will be plotted)
+        :param gate_path: tuple of gate names for full set of gate ancestors.
+            Required if gate_name is ambiguous
         :param x_min: Lower bound of x-axis. If None, channel's min value will
             be used with some padding to keep events off the edge of the plot.
         :param x_max: Upper bound of x-axis. If None, channel's max value will
@@ -769,10 +838,37 @@ class Session(object):
         """
         group = self._sample_group_lut[group_name]
         gating_strategy = group['samples'][sample_id]
-        gate = gating_strategy.get_gate(gate_id, gate_path)
+        gate = gating_strategy.get_gate(gate_name, gate_path)
+
+        dim_ids_ordered = []
+        dim_is_ratio = []
+        dim_comp_refs = []
+        dim_min = []
+        dim_max = []
+        for i, dim in enumerate(gate.dimensions):
+            if isinstance(dim, dimension.RatioDimension):
+                dim_ids_ordered.append(dim.ratio_ref)
+                tmp_dim_min = dim.min
+                tmp_dim_max = dim.max
+                is_ratio = True
+            elif isinstance(dim, dimension.QuadrantDivider):
+                dim_ids_ordered.append(dim.dimension_ref)
+                tmp_dim_min = None
+                tmp_dim_max = None
+                is_ratio = False
+            else:
+                dim_ids_ordered.append(dim.id)
+                tmp_dim_min = dim.min
+                tmp_dim_max = dim.max
+                is_ratio = False
+
+            dim_min.append(tmp_dim_min)
+            dim_max.append(tmp_dim_max)
+            dim_is_ratio.append(is_ratio)
+            dim_comp_refs.append(dim.compensation_ref)
 
         # dim count determines if we need a histogram, scatter, or multi-scatter
-        dim_count = len(gate.dimensions)
+        dim_count = len(dim_ids_ordered)
         if dim_count == 1:
             gate_type = 'hist'
         elif dim_count == 2:
@@ -781,53 +877,83 @@ class Session(object):
             raise NotImplementedError("Plotting of gates with >2 dimensions is not yet supported")
 
         sample_to_plot = self.get_sample(sample_id)
-        events, dim_idx, dim_min, dim_max, new_dims = gate.preprocess_sample_events(
+        # noinspection PyProtectedMember
+        events = gating_strategy._preprocess_sample_events(
             sample_to_plot,
-            copy.deepcopy(gating_strategy)
+            gate
         )
 
         # get parent gate results to display only those events
         if gate.parent is not None:
-            parent_results = gating_strategy.gate_sample(sample_to_plot, gate.parent)
-            is_parent_event = parent_results.get_gate_indices(gate.parent)
+            # TODO:  make it clear to call analyze_samples prior to calling this method
+            gating_results = self.get_gating_results(group_name, sample_id)
+            is_parent_event = gating_results.get_gate_membership(gate.parent)
             is_subsample = np.zeros(sample_to_plot.event_count, dtype=bool)
             is_subsample[sample_to_plot.subsample_indices] = True
             idx_to_plot = np.logical_and(is_parent_event, is_subsample)
         else:
             idx_to_plot = sample_to_plot.subsample_indices
 
-        if len(new_dims) > 0:
-            raise NotImplementedError("Plotting of RatioDimensions is not yet supported.")
+        x = events.loc[idx_to_plot, dim_ids_ordered[0]].values
 
-        x = events[idx_to_plot, dim_idx[0]]
+        dim_ids = []
 
-        dim_labels = []
+        if dim_is_ratio[0]:
+            dim_ids.append(dim_ids_ordered[0])
+            x_pnn_label = None
+        else:
+            try:
+                x_index = sample_to_plot.get_channel_index(dim_ids_ordered[0])
+            except ValueError:
+                # might be a label reference in the comp matrix
+                matrix = gating_strategy.get_comp_matrix(dim_comp_refs[0])
+                try:
+                    matrix_dim_idx = matrix.fluorochomes.index(dim_ids_ordered[0])
+                except ValueError:
+                    raise ValueError("%s not found in list of matrix fluorochromes" % dim_ids_ordered[0])
+                detector = matrix.detectors[matrix_dim_idx]
+                x_index = sample_to_plot.get_channel_index(detector)
 
-        x_index = dim_idx[0]
-        x_pnn_label = sample_to_plot.pnn_labels[x_index]
+            x_pnn_label = sample_to_plot.pnn_labels[x_index]
+
+            if sample_to_plot.pns_labels[x_index] != '':
+                dim_ids.append('%s (%s)' % (sample_to_plot.pns_labels[x_index], x_pnn_label))
+            else:
+                dim_ids.append(sample_to_plot.pnn_labels[x_index])
+
         y_pnn_label = None
 
-        if sample_to_plot.pns_labels[x_index] != '':
-            dim_labels.append('%s (%s)' % (sample_to_plot.pns_labels[x_index], x_pnn_label))
-        else:
-            dim_labels.append(sample_to_plot.pnn_labels[x_index])
+        if dim_count > 1:
+            if dim_is_ratio[1]:
+                dim_ids.append(dim_ids_ordered[1])
 
-        if len(dim_idx) > 1:
-            y_index = dim_idx[1]
-            y_pnn_label = sample_to_plot.pnn_labels[y_index]
-
-            if sample_to_plot.pns_labels[y_index] != '':
-                dim_labels.append('%s (%s)' % (sample_to_plot.pns_labels[y_index], y_pnn_label))
             else:
-                dim_labels.append(sample_to_plot.pnn_labels[y_index])
+                try:
+                    y_index = sample_to_plot.get_channel_index(dim_ids_ordered[1])
+                except ValueError:
+                    # might be a label reference in the comp matrix
+                    matrix = gating_strategy.get_comp_matrix(dim_comp_refs[1])
+                    try:
+                        matrix_dim_idx = matrix.fluorochomes.index(dim_ids_ordered[1])
+                    except ValueError:
+                        raise ValueError("%s not found in list of matrix fluorochromes" % dim_ids_ordered[1])
+                    detector = matrix.detectors[matrix_dim_idx]
+                    y_index = sample_to_plot.get_channel_index(detector)
+
+                y_pnn_label = sample_to_plot.pnn_labels[y_index]
+
+                if sample_to_plot.pns_labels[y_index] != '':
+                    dim_ids.append('%s (%s)' % (sample_to_plot.pns_labels[y_index], y_pnn_label))
+                else:
+                    dim_ids.append(sample_to_plot.pnn_labels[y_index])
 
         if gate_type == 'scatter':
-            y = events[idx_to_plot, dim_idx[1]]
+            y = events.loc[idx_to_plot, dim_ids_ordered[1]].values
 
             p = plot_utils.plot_scatter(
                 x,
                 y,
-                dim_labels,
+                dim_ids,
                 x_min=x_min,
                 x_max=x_max,
                 y_min=y_min,
@@ -835,7 +961,7 @@ class Session(object):
                 color_density=color_density
             )
         elif gate_type == 'hist':
-            p = plot_utils.plot_histogram(x, dim_labels[0])
+            p = plot_utils.plot_histogram(x, dim_ids[0])
         else:
             raise NotImplementedError("Only histograms and scatter plots are supported in this version of FlowKit")
 
@@ -843,7 +969,7 @@ class Session(object):
             source, glyph = plot_utils.render_polygon(gate.vertices)
             p.add_glyph(source, glyph)
         elif isinstance(gate, gates.EllipsoidGate):
-            ellipse = plot_utils.calculate_ellipse(
+            ellipse = plot_utils.render_ellipse(
                 gate.coordinates[0],
                 gate.coordinates[1],
                 gate.covariance_matrix,
@@ -881,7 +1007,7 @@ class Session(object):
 
         if gate_path is not None:
             full_gate_path = gate_path[1:]  # omit 'root'
-            full_gate_path.append(gate_id)
+            full_gate_path = full_gate_path + (gate_name,)
             sub_title = ' > '.join(full_gate_path)
 
             # truncate beginning of long gate paths
@@ -893,7 +1019,7 @@ class Session(object):
             )
         else:
             p.add_layout(
-                Title(text=gate_id, text_font_style="italic", text_font_size="1em", align='center'),
+                Title(text=gate_name, text_font_style="italic", text_font_size="1em", align='center'),
                 'above'
             )
 
@@ -911,7 +1037,7 @@ class Session(object):
             x_dim,
             y_dim,
             group_name='default',
-            gate_id=None,
+            gate_name=None,
             subsample=False,
             color_density=True,
             x_min=None,
@@ -926,7 +1052,7 @@ class Session(object):
         :param x_dim:  Dimension instance to use for the x-axis data
         :param y_dim: Dimension instance to use for the y-axis data
         :param group_name: The sample group containing the sample ID (and, optionally the gate ID)
-        :param gate_id: Gate ID to filter events (only events within the given gate will be plotted)
+        :param gate_name: Gate name to filter events (only events within the given gate will be plotted)
         :param subsample: Whether to use all events for plotting or just the
             sub-sampled events. Default is False (all events). Plotting
             sub-sampled events can be much faster.
@@ -946,8 +1072,8 @@ class Session(object):
         group = self._sample_group_lut[group_name]
         gating_strategy = group['samples'][sample_id]
 
-        x_index = sample.get_channel_index(x_dim.label)
-        y_index = sample.get_channel_index(y_dim.label)
+        x_index = sample.get_channel_index(x_dim.id)
+        y_index = sample.get_channel_index(y_dim.id)
 
         x_comp_ref = x_dim.compensation_ref
         x_xform_ref = x_dim.transformation_ref
@@ -961,7 +1087,7 @@ class Session(object):
             x = comp_events[:, x_index]
         else:
             # not doing sub-sample here, will do later with bool AND
-            x = sample.get_channel_data(x_index, source='raw', subsample=False)
+            x = sample.get_channel_events(x_index, source='raw', subsample=False)
 
         if y_comp_ref is not None and x_comp_ref != 'uncompensated':
             # this is likely unnecessary as the x & y comp should be the same,
@@ -971,7 +1097,7 @@ class Session(object):
             y = comp_events[:, y_index]
         else:
             # not doing sub-sample here, will do later with bool AND
-            y = sample.get_channel_data(y_index, source='raw', subsample=False)
+            y = sample.get_channel_events(y_index, source='raw', subsample=False)
 
         if x_xform_ref is not None:
             x_xform = gating_strategy.get_transform(x_xform_ref)
@@ -980,9 +1106,9 @@ class Session(object):
             y_xform = gating_strategy.get_transform(y_xform_ref)
             y = y_xform.apply(y.reshape(-1, 1))[:, 0]
 
-        if gate_id is not None:
-            gate_results = gating_strategy.gate_sample(sample, gate_id)
-            is_gate_event = gate_results.get_gate_indices(gate_id)
+        if gate_name is not None:
+            gate_results = self.get_gating_results(group_name, sample_id=sample_id)
+            is_gate_event = gate_results.get_gate_membership(gate_name)
             if subsample:
                 is_subsample = np.zeros(sample.event_count, dtype=bool)
                 is_subsample[sample.subsample_indices] = True
@@ -993,22 +1119,22 @@ class Session(object):
             x = x[idx_to_plot]
             y = y[idx_to_plot]
 
-        dim_labels = []
+        dim_ids = []
 
         if sample.pns_labels[x_index] != '':
-            dim_labels.append('%s (%s)' % (sample.pns_labels[x_index], sample.pnn_labels[x_index]))
+            dim_ids.append('%s (%s)' % (sample.pns_labels[x_index], sample.pnn_labels[x_index]))
         else:
-            dim_labels.append(sample.pnn_labels[x_index])
+            dim_ids.append(sample.pnn_labels[x_index])
 
         if sample.pns_labels[y_index] != '':
-            dim_labels.append('%s (%s)' % (sample.pns_labels[y_index], sample.pnn_labels[y_index]))
+            dim_ids.append('%s (%s)' % (sample.pns_labels[y_index], sample.pnn_labels[y_index]))
         else:
-            dim_labels.append(sample.pnn_labels[y_index])
+            dim_ids.append(sample.pnn_labels[y_index])
 
         p = plot_utils.plot_scatter(
             x,
             y,
-            dim_labels,
+            dim_ids,
             x_min=x_min,
             x_max=x_max,
             y_min=y_min,
