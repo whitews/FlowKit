@@ -1,3 +1,6 @@
+"""
+gates Module
+"""
 import numpy as np
 from ._base_gate import Gate
 from ..dimension import RatioDimension
@@ -37,6 +40,13 @@ class RectangleGate(Gate):
         )
 
     def apply(self, df_events):
+        """
+        Apply gate to events in given pandas DataFrame. The given DataFrame must have columns matching the
+        Dimension IDs for the Dimension instances defined for the gate.
+
+        :param df_events: pandas DataFrame with column labels matching Dimension IDs
+        :return: NumPy array of boolean values for each event.  (True is inside gate)
+        """
         results = np.ones(df_events.shape[0], dtype=bool)
 
         for i, dim in enumerate(self.dimensions):
@@ -85,6 +95,13 @@ class PolygonGate(Gate):
         )
 
     def apply(self, df_events):
+        """
+        Apply gate to events in given pandas DataFrame. The given DataFrame must have columns matching the
+        Dimension IDs for the Dimension instances defined for the gate.
+
+        :param df_events: pandas DataFrame with column labels matching Dimension IDs
+        :return: NumPy array of boolean values for each event  (True is inside gate)
+        """
         path_vertices = []
 
         dim_ids_ordered = []
@@ -149,6 +166,13 @@ class EllipsoidGate(Gate):
         )
 
     def apply(self, df_events):
+        """
+        Apply gate to events in given pandas DataFrame. The given DataFrame must have columns matching the
+        Dimension IDs for the Dimension instances defined for the gate.
+
+        :param df_events: pandas DataFrame with column labels matching Dimension IDs
+        :return: NumPy array of boolean values for each event (True is inside gate)
+        """
         dim_ids_ordered = []
         for i, dim in enumerate(self.dimensions):
             if isinstance(dim, RatioDimension):
@@ -191,6 +215,11 @@ class Quadrant(object):
             raise ValueError("Failed to parse divider ranges")
 
     def get_divider_range(self, div_ref):
+        """
+        Returns the divider range values for the given QuadrantDivider ID reference.
+        :param div_ref: QuadrantDivider ID string
+        :return: min/max range values for the requested divider
+        """
         return self._divider_ranges[div_ref]
 
     def __repr__(self):
@@ -260,7 +289,14 @@ class QuadrantGate(Gate):
         )
 
     def apply(self, df_events):
+        """
+        Apply gate to events in given pandas DataFrame. The given DataFrame must have columns matching the
+        QuadrantDivider dimension_ref for the QuadrantDivider instances defined for the gate.
 
+        :param df_events: pandas DataFrame with column labels matching QuadrantDivider dimension_ref values.
+        :return: A dictionary where each key is a Quadrant ID and the value is a NumPy array of boolean values
+        for each event (True is inside gate).
+        """
         results = {}
 
         for q_id, quadrant in self.quadrants.items():
@@ -328,6 +364,13 @@ class BooleanGate(Gate):
         )
 
     def apply(self, df_events):
+        """
+        Apply gate to events in given pandas DataFrame. The given DataFrame must have columns matching the
+        `ref` keys of the `gate_refs` list of dictionaries.
+
+        :param df_events: pandas DataFrame with column labels matching gate_refs 'ref' keys
+        :return: NumPy array of boolean values for each event (True is inside gate)
+        """
         all_gate_results = []
 
         for gate_ref_dict in self.gate_refs:
