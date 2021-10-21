@@ -61,7 +61,7 @@ int calc_wind_count(double point_x, double point_y, int vert_count, double *poly
     return wind_count;
 }
 
-int * points_in_polygon(double *poly_vertices, int vert_count, double *points, int point_count) {
+int * points_in_polygon(int *wind_counts, double *poly_vertices, int vert_count, double *points, int point_count) {
     /*
     Determines whether points in an array are inside a polygon. Points on the
     edge of the polygon are considered inclusive. This function uses the
@@ -81,7 +81,6 @@ int * points_in_polygon(double *poly_vertices, int vert_count, double *points, i
     :param point_count: Number of points
     :return: Array of winding counts for each point. True is inside polygon.
     */
-    int *wind_counts = malloc(point_count * sizeof(int));
     int wind_count;
     double point_x;
     double point_y;

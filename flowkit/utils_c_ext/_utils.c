@@ -43,7 +43,7 @@ static PyObject *wrap_points_in_polygon(PyObject *self, PyObject *args) {
     // now we can call our function!
     int *is_in_polygon = malloc(point_count * sizeof(int));
 
-    is_in_polygon = points_in_polygon(poly_vertices_c, vert_count, points_c, point_count);
+    points_in_polygon(is_in_polygon, poly_vertices_c, vert_count, points_c, point_count);
 
     Py_DECREF(poly_vert_array);
     Py_DECREF(points_array);
