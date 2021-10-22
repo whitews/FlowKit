@@ -84,7 +84,7 @@ def _gate_samples(gating_strategies, samples, cache_events, verbose, use_mp=Fals
             proc_count = sample_count
 
         with mp.get_context(mp_context).Pool(processes=proc_count, maxtasksperchild=1) as pool:
-            if True:
+            if verbose:
                 print(
                     '#### Processing gates for %d samples (multiprocessing is enabled - %d cpus) ####'
                     % (sample_count, proc_count)
