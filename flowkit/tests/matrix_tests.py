@@ -1,6 +1,10 @@
+"""
+Matrix class tests
+"""
 import unittest
 import numpy as np
 import pandas as pd
+import warnings
 import flowkit as fk
 
 fcs_spill = '13,B515-A,R780-A,R710-A,R660-A,V800-A,V655-A,V585-A,V450-A,G780-A,G710-A,G660-A,G610-A,G560-A,'\
@@ -100,11 +104,13 @@ class MatrixTestCase(unittest.TestCase):
         fcs_file_path = "examples/data/test_comp_example.fcs"
         comp_file_path = "examples/data/comp_complete_example.csv"
 
-        sample = fk.Sample(
-            fcs_path_or_data=fcs_file_path,
-            compensation=comp_file_path,
-            ignore_offset_error=True  # sample has off by 1 data offset
-        )
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            sample = fk.Sample(
+                fcs_path_or_data=fcs_file_path,
+                compensation=comp_file_path,
+                ignore_offset_error=True  # sample has off by 1 data offset
+            )
         matrix = sample.compensation
 
         data_raw = sample.get_events(source='raw')
