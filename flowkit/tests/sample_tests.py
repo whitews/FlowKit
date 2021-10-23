@@ -1,6 +1,7 @@
 """
 Unit tests for Sample class
 """
+import copy
 import unittest
 import sys
 import os
@@ -8,6 +9,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import flowio
+import warnings
 
 sys.path.append(os.path.abspath('../..'))
 
@@ -15,10 +17,28 @@ from flowkit import Sample, transforms
 
 data1_fcs_path = 'examples/data/gate_ref/data1.fcs'
 data1_sample = Sample(data1_fcs_path)
+data1_sample_with_orig = Sample(data1_fcs_path, cache_original_events=True)
 
 xform_logicle = transforms.LogicleTransform('logicle', param_t=10000, param_w=0.5, param_m=4.5, param_a=0)
 xform_biex1 = transforms.WSPBiexTransform('neg0', width=-100.0, negative=0.0)
 xform_biex2 = transforms.WSPBiexTransform('neg1', width=-100.0, negative=1.0)
+
+fcs_file_path = "examples/data/test_comp_example.fcs"
+comp_file_path = "examples/data/comp_complete_example.csv"
+
+with warnings.catch_warnings():
+    warnings.simplefilter('ignore')
+    test_comp_sample = Sample(
+        fcs_path_or_data=fcs_file_path,
+        compensation=comp_file_path,
+        ignore_offset_error=True  # sample has off by 1 data offset
+    )
+
+    warnings.simplefilter('ignore')
+    test_comp_sample_uncomp = Sample(
+        fcs_path_or_data=fcs_file_path,
+        ignore_offset_error=True  # sample has off by 1 data offset
+    )
 
 
 class SampleTestCase(unittest.TestCase):
@@ -98,40 +118,18 @@ class SampleTestCase(unittest.TestCase):
         self.assertRaises(ValueError, Sample, object())
 
     def test_comp_matrix_from_csv(self):
-        fcs_file_path = "examples/data/test_comp_example.fcs"
-        comp_file_path = "examples/data/comp_complete_example.csv"
-
-        sample = Sample(
-            fcs_path_or_data=fcs_file_path,
-            compensation=comp_file_path,
-            ignore_offset_error=True  # sample has off by 1 data offset
-        )
+        sample = test_comp_sample
 
         self.assertIsNotNone(sample._comp_events)
 
     def test_clearing_comp_events(self):
-        fcs_file_path = "examples/data/test_comp_example.fcs"
-        comp_file_path = "examples/data/comp_complete_example.csv"
-
-        sample = Sample(
-            fcs_path_or_data=fcs_file_path,
-            compensation=comp_file_path,
-            ignore_offset_error=True  # sample has off by 1 data offset
-        )
-
+        sample = copy.deepcopy(test_comp_sample)
         sample.apply_compensation(None)
 
         self.assertIsNone(sample._comp_events)
 
     def test_comp_matrix_from_pathlib_path(self):
-        fcs_file_path = "examples/data/test_comp_example.fcs"
-        comp_file_path = Path("examples/data/comp_complete_example.csv")
-
-        sample = Sample(
-            fcs_path_or_data=fcs_file_path,
-            compensation=comp_file_path,
-            ignore_offset_error=True  # sample has off by 1 data offset
-        )
+        sample = test_comp_sample
 
         self.assertIsNotNone(sample._comp_events)
 
@@ -167,14 +165,7 @@ class SampleTestCase(unittest.TestCase):
 
     @staticmethod
     def test_get_channel_events_comp():
-        fcs_file_path = "examples/data/test_comp_example.fcs"
-        comp_file_path = Path("examples/data/comp_complete_example.csv")
-
-        sample = Sample(
-            fcs_path_or_data=fcs_file_path,
-            compensation=comp_file_path,
-            ignore_offset_error=True  # sample has off by 1 data offset
-        )
+        sample = test_comp_sample
 
         data_idx_6 = sample.get_channel_events(6, source='comp')
 
@@ -182,14 +173,7 @@ class SampleTestCase(unittest.TestCase):
 
     @staticmethod
     def test_get_channel_events_xform():
-        fcs_file_path = "examples/data/test_comp_example.fcs"
-        comp_file_path = Path("examples/data/comp_complete_example.csv")
-
-        sample = Sample(
-            fcs_path_or_data=fcs_file_path,
-            compensation=comp_file_path,
-            ignore_offset_error=True  # sample has off by 1 data offset
-        )
+        sample = copy.deepcopy(test_comp_sample)
         sample.apply_transform(xform_logicle)
 
         data_idx_6 = sample.get_channel_events(6, source='xform')
@@ -213,9 +197,7 @@ class SampleTestCase(unittest.TestCase):
     def test_get_subsampled_orig_events_not_cached(self):
         sample = Sample(data1_fcs_path, cache_original_events=False, subsample=500)
 
-        events = sample.get_events(source='orig', subsample=True)
-
-        self.assertIsNone(events, None)
+        self.assertRaises(ValueError, sample.get_events, source='orig', subsample=True)
 
     def test_get_subsampled_raw_events(self):
         sample = Sample(data1_fcs_path, subsample=500)
@@ -225,30 +207,16 @@ class SampleTestCase(unittest.TestCase):
         self.assertEqual(events.shape[0], 500)
 
     def test_get_subsampled_comp_events(self):
-        fcs_file_path = "examples/data/test_comp_example.fcs"
-        comp_file_path = Path("examples/data/comp_complete_example.csv")
-
-        sample = Sample(
-            fcs_path_or_data=fcs_file_path,
-            compensation=comp_file_path,
-            ignore_offset_error=True,  # sample has off by 1 data offset
-            subsample=500
-        )
+        sample = copy.deepcopy(test_comp_sample)
+        sample.subsample_events(500)
 
         events = sample.get_events(source='comp', subsample=True)
 
         self.assertEqual(events.shape[0], 500)
 
     def test_get_subsampled_xform_events(self):
-        fcs_file_path = "examples/data/test_comp_example.fcs"
-        comp_file_path = Path("examples/data/comp_complete_example.csv")
-
-        sample = Sample(
-            fcs_path_or_data=fcs_file_path,
-            compensation=comp_file_path,
-            ignore_offset_error=True,  # sample has off by 1 data offset
-            subsample=500
-        )
+        sample = copy.deepcopy(test_comp_sample)
+        sample.subsample_events(500)
         sample.apply_transform(xform_logicle)
 
         events = sample.get_events(source='xform', subsample=True)
@@ -256,39 +224,26 @@ class SampleTestCase(unittest.TestCase):
         self.assertEqual(events.shape[0], 500)
 
     def test_get_compensated_events_if_no_comp(self):
-        fcs_file_path = "examples/data/test_comp_example.fcs"
+        sample = test_comp_sample_uncomp
 
-        sample = Sample(
-            fcs_path_or_data=fcs_file_path,
-            ignore_offset_error=True  # sample has off by 1 data offset
-        )
-
-        comp_events = sample.get_events(source='comp')
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            comp_events = sample.get_events(source='comp')
 
         self.assertIsNone(comp_events)
 
     def test_get_transformed_events_if_no_xform(self):
-        fcs_file_path = "examples/data/test_comp_example.fcs"
+        sample = test_comp_sample_uncomp
 
-        sample = Sample(
-            fcs_path_or_data=fcs_file_path,
-            ignore_offset_error=True  # sample has off by 1 data offset
-        )
-
-        xform_events = sample.get_events(source='xform')
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            xform_events = sample.get_events(source='xform')
 
         self.assertIsNone(xform_events)
 
     @staticmethod
     def test_get_transformed_events_exclude_scatter():
-        fcs_file_path = "examples/data/test_comp_example.fcs"
-        comp_file_path = Path("examples/data/comp_complete_example.csv")
-
-        sample = Sample(
-            fcs_path_or_data=fcs_file_path,
-            compensation=comp_file_path,
-            ignore_offset_error=True  # sample has off by 1 data offset
-        )
+        sample = copy.deepcopy(test_comp_sample)
         sample.apply_transform(xform_logicle, include_scatter=False)
 
         fsc_a_index = sample.get_channel_index('FSC-A')
@@ -297,14 +252,7 @@ class SampleTestCase(unittest.TestCase):
         np.testing.assert_equal(sample._raw_events[:, fsc_a_index], data_fsc_a)
 
     def test_get_transformed_events_include_scatter(self):
-        fcs_file_path = "examples/data/test_comp_example.fcs"
-        comp_file_path = Path("examples/data/comp_complete_example.csv")
-
-        sample = Sample(
-            fcs_path_or_data=fcs_file_path,
-            compensation=comp_file_path,
-            ignore_offset_error=True  # sample has off by 1 data offset
-        )
+        sample = copy.deepcopy(test_comp_sample)
         sample.apply_transform(xform_logicle, include_scatter=True)
 
         fsc_a_index = sample.get_channel_index('FSC-A')
@@ -316,21 +264,15 @@ class SampleTestCase(unittest.TestCase):
         self.assertEqual(round(data_fsc_a_xform[0], 3), 1.238)
 
     def test_get_events_as_data_frame_xform(self):
-        data1_sample.apply_transform(xform_logicle)
-        df = data1_sample.as_dataframe(source='xform')
+        sample = copy.deepcopy(data1_sample)
+        sample.apply_transform(xform_logicle)
+        df = sample.as_dataframe(source='xform')
 
         self.assertIsInstance(df, pd.DataFrame)
-        np.testing.assert_equal(df.values, data1_sample.get_events(source='xform'))
+        np.testing.assert_equal(df.values, sample.get_events(source='xform'))
 
     def test_get_events_as_data_frame_comp(self):
-        fcs_file_path = "examples/data/test_comp_example.fcs"
-        comp_file_path = "examples/data/comp_complete_example.csv"
-
-        sample = Sample(
-            fcs_path_or_data=fcs_file_path,
-            compensation=comp_file_path,
-            ignore_offset_error=True  # sample has off by 1 data offset
-        )
+        sample = test_comp_sample
 
         df = sample.as_dataframe(source='comp')
 
@@ -344,10 +286,10 @@ class SampleTestCase(unittest.TestCase):
         np.testing.assert_equal(df.values, data1_sample.get_events(source='raw'))
 
     def test_get_events_as_data_frame_orig(self):
-        df = data1_sample.as_dataframe(source='orig')
+        df = data1_sample_with_orig.as_dataframe(source='orig')
 
         self.assertIsInstance(df, pd.DataFrame)
-        np.testing.assert_equal(df.values, data1_sample.get_events(source='orig'))
+        np.testing.assert_equal(df.values, data1_sample_with_orig.get_events(source='orig'))
 
     def test_get_events_as_data_frame_column_order(self):
         orig_col_order = ['FSC-H', 'SSC-H', 'FL1-H', 'FL2-H', 'FL3-H', 'FL2-A', 'FL4-H', 'Time']
@@ -397,14 +339,7 @@ class SampleTestCase(unittest.TestCase):
         np.testing.assert_raises(AssertionError, np.testing.assert_equal, s1_fl3, s2_fl3)
 
     def test_export_as_fcs(self):
-        fcs_file_path = "examples/data/test_comp_example.fcs"
-        comp_file_path = Path("examples/data/comp_complete_example.csv")
-
-        sample = Sample(
-            fcs_path_or_data=fcs_file_path,
-            compensation=comp_file_path,
-            ignore_offset_error=True  # sample has off by 1 data offset
-        )
+        sample = test_comp_sample
 
         sample.export("test_fcs_export.fcs", source='comp', directory="examples")
 
@@ -513,14 +448,7 @@ class SampleTestCase(unittest.TestCase):
         )
 
     def test_export_as_csv(self):
-        fcs_file_path = "examples/data/test_comp_example.fcs"
-        comp_file_path = Path("examples/data/comp_complete_example.csv")
-
-        sample = Sample(
-            fcs_path_or_data=fcs_file_path,
-            compensation=comp_file_path,
-            ignore_offset_error=True  # sample has off by 1 data offset
-        )
+        sample = test_comp_sample
 
         sample.export("test_fcs_export.csv", source='comp', directory="examples")
 
