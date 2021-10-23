@@ -426,12 +426,10 @@ class Sample(object):
         :return: NumPy array of original events
         """
         if self._orig_events is None:
-            warnings.warn(
+            raise ValueError(
                 "Original events were not cached, to retrieve them create a "
-                "Sample instance with cache_original_events=True",
-                UserWarning
+                "Sample instance with cache_original_events=True"
             )
-            return None
 
         if subsample:
             return self._orig_events[self.subsample_indices]
