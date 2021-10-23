@@ -482,11 +482,10 @@ class Sample(object):
             has been applied.
         """
         if self._transformed_events is None:
-            warnings.warn(
-                "No transform has been applied, call a transform method first.",
-                UserWarning
+            raise AttributeError(
+                "Transformed events were requested but do not exist.\n"
+                "Call a transform method prior to retrieving transformed events."
             )
-            return None
 
         if subsample:
             return self._transformed_events[self.subsample_indices]
@@ -811,14 +810,6 @@ class Sample(object):
             be used with some padding to keep events off the edge of the plot.
         :return: A Bokeh Figure object containing the interactive scatter plot.
         """
-        # First, sanity check on requested source type
-        if source == 'xform' and self._transformed_events is None:
-            raise AttributeError(
-                "Transformed events were requested but do not exist.\n"
-                "Have you called a transform method? \n"
-                "Or, maybe you meant to plot the non-transformed events? If so, use the source='raw' option."
-            )
-
         x_index = self.get_channel_index(x_label_or_number)
         y_index = self.get_channel_index(y_label_or_number)
 
