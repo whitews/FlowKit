@@ -198,7 +198,6 @@ class FlowJoWSPTestCase(unittest.TestCase):
 
     def test_parse_wsp_reused_gate_with_child(self):
         wsp_path = "examples/data/8_color_data_set/reused_quad_gate_with_child.wsp"
-        sample_id = '101_DEN084Y5_15_E01_008_clean.fcs'
 
         fks = Session(copy.deepcopy(test_samples_8c_full_set))
         fks.import_flowjo_workspace(wsp_path, ignore_missing_files=True)
