@@ -460,11 +460,10 @@ class Sample(object):
             matrix has been applied.
         """
         if self._comp_events is None:
-            warnings.warn(
-                "No compensation has been applied, call 'compensate' method first.",
-                UserWarning
+            raise AttributeError(
+                "Compensated events were requested but do not exist.\n"
+                "Call a apply_compensation method prior to retrieving compensated events."
             )
-            return None
 
         if subsample:
             return self._comp_events[self.subsample_indices]
