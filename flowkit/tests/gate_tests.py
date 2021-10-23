@@ -4,7 +4,7 @@ Unit tests for Gate sub-classes
 import unittest
 import numpy as np
 
-from flowkit import gates, Dimension
+from flowkit import Dimension
 from .gating_strategy_tests import poly1_gate
 
 test_data_range1 = np.linspace(0.0, 10.0, 101)

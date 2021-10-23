@@ -3,6 +3,7 @@ Unit tests for Transform sub-classes
 """
 import unittest
 import numpy as np
+import warnings
 
 from flowkit import Sample, transforms
 
@@ -95,7 +96,9 @@ class TransformsTestCase(unittest.TestCase):
 
     def test_transform_sample_log(self):
         xform = transforms.LogTransform('log', param_t=10000, param_m=4.5)
-        data1_sample.apply_transform(xform)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            data1_sample.apply_transform(xform)
 
         self.assertIsInstance(data1_sample._transformed_events, np.ndarray)
 
@@ -111,7 +114,9 @@ class TransformsTestCase(unittest.TestCase):
     @staticmethod
     def test_inverse_log_transform():
         xform = transforms.LogTransform('log', param_t=10000, param_m=4.5)
-        y = xform.apply(test_data_range1)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            y = xform.apply(test_data_range1)
         x = xform.inverse(y)
 
         np.testing.assert_array_almost_equal(test_data_range1, x, decimal=10)

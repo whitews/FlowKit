@@ -282,7 +282,9 @@ def _recurse_wsp_sub_populations(sub_pop_el, gate_path, gating_ns, data_type_ns)
     ns_map = sub_pop_el.nsmap
 
     if gate_path is None:
-        gate_path = []
+        # here we'll create the gate path as a list b/c we will append to it for recursion
+        # however, when it is finally stored in the list of gate dicts we will convert to tuple
+        gate_path = ['root']
         parent_id = None
     else:
         parent_id = gate_path[-1]
@@ -324,7 +326,7 @@ def _recurse_wsp_sub_populations(sub_pop_el, gate_path, gating_ns, data_type_ns)
             {
                 'owning_group': owning_group,
                 'gate': g,
-                'gate_path': gate_path
+                'gate_path': tuple(gate_path)  # converting to tuple!
             }
         )
 

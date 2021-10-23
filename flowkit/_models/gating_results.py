@@ -75,6 +75,16 @@ class GatingResults(object):
 
         self.report = df.sort_values(['sample', 'level', 'gate_name'])
 
+    def _filter_gate_report(self, gate_name, gate_path=None):
+        results = self.report[(self.report['sample'] == self.sample_id) & (self.report['gate_name'] == gate_name)]
+
+        if gate_path is not None:
+            results = results[results.gate_path == gate_path]
+        elif len(results) > 1:
+            raise ValueError("Gate name %s is ambiguous, specify the full gate path")
+
+        return results
+
     def get_gate_membership(self, gate_name, gate_path=None):
         """
         Retrieve a boolean array indicating gate membership for the events in the GatingResults sample.
@@ -108,45 +118,39 @@ class GatingResults(object):
         else:
             raise ValueError("Report as bug: The gate %s appears to have multiple quadrant parents." % gate_name)
 
-    def get_gate_count(self, gate_name):
+    def get_gate_count(self, gate_name, gate_path=None):
         """
         Retrieve event count for the specified gate ID for the gating results sample
 
         :param gate_name: text string of a gate name
+        :param gate_path: tuple of ancestor gate names
         :return: integer count of events in gate ID
         """
-        results = self.report[(self.report['sample'] == self.sample_id) & (self.report['gate_name'] == gate_name)]
-
-        if len(results) > 1:
-            raise NotImplementedError("Gate ID %s is ambiguous and gate_path is not yet implemented for this method")
+        results = self._filter_gate_report(gate_name, gate_path=gate_path)
 
         return results['count'].values[0]
 
-    def get_gate_absolute_percent(self, gate_name):
+    def get_gate_absolute_percent(self, gate_name, gate_path=None):
         """
         Retrieve percent of events, relative to the total sample events, of the specified gate ID for the
         gating results sample
 
         :param gate_name: text string of a gate name
+        :param gate_path: tuple of ancestor gate names
         :return: floating point number of the absolute percent
         """
-        results = self.report[(self.report['sample'] == self.sample_id) & (self.report['gate_name'] == gate_name)]
-
-        if len(results) > 1:
-            raise NotImplementedError("Gate ID %s is ambiguous and gate_path is not yet implemented for this method")
+        results = self._filter_gate_report(gate_name, gate_path=gate_path)
 
         return results['absolute_percent'].values[0]
 
-    def get_gate_relative_percent(self, gate_name):
+    def get_gate_relative_percent(self, gate_name, gate_path=None):
         """
         Retrieve percent of events, relative to parent gate, of the specified gate ID for the gating results sample
 
         :param gate_name: text string of a gate name
+        :param gate_path: tuple of ancestor gate names
         :return: floating point number of the relative percent
         """
-        results = self.report[(self.report['sample'] == self.sample_id) & (self.report['gate_name'] == gate_name)]
-
-        if len(results) > 1:
-            raise NotImplementedError("Gate ID %s is ambiguous and gate_path is not yet implemented for this method")
+        results = self._filter_gate_report(gate_name, gate_path=gate_path)
 
         return results['relative_percent'].values[0]

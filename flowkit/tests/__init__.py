@@ -11,6 +11,7 @@ from .export_gml_tests import ExportGMLTestCase
 from .gating_strategy_tests import GatingStrategyTestCase, GatingStrategyReusedGatesTestCase
 from .session_tests import SessionTestCase
 from .flowjo_wsp_tests import FlowJoWSPTestCase
+from .gating_results_tests import GatingResultsTestCase
 from .matrix_tests import MatrixTestCase
 from .transform_tests import TransformsTestCase
 from .gate_tests import GateTestCase

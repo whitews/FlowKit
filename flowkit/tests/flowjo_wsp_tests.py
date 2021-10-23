@@ -196,6 +196,22 @@ class FlowJoWSPTestCase(unittest.TestCase):
         self.assertIsInstance(gate_indices, np.ndarray)
         self.assertEqual(np.sum(gate_indices), 21)
 
+    def test_parse_wsp_reused_gate_with_child(self):
+        wsp_path = "examples/data/8_color_data_set/reused_quad_gate_with_child.wsp"
+
+        fks = Session(copy.deepcopy(test_samples_8c_full_set))
+        fks.import_flowjo_workspace(wsp_path, ignore_missing_files=True)
+        group_name = 'All Samples'
+        gate_name = 'some_child_gate'
+
+        gate_ids = fks.get_gate_ids(group_name)
+
+        gate_id_1 = (gate_name, ('root', 'good cells', 'cd4+', 'Q2: CD107a+, IL2+'))
+        gate_id_2 = (gate_name, ('root', 'good cells', 'cd8+', 'Q2: CD107a+, IL2+'))
+
+        self.assertIn(gate_id_1, gate_ids)
+        self.assertIn(gate_id_2, gate_ids)
+
     def test_analyze_single_sample(self):
         wsp_path = "examples/data/8_color_data_set/8_color_ICS_simple.wsp"
         sample_id = '101_DEN084Y5_15_E01_008_clean.fcs'
