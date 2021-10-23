@@ -844,9 +844,9 @@ class Sample(object):
 
     def plot_scatter_matrix(
             self,
+            channel_labels_or_numbers=None,
             source='xform',
             subsample=True,
-            channel_labels_or_numbers=None,
             color_density=False,
             plot_height=256,
             plot_width=256
@@ -855,14 +855,14 @@ class Sample(object):
         Returns an interactive scatter plot matrix for all channel combinations
         except for the Time channel.
 
+        :param channel_labels_or_numbers: List of channel PnN labels or channel
+            numbers to use for the scatter plot matrix. If None, then all
+            channels will be plotted (except Time).
         :param source: 'raw', 'comp', 'xform' for whether the raw, compensated
             or transformed events are used for plotting
         :param subsample: Whether to use all events for plotting or just the
             sub-sampled events. Default is True (sub-sampled events). Plotting
             sub-sampled events is be much faster.
-        :param channel_labels_or_numbers: List of channel PnN labels or channel
-            numbers to use for the scatter plot matrix. If None, then all
-            channels will be plotted (except Time).
         :param color_density: Whether to color the events by density, similar
             to a heat map. Default is False.
         :param plot_height: Height of plot in pixels (screen units)
