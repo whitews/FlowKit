@@ -309,8 +309,9 @@ class GatingStrategy(object):
     def get_gate_ids(self):
         """
         Retrieve the list of gate IDs (with ancestors) for the gating strategy
+
         :return: list of tuples where the 1st item is the gate name string and 2nd item is
-                 a list of ancestor gate names
+            a list of ancestor gate names
         """
         gates = []
         for node in self._gate_tree.descendants:
