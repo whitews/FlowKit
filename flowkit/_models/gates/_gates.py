@@ -295,7 +295,7 @@ class QuadrantGate(Gate):
 
         :param df_events: pandas DataFrame with column labels matching QuadrantDivider dimension_ref values.
         :return: A dictionary where each key is a Quadrant ID and the value is a NumPy array of boolean values
-        for each event (True is inside gate).
+            for each event (True is inside gate).
         """
         results = {}
 
