@@ -42,13 +42,13 @@ def _estimate_cpu_count_for_workload(sample_count, total_event_count):
 
     # But workload is just the total number of values in the array for all samples.
     # Each value is 64-bit double, so multiply by 8 bytes for total byte size
-    # AND we'll multiply by 4 because processing will almost certainly require
+    # AND we'll multiply by 5 because processing will almost certainly require
     # at least an additional copy for:
     #   +1 for preprocessed comp events
     #   +1 for preprocessed xform events
     #   +1 for carrying over parent populations
     #   +1 for space for the boolean results and other machinery.
-    workload_in_bytes = total_event_count * 8 * 4
+    workload_in_bytes = total_event_count * 8 * 5
 
     # Now, determine how many samples we can run while staying at or below 80% mem usage.
     # We'll assume equal distribution of events per sample...not the most accurate way,
