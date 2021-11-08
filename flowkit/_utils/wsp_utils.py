@@ -268,7 +268,8 @@ def _convert_wsp_gate(wsp_gate, comp_matrix, xform_lut, ignore_transforms=False)
         gate = copy.deepcopy(wsp_gate)
         gate.dimensions = new_dims
     elif isinstance(wsp_gate, WSPEllipsoidGate):
-        gate = copy.deepcopy(wsp_gate)
+        gate = wsp_gate.convert_to_ellipsoid_gate(xforms)
+        gate.dimensions = new_dims
     else:
         raise NotImplemented(
             "%s gates for FlowJo workspaces are not currently supported." % type(wsp_gate).__name__
