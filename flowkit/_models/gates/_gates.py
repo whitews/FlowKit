@@ -116,7 +116,7 @@ class PolygonGate(Gate):
 
         results = gate_utils.points_in_polygon(
             np.array(path_vertices, dtype=np.float64),
-            df_events[dim_ids_ordered]
+            df_events[dim_ids_ordered].values  # send a NumPy array and not a DataFrame
         )
 
         return results
@@ -184,7 +184,7 @@ class EllipsoidGate(Gate):
             self.covariance_matrix,
             self.coordinates,
             self.distance_square,
-            df_events[dim_ids_ordered]
+            df_events[dim_ids_ordered].values  # send a NumPy array and not a DataFrame
         )
 
         return results
