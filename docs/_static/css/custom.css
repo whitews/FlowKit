@@ -6,3 +6,35 @@ dl.method {
     margin-top: 27px;
     margin-left: 17px;
 }
+
+.autoclasstoc table {
+    border-collapse: collapse !important;
+    margin: 25px 0;
+    font-size: 0.9em;
+    font-family: sans-serif;
+    min-width: 400px;
+    border-left: none !important;
+    border-right: none !important;
+    box-shadow: none !important;
+}
+
+.autoclasstoc th, td {
+    padding: 12px 15px !important;
+    border-bottom: 1px solid #dddddd !important;
+    border-left: none !important;
+    border-right: none !important;
+}
+
+.autoclasstoc tbody tr {
+    border-bottom: 1px solid #dddddd !important;
+    border-left: none !important;
+    border-right: none !important;
+}
+
+.autoclasstoc tbody tr:first-of-type {
+    border-top: 2px solid #009879 !important;
+}
+
+.autoclasstoc tbody tr:last-of-type {
+    border-bottom: 2px solid #009879 !important;
+}

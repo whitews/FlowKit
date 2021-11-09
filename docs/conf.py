@@ -1,8 +1,10 @@
-# Configuration file for the Sphinx documentation builder.
-#
-# This file only contains a selection of the most common options. For a full
-# list see the documentation:
-# https://www.sphinx-doc.org/en/master/usage/configuration.html
+"""
+Configuration file for the Sphinx documentation builder.
+
+This file only contains a selection of the most common options. For a full
+list see the documentation:
+https://www.sphinx-doc.org/en/master/usage/configuration.html
+"""
 
 import os
 import sys
@@ -48,7 +50,21 @@ autodoc_member_order = 'bysource'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.autodoc'
+    'autoclasstoc',
+    'sphinx.ext.autodoc',
+    'sphinx.ext.autosummary'
+]
+
+autodoc_default_options = {
+    'members': True,
+    'private-members': False,
+    'inherited-members': True,
+    'undoc-members': True,
+    'exclude-members': '__weakref__'
+}
+
+autoclasstoc_sections = [
+        'public-methods'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
