@@ -4,6 +4,7 @@ Unit tests for plotting functions
 import copy
 import unittest
 from bokeh.plotting.figure import Figure as bk_Figure
+from bokeh.layouts import Column as bk_Column
 from matplotlib.pyplot import Figure as mpl_Figure
 import flowkit as fk
 
@@ -80,6 +81,23 @@ class PlotTestCase(unittest.TestCase):
         )
 
         self.assertIsInstance(p, bk_Figure)
+
+    def test_plot_sample_scatter_matrix(self):
+        sample = copy.deepcopy(test_sample)
+
+        # reduce # of events for plotting performance
+        sample.subsample_events(500)
+
+        xform_logicle = fk.transforms.LogicleTransform('logicle', param_t=10000, param_w=0.5, param_m=4.5, param_a=0)
+        sample.apply_transform(xform_logicle)
+
+        grid = sample.plot_scatter_matrix(
+            ['FL1-H', 'FL2-H', 'FL3-H'],
+            source='xform',
+            subsample=True
+        )
+
+        self.assertIsInstance(grid, bk_Column)
 
     def test_plot_gates(self):
         fks = fk.Session(copy.deepcopy(test_sample))

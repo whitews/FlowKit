@@ -1,14 +1,23 @@
-# Configuration file for the Sphinx documentation builder.
-#
-# This file only contains a selection of the most common options. For a full
-# list see the documentation:
-# https://www.sphinx-doc.org/en/master/usage/configuration.html
+"""
+Configuration file for the Sphinx documentation builder.
+
+This file only contains a selection of the most common options. For a full
+list see the documentation:
+https://www.sphinx-doc.org/en/master/usage/configuration.html
+"""
 
 import os
 import sys
 from unittest.mock import MagicMock
 
+# -- Path setup --------------------------------------------------------------
+
+# If extensions (or modules to document with autodoc) are in another directory,
+# add these directories to sys.path here. If the directory is relative to the
+# documentation root, use os.path.abspath to make it absolute, like shown here.
+
 on_rtd = os.environ.get('READTHEDOCS') == 'True'
+
 if on_rtd:
     sys.path.insert(0, os.path.abspath('..'))
 else:
@@ -21,19 +30,9 @@ class Mock(MagicMock):
         return MagicMock()
 
 
-MOCK_MODULES = ['MulticoreTSNE', 'flowkit._utils_c']
+# mock the C extension
+MOCK_MODULES = ['flowkit._utils_c']
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
-
-# -- Path setup --------------------------------------------------------------
-
-# If extensions (or modules to document with autodoc) are in another directory,
-# add these directories to sys.path here. If the directory is relative to the
-# documentation root, use os.path.abspath to make it absolute, like shown here.
-#
-# import os
-# import sys
-# sys.path.insert(0, os.path.abspath('.'))
-
 
 # -- Project information -----------------------------------------------------
 
@@ -51,7 +50,21 @@ autodoc_member_order = 'bysource'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.autodoc'
+    'autoclasstoc',
+    'sphinx.ext.autodoc',
+    'sphinx.ext.autosummary'
+]
+
+autodoc_default_options = {
+    'members': True,
+    'private-members': False,
+    'inherited-members': True,
+    'undoc-members': True,
+    'exclude-members': '__weakref__'
+}
+
+autoclasstoc_sections = [
+        'public-methods'
 ]
 
 # Add any paths that contain templates here, relative to this directory.

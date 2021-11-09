@@ -460,11 +460,10 @@ class Sample(object):
             matrix has been applied.
         """
         if self._comp_events is None:
-            warnings.warn(
-                "No compensation has been applied, call 'compensate' method first.",
-                UserWarning
+            raise AttributeError(
+                "Compensated events were requested but do not exist.\n"
+                "Call a apply_compensation method prior to retrieving compensated events."
             )
-            return None
 
         if subsample:
             return self._comp_events[self.subsample_indices]
@@ -482,11 +481,10 @@ class Sample(object):
             has been applied.
         """
         if self._transformed_events is None:
-            warnings.warn(
-                "No transform has been applied, call a transform method first.",
-                UserWarning
+            raise AttributeError(
+                "Transformed events were requested but do not exist.\n"
+                "Call a transform method prior to retrieving transformed events."
             )
-            return None
 
         if subsample:
             return self._transformed_events[self.subsample_indices]
@@ -811,14 +809,6 @@ class Sample(object):
             be used with some padding to keep events off the edge of the plot.
         :return: A Bokeh Figure object containing the interactive scatter plot.
         """
-        # First, sanity check on requested source type
-        if source == 'xform' and self._transformed_events is None:
-            raise AttributeError(
-                "Transformed events were requested but do not exist.\n"
-                "Have you called a transform method? \n"
-                "Or, maybe you meant to plot the non-transformed events? If so, use the source='raw' option."
-            )
-
         x_index = self.get_channel_index(x_label_or_number)
         y_index = self.get_channel_index(y_label_or_number)
 
@@ -854,9 +844,9 @@ class Sample(object):
 
     def plot_scatter_matrix(
             self,
+            channel_labels_or_numbers=None,
             source='xform',
             subsample=True,
-            channel_labels_or_numbers=None,
             color_density=False,
             plot_height=256,
             plot_width=256
@@ -865,14 +855,14 @@ class Sample(object):
         Returns an interactive scatter plot matrix for all channel combinations
         except for the Time channel.
 
+        :param channel_labels_or_numbers: List of channel PnN labels or channel
+            numbers to use for the scatter plot matrix. If None, then all
+            channels will be plotted (except Time).
         :param source: 'raw', 'comp', 'xform' for whether the raw, compensated
             or transformed events are used for plotting
         :param subsample: Whether to use all events for plotting or just the
             sub-sampled events. Default is True (sub-sampled events). Plotting
             sub-sampled events is be much faster.
-        :param channel_labels_or_numbers: List of channel PnN labels or channel
-            numbers to use for the scatter plot matrix. If None, then all
-            channels will be plotted (except Time).
         :param color_density: Whether to color the events by density, similar
             to a heat map. Default is False.
         :param plot_height: Height of plot in pixels (screen units)

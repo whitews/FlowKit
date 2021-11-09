@@ -1,1 +1,4 @@
-__version__ = "0.8.1"
+"""
+FlowKit version
+"""
+__version__ = "0.8.2"

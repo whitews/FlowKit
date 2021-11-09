@@ -226,20 +226,12 @@ class SampleTestCase(unittest.TestCase):
     def test_get_compensated_events_if_no_comp(self):
         sample = test_comp_sample_uncomp
 
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore')
-            comp_events = sample.get_events(source='comp')
+        self.assertRaises(AttributeError, sample.get_events, source='comp')
 
-        self.assertIsNone(comp_events)
-
-    def test_get_transformed_events_if_no_xform(self):
+    def test_get_transformed_events_if_no_xform_raises(self):
         sample = test_comp_sample_uncomp
 
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore')
-            xform_events = sample.get_events(source='xform')
-
-        self.assertIsNone(xform_events)
+        self.assertRaises(AttributeError, sample.get_events, source='xform')
 
     @staticmethod
     def test_get_transformed_events_exclude_scatter():

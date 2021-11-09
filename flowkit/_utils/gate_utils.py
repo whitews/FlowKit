@@ -22,9 +22,9 @@ def points_in_ellipsoid(
         the size of the ellipsoid. The distance square parameter is conceptually
         similar to the number of standard deviations representing the boundary
         for an n-dimensional distribution of points.
-    :param points: Points to test for ellipsoid inclusion
+    :param points: NumPy array of data points to test for ellipsoid inclusion
 
-    :return: List of boolean values for each point. True is inside ellipsoid.
+    :return: NumPy 1-D array of boolean values for each point. True is inside ellipsoid.
     """
     # we only take points that have already been filtered by the correct
     # columns (i.e. those columns that are included in the ellipsoid
@@ -55,9 +55,9 @@ def points_in_polygon(poly_vertices, points):
     boundaries, including the presence of 'holes' created by boundary crosses.
 
     :param poly_vertices: Polygon vertices (NumPy array of 2-D points)
-    :param points: Points to test for polygon inclusion
+    :param points: NumPy array of data points to test for polygon inclusion
 
-    :return: List of boolean values for each point. True is inside polygon.
+    :return: NumPy 1-D array of boolean values for each point. True is inside polygon.
     """
     wind_counts = utils_c.points_in_polygon(poly_vertices, len(poly_vertices), points, len(points))
     return wind_counts % 2 != 0
