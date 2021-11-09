@@ -31,17 +31,15 @@ Features
 --------
 
 * Read FCS files, including versions 2.0, 3.0, and 3.1
-* Export FCS data as a new FCS 3.1 file, NumPy array, Pandas DataFrame, or CSV
+* Export FCS data as a new FCS 3.1 file, NumPy array, pandas DataFrame, or CSV
 * Compensation of FCS events
 * Automatically create compensation matrix from compensation bead files
-* Tranform FCS events in a variety of transforms used in the flow community (including logicle)
+* Transform FCS events in a variety of transforms used in the flow community (including logicle & FlowJo 10 biexponential)
 * Full support for the GatingML 2.0 specification
 * Limited support for importing FlowJo 10 workspace files. Workspace files are currently limited to the following features:
-  * Linear, logarithmic, and logicle transforms
-  * Polygon and rectangle gates
-
+    * Linear, logarithmic, bi-exponential, and logicle transforms
+    * Polygon, rectangle, ellipse, and quadrant gates
+    * Export a Session's sample group analysis as a FlowJo 10 workspace file
 * Programmatically create gating strategies including polygon, rectangle, range, ellipsoid, quadrant, and boolean gates
-* Easily retrieve gating results from a gating strategy as a Pandas DataFrame.
-* Optional, automatic filtering of negative scatter events and/or anomalous events
-* Visualize FCS data as histograms, contour plots, and interactive scatter plots
-
+* Retrieve gating results as a pandas DataFrame
+* Visualize FCM data as histograms, contour plots, and interactive scatter plots

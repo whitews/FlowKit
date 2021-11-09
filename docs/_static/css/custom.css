@@ -2,6 +2,10 @@ div.body li {
     line-height: 1.5em;
 }
 
+#features p, #features li {
+    line-height: 1.4em;
+}
+
 dl.method {
     margin-top: 27px;
     margin-left: 17px;
