@@ -8,7 +8,14 @@ import os
 import sys
 from unittest.mock import MagicMock
 
+# -- Path setup --------------------------------------------------------------
+
+# If extensions (or modules to document with autodoc) are in another directory,
+# add these directories to sys.path here. If the directory is relative to the
+# documentation root, use os.path.abspath to make it absolute, like shown here.
+
 on_rtd = os.environ.get('READTHEDOCS') == 'True'
+
 if on_rtd:
     sys.path.insert(0, os.path.abspath('..'))
 else:
@@ -21,19 +28,9 @@ class Mock(MagicMock):
         return MagicMock()
 
 
-MOCK_MODULES = ['MulticoreTSNE', 'flowkit._utils_c']
+# mock the C extension
+MOCK_MODULES = ['flowkit._utils_c']
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
-
-# -- Path setup --------------------------------------------------------------
-
-# If extensions (or modules to document with autodoc) are in another directory,
-# add these directories to sys.path here. If the directory is relative to the
-# documentation root, use os.path.abspath to make it absolute, like shown here.
-#
-# import os
-# import sys
-# sys.path.insert(0, os.path.abspath('.'))
-
 
 # -- Project information -----------------------------------------------------
 
