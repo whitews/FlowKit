@@ -18,6 +18,7 @@
   * [Tutorials](#tutorials)
   * [Advanced Examples](#advanced-examples)
 * [Contributing](#contributing)
+* [Cite FlowKit](#cite-flowkit)
 * [Projects & Research Using FlowKit](#projects--research-using-flowkit)
 
 ## Overview
@@ -141,6 +142,10 @@ Below are more advanced and practical examples for using FlowKit. If you have an
 Want to get involved in the development of FlowKit? 
 
 [Read our CONTRIBUTING guidelines](https://github.com/whitews/FlowKit/blob/master/CONTRIBUTING.md)
+
+## Cite FlowKit
+
+[White, S., Quinn, J., Enzor, J., Staats, J., Mosier, S. M., Almarode, J., Denny, T. N., Weinhold, K. J., Ferrari, G., & Chan, C. (2021). FlowKit: A Python toolkit for integrated manual and automated cytometry analysis workflows. Frontiers in Immunology, 12. https://doi.org/10.3389/fimmu.2021.768541](https://www.frontiersin.org/articles/10.3389/fimmu.2021.768541/full)
 
 ## Projects & Research Using FlowKit 
 
