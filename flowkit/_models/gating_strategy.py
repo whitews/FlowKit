@@ -122,7 +122,7 @@ class GatingStrategy(object):
             parent_child_nodes = anytree.search.findall_by_attr(parent_node, gate.gate_name, maxlevel=1)
             if len(parent_child_nodes) > 0:
                 raise ValueError(
-                    "A gate already exists matching gate name %s and the specified gate path" % gate.gate_name
+                    """A gate already exists matching gate name "%s" and the specified gate path""" % gate.gate_name
                 )
 
         node = anytree.Node(gate.gate_name, parent=parent_node, gate=gate)
