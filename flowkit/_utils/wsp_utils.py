@@ -6,7 +6,7 @@ import datetime
 import re
 import numpy as np
 from lxml import etree
-from .sample_utils import FCS_STANDARD_KEYWORDS
+from .fcs_keywords import FCS_STANDARD_KEYWORDS
 from .xml_utils import find_attribute_value, _get_xml_type
 from .._models.dimension import Dimension
 # noinspection PyProtectedMember
