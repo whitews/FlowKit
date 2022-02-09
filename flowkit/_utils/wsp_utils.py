@@ -180,7 +180,7 @@ def _parse_wsp_transforms(transforms_el, transform_ns, data_type_ns):
         elif xform_type == 'fasinh':
             # FlowJo's implementation of fasinh is slightly different from GML,
             # and uses an additional 'length' scale factor. However, this scaling
-            # doesn't seem to affect the results and we can use the regular
+            # doesn't seem to affect the results, and we can use the regular
             # GML version of asinh. The xform_el also contains other
             # unnecessary parameters: 'length', 'maxRange', and 'W'
             param_t = find_attribute_value(xform_el, transform_ns, 'T')
@@ -314,7 +314,7 @@ def _recurse_wsp_sub_populations(sub_pop_el, gate_path, gating_ns, data_type_ns)
             data_type_ns
         )
 
-        # replace ID and parent ID with population names, but save the originals
+        # replace ID and parent ID with population names, but save the originals,
         # so we can re-create the correct hierarchy later.
         # NOTE: Some wsp files have the ID as an attribute of the GatingML-style sub-element,
         #       though it isn't always the case. However, it seems the ID is reliably included
@@ -363,7 +363,7 @@ def _parse_wsp_groups(group_node_els, ns_map, gating_ns, data_type_ns):
 
         group_root_sub_pop_el = group_node_el.find('Subpopulations', ns_map)
 
-        # ignore groups with no sub-populations
+        # ignore groups with no subpopulations
         if group_root_sub_pop_el is not None:
             group_gates = _recurse_wsp_sub_populations(
                 group_root_sub_pop_el,
@@ -396,7 +396,7 @@ def _parse_wsp_samples(sample_els, ns_map, gating_ns, transform_ns, data_type_ns
         # parse spilloverMatrix elements
         sample_comp = _parse_wsp_compensation(sample_el, transform_ns, data_type_ns)
 
-        # FlowJo WSP gates are nested so we'll have to do a recursive search from the root
+        # FlowJo WSP gates are nested, so we'll have to do a recursive search from the root
         # Sub-populations node
         sample_root_sub_pop_el = sample_node_el.find('Subpopulations', ns_map)
 
@@ -464,7 +464,7 @@ def parse_wsp(workspace_file_or_path, ignore_transforms=False):
     sample_list_el = root_xml.find('SampleList', ns_map)
     sample_els = sample_list_el.findall('Sample', ns_map)
 
-    # Find all group gates before looking a the custom sample gates.
+    # Find all group gates before looking at the custom sample gates.
     # Custom sample gates are defined in the SampleList branch and
     # are indicated by having an empty string for the owningGroup.
     # Only 1 custom sample gate can exist per sample, regardless
@@ -728,7 +728,7 @@ def _add_group_node_to_wsp(parent_el, group_name, sample_id_list):
 
 
 def _recurse_add_sub_populations(parent_el, gate_id, gate_path, gating_strategy, gate_fj_id_lut, comp_prefix, ns_map):
-    # first, add given gate to parent XML element inside it's own Population element
+    # first, add given gate to parent XML element inside its own Population element
     pop_el = etree.SubElement(parent_el, "Population")
     pop_el.set('name', gate_id)
     pop_el.set('annotation', "")
@@ -737,7 +737,7 @@ def _recurse_add_sub_populations(parent_el, gate_id, gate_path, gating_strategy,
     # Lookup the gate's FJ ID
     fj_id = gate_fj_id_lut[(gate_id, tuple(gate_path))]
 
-    # Determine if gate has a parent gate & lookup it's FJ ID
+    # Determine if gate has a parent gate & lookup its FJ ID
     if len(gate_path) > 1:
         # gate has a true parent gate
         parent_gate_id = gate_path[-1]
@@ -802,7 +802,7 @@ def _add_sample_node_to_wsp(parent_el, sample_name, sample_id, gating_strategy, 
     # need to find a matching compensation to add the correct comp prefix to parameter labels
     comp_ids = gating_strategy.comp_matrices.keys()
 
-    # there really shouldn't be more than 1 compensation matrix and we only support 1 for now
+    # there really shouldn't be more than 1 compensation matrix, and we only support 1 for now
     comp_prefix = ''
     for comp_id in comp_ids:
         if comp_id in comp_prefix_lut:

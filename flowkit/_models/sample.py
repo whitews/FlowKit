@@ -27,7 +27,7 @@ class Sample(object):
     Represents a single FCS sample from an FCS file, NumPy array or pandas
     DataFrame.
 
-    For Sample plot methods, pay attention the the defaults for the subsample
+    For Sample plot methods, pay attention to the defaults for the subsample
     arguments, as most will use the sub-sampled events by default for better
     performance. For compensation and transformation routines, all events are
     always processed.
@@ -236,7 +236,7 @@ class Sample(object):
         # but should not be scaled by any gain value present in PnG.
         # It seems common for cytometers to include a gain value for the
         # time channel that matches the fluoro channels. Not sure why
-        # they do this but it makes no sense to have an amplifier gain
+        # they do this, but it makes no sense to have an amplifier gain
         # on the time data. Here, we set any time gain to 1.0.
         if self.time_index is not None:
             channel_gain[self.time_index] = 1.0
@@ -549,7 +549,7 @@ class Sample(object):
     def get_channel_number_by_label(self, label):
         """
         Returns the channel number for the given PnN label. Note, this is the
-        channel number as defined in the FCS data (not the channel index), so
+        channel number, as defined in the FCS data (not the channel index), so
         the 1st channel's number is 1 (not 0).
 
         :param label: PnN label of a channel
@@ -587,7 +587,7 @@ class Sample(object):
         Note: This method returns the array directly, not a copy of the array. Be careful if you
         are planning to modify returned event data, and make a copy of the array when appropriate.
 
-        :param channel_index: Channel index for which data is returned
+        :param channel_index: channel index for which data is returned
         :param source: 'raw', 'comp', 'xform' for whether the raw, compensated
             or transformed events will be returned
         :param subsample: Whether to return all events or just the sub-sampled
@@ -637,12 +637,12 @@ class Sample(object):
         Applies given transform to Sample events, and overwrites the `transform` attribute.
         By default, only the fluorescent channels are transformed. For fully customized transformations
         per channel, the `transform` can be specified as a dictionary mapping PnN labels to an instance
-        of the Transform sub-class. If a dictionary of transforms is specified, the `include_scatter`
+        of the Transform subclass. If a dictionary of transforms is specified, the `include_scatter`
         option is ignored and only the channels explicitly included in the transform dictionary will
         be transformed.
 
-        :param transform: an instance of a Transform sub-class or a dictionary where the keys correspond
-            to the PnN labels and the value is an instance of a Transform sub-class.
+        :param transform: an instance of a Transform subclass or a dictionary where the keys correspond
+            to the PnN labels and the value is an instance of a Transform subclass.
         :param include_scatter: Whether to transform the scatter channel in addition to the
             fluorescent channels. Default is False.
         """
@@ -710,8 +710,8 @@ class Sample(object):
         :param source: 'raw', 'comp', 'xform' for whether the raw, compensated
             or transformed events are used for plotting
         :param subsample: Whether to use all events for plotting or just the
-            sub-sampled events. Default is True (sub-sampled events). It is
-            not recommended to run with all events, as the Kernel Density
+            sub-sampled events. Default is True (sub-sampled events). Running
+            with all events is not recommended, as the Kernel Density
             Estimation is computationally demanding.
         :param plot_contour: Whether to display the contour lines. Default is True.
         :param plot_events: Whether to display the event data points in
@@ -862,7 +862,7 @@ class Sample(object):
             or transformed events are used for plotting
         :param subsample: Whether to use all events for plotting or just the
             sub-sampled events. Default is True (sub-sampled events). Plotting
-            sub-sampled events is be much faster.
+            sub-sampled events is much faster.
         :param color_density: Whether to color the events by density, similar
             to a heat map. Default is False.
         :param plot_height: Height of plot in pixels (screen units)
