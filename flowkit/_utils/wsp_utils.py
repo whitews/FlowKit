@@ -202,6 +202,22 @@ def _parse_wsp_transforms(transforms_el, transform_ns, data_type_ns):
     return xforms_lut
 
 
+def _parse_wsp_keywords(keywords_el):
+    # get all children, each is a 'Keyword' element with a 'name' & 'value' attribute
+    keyword_els = keywords_el.getchildren()
+
+    # there should be one transform per channel, use the channel names to create a LUT
+    keywords_lut = {}
+
+    for keyword_el in keyword_els:
+        keyword_name = keyword_el.attrib['name']
+        keyword_value = keyword_el.attrib['value']
+
+        keywords_lut[keyword_name] = keyword_value
+
+    return keywords_lut
+
+
 def _convert_wsp_gate(wsp_gate, comp_matrix, xform_lut, ignore_transforms=False):
     new_dims = []
     xforms = []
@@ -385,6 +401,7 @@ def _parse_wsp_samples(sample_els, ns_map, gating_ns, transform_ns, data_type_ns
 
     for sample_el in sample_els:
         transforms_el = sample_el.find('Transformations', ns_map)
+        keywords_el = sample_el.find('Keywords', ns_map)
         sample_node_el = sample_el.find('SampleNode', ns_map)
         sample_name = sample_node_el.attrib['name']
         sample_id = sample_node_el.attrib['sampleID']
@@ -392,6 +409,10 @@ def _parse_wsp_samples(sample_els, ns_map, gating_ns, transform_ns, data_type_ns
         # It appears there is only a single set of xforms per sample, one for each channel.
         # And, the xforms have no IDs. We'll extract it and give it IDs based on ???
         sample_xform_lut = _parse_wsp_transforms(transforms_el, transform_ns, data_type_ns)
+
+        # Parse sample keywords. Some keywords may be present in the WSP file that are not
+        # in the FCS metadata. FJ allows adding custom keywords for samples.
+        sample_keywords_lut = _parse_wsp_keywords(keywords_el)
 
         # parse spilloverMatrix elements
         sample_comp = _parse_wsp_compensation(sample_el, transform_ns, data_type_ns)
@@ -417,6 +438,7 @@ def _parse_wsp_samples(sample_els, ns_map, gating_ns, transform_ns, data_type_ns
             'custom_gate_ids': set(),
             'custom_gates': [],
             'transforms': sample_xform_lut,
+            'keywords': sample_keywords_lut,
             'comp': sample_comp
         }
 
@@ -562,6 +584,45 @@ def parse_wsp(workspace_file_or_path, ignore_transforms=False):
             }
 
     return wsp_dict
+
+
+def extract_wsp_sample_data(workspace_file_or_path):
+    """
+    Parses a FlowJo 10 workspace file (.wsp) and extracts Sample metadata (keywords)
+    into a Python dictionary with the following structure:
+
+        wsp_sample_dict[sample_name] = {
+            'keywords': {gate_id: gate_instance, ...},
+            'transforms': transforms_list,
+            'compensation': matrix
+        }
+
+    :param workspace_file_or_path: A FlowJo .wsp file or file path
+    :return: dict
+    """
+    doc_type, root_xml, gating_ns, data_type_ns, transform_ns = _get_xml_type(workspace_file_or_path)
+
+    # first, find 1st level SampleList element, which contain 'Sample' elements
+    ns_map = root_xml.nsmap
+    sample_list_el = root_xml.find('SampleList', ns_map)
+    sample_els = sample_list_el.findall('Sample', ns_map)
+
+    # Now parse the Sample elements in SampleList
+    raw_wsp_samples = _parse_wsp_samples(sample_els, ns_map, gating_ns, transform_ns, data_type_ns)
+
+    # re-org the dictionary to be more user-friendly
+    # the keys from above are WSP sample ID values that aren't useful
+    # We'll iterate over the dicts and use the sample name for the new key
+    # and only save out the
+    wsp_samples = {}
+    for value_dict in raw_wsp_samples.values():
+        wsp_samples[value_dict['sample_name']] = {
+            'keywords': value_dict['keywords'],
+            'comp': value_dict['comp'],
+            'transforms': value_dict['transforms']
+        }
+
+    return wsp_samples
 
 
 def _add_matrix_to_wsp(parent_el, prefix, matrix, ns_map):
