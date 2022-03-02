@@ -9,6 +9,7 @@ FCS keyword strings
 # most cytometers use all uppercase for keyword strings. FlowKit follows
 # the convention used in FlowIO and internally stores and references all
 # FCS keywords as lowercase for more convenient typing by developers.
+# noinspection SpellCheckingInspection
 FCS_STANDARD_KEYWORDS = [
     'beginanalysis',
     'begindata',
@@ -31,7 +32,7 @@ FCS_STANDARD_KEYWORDS = [
     'csvbits',
     'cyt',
     'cytsn',
-    'data',
+    'date',
     'etim',
     'exp',
     'fil',
