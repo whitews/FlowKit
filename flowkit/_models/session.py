@@ -135,6 +135,17 @@ class Session(object):
 
         self.add_samples(fcs_samples)
 
+    def __repr__(self):
+        sample_count = len(self.sample_lut)
+        loaded_sample_count = len([k for k, v in self.sample_lut.items() if isinstance(v, Sample)])
+        sample_group_count = len(self._sample_group_lut)
+
+        return (
+            f'{self.__class__.__name__}('
+            f'{sample_count} samples [{loaded_sample_count} loaded], '
+            f'{sample_group_count} sample groups)'
+        )
+
     def add_sample_group(self, group_name, gating_strategy=None):
         """
         Create a new sample group to the session. The group name must be unique to the session.
