@@ -4,7 +4,6 @@ Unit tests for string representations
 import unittest
 import flowkit as fk
 from . import gating_strategy_prog_gate_tests as prog_test_data
-# import comp_matrix_01, logicle_xform1, hyperlog_xform1, poly1_gate
 
 data1_fcs_path = 'examples/data/gate_ref/data1.fcs'
 data1_sample = fk.Sample(data1_fcs_path)
@@ -165,3 +164,12 @@ class StringReprTestCase(unittest.TestCase):
         gs_string = "GatingStrategy(3 gates, 2 transforms, 1 compensations)"
 
         self.assertEqual(repr(gs), gs_string)
+
+    def test_session_repr(self):
+        wsp_path = "examples/data/8_color_data_set/8_color_ICS_simple.wsp"
+        session = fk.Session()
+        session.import_flowjo_workspace(wsp_path, ignore_missing_files=True)
+
+        session_string = "Session(3 samples [0 loaded], 3 sample groups)"
+
+        self.assertEqual(repr(session), session_string)
