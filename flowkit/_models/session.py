@@ -354,7 +354,7 @@ class Session(object):
         Add a Gate instance to a sample group in the session. Gates will be added to
         the 'default' sample group by default.
 
-        :param gate: an instance of a Gate sub-class
+        :param gate: an instance of a Gate subclass
         :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
             Required if gate.gate_name and gate.parent combination is ambiguous
         :param group_name: a text string representing the sample group
@@ -374,7 +374,7 @@ class Session(object):
         Add a Transform instance to a sample group in the session. Transforms will be added to
         the 'default' sample group by default.
 
-        :param transform: an instance of a Transform sub-class
+        :param transform: an instance of a Transform subclass
         :param group_name: a text string representing the sample group
         :return: None
         """
@@ -407,7 +407,7 @@ class Session(object):
 
         :param group_name: a text string representing the sample group
         :param transform_id: a text string representing a Transform ID
-        :return: an instance of a Transform sub-class
+        :return: an instance of a Transform subclass
         """
         group = self._sample_group_lut[group_name]
         gating_strategy = group['template']
@@ -506,7 +506,7 @@ class Session(object):
 
         :param group_name: a text string representing the sample group
         :param sample_id: a text string representing a Sample instance
-        :return: list of Gate sub-class instances
+        :return: list of Gate subclass instances
         """
         group = self._sample_group_lut[group_name]
         gating_strategy = group['samples'][sample_id]
@@ -539,7 +539,7 @@ class Session(object):
 
         :param group_name: a text string representing the sample group
         :param sample_id: a text string representing a Sample instance
-        :return: list of Transform sub-class instances
+        :return: list of Transform subclass instances
         """
         group = self._sample_group_lut[group_name]
         gating_strategy = group['samples'][sample_id]
@@ -716,7 +716,7 @@ class Session(object):
         :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
             Required if gate_name is ambiguous
         :param matrix: an instance of the Matrix class
-        :param transform: an instance of a Transform sub-class
+        :param transform: an instance of a Transform subclass
         :return: pandas DataFrame containing only the events within the specified gate
         """
         sample = self.get_sample(sample_id)
