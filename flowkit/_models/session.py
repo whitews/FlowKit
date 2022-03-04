@@ -228,8 +228,8 @@ class Session(object):
 
     def add_samples(self, fcs_samples, group_name=None):
         """
-        Adds FCS samples to the session. All added samples will be added to the 'default' sample group unless
-        an existing sample group is specified for the group_name.
+        Adds FCS samples to the session. All added samples will be added to the 'default' sample group.
+        The given samples will also be added to the provided group_name (if specified and the group exists).
 
         :param fcs_samples: str or list. If given a string, it can be a directory path or a file path.
             If a directory, any .fcs files in the directory will be loaded. If a list, then it must
