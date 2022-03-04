@@ -422,19 +422,20 @@ def _parse_wsp_samples(sample_els, ns_map, gating_ns, transform_ns, data_type_ns
         sample_root_sub_pop_el = sample_node_el.find('Subpopulations', ns_map)
 
         if sample_root_sub_pop_el is None:
-            continue
-
-        sample_gates = _recurse_wsp_sub_populations(
-            sample_root_sub_pop_el,
-            None,  # starting at root, so no gate path
-            gating_ns,
-            data_type_ns
-        )
+            sample_gates = []
+        else:
+            sample_gates = _recurse_wsp_sub_populations(
+                sample_root_sub_pop_el,
+                None,  # starting at root, so no gate path
+                gating_ns,
+                data_type_ns
+            )
 
         # sample gate LUT will store everything we need to convert sample gates,
         # including any custom gates (ones with empty string owning groups).
         wsp_samples[sample_id] = {
             'sample_name': sample_name,
+            'sample_gates': sample_gates,
             'custom_gate_ids': set(),
             'custom_gates': [],
             'transforms': sample_xform_lut,
@@ -510,6 +511,11 @@ def parse_wsp(workspace_file_or_path, ignore_transforms=False):
         for group_sample_id in group_dict['samples']:
             sample_dict = wsp_samples[group_sample_id]
             sample_name = sample_dict['sample_name']
+
+            # check the sample's sample_gates. If it is empty, then the
+            # sample belongs to a group, but it has no gate hierarchy.
+            if len(sample_dict['sample_gates']) == 0:
+                continue
 
             group_sample_gate_names = []
             group_sample_gates = []
