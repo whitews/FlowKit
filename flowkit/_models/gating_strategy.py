@@ -319,6 +319,12 @@ class GatingStrategy(object):
 
         return gates
 
+    def get_max_depth(self):
+        """
+        Returns the max depth of the gating hierarchy
+        """
+        return self._gate_tree.height
+
     def get_gate_hierarchy(self, output='ascii', **kwargs):
         """
         Retrieve the hierarchy of gates in the gating strategy in several formats, including text,
