@@ -146,6 +146,40 @@ class Session(object):
             f'{sample_group_count} sample groups)'
         )
 
+    def summary(self):
+        """
+        Retrieve a summary of Session information, including a list of
+        sample groups defined, along with the sample and gate counts
+        for those sample groups.
+
+        :return: Pandas DataFrame containing Session summary information
+        """
+        sg_list = []
+
+        for group_name, group_dict in self._sample_group_lut.items():
+            template_gs = group_dict['template']
+
+            loaded_sample_ids = self.get_group_sample_ids(group_name, loaded_only=True)
+            gate_ids = template_gs.get_gate_ids()
+            gate_depth = template_gs.get_max_depth()
+
+
+            sg_info = {
+                'group_name': group_name,
+                'samples': len(group_dict['samples']),
+                'loaded_samples': len(loaded_sample_ids),
+                'gates': len(gate_ids),
+                'max_gate_depth': gate_depth
+            }
+
+            sg_list.append(sg_info)
+
+        df = pd.DataFrame(sg_list)
+        df.set_index('group_name', inplace=True)
+
+        return df
+
+
     def add_sample_group(self, group_name, gating_strategy=None):
         """
         Create a new sample group to the session. The group name must be unique to the session.
