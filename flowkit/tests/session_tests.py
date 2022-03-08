@@ -303,6 +303,22 @@ class SessionTestCase(unittest.TestCase):
 
         self.assertListEqual(s_sample_ids, [])
 
+    def test_session_summary(self):
+        wsp_path = "examples/data/8_color_data_set/8_color_ICS.wsp"
+        sample_grp = 'DEN'
+
+        fks = Session()
+        fks.import_flowjo_workspace(wsp_path, ignore_missing_files=True)
+
+        fks_summary = fks.summary()
+
+        self.assertIsInstance(fks_summary, pd.DataFrame)
+
+        group_stats = fks_summary.loc[sample_grp]
+        self.assertEqual(group_stats.max_gate_depth, 6)
+        self.assertEqual(group_stats.samples, 3)
+        self.assertEqual(group_stats.loaded_samples, 0)
+
     def test_analyze_samples_multiproc(self):
         wsp_path = "examples/data/8_color_data_set/8_color_ICS_simple.wsp"
         sample_grp = 'DEN'
