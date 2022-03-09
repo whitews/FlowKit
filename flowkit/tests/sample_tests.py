@@ -26,6 +26,8 @@ xform_biex2 = transforms.WSPBiexTransform('neg1', width=-100.0, negative=1.0)
 fcs_file_path = "examples/data/test_comp_example.fcs"
 comp_file_path = "examples/data/comp_complete_example.csv"
 
+fcs_2d_file_path = "examples/data/test_data_2d_01.fcs"
+
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
     test_comp_sample = Sample(
@@ -45,16 +47,13 @@ class SampleTestCase(unittest.TestCase):
     """Tests for loading FCS files as Sample objects"""
     def test_load_from_fcs_file_path(self):
         """Test creating Sample object from an FCS file path"""
-        fcs_file_path = "examples/data/test_data_2d_01.fcs"
-
-        sample = Sample(fcs_path_or_data=fcs_file_path)
+        sample = Sample(fcs_path_or_data=fcs_2d_file_path)
 
         self.assertIsInstance(sample, Sample)
 
     def test_load_from_flowio_flowdata_object(self):
         """Test creating Sample object from an FCS file path"""
-        fcs_file_path = "examples/data/test_data_2d_01.fcs"
-        flow_data = flowio.FlowData(fcs_file_path)
+        flow_data = flowio.FlowData(fcs_2d_file_path)
 
         self.assertIsInstance(flow_data, flowio.FlowData)
 
@@ -64,16 +63,14 @@ class SampleTestCase(unittest.TestCase):
 
     def test_load_from_pathlib(self):
         """Test creating Sample object from a pathlib Path object"""
-        fcs_file_path = "examples/data/test_data_2d_01.fcs"
-        path = Path(fcs_file_path)
+        path = Path(fcs_2d_file_path)
         sample = Sample(fcs_path_or_data=path)
 
         self.assertIsInstance(sample, Sample)
 
     def test_load_from_io_base(self):
         """Test creating Sample object from a IOBase object"""
-        fcs_file_path = "examples/data/test_data_2d_01.fcs"
-        f = open(fcs_file_path, 'rb')
+        f = open(fcs_2d_file_path, 'rb')
         sample = Sample(fcs_path_or_data=f)
         f.close()
 
@@ -81,6 +78,7 @@ class SampleTestCase(unittest.TestCase):
 
     def test_load_from_numpy_array(self):
         npy_file_path = "examples/data/test_comp_example.npy"
+        # noinspection SpellCheckingInspection
         channels = [
             'FSC-A', 'FSC-W', 'SSC-A',
             'Ax488-A', 'PE-A', 'PE-TR-A',
@@ -135,9 +133,7 @@ class SampleTestCase(unittest.TestCase):
 
     def test_get_metadata(self):
         """Test Sample method get_metadata"""
-        fcs_file_path = "examples/data/test_data_2d_01.fcs"
-
-        sample = Sample(fcs_path_or_data=fcs_file_path)
+        sample = Sample(fcs_path_or_data=fcs_2d_file_path)
         meta = sample.get_metadata()
 
         self.assertEqual(len(meta), 20)
@@ -330,140 +326,10 @@ class SampleTestCase(unittest.TestCase):
         np.testing.assert_equal(s1_fl2, s2_fl2)
         np.testing.assert_raises(AssertionError, np.testing.assert_equal, s1_fl3, s2_fl3)
 
-    def test_export_as_fcs(self):
-        sample = test_comp_sample
-
-        sample.export("test_fcs_export.fcs", source='comp', directory="examples")
-
-        exported_fcs_file = "examples/test_fcs_export.fcs"
-        exported_sample = Sample(fcs_path_or_data=exported_fcs_file)
-        os.unlink(exported_fcs_file)
-
-        self.assertIsInstance(exported_sample, Sample)
-
-        # When the comp events are exported, they are saved as single precision (32-bit). We'll test the
-        # arrays with the original sample comp data converted to 32-bit float. The original sample data
-        # was also originally in 32-bit but the compensation calculation results in 64-bit data. Comparing
-        # both in single precision is then the most "correct" thing to do here.
-        np.testing.assert_array_equal(
-            sample._comp_events.astype(np.float32),
-            exported_sample._raw_events.astype(np.float32)
-        )
-
-    def test_export_fcs_as_orig_with_timestep(self):
-        # This test uses a file where the preprocessing makes the orig & raw events different.
-        # File 100715.fcs has a timestep value of 0.08.
-        # The purpose here is to verify that importing the exported file has the same raw events
-        # as the original file's raw events. Here we export the 'orig' events.
-        fcs_file_path = "examples/data/100715.fcs"
-
-        sample = Sample(fcs_path_or_data=fcs_file_path, cache_original_events=True)
-
-        sample.export("test_fcs_export.fcs", source='orig', directory="examples")
-
-        exported_fcs_file = "examples/test_fcs_export.fcs"
-        exported_sample = Sample(fcs_path_or_data=exported_fcs_file)
-        os.unlink(exported_fcs_file)
-
-        self.assertIsInstance(exported_sample, Sample)
-
-        # When the events are exported, they are saved as single precision (32-bit). We'll test the
-        # arrays with the original sample data converted to 32-bit float. The original sample data
-        # was also originally in 32-bit. Comparing both in single precision is then the most
-        # "correct" thing to do here.
-        np.testing.assert_array_equal(
-            sample._raw_events.astype(np.float32),
-            exported_sample._raw_events.astype(np.float32)
-        )
-
-    def test_export_fcs_as_orig_with_pne_log_raises_error(self):
-        # This test uses a file where some PnE values specify log scale
-        # FlowIO does not currently support creating FCS files with log scale PnE values
-        # Test that the Sample class raises a NotImplementedError for this case.
-        sample = Sample(fcs_path_or_data=data1_fcs_path, cache_original_events=True)
-
-        self.assertRaises(
-            NotImplementedError,
-            sample.export,
-            "test_fcs_export.fcs",
-            source='orig',
-            directory="examples"
-        )
-
-    def test_export_fcs_as_raw_with_gain(self):
-        # This test uses a file where the preprocessing makes the orig & raw events different.
-        # File data1.fcs has 2 channels that specify a gain value other than 1.0.
-        # The purpose here is to verify that importing the exported file has the same raw events
-        # as the original file's raw events.
-        sample = Sample(fcs_path_or_data=data1_fcs_path, cache_original_events=True)
-
-        sample.export("test_fcs_export.fcs", source='raw', directory="examples")
-
-        exported_fcs_file = "examples/test_fcs_export.fcs"
-        exported_sample = Sample(fcs_path_or_data=exported_fcs_file)
-        os.unlink(exported_fcs_file)
-
-        self.assertIsInstance(exported_sample, Sample)
-
-        # When the events are exported, they are saved as single precision (32-bit). We'll test the
-        # arrays with the original sample data converted to 32-bit float. The original sample data
-        # was also originally in 32-bit. Comparing both in single precision is then the most
-        # "correct" thing to do here.
-        np.testing.assert_array_equal(
-            sample._raw_events.astype(np.float32),
-            exported_sample._raw_events.astype(np.float32)
-        )
-
-    def test_export_fcs_as_raw(self):
-        # This test uses a file where the preprocessing makes the orig & raw events different.
-        # The purpose here is to verify that importing the exported file has the same raw events
-        # as the original file's raw events.
-        fcs_file_path = "examples/data/8_color_data_set/fcs_files/101_DEN084Y5_15_E01_008_clean.fcs"
-
-        sample = Sample(fcs_path_or_data=fcs_file_path)
-
-        sample.export("test_fcs_export.fcs", source='raw', directory="examples")
-
-        exported_fcs_file = "examples/test_fcs_export.fcs"
-        exported_sample = Sample(fcs_path_or_data=exported_fcs_file)
-        os.unlink(exported_fcs_file)
-
-        self.assertIsInstance(exported_sample, Sample)
-
-        # When the events are exported, they are saved as single precision (32-bit). We'll test the
-        # arrays with the original sample data converted to 32-bit float. The original sample data
-        # was also originally in 32-bit. Comparing both in single precision is then the most
-        # "correct" thing to do here.
-        np.testing.assert_array_equal(
-            sample._raw_events.astype(np.float32),
-            exported_sample._raw_events.astype(np.float32)
-        )
-
-    def test_export_as_csv(self):
-        sample = test_comp_sample
-
-        sample.export("test_fcs_export.csv", source='comp', directory="examples")
-
-        exported_csv_file = "examples/test_fcs_export.csv"
-        exported_df = pd.read_csv(exported_csv_file)
-        exported_sample = Sample(exported_df)
-        os.unlink(exported_csv_file)
-
-        self.assertIsInstance(exported_sample, Sample)
-
-        # When the comp events are exported, they are saved as single precision (32-bit). We'll test the
-        # arrays with the original sample comp data converted to 32-bit float. The original sample data
-        # was also originally in 32-bit but the compensation calculation results in 64-bit data. Comparing
-        # both in single precision is then the most "correct" thing to do here.
-        np.testing.assert_array_equal(
-            sample._comp_events.astype(np.float32),
-            exported_sample._raw_events.astype(np.float32)
-        )
-
     def test_filter_negative_scatter(self):
         # there are 2 negative SSC-A events in this file (of 65016 total events)
-        fcs_file_path = "examples/data/100715.fcs"
-        sample = Sample(fcs_path_or_data=fcs_file_path, subsample=50000)
+        sample_file_path = "examples/data/100715.fcs"
+        sample = Sample(fcs_path_or_data=sample_file_path, subsample=50000)
         sample.filter_negative_scatter(reapply_subsample=False)
 
         # using the default seed, the 2 negative events are in the subsample
@@ -475,21 +341,3 @@ class SampleTestCase(unittest.TestCase):
         self.assertEqual(len(common_idx), 0)
 
         self.assertEqual(sample.negative_scatter_indices.shape[0], 2)
-
-    def test_export_exclude_negative_scatter(self):
-        # there are 2 negative SSC-A events in this file (of 65016 total events)
-        fcs_file_path = "examples/data/100715.fcs"
-        sample = Sample(fcs_path_or_data=fcs_file_path)
-        sample.filter_negative_scatter()
-
-        neg_scatter_count = len(sample.negative_scatter_indices)
-
-        exported_fcs_file = "examples/test_fcs_export.fcs"
-        sample.export(exported_fcs_file, source='raw', exclude_neg_scatter=True)
-        exported_sample = Sample(exported_fcs_file)
-        os.unlink(exported_fcs_file)
-
-        orig_event_count = sample.event_count
-        exp_event_count = exported_sample.event_count
-
-        self.assertEqual(exp_event_count, orig_event_count - neg_scatter_count)
