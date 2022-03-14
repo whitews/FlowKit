@@ -81,7 +81,7 @@ above is required for correct Logicle and Hyperlog transformations.***
 
 Required Python dependencies:
 
-* [flowio](https://github.com/whitews/flowio) == 0.9.12
+* [flowio](https://github.com/whitews/flowio) == 0.9.14
 * [flowutils](https://github.com/whitews/flowutils) == 0.9.5
 * anytree >= 2.6
 * bokeh >= 1.4
@@ -114,7 +114,7 @@ python setup.py install
 
 ## Documentation
 
-The FlowKit API documentation is available [on ReadTheDocs here](https://flowkit.readthedocs.io/en/latest/?badge=latest). The tutorial notebooks in the examples directory are a great place to get started with FlowKit, and are linked below.
+The FlowKit API documentation is available [on ReadTheDocs here](https://flowkit.readthedocs.io/en/latest/?badge=latest). The tutorial notebooks in the `examples` directory are a great place to get started with FlowKit, and are linked below.
 If you have any questions about FlowKit, find any bugs, or feel something is missing from the tutorials below [please submit an issue to the GitHub repository here](https://github.com/whitews/FlowKit/issues/new/).
 
 ### Tutorials
