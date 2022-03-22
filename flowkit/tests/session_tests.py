@@ -333,4 +333,3 @@ class SessionTestCase(unittest.TestCase):
         gate_membership = fks.get_gate_membership(sample_grp, sample_id, gate_name)
 
         self.assertEqual(gate_membership.sum(), 133670)
-
