@@ -945,6 +945,71 @@ class Sample(object):
 
         return p
 
+    def _get_metadata_for_export(self, source, include_all=False):
+        metadata_dict = {}
+        ignore_keywords = ['timestep']
+
+        # If the original events were requested, need to make sure
+        # some metadata is included and has certain values. This
+        # ensures the events can be interpreted correctly.
+        # For non-orig sources, the event values have already been
+        # processed to account for the metadata.
+        if source == 'orig':
+            if 'timestep' in self.metadata and self.time_index is not None:
+                metadata_dict['TIMESTEP'] = self.metadata['timestep']
+
+            # Grab channel scale & gain values from self.channels
+            # This seems safer than
+            for _, channel_row in self.channels.iterrows():
+                chan_num = channel_row['channel_number']
+
+                gain_keyword = 'p%dg' % chan_num
+                gain_value = str(channel_row['png'])
+
+                scale_keyword = 'p%de' % chan_num
+                decades, log0 = channel_row['pne']
+
+                # in Python 3.6+, this seems safe to do
+                scale_value = ",".join([str(decades), str(log0)])
+
+                range_keyword = 'p%dr' % chan_num
+                range_value = str(channel_row['pnr'])
+
+                metadata_dict[gain_keyword] = gain_value
+                metadata_dict[scale_keyword] = scale_value
+                metadata_dict[range_keyword] = range_value
+
+                ignore_keywords.extend([gain_keyword, scale_keyword, range_keyword])
+        else:
+            # for 'raw', 'comp', or 'xform' the event values
+            for _, channel_row in self.channels.iterrows():
+                chan_num = channel_row['channel_number']
+
+                gain_keyword = 'p%dg' % chan_num
+                scale_keyword = 'p%de' % chan_num
+                range_keyword = 'p%dr' % chan_num
+
+                metadata_dict[gain_keyword] = '1.0'
+                metadata_dict[scale_keyword] = '0,0'
+                metadata_dict[range_keyword] = '262144'
+
+                ignore_keywords.extend([gain_keyword, scale_keyword, range_keyword])
+
+        # Certain metadata fields are set automatically in FlowIO,
+        # but FlowIO will ignore them if present, so it's fine to
+        # include them.
+        # However, we do want to avoid any of the above keywords that
+        # we had to set.
+        if include_all:
+            for k, v in self.metadata.items():
+                if k in ignore_keywords or k in metadata_dict:
+                    # keyword has already been added or isn't needed
+                    continue
+
+                metadata_dict[k] = v
+
+        return metadata_dict
+
     def export(
             self,
             filename,
@@ -953,6 +1018,7 @@ class Sample(object):
             exclude_flagged=False,
             exclude_normal=False,
             subsample=False,
+            include_metadata=False,
             directory=None
     ):
         """
@@ -969,6 +1035,9 @@ class Sample(object):
              the "bad" events (neg scatter and/or flagged events). Default is False.
         :param subsample: Whether to export all events or just the sub-sampled events.
             Default is False (all events).
+        :param include_metadata: Whether to include all key/value pairs in self.metadata in the output
+            FCS file. Only valid for .fcs file extension. If False, only the minimum amount of
+            metadata will be included in the output FCS file. Default is False.
         :param directory: Directory path where the exported file will be saved. If None, the file
             will be saved in the current working directory.
         :return: None
@@ -1026,13 +1095,15 @@ class Sample(object):
                 comments=''
             )
         elif ext == '.fcs':
+            metadata_dict = self._get_metadata_for_export(source=source, include_all=include_metadata)
+
             fh = open(output_path, 'wb')
 
             flowio.create_fcs(
+                fh,
                 events.flatten().tolist(),
                 channel_names=self.pnn_labels,
                 opt_channel_names=self.pns_labels,
-                file_handle=fh,
-                extra=extra_dict
+                metadata_dict=metadata_dict
             )
             fh.close()
