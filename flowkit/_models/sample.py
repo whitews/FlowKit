@@ -110,9 +110,9 @@ class Sample(object):
         elif isinstance(fcs_path_or_data, np.ndarray):
             tmp_file = TemporaryFile()
             flowio.create_fcs(
+                tmp_file,
                 fcs_path_or_data.flatten().tolist(),
-                channel_names=channel_labels,
-                file_handle=tmp_file
+                channel_names=channel_labels
             )
 
             flow_data = flowio.FlowData(tmp_file)
@@ -128,9 +128,9 @@ class Sample(object):
                 pns_labels = None
 
             flowio.create_fcs(
+                tmp_file,
                 fcs_path_or_data.values.flatten().tolist(),
                 channel_names=pnn_labels,
-                file_handle=tmp_file,
                 opt_channel_names=pns_labels
             )
 
