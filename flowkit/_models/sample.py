@@ -155,7 +155,7 @@ class Sample(object):
         self.time_index = None
 
         channel_gain = []
-        self.channel_lin_log = []
+        channel_lin_log = []
         channel_range = []
         self.metadata = flow_data.text
 
@@ -185,9 +185,9 @@ class Sample(object):
                 ]
                 if log0 == 0 and decades != 0:
                     log0 = 1.0  # FCS std states to use 1.0 for invalid 0 value
-                self.channel_lin_log.append((decades, log0))
+                channel_lin_log.append((decades, log0))
             else:
-                self.channel_lin_log.append((0.0, 0.0))
+                channel_lin_log.append((0.0, 0.0))
 
             if channel_label.lower()[:4] not in ['fsc-', 'ssc-', 'time']:
                 self.fluoro_indices.append(n - 1)
@@ -209,6 +209,7 @@ class Sample(object):
         self.channels['pnn'] = self.pnn_labels
         self.channels['pns'] = self.pns_labels
         self.channels['png'] = channel_gain
+        self.channels['pne'] = channel_lin_log
         self.channels['pnr'] = channel_range
 
         # Start processing the event data. First, we'll get the unprocessed events
@@ -245,7 +246,7 @@ class Sample(object):
             time_step = float(self.metadata['timestep'])
             raw_events[:, self.time_index] = raw_events[:, self.time_index] * time_step
 
-        for i, (decades, log0) in enumerate(self.channel_lin_log):
+        for i, (decades, log0) in enumerate(channel_lin_log):
             if decades > 0:
                 raw_events[:, i] = (10 ** (decades * raw_events[:, i] / channel_range[i])) * log0
 
@@ -1012,29 +1013,8 @@ class Sample(object):
             # then filter out the inverse normal indices
             idx = np.logical_and(idx, ~normal_idx)
 
-        extra_dict = {}
-
         events = self.get_events(source=source)
         events = events[idx, :]
-
-        if source == 'orig':
-            if 'timestep' in self.metadata and self.time_index is not None:
-                extra_dict['TIMESTEP'] = self.metadata['timestep']
-
-            # check for channel scale for each channel, log scale is not supported yet by FlowIO
-            for (decades, log0) in self.channel_lin_log:
-                if decades > 0:
-                    raise NotImplementedError(
-                        "Export of FCS files with original events containing PnE instructions "
-                        "for log scale is not yet supported"
-                    )
-
-            # check for channel gain values != 1.0
-            for _, channel_row in self.channels.iterrows():
-                gain_keyword = 'p%dg' % channel_row['channel_number']
-                gain_value = channel_row['png']
-                if gain_value != 1.0:
-                    extra_dict[gain_keyword] = gain_value
 
         # TODO: support exporting to HDF5 format, but as optional dependency/import
         if ext == '.csv':
