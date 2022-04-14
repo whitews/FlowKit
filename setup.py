@@ -19,7 +19,7 @@ dist.Distribution().fetch_build_eggs(['numpy>=1.19'])
 # this has to be imported here, after fetching the NumPy egg
 import numpy as np  # noqa: E402
 
-with open("README.md", "r") as fh:
+with open("README.md", "r", encoding='utf-8') as fh:
     long_description = fh.read()
 
 utils_extension = Extension(
