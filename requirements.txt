@@ -1,7 +1,7 @@
 anytree>=2.6
-bokeh>=1.4
+bokeh>=2,<3.0
 flowio==1.0.0
-flowutils==0.9.5
+flowutils==1.0.0b0
 lxml>=4.4
 matplotlib>=3.1
 networkx>=2.3
