@@ -1,0 +1,41 @@
+name: Build & test
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version: ["3.7", "3.8", "3.9", "3.10"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          ref: 'master'
+
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - run: pip install coverage
+      - run: pip install -r requirements.txt
+
+      - name: Run tests with coverage
+        run: |
+          coverage run --source flowkit --omit="flowkit/tests/*" run_tests.py
+          coverage xml
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v2
+        with:
+          files: coverage.xml
+          fail_ci_if_error: true
+          verbose: true
+
