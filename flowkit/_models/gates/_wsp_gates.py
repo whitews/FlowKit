@@ -5,7 +5,24 @@ import copy
 import numpy as np
 from ._base_gate import Gate
 from ..gates import EllipsoidGate
-from ..._utils import gate_utils, xml_utils
+from ..._utils import xml_utils
+
+
+def _rotate_point_around_point(point, cov_mat, center_point=(0, 0)):
+    """
+    Rotates given point around center_point
+
+    :param point: Coordinates of point to rotate
+    :param cov_mat: Covariance matrix for the rotation
+    :param center_point: Coordinates of the reference rotation point. Default is the origin (0, 0)
+
+    :return: Rotated point coordinates
+    """
+    point_translated = np.array([point[0] - center_point[0], point[1] - center_point[1]])
+    point_rot = np.dot(point_translated, cov_mat)
+    point_untranslated = point_rot + center_point
+
+    return point_untranslated
 
 
 class WSPEllipsoidGate(Gate):
@@ -150,8 +167,8 @@ class WSPEllipsoidGate(Gate):
         cos, sin = np.cos(theta_rad), np.sin(theta_rad)
         r = np.array(((cos, -sin), (sin, cos)))
 
-        rv1 = gate_utils.rotate_point_around_point(edge_vertices[0], r, center)
-        rv3 = gate_utils.rotate_point_around_point(edge_vertices[2], r, center)
+        rv1 = _rotate_point_around_point(edge_vertices[0], r, center)
+        rv3 = _rotate_point_around_point(edge_vertices[2], r, center)
 
         # (((x - cx) ** 2) / a ** 2) + (((y - cy) ** 2) / b ** 2) = 1
         # let:

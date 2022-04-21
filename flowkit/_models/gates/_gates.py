@@ -4,7 +4,7 @@ gates Module
 import numpy as np
 from ._base_gate import Gate
 from ..dimension import RatioDimension
-from ..._utils import gate_utils
+from flowutils import gating
 
 
 class RectangleGate(Gate):
@@ -114,7 +114,7 @@ class PolygonGate(Gate):
         for vert in self.vertices:
             path_vertices.append(vert.coordinates)
 
-        results = gate_utils.points_in_polygon(
+        results = gating.points_in_polygon(
             np.array(path_vertices, dtype=np.float64),
             df_events[dim_ids_ordered].values  # send a NumPy array and not a DataFrame
         )
@@ -180,7 +180,7 @@ class EllipsoidGate(Gate):
             else:
                 dim_ids_ordered.append(dim.id)
 
-        results = gate_utils.points_in_ellipsoid(
+        results = gating.points_in_ellipsoid(
             self.covariance_matrix,
             self.coordinates,
             self.distance_square,
