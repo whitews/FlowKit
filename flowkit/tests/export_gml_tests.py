@@ -35,7 +35,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
         result = sess_out.get_gate_membership(group_name, data1_sample.original_filename, 'Range1')
 
         np.testing.assert_array_equal(truth, result)
@@ -59,7 +59,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
         result = sess_out.get_gate_membership(group_name, data1_sample.original_filename, 'Rectangle1')
 
         np.testing.assert_array_equal(truth, result)
@@ -83,7 +83,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
         result = sess_out.get_gate_membership(group_name, data1_sample.original_filename, 'Rectangle2')
 
         np.testing.assert_array_equal(truth, result)
@@ -107,7 +107,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
         result = sess_out.get_gate_membership(group_name, data1_sample.original_filename, 'Polygon1')
 
         np.testing.assert_array_equal(truth, result)
@@ -131,7 +131,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
         result = sess_out.get_gate_membership(group_name, data1_sample.original_filename, 'Polygon2')
 
         np.testing.assert_array_equal(truth, result)
@@ -155,7 +155,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
         result = sess_out.get_gate_membership(group_name, data1_sample.original_filename, 'Polygon3NS')
 
         np.testing.assert_array_equal(truth, result)
@@ -179,7 +179,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
         result = sess_out.get_gate_membership(group_name, data1_sample.original_filename, 'Ellipse1')
 
         np.testing.assert_array_equal(truth, result)
@@ -203,7 +203,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
         result = sess_out.get_gate_membership(group_name, data1_sample.original_filename, 'Ellipsoid3D')
 
         np.testing.assert_array_equal(truth, result)
@@ -227,7 +227,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
         result = sess_out.get_gate_membership(group_name, data1_sample.original_filename, 'Range2')
 
         np.testing.assert_array_equal(truth, result)
@@ -254,10 +254,10 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
-        truth1 = pd.read_csv(res1_path, header=None, squeeze=True, dtype='bool').values
-        truth2 = pd.read_csv(res2_path, header=None, squeeze=True, dtype='bool').values
-        truth3 = pd.read_csv(res3_path, header=None, squeeze=True, dtype='bool').values
-        truth4 = pd.read_csv(res4_path, header=None, squeeze=True, dtype='bool').values
+        truth1 = pd.read_csv(res1_path, header=None, dtype='bool').squeeze().values
+        truth2 = pd.read_csv(res2_path, header=None, dtype='bool').squeeze().values
+        truth3 = pd.read_csv(res3_path, header=None, dtype='bool').squeeze().values
+        truth4 = pd.read_csv(res4_path, header=None, dtype='bool').squeeze().values
 
         result = sess_out.get_gating_results(group_name, data1_sample.original_filename)
 
@@ -289,11 +289,11 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
-        truth1 = pd.read_csv(res1_path, header=None, squeeze=True, dtype='bool').values
-        truth2 = pd.read_csv(res2_path, header=None, squeeze=True, dtype='bool').values
-        truth3 = pd.read_csv(res3_path, header=None, squeeze=True, dtype='bool').values
-        truth4 = pd.read_csv(res4_path, header=None, squeeze=True, dtype='bool').values
-        truth5 = pd.read_csv(res5_path, header=None, squeeze=True, dtype='bool').values
+        truth1 = pd.read_csv(res1_path, header=None, dtype='bool').squeeze().values
+        truth2 = pd.read_csv(res2_path, header=None, dtype='bool').squeeze().values
+        truth3 = pd.read_csv(res3_path, header=None, dtype='bool').squeeze().values
+        truth4 = pd.read_csv(res4_path, header=None, dtype='bool').squeeze().values
+        truth5 = pd.read_csv(res5_path, header=None, dtype='bool').squeeze().values
 
         result = sess_out.get_gating_results(group_name, data1_sample.original_filename)
 
@@ -322,7 +322,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
         result = sess_out.get_gate_membership(group_name, data1_sample.original_filename, 'RatRange1')
 
         np.testing.assert_array_equal(truth, result)
@@ -346,7 +346,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
         result = sess_out.get_gate_membership(group_name, data1_sample.original_filename, 'RatRange2')
 
         np.testing.assert_array_equal(truth, result)
@@ -370,7 +370,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
         result = sess_out.get_gate_membership(group_name, data1_sample.original_filename, 'RatRange1a')
 
         np.testing.assert_array_equal(truth, result)
@@ -394,7 +394,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
         result = sess_out.get_gate_membership(group_name, data1_sample.original_filename, 'And1')
 
         np.testing.assert_array_equal(truth, result)
@@ -418,7 +418,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
         result = sess_out.get_gate_membership(group_name, data1_sample.original_filename, 'And2')
 
         np.testing.assert_array_equal(truth, result)
@@ -442,7 +442,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
         result = sess_out.get_gate_membership(group_name, data1_sample.original_filename, 'Or1')
 
         np.testing.assert_array_equal(truth, result)
@@ -466,7 +466,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
         result = sess_out.get_gate_membership(group_name, data1_sample.original_filename, 'And3')
 
         np.testing.assert_array_equal(truth, result)
@@ -490,7 +490,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
         result = sess_out.get_gate_membership(group_name, data1_sample.original_filename, 'Not1')
 
         np.testing.assert_array_equal(truth, result)
@@ -514,7 +514,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
         result = sess_out.get_gate_membership(group_name, data1_sample.original_filename, 'And4')
 
         np.testing.assert_array_equal(truth, result)
@@ -538,7 +538,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
         result = sess_out.get_gate_membership(group_name, data1_sample.original_filename, 'Or2')
 
         np.testing.assert_array_equal(truth, result)
@@ -562,7 +562,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
         result = sess_out.get_gate_membership(group_name, data1_sample.original_filename, 'Polygon4')
 
         np.testing.assert_array_equal(truth, result)
@@ -586,7 +586,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
         result = sess_out.get_gate_membership(group_name, data1_sample.original_filename, 'Rectangle3')
 
         np.testing.assert_array_equal(truth, result)
@@ -610,7 +610,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
         result = sess_out.get_gate_membership(group_name, data1_sample.original_filename, 'Rectangle4')
 
         np.testing.assert_array_equal(truth, result)
@@ -634,7 +634,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
         result = sess_out.get_gate_membership(group_name, data1_sample.original_filename, 'Rectangle5')
 
         np.testing.assert_array_equal(truth, result)
@@ -658,7 +658,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
         result = sess_out.get_gating_results(group_name, data1_sample.original_filename)
 
         np.testing.assert_array_equal(truth, result.get_gate_membership('ScaleRange1'))
@@ -682,7 +682,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
         result = sess_out.get_gate_membership(group_name, data1_sample.original_filename, 'ScaleRange2')
 
         np.testing.assert_array_equal(truth, result)
@@ -706,7 +706,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
         result = sess_out.get_gate_membership(group_name, data1_sample.original_filename, 'ScaleRange3')
 
         np.testing.assert_array_equal(truth, result)
@@ -730,7 +730,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
         result = sess_out.get_gate_membership(group_name, data1_sample.original_filename, 'ScaleRange4')
 
         np.testing.assert_array_equal(truth, result)
@@ -754,7 +754,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
         result = sess_out.get_gate_membership(group_name, data1_sample.original_filename, 'ScaleRange5')
 
         np.testing.assert_array_equal(truth, result)
@@ -778,7 +778,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
         result = sess_out.get_gate_membership(group_name, data1_sample.original_filename, 'ScaleRange6')
 
         np.testing.assert_array_equal(truth, result)
@@ -802,7 +802,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
         result = sess_out.get_gating_results(group_name, data1_sample.original_filename)
 
         np.testing.assert_array_equal(truth, result.get_gate_membership('ScaleRange1c'))
@@ -826,7 +826,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
         result = sess_out.get_gating_results(group_name, data1_sample.original_filename)
 
         np.testing.assert_array_equal(truth, result.get_gate_membership('ScaleRange2c'))
@@ -850,7 +850,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
         result = sess_out.get_gating_results(group_name, data1_sample.original_filename)
 
         np.testing.assert_array_equal(truth, result.get_gate_membership('ScaleRange3c'))
@@ -874,7 +874,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
         result = sess_out.get_gating_results(group_name, data1_sample.original_filename)
 
         np.testing.assert_array_equal(truth, result.get_gate_membership('ScaleRange4c'))
@@ -898,7 +898,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
         result = sess_out.get_gating_results(group_name, data1_sample.original_filename)
 
         np.testing.assert_array_equal(truth, result.get_gate_membership('ScaleRange5c'))
@@ -922,7 +922,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
         result = sess_out.get_gating_results(group_name, data1_sample.original_filename)
 
         np.testing.assert_array_equal(truth, result.get_gate_membership('ScaleRange6c'))
@@ -946,7 +946,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
         result = sess_out.get_gating_results(group_name, data1_sample.original_filename)
 
         np.testing.assert_array_equal(truth, result.get_gate_membership('ScaleRange7c'))
@@ -970,7 +970,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
         result = sess_out.get_gating_results(group_name, data1_sample.original_filename)
 
         np.testing.assert_array_equal(truth, result.get_gate_membership('ScaleRange8c'))
@@ -994,7 +994,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
         result = sess_out.get_gating_results(group_name, data1_sample.original_filename)
 
         np.testing.assert_array_equal(truth, result.get_gate_membership('ScaleRect1'))
@@ -1018,7 +1018,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
         result = sess_out.get_gating_results(group_name, data1_sample.original_filename)
 
         np.testing.assert_array_equal(truth, result.get_gate_membership('ParAnd2'))
@@ -1042,7 +1042,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
         result = sess_out.get_gating_results(group_name, data1_sample.original_filename)
 
         np.testing.assert_array_equal(truth, result.get_gate_membership('ParAnd3'))
@@ -1066,7 +1066,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
         result = sess_out.get_gating_results(group_name, data1_sample.original_filename)
 
         np.testing.assert_array_equal(truth, result.get_gate_membership('ScalePar1'))
@@ -1090,7 +1090,7 @@ class ExportGMLTestCase(unittest.TestCase):
         sess_out.assign_samples(data1_sample.original_filename, group_name)
         sess_out.analyze_samples(group_name)
 
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
         result = sess_out.get_gating_results(group_name, data1_sample.original_filename)
 
         np.testing.assert_array_equal(truth, result.get_gate_membership('ParRectangle1'))
@@ -1174,7 +1174,7 @@ class ExportGMLTestCase(unittest.TestCase):
             match = re.search("Results_(.+)\\.txt$", res_path)
             if match is not None:
                 g_id = match.group(1)
-                truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+                truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
                 truth_dict[g_id] = truth
 
