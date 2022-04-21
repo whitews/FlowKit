@@ -75,16 +75,20 @@ FlowKit is an intuitive Python toolkit for flow cytometry analysis and visualiza
 FlowKit supports Python version 3.7 or above. All dependencies are installable 
 via pip, and are listed below.
 
-***Note: FlowKit and FlowUtils use C extensions for significant performance 
-improvements. If using `gcc`, version 5 or 
-above is required for correct Logicle and Hyperlog transformations.***
+***Note: FlowUtils uses C extensions for significant performance 
+improvements. For the most common platforms and Python versions, pre-built
+binaries are available in PyPI (and installable via pip).***
+
+***If a pre-built binary of FlowUtils is not available for your environment,
+then the C extensions must be compiled using the source package. NumPy >=1.19 
+must be installed prior to compiling FlowUtils. If compiling using `gcc`, version 5 or later is required.***
 
 Required Python dependencies:
 
 * [flowio](https://github.com/whitews/flowio) == 1.0.0
 * [flowutils](https://github.com/whitews/flowutils) == 1.0.0
 * anytree >= 2.6
-* bokeh >= 1.4
+* bokeh >= 1.4, <3
 * lxml >= 4.4
 * matplotlib >= 3.1
 * networkx >= 2.3

@@ -45,6 +45,7 @@ setup(
     ext_modules=[],
     install_requires=reqs,
     classifiers=[
+        'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.7'
