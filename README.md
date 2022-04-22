@@ -122,6 +122,10 @@ python setup.py install
 The FlowKit API documentation is available [on ReadTheDocs here](https://flowkit.readthedocs.io/en/latest/?badge=latest). The tutorial notebooks in the `examples` directory are a great place to get started with FlowKit, and are linked below.
 If you have any questions about FlowKit, find any bugs, or feel something is missing from the tutorials below [please submit an issue to the GitHub repository here](https://github.com/whitews/FlowKit/issues/new/).
 
+### Changelogs
+
+[Changelogs for versions are available here](https://github.com/whitews/FlowKit/releases)
+
 ### Tutorials
 
 The series of Jupyter notebook tutorials can be found in the `examples` directory of this repository. Note, the interactive scatterplots do not render on GitHub. Clone the repo (or download the example notebooks), and run them locally to see the fully interactive plots.
