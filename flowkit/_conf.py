@@ -4,7 +4,7 @@ Configuration & system settings used by FlowKit
 import sys
 import platform
 
-# Used to detect PyCharm's debugging mode to turn off multi-processing for debugging with tests
+# Used to detect PyCharm's debugging mode to turn off multiprocessing for debugging with tests
 get_trace = getattr(sys, 'gettrace', lambda: None)
 
 if get_trace() is None:

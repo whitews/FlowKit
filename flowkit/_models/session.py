@@ -163,7 +163,6 @@ class Session(object):
             gate_ids = template_gs.get_gate_ids()
             gate_depth = template_gs.get_max_depth()
 
-
             sg_info = {
                 'group_name': group_name,
                 'samples': len(group_dict['samples']),
@@ -178,7 +177,6 @@ class Session(object):
         df.set_index('group_name', inplace=True)
 
         return df
-
 
     def add_sample_group(self, group_name, gating_strategy=None):
         """
