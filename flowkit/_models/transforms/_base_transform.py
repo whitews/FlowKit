@@ -23,7 +23,7 @@ class Transform(ABC):
         """
         Abstract method for applying the transform to a set of events.
 
-        :param events_or_sample: A NumPy array of event data or, in some cases, a Sample instance. See sub-class
-            documentation for specific implementation.
+        :param events_or_sample: A NumPy array of event data or, in some cases, a Sample instance.
+          See subclass documentation for specific implementation.
         """
         return

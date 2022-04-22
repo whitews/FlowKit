@@ -57,7 +57,7 @@ class RatioTransform(Transform):
         it references 2 distinct channels of event data. Since the indices of those
         channels could vary across different FCS files, we need the Sample
         instance to introspect for the correct channels. All other Transform
-        sub-classes take an events array as the argument to the apply method.
+        subclasses take an events array as the argument to the apply method.
 
         :param sample: Sample instance from which event data should be extracted
         :return: NumPy array of transformed events
