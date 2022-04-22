@@ -15,8 +15,8 @@ with open("README.md", "r", encoding='utf-8') as fh:
     long_description = fh.read()
 
 reqs = [
-    'flowio',
-    'flowutils',
+    'flowio>=1,<1.1',
+    'flowutils>=1,<1.1',
     'matplotlib',
     'scipy',
     'statsmodels',
