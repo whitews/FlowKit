@@ -15,16 +15,16 @@ with open("README.md", "r", encoding='utf-8') as fh:
     long_description = fh.read()
 
 reqs = [
-    'anytree',
+    'anytree>=2.6',
     'bokeh>=2,<3',
     'flowio>=1,<1.1',
-    'flowutils>=1,<1.1',
-    'lxml',
-    'matplotlib',
-    'networkx',
-    'numpy>=1.19',
-    'pandas',
-    'psutil'
+    'flowutils==1.0.0b0',
+    'lxml>=4.4',
+    'matplotlib>=3.1',
+    'networkx>=2.3',
+    'numpy>=1.20',
+    'pandas>=1.1',
+    'psutil>=5.8'
     'scipy',
     'seaborn',
     'statsmodels',
