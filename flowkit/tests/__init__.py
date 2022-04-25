@@ -4,6 +4,7 @@ FlowKit Test Suites
 import unittest
 
 from .sample_tests import SampleTestCase
+from .sample_export_tests import SampleExportTestCase
 from .sample_utils_tests import SampleUtilsTestCase
 from .gatingml_tests import GatingMLTestCase
 from .gating_strategy_prog_gate_tests import GatingTestCase

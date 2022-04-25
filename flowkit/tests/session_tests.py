@@ -186,7 +186,7 @@ class SessionTestCase(unittest.TestCase):
         result = fks.get_gating_results('default', data1_sample.original_filename)
 
         res_path = 'examples/data/gate_ref/truth/Results_Polygon1.txt'
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         np.testing.assert_array_equal(truth, result.get_gate_membership('Polygon1'))
 
@@ -212,7 +212,7 @@ class SessionTestCase(unittest.TestCase):
         fks.add_gate(poly_gate)
 
         res_path = 'examples/data/gate_ref/truth/Results_Polygon4.txt'
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         fks.analyze_samples()
         result = fks.get_gating_results('default', data1_sample.original_filename)
@@ -231,7 +231,7 @@ class SessionTestCase(unittest.TestCase):
         fks.add_gate(rect_gate)
 
         res_path = 'examples/data/gate_ref/truth/Results_ScaleRange1.txt'
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         fks.analyze_samples()
         result = fks.get_gating_results('default', data1_sample.original_filename)
@@ -303,6 +303,22 @@ class SessionTestCase(unittest.TestCase):
 
         self.assertListEqual(s_sample_ids, [])
 
+    def test_session_summary(self):
+        wsp_path = "examples/data/8_color_data_set/8_color_ICS.wsp"
+        sample_grp = 'DEN'
+
+        fks = Session()
+        fks.import_flowjo_workspace(wsp_path, ignore_missing_files=True)
+
+        fks_summary = fks.summary()
+
+        self.assertIsInstance(fks_summary, pd.DataFrame)
+
+        group_stats = fks_summary.loc[sample_grp]
+        self.assertEqual(group_stats.max_gate_depth, 6)
+        self.assertEqual(group_stats.samples, 3)
+        self.assertEqual(group_stats.loaded_samples, 0)
+
     def test_analyze_samples_multiproc(self):
         wsp_path = "examples/data/8_color_data_set/8_color_ICS_simple.wsp"
         sample_grp = 'DEN'
@@ -317,4 +333,3 @@ class SessionTestCase(unittest.TestCase):
         gate_membership = fks.get_gate_membership(sample_grp, sample_id, gate_name)
 
         self.assertEqual(gate_membership.sum(), 133670)
-

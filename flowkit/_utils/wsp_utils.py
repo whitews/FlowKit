@@ -6,7 +6,7 @@ import datetime
 import re
 import numpy as np
 from lxml import etree
-from .sample_utils import FCS_STANDARD_KEYWORDS
+from flowio.fcs_keywords import FCS_STANDARD_KEYWORDS
 from .xml_utils import find_attribute_value, _get_xml_type
 from .._models.dimension import Dimension
 # noinspection PyProtectedMember
@@ -180,7 +180,7 @@ def _parse_wsp_transforms(transforms_el, transform_ns, data_type_ns):
         elif xform_type == 'fasinh':
             # FlowJo's implementation of fasinh is slightly different from GML,
             # and uses an additional 'length' scale factor. However, this scaling
-            # doesn't seem to affect the results and we can use the regular
+            # doesn't seem to affect the results, and we can use the regular
             # GML version of asinh. The xform_el also contains other
             # unnecessary parameters: 'length', 'maxRange', and 'W'
             param_t = find_attribute_value(xform_el, transform_ns, 'T')
@@ -200,6 +200,22 @@ def _parse_wsp_transforms(transforms_el, transform_ns, data_type_ns):
             raise ValueError(error_msg)
 
     return xforms_lut
+
+
+def _parse_wsp_keywords(keywords_el):
+    # get all children, each is a 'Keyword' element with a 'name' & 'value' attribute
+    keyword_els = keywords_el.getchildren()
+
+    # there should be one transform per channel, use the channel names to create a LUT
+    keywords_lut = {}
+
+    for keyword_el in keyword_els:
+        keyword_name = keyword_el.attrib['name']
+        keyword_value = keyword_el.attrib['value']
+
+        keywords_lut[keyword_name] = keyword_value
+
+    return keywords_lut
 
 
 def _convert_wsp_gate(wsp_gate, comp_matrix, xform_lut, ignore_transforms=False):
@@ -314,7 +330,7 @@ def _recurse_wsp_sub_populations(sub_pop_el, gate_path, gating_ns, data_type_ns)
             data_type_ns
         )
 
-        # replace ID and parent ID with population names, but save the originals
+        # replace ID and parent ID with population names, but save the originals,
         # so we can re-create the correct hierarchy later.
         # NOTE: Some wsp files have the ID as an attribute of the GatingML-style sub-element,
         #       though it isn't always the case. However, it seems the ID is reliably included
@@ -363,7 +379,7 @@ def _parse_wsp_groups(group_node_els, ns_map, gating_ns, data_type_ns):
 
         group_root_sub_pop_el = group_node_el.find('Subpopulations', ns_map)
 
-        # ignore groups with no sub-populations
+        # ignore groups with no subpopulations
         if group_root_sub_pop_el is not None:
             group_gates = _recurse_wsp_sub_populations(
                 group_root_sub_pop_el,
@@ -385,6 +401,7 @@ def _parse_wsp_samples(sample_els, ns_map, gating_ns, transform_ns, data_type_ns
 
     for sample_el in sample_els:
         transforms_el = sample_el.find('Transformations', ns_map)
+        keywords_el = sample_el.find('Keywords', ns_map)
         sample_node_el = sample_el.find('SampleNode', ns_map)
         sample_name = sample_node_el.attrib['name']
         sample_id = sample_node_el.attrib['sampleID']
@@ -393,30 +410,36 @@ def _parse_wsp_samples(sample_els, ns_map, gating_ns, transform_ns, data_type_ns
         # And, the xforms have no IDs. We'll extract it and give it IDs based on ???
         sample_xform_lut = _parse_wsp_transforms(transforms_el, transform_ns, data_type_ns)
 
+        # Parse sample keywords. Some keywords may be present in the WSP file that are not
+        # in the FCS metadata. FJ allows adding custom keywords for samples.
+        sample_keywords_lut = _parse_wsp_keywords(keywords_el)
+
         # parse spilloverMatrix elements
         sample_comp = _parse_wsp_compensation(sample_el, transform_ns, data_type_ns)
 
-        # FlowJo WSP gates are nested so we'll have to do a recursive search from the root
+        # FlowJo WSP gates are nested, so we'll have to do a recursive search from the root
         # Sub-populations node
         sample_root_sub_pop_el = sample_node_el.find('Subpopulations', ns_map)
 
         if sample_root_sub_pop_el is None:
-            continue
-
-        sample_gates = _recurse_wsp_sub_populations(
-            sample_root_sub_pop_el,
-            None,  # starting at root, so no gate path
-            gating_ns,
-            data_type_ns
-        )
+            sample_gates = []
+        else:
+            sample_gates = _recurse_wsp_sub_populations(
+                sample_root_sub_pop_el,
+                None,  # starting at root, so no gate path
+                gating_ns,
+                data_type_ns
+            )
 
         # sample gate LUT will store everything we need to convert sample gates,
         # including any custom gates (ones with empty string owning groups).
         wsp_samples[sample_id] = {
             'sample_name': sample_name,
+            'sample_gates': sample_gates,
             'custom_gate_ids': set(),
             'custom_gates': [],
             'transforms': sample_xform_lut,
+            'keywords': sample_keywords_lut,
             'comp': sample_comp
         }
 
@@ -464,7 +487,7 @@ def parse_wsp(workspace_file_or_path, ignore_transforms=False):
     sample_list_el = root_xml.find('SampleList', ns_map)
     sample_els = sample_list_el.findall('Sample', ns_map)
 
-    # Find all group gates before looking a the custom sample gates.
+    # Find all group gates before looking at the custom sample gates.
     # Custom sample gates are defined in the SampleList branch and
     # are indicated by having an empty string for the owningGroup.
     # Only 1 custom sample gate can exist per sample, regardless
@@ -488,6 +511,11 @@ def parse_wsp(workspace_file_or_path, ignore_transforms=False):
         for group_sample_id in group_dict['samples']:
             sample_dict = wsp_samples[group_sample_id]
             sample_name = sample_dict['sample_name']
+
+            # check the sample's sample_gates. If it is empty, then the
+            # sample belongs to a group, but it has no gate hierarchy.
+            if len(sample_dict['sample_gates']) == 0:
+                continue
 
             group_sample_gate_names = []
             group_sample_gates = []
@@ -562,6 +590,45 @@ def parse_wsp(workspace_file_or_path, ignore_transforms=False):
             }
 
     return wsp_dict
+
+
+def extract_wsp_sample_data(workspace_file_or_path):
+    """
+    Parses a FlowJo 10 workspace file (.wsp) and extracts Sample metadata (keywords)
+    into a Python dictionary with the following structure:
+
+        wsp_sample_dict[sample_name] = {
+            'keywords': {gate_id: gate_instance, ...},
+            'transforms': transforms_list,
+            'compensation': matrix
+        }
+
+    :param workspace_file_or_path: A FlowJo .wsp file or file path
+    :return: dict
+    """
+    doc_type, root_xml, gating_ns, data_type_ns, transform_ns = _get_xml_type(workspace_file_or_path)
+
+    # first, find 1st level SampleList element, which contain 'Sample' elements
+    ns_map = root_xml.nsmap
+    sample_list_el = root_xml.find('SampleList', ns_map)
+    sample_els = sample_list_el.findall('Sample', ns_map)
+
+    # Now parse the Sample elements in SampleList
+    raw_wsp_samples = _parse_wsp_samples(sample_els, ns_map, gating_ns, transform_ns, data_type_ns)
+
+    # re-org the dictionary to be more user-friendly
+    # the keys from above are WSP sample ID values that aren't useful
+    # We'll iterate over the dicts and use the sample name for the new key
+    # and only save out the
+    wsp_samples = {}
+    for value_dict in raw_wsp_samples.values():
+        wsp_samples[value_dict['sample_name']] = {
+            'keywords': value_dict['keywords'],
+            'comp': value_dict['comp'],
+            'transforms': value_dict['transforms']
+        }
+
+    return wsp_samples
 
 
 def _add_matrix_to_wsp(parent_el, prefix, matrix, ns_map):
@@ -728,7 +795,7 @@ def _add_group_node_to_wsp(parent_el, group_name, sample_id_list):
 
 
 def _recurse_add_sub_populations(parent_el, gate_id, gate_path, gating_strategy, gate_fj_id_lut, comp_prefix, ns_map):
-    # first, add given gate to parent XML element inside it's own Population element
+    # first, add given gate to parent XML element inside its own Population element
     pop_el = etree.SubElement(parent_el, "Population")
     pop_el.set('name', gate_id)
     pop_el.set('annotation', "")
@@ -737,7 +804,7 @@ def _recurse_add_sub_populations(parent_el, gate_id, gate_path, gating_strategy,
     # Lookup the gate's FJ ID
     fj_id = gate_fj_id_lut[(gate_id, tuple(gate_path))]
 
-    # Determine if gate has a parent gate & lookup it's FJ ID
+    # Determine if gate has a parent gate & lookup its FJ ID
     if len(gate_path) > 1:
         # gate has a true parent gate
         parent_gate_id = gate_path[-1]
@@ -802,7 +869,7 @@ def _add_sample_node_to_wsp(parent_el, sample_name, sample_id, gating_strategy, 
     # need to find a matching compensation to add the correct comp prefix to parameter labels
     comp_ids = gating_strategy.comp_matrices.keys()
 
-    # there really shouldn't be more than 1 compensation matrix and we only support 1 for now
+    # there really shouldn't be more than 1 compensation matrix, and we only support 1 for now
     comp_prefix = ''
     for comp_id in comp_ids:
         if comp_id in comp_prefix_lut:

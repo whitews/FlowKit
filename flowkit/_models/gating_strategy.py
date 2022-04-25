@@ -35,7 +35,7 @@ class GatingStrategy(object):
 
         # use a directed acyclic graph for later processing and enforcing there
         # are no cyclical gate relationships.
-        # Each node is made from a tuple representing it's full gate path
+        # Each node is made from a tuple representing its full gate path
         self._dag = nx.DiGraph()
         self._dag.add_node(('root',))
 
@@ -53,7 +53,7 @@ class GatingStrategy(object):
         specifying a gate_path. However, if the gate's ID and parent combination already exists in
         the gating strategy, a unique gate path must be provided.
 
-        :param gate: instance from a sub-class of the Gate class
+        :param gate: instance from a subclass of the Gate class
         :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
             Required if gate.gate_name and gate.parent combination is ambiguous
 
@@ -122,7 +122,7 @@ class GatingStrategy(object):
             parent_child_nodes = anytree.search.findall_by_attr(parent_node, gate.gate_name, maxlevel=1)
             if len(parent_child_nodes) > 0:
                 raise ValueError(
-                    "A gate already exists matching gate name %s and the specified gate path" % gate.gate_name
+                    """A gate already exists matching gate name "%s" and the specified gate path""" % gate.gate_name
                 )
 
         node = anytree.Node(gate.gate_name, parent=parent_node, gate=gate)
@@ -154,7 +154,7 @@ class GatingStrategy(object):
         Add a transform to the gating strategy, see `transforms` module. The transform ID must be unique in the
         gating strategy.
 
-        :param transform: instance from a sub-class of the Transform class
+        :param transform: instance from a subclass of the Transform class
         :return: None
         """
         if not isinstance(transform, Transform):
@@ -170,7 +170,7 @@ class GatingStrategy(object):
         Retrieve transform instance from gating strategy.
 
         :param transform_id: String of a valid transform ID stored in the gating strategy
-        :return: Instance of a Transform sub-class
+        :return: Instance of a Transform subclass
         """
         return self.transformations[transform_id]
 
@@ -318,6 +318,12 @@ class GatingStrategy(object):
             gates.append((node.name, ancestors))
 
         return gates
+
+    def get_max_depth(self):
+        """
+        Returns the max depth of the gating hierarchy
+        """
+        return self._gate_tree.height
 
     def get_gate_hierarchy(self, output='ascii', **kwargs):
         """

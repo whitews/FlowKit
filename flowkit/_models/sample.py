@@ -27,7 +27,7 @@ class Sample(object):
     Represents a single FCS sample from an FCS file, NumPy array or pandas
     DataFrame.
 
-    For Sample plot methods, pay attention the the defaults for the subsample
+    For Sample plot methods, pay attention to the defaults for the subsample
     arguments, as most will use the sub-sampled events by default for better
     performance. For compensation and transformation routines, all events are
     always processed.
@@ -110,9 +110,9 @@ class Sample(object):
         elif isinstance(fcs_path_or_data, np.ndarray):
             tmp_file = TemporaryFile()
             flowio.create_fcs(
+                tmp_file,
                 fcs_path_or_data.flatten().tolist(),
-                channel_names=channel_labels,
-                file_handle=tmp_file
+                channel_names=channel_labels
             )
 
             flow_data = flowio.FlowData(tmp_file)
@@ -128,9 +128,9 @@ class Sample(object):
                 pns_labels = None
 
             flowio.create_fcs(
+                tmp_file,
                 fcs_path_or_data.values.flatten().tolist(),
                 channel_names=pnn_labels,
-                file_handle=tmp_file,
                 opt_channel_names=pns_labels
             )
 
@@ -155,7 +155,7 @@ class Sample(object):
         self.time_index = None
 
         channel_gain = []
-        self.channel_lin_log = []
+        channel_lin_log = []
         channel_range = []
         self.metadata = flow_data.text
 
@@ -185,9 +185,9 @@ class Sample(object):
                 ]
                 if log0 == 0 and decades != 0:
                     log0 = 1.0  # FCS std states to use 1.0 for invalid 0 value
-                self.channel_lin_log.append((decades, log0))
+                channel_lin_log.append((decades, log0))
             else:
-                self.channel_lin_log.append((0.0, 0.0))
+                channel_lin_log.append((0.0, 0.0))
 
             if channel_label.lower()[:4] not in ['fsc-', 'ssc-', 'time']:
                 self.fluoro_indices.append(n - 1)
@@ -209,6 +209,7 @@ class Sample(object):
         self.channels['pnn'] = self.pnn_labels
         self.channels['pns'] = self.pns_labels
         self.channels['png'] = channel_gain
+        self.channels['pne'] = channel_lin_log
         self.channels['pnr'] = channel_range
 
         # Start processing the event data. First, we'll get the unprocessed events
@@ -236,7 +237,7 @@ class Sample(object):
         # but should not be scaled by any gain value present in PnG.
         # It seems common for cytometers to include a gain value for the
         # time channel that matches the fluoro channels. Not sure why
-        # they do this but it makes no sense to have an amplifier gain
+        # they do this, but it makes no sense to have an amplifier gain
         # on the time data. Here, we set any time gain to 1.0.
         if self.time_index is not None:
             channel_gain[self.time_index] = 1.0
@@ -245,7 +246,7 @@ class Sample(object):
             time_step = float(self.metadata['timestep'])
             raw_events[:, self.time_index] = raw_events[:, self.time_index] * time_step
 
-        for i, (decades, log0) in enumerate(self.channel_lin_log):
+        for i, (decades, log0) in enumerate(channel_lin_log):
             if decades > 0:
                 raw_events[:, i] = (10 ** (decades * raw_events[:, i] / channel_range[i])) * log0
 
@@ -271,9 +272,11 @@ class Sample(object):
         except KeyError:
             self.acquisition_date = None
 
-        # TODO: Allow user to set some sort of Sample ID or the orig filename,
-        #       would be useful for Samples created from data arrays or if
-        #       2 FCS files had the same file name.
+        # TODO: Should we create a separate Sample 'id' attribute?
+        #  Could be populated by default by the orig filename,
+        #  or if that is None, issue UserWarning to set the 'id'.
+        #  Having Sample 'id' would be useful for Samples created
+        #  from data arrays or if 2 FCS files had the same file name.
         try:
             self.original_filename = self.metadata['fil']
         except KeyError:
@@ -549,7 +552,7 @@ class Sample(object):
     def get_channel_number_by_label(self, label):
         """
         Returns the channel number for the given PnN label. Note, this is the
-        channel number as defined in the FCS data (not the channel index), so
+        channel number, as defined in the FCS data (not the channel index), so
         the 1st channel's number is 1 (not 0).
 
         :param label: PnN label of a channel
@@ -587,7 +590,7 @@ class Sample(object):
         Note: This method returns the array directly, not a copy of the array. Be careful if you
         are planning to modify returned event data, and make a copy of the array when appropriate.
 
-        :param channel_index: Channel index for which data is returned
+        :param channel_index: channel index for which data is returned
         :param source: 'raw', 'comp', 'xform' for whether the raw, compensated
             or transformed events will be returned
         :param subsample: Whether to return all events or just the sub-sampled
@@ -637,12 +640,12 @@ class Sample(object):
         Applies given transform to Sample events, and overwrites the `transform` attribute.
         By default, only the fluorescent channels are transformed. For fully customized transformations
         per channel, the `transform` can be specified as a dictionary mapping PnN labels to an instance
-        of the Transform sub-class. If a dictionary of transforms is specified, the `include_scatter`
+        of the Transform subclass. If a dictionary of transforms is specified, the `include_scatter`
         option is ignored and only the channels explicitly included in the transform dictionary will
         be transformed.
 
-        :param transform: an instance of a Transform sub-class or a dictionary where the keys correspond
-            to the PnN labels and the value is an instance of a Transform sub-class.
+        :param transform: an instance of a Transform subclass or a dictionary where the keys correspond
+            to the PnN labels and the value is an instance of a Transform subclass.
         :param include_scatter: Whether to transform the scatter channel in addition to the
             fluorescent channels. Default is False.
         """
@@ -710,8 +713,8 @@ class Sample(object):
         :param source: 'raw', 'comp', 'xform' for whether the raw, compensated
             or transformed events are used for plotting
         :param subsample: Whether to use all events for plotting or just the
-            sub-sampled events. Default is True (sub-sampled events). It is
-            not recommended to run with all events, as the Kernel Density
+            sub-sampled events. Default is True (sub-sampled events). Running
+            with all events is not recommended, as the Kernel Density
             Estimation is computationally demanding.
         :param plot_contour: Whether to display the contour lines. Default is True.
         :param plot_events: Whether to display the event data points in
@@ -862,7 +865,7 @@ class Sample(object):
             or transformed events are used for plotting
         :param subsample: Whether to use all events for plotting or just the
             sub-sampled events. Default is True (sub-sampled events). Plotting
-            sub-sampled events is be much faster.
+            sub-sampled events is much faster.
         :param color_density: Whether to color the events by density, similar
             to a heat map. Default is False.
         :param plot_height: Height of plot in pixels (screen units)
@@ -944,6 +947,71 @@ class Sample(object):
 
         return p
 
+    def _get_metadata_for_export(self, source, include_all=False):
+        metadata_dict = {}
+        ignore_keywords = ['timestep']
+
+        # If the original events were requested, need to make sure
+        # some metadata is included and has certain values. This
+        # ensures the events can be interpreted correctly.
+        # For non-orig sources, the event values have already been
+        # processed to account for the metadata.
+        if source == 'orig':
+            if 'timestep' in self.metadata and self.time_index is not None:
+                metadata_dict['TIMESTEP'] = self.metadata['timestep']
+
+            # Grab channel scale & gain values from self.channels
+            # This seems safer than
+            for _, channel_row in self.channels.iterrows():
+                chan_num = channel_row['channel_number']
+
+                gain_keyword = 'p%dg' % chan_num
+                gain_value = str(channel_row['png'])
+
+                scale_keyword = 'p%de' % chan_num
+                decades, log0 = channel_row['pne']
+
+                # in Python 3.6+, this seems safe to do
+                scale_value = ",".join([str(decades), str(log0)])
+
+                range_keyword = 'p%dr' % chan_num
+                range_value = str(channel_row['pnr'])
+
+                metadata_dict[gain_keyword] = gain_value
+                metadata_dict[scale_keyword] = scale_value
+                metadata_dict[range_keyword] = range_value
+
+                ignore_keywords.extend([gain_keyword, scale_keyword, range_keyword])
+        else:
+            # for 'raw', 'comp', or 'xform' the event values
+            for _, channel_row in self.channels.iterrows():
+                chan_num = channel_row['channel_number']
+
+                gain_keyword = 'p%dg' % chan_num
+                scale_keyword = 'p%de' % chan_num
+                range_keyword = 'p%dr' % chan_num
+
+                metadata_dict[gain_keyword] = '1.0'
+                metadata_dict[scale_keyword] = '0,0'
+                metadata_dict[range_keyword] = '262144'
+
+                ignore_keywords.extend([gain_keyword, scale_keyword, range_keyword])
+
+        # Certain metadata fields are set automatically in FlowIO,
+        # but FlowIO will ignore them if present, so it's fine to
+        # include them.
+        # However, we do want to avoid any of the above keywords that
+        # we had to set.
+        if include_all:
+            for k, v in self.metadata.items():
+                if k in ignore_keywords or k in metadata_dict:
+                    # keyword has already been added or isn't needed
+                    continue
+
+                metadata_dict[k] = v
+
+        return metadata_dict
+
     def export(
             self,
             filename,
@@ -952,6 +1020,7 @@ class Sample(object):
             exclude_flagged=False,
             exclude_normal=False,
             subsample=False,
+            include_metadata=False,
             directory=None
     ):
         """
@@ -968,6 +1037,9 @@ class Sample(object):
              the "bad" events (neg scatter and/or flagged events). Default is False.
         :param subsample: Whether to export all events or just the sub-sampled events.
             Default is False (all events).
+        :param include_metadata: Whether to include all key/value pairs in self.metadata in the output
+            FCS file. Only valid for .fcs file extension. If False, only the minimum amount of
+            metadata will be included in the output FCS file. Default is False.
         :param directory: Directory path where the exported file will be saved. If None, the file
             will be saved in the current working directory.
         :return: None
@@ -1012,29 +1084,8 @@ class Sample(object):
             # then filter out the inverse normal indices
             idx = np.logical_and(idx, ~normal_idx)
 
-        extra_dict = {}
-
         events = self.get_events(source=source)
         events = events[idx, :]
-
-        if source == 'orig':
-            if 'timestep' in self.metadata and self.time_index is not None:
-                extra_dict['TIMESTEP'] = self.metadata['timestep']
-
-            # check for channel scale for each channel, log scale is not supported yet by FlowIO
-            for (decades, log0) in self.channel_lin_log:
-                if decades > 0:
-                    raise NotImplementedError(
-                        "Export of FCS files with original events containing PnE instructions "
-                        "for log scale is not yet supported"
-                    )
-
-            # check for channel gain values != 1.0
-            for _, channel_row in self.channels.iterrows():
-                gain_keyword = 'p%dg' % channel_row['channel_number']
-                gain_value = channel_row['png']
-                if gain_value != 1.0:
-                    extra_dict[gain_keyword] = gain_value
 
         # TODO: support exporting to HDF5 format, but as optional dependency/import
         if ext == '.csv':
@@ -1046,13 +1097,15 @@ class Sample(object):
                 comments=''
             )
         elif ext == '.fcs':
+            metadata_dict = self._get_metadata_for_export(source=source, include_all=include_metadata)
+
             fh = open(output_path, 'wb')
 
             flowio.create_fcs(
+                fh,
                 events.flatten().tolist(),
                 channel_names=self.pnn_labels,
                 opt_channel_names=self.pns_labels,
-                file_handle=fh,
-                extra=extra_dict
+                metadata_dict=metadata_dict
             )
             fh.close()

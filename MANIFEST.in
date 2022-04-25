@@ -1,4 +1,3 @@
 include LICENSE
 include flowkit/_resources/*.xsd
-recursive-include flowkit *.h
 prune flowkit/tests/

@@ -6,7 +6,8 @@
 [![DOI](https://zenodo.org/badge/138655889.svg)](https://zenodo.org/badge/latestdoi/138655889)
 
 
-[![Build Status](https://app.travis-ci.com/whitews/FlowKit.svg?branch=master)](https://app.travis-ci.com/github/whitews/FlowKit)
+[![Build & test (master)](https://github.com/whitews/FlowKit/actions/workflows/tests_master.yml/badge.svg)](https://github.com/whitews/FlowKit/actions/workflows/tests_master.yml)
+[![Build & test (develop)](https://github.com/whitews/FlowKit/actions/workflows/tests_develop.yml/badge.svg)](https://github.com/whitews/FlowKit/actions/workflows/tests_develop.yml)
 [![Coverage](https://codecov.io/gh/whitews/FlowKit/branch/develop/graph/badge.svg)](https://codecov.io/gh/whitews/flowkit)
 [![Documentation Status](https://readthedocs.org/projects/flowkit/badge/?version=latest)](https://flowkit.readthedocs.io/en/latest/?badge=latest)
 
@@ -72,23 +73,27 @@ FlowKit is an intuitive Python toolkit for flow cytometry analysis and visualiza
 
 ## Requirements
 
-FlowKit supports Python version 3.6 or above. All dependencies are installable 
+FlowKit supports Python version 3.7 or above. All dependencies are installable 
 via pip, and are listed below.
 
-***Note: FlowKit and FlowUtils use C extensions for significant performance 
-improvements. If using `gcc`, version 5 or 
-above is required for correct Logicle and Hyperlog transformations.***
+***Note: FlowUtils uses C extensions for significant performance 
+improvements. For the most common platforms and Python versions, pre-built
+binaries are available in PyPI (and installable via pip).***
+
+***If a pre-built binary of FlowUtils is not available for your environment,
+then the C extensions must be compiled using the source package. NumPy >=1.19 
+must be installed prior to compiling FlowUtils. If compiling using `gcc`, version 5 or later is required.***
 
 Required Python dependencies:
 
-* [flowio](https://github.com/whitews/flowio) == 0.9.12
-* [flowutils](https://github.com/whitews/flowutils) == 0.9.5
+* [flowio](https://github.com/whitews/flowio) == 1.0.0
+* [flowutils](https://github.com/whitews/flowutils) == 1.0.0
 * anytree >= 2.6
-* bokeh >= 1.4
+* bokeh >= 1.4, <3
 * lxml >= 4.4
 * matplotlib >= 3.1
 * networkx >= 2.3
-* numpy >= 1.19
+* numpy >= 1.20
 * pandas >= 1.1
 * psutils ~= 5.8
 * scipy >= 1.3
@@ -96,6 +101,10 @@ Required Python dependencies:
 * statsmodels
 
 ## Installation
+
+####**Note for MacOS users running on Apple Silicon (e.g. M1 CPUs)**
+
+**The version of `pip` may need to be upgraded prior to installing FlowKit in order to install the required dependencies.**
 
 ### From PyPI
 
@@ -114,8 +123,12 @@ python setup.py install
 
 ## Documentation
 
-The FlowKit API documentation is available [on ReadTheDocs here](https://flowkit.readthedocs.io/en/latest/?badge=latest). The tutorial notebooks in the examples directory are a great place to get started with FlowKit, and are linked below.
+The FlowKit API documentation is available [on ReadTheDocs here](https://flowkit.readthedocs.io/en/latest/?badge=latest). The tutorial notebooks in the `examples` directory are a great place to get started with FlowKit, and are linked below.
 If you have any questions about FlowKit, find any bugs, or feel something is missing from the tutorials below [please submit an issue to the GitHub repository here](https://github.com/whitews/FlowKit/issues/new/).
+
+### Changelogs
+
+[Changelogs for versions are available here](https://github.com/whitews/FlowKit/releases)
 
 ### Tutorials
 
@@ -151,4 +164,4 @@ Want to get involved in the development of FlowKit?
 
 The following projects and publications have utilized FlowKit. If you have a package or publication where FlowKit was used, and you want it listed here, feel free to [submit an issue](https://github.com/whitews/FlowKit/issues/new/) letting me know.
 
-* Rendeiro, André F et al. “Profiling of immune dysfunction in COVID-19 patients allows early prediction of disease progression.” Life science alliance vol. 4,2 e202000955. 24 Dec. 2020, [doi:10.26508/lsa.202000955](https://www.life-science-alliance.org/content/4/2/e202000955.full)
+* Rendeiro, André F et al. "Profiling of immune dysfunction in COVID-19 patients allows early prediction of disease progression." Life science alliance vol. 4,2 e202000955. 24 Dec. 2020, [doi:10.26508/lsa.202000955](https://www.life-science-alliance.org/content/4/2/e202000955.full)

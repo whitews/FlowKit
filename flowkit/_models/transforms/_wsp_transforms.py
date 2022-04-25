@@ -171,8 +171,8 @@ class WSPBiexTransform(Transform):
     linear space around zero. The space of linear does not change, but rather the
     number of channels or bins being compressed into the linear space.
 
-    Width should be set high enough that all of the data in the histogram is visible
-    on screen, but not so high that extra white space is seen to the left hand side
+    Width should be set high enough that all the data in the histogram is visible
+    on screen, but not so high that extra white space is seen to the left-hand side
     of your dimmest distribution. For most practical uses, once all events have been
     shifted off the axis and there is no more axis ‘pile-up’, then the optimal width
     basis value has been reached.

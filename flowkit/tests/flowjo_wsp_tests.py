@@ -6,7 +6,7 @@ import unittest
 import os
 from io import BytesIO
 import numpy as np
-from flowkit import Session, gates, transforms
+from flowkit import Session, gates, transforms, extract_wsp_sample_data
 from .session_tests import test_samples_8c_full_set
 
 
@@ -244,6 +244,45 @@ class FlowJoWSPTestCase(unittest.TestCase):
         report = fks.get_group_report(sample_grp)
 
         self.assertEqual(report['sample'].nunique(), 1)
+
+    def test_parse_wsp_sample_without_gates(self):
+        wsp_path = "examples/data/8_color_data_set/8_color_ICS_sample_without_gates.wsp"
+        sample_id = '101_DEN084Y5_15_E03_009_clean.fcs'
+        sample_grp = 'DEN'
+
+        fks = Session(copy.deepcopy(test_samples_8c_full_set))
+        fks.import_flowjo_workspace(wsp_path, ignore_missing_files=False)
+
+        sample_ids = fks.get_group_sample_ids(sample_grp)
+
+        # there are technically 3 samples in the workspace 'DEN' group,
+        # but one sample has no gates. FlowKit ignores these gate-less
+        # samples because all samples in a FK sample group must have the
+        # same gate tree. So there should be 2 samples found here.
+        self.assertEqual(len(sample_ids), 2)
+
+        fks.analyze_samples(sample_grp, sample_id=sample_id)
+        results = fks.get_gating_results(sample_grp, sample_id)
+        time_count = results.get_gate_count('Time')
+        self.assertEqual(time_count, 257482)
+
+    def test_extract_sample_data(self):
+        wsp_path = "examples/data/8_color_data_set/8_color_ICS.wsp"
+        sample_id = '101_DEN084Y5_15_E01_008_clean.fcs'
+
+        sample_data = extract_wsp_sample_data(wsp_path)
+
+        self.assertIsInstance(sample_data, dict)
+        self.assertIn(sample_id, sample_data)
+
+        sample_id_data = sample_data[sample_id]
+
+        self.assertIn('keywords', sample_id_data)
+
+        sample_keywords = sample_id_data['keywords']
+        sample_keyword_count = len(sample_keywords)
+
+        self.assertGreaterEqual(sample_keyword_count, 0)
 
     def test_export_wsp(self):
         wsp_path = "examples/data/8_color_data_set/8_color_ICS.wsp"

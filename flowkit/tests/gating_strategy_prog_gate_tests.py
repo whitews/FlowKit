@@ -134,7 +134,7 @@ class GatingTestCase(unittest.TestCase):
 
         gs.add_gate(range1_gate)
 
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
 
@@ -152,7 +152,7 @@ class GatingTestCase(unittest.TestCase):
         gs.add_gate(rect_gate)
 
         res_path = 'examples/data/gate_ref/truth/Results_Rectangle1.txt'
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
 
@@ -170,7 +170,7 @@ class GatingTestCase(unittest.TestCase):
         gs.add_gate(rect_gate)
 
         res_path = 'examples/data/gate_ref/truth/Results_Rectangle2.txt'
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
 
@@ -183,7 +183,7 @@ class GatingTestCase(unittest.TestCase):
         gs.add_gate(poly1_gate)
 
         res_path = 'examples/data/gate_ref/truth/Results_Polygon1.txt'
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
 
@@ -208,7 +208,7 @@ class GatingTestCase(unittest.TestCase):
         gs.add_gate(poly_gate)
 
         res_path = 'examples/data/gate_ref/truth/Results_Polygon2.txt'
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
 
@@ -237,7 +237,7 @@ class GatingTestCase(unittest.TestCase):
         gs.add_gate(poly_gate)
 
         res_path = 'examples/data/gate_ref/truth/Results_Polygon3NS.txt'
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
 
@@ -250,7 +250,7 @@ class GatingTestCase(unittest.TestCase):
         gs.add_gate(ellipse1_gate)
 
         res_path = 'examples/data/gate_ref/truth/Results_Ellipse1.txt'
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
 
@@ -273,7 +273,7 @@ class GatingTestCase(unittest.TestCase):
         gs.add_gate(poly_gate)
 
         res_path = 'examples/data/gate_ref/truth/Results_Ellipsoid3D.txt'
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
 
@@ -287,7 +287,7 @@ class GatingTestCase(unittest.TestCase):
 
         gs.add_gate(range2_gate)
 
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
 
@@ -304,10 +304,10 @@ class GatingTestCase(unittest.TestCase):
 
         gs.add_gate(quad1_gate)
 
-        truth1 = pd.read_csv(res1_path, header=None, squeeze=True, dtype='bool').values
-        truth2 = pd.read_csv(res2_path, header=None, squeeze=True, dtype='bool').values
-        truth3 = pd.read_csv(res3_path, header=None, squeeze=True, dtype='bool').values
-        truth4 = pd.read_csv(res4_path, header=None, squeeze=True, dtype='bool').values
+        truth1 = pd.read_csv(res1_path, header=None, dtype='bool').squeeze().values
+        truth2 = pd.read_csv(res2_path, header=None, dtype='bool').squeeze().values
+        truth3 = pd.read_csv(res3_path, header=None, dtype='bool').squeeze().values
+        truth4 = pd.read_csv(res4_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
 
@@ -338,11 +338,11 @@ class GatingTestCase(unittest.TestCase):
         res4_path = 'examples/data/gate_ref/truth/Results_FSCD-FL1P.txt'
         res5_path = 'examples/data/gate_ref/truth/Results_FSCN-SSCP-FL1P.txt'
 
-        truth1 = pd.read_csv(res1_path, header=None, squeeze=True, dtype='bool').values
-        truth2 = pd.read_csv(res2_path, header=None, squeeze=True, dtype='bool').values
-        truth3 = pd.read_csv(res3_path, header=None, squeeze=True, dtype='bool').values
-        truth4 = pd.read_csv(res4_path, header=None, squeeze=True, dtype='bool').values
-        truth5 = pd.read_csv(res5_path, header=None, squeeze=True, dtype='bool').values
+        truth1 = pd.read_csv(res1_path, header=None, dtype='bool').squeeze().values
+        truth2 = pd.read_csv(res2_path, header=None, dtype='bool').squeeze().values
+        truth3 = pd.read_csv(res3_path, header=None, dtype='bool').squeeze().values
+        truth4 = pd.read_csv(res4_path, header=None, dtype='bool').squeeze().values
+        truth5 = pd.read_csv(res5_path, header=None, dtype='bool').squeeze().values
 
         gs = fk.GatingStrategy()
 
@@ -416,7 +416,7 @@ class GatingTestCase(unittest.TestCase):
         gs.add_gate(rect_gate)
 
         res_path = 'examples/data/gate_ref/truth/Results_RatRange1.txt'
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
 
@@ -447,7 +447,7 @@ class GatingTestCase(unittest.TestCase):
         gs.add_gate(rect_gate)
 
         res_path = 'examples/data/gate_ref/truth/Results_RatRange2.txt'
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
 
@@ -482,7 +482,7 @@ class GatingTestCase(unittest.TestCase):
         gs.add_gate(rect_gate)
 
         res_path = 'examples/data/gate_ref/truth/Results_RatRange1a.txt'
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
 
@@ -512,7 +512,7 @@ class GatingTestCase(unittest.TestCase):
         gs.add_gate(bool_gate)
 
         res_path = 'examples/data/gate_ref/truth/Results_And1.txt'
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
 
@@ -548,7 +548,7 @@ class GatingTestCase(unittest.TestCase):
         gs.add_gate(bool_gate)
 
         res_path = 'examples/data/gate_ref/truth/Results_And2.txt'
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
 
@@ -584,7 +584,7 @@ class GatingTestCase(unittest.TestCase):
         gs.add_gate(bool_gate)
 
         res_path = 'examples/data/gate_ref/truth/Results_Or1.txt'
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
 
@@ -620,7 +620,7 @@ class GatingTestCase(unittest.TestCase):
         gs.add_gate(bool_gate)
 
         res_path = 'examples/data/gate_ref/truth/Results_And3.txt'
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
 
@@ -644,7 +644,7 @@ class GatingTestCase(unittest.TestCase):
         gs.add_gate(bool_gate)
 
         res_path = 'examples/data/gate_ref/truth/Results_Not1.txt'
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
 
@@ -691,7 +691,7 @@ class GatingTestCase(unittest.TestCase):
         gs.add_gate(bool2_gate)
 
         res_path = 'examples/data/gate_ref/truth/Results_And4.txt'
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
 
@@ -726,7 +726,7 @@ class GatingTestCase(unittest.TestCase):
         gs.add_gate(bool1_gate)
 
         res_path = 'examples/data/gate_ref/truth/Results_Or2.txt'
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
 
@@ -746,7 +746,7 @@ class GatingTestCase(unittest.TestCase):
         gs.add_gate(poly_gate)
 
         res_path = 'examples/data/gate_ref/truth/Results_Polygon4.txt'
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
 
@@ -766,7 +766,7 @@ class GatingTestCase(unittest.TestCase):
         gs.add_gate(rect_gate)
 
         res_path = 'examples/data/gate_ref/truth/Results_Rectangle3.txt'
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
 
@@ -786,7 +786,7 @@ class GatingTestCase(unittest.TestCase):
         gs.add_gate(rect_gate)
 
         res_path = 'examples/data/gate_ref/truth/Results_Rectangle4.txt'
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
 
@@ -806,7 +806,7 @@ class GatingTestCase(unittest.TestCase):
         gs.add_gate(rect_gate)
 
         res_path = 'examples/data/gate_ref/truth/Results_Rectangle5.txt'
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
 
@@ -825,7 +825,7 @@ class GatingTestCase(unittest.TestCase):
         gs.add_gate(rect_gate)
 
         res_path = 'examples/data/gate_ref/truth/Results_ScaleRange1.txt'
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
 
@@ -844,7 +844,7 @@ class GatingTestCase(unittest.TestCase):
         gs.add_gate(rect_gate)
 
         res_path = 'examples/data/gate_ref/truth/Results_ScaleRange2.txt'
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
 
@@ -863,7 +863,7 @@ class GatingTestCase(unittest.TestCase):
         gs.add_gate(rect_gate)
 
         res_path = 'examples/data/gate_ref/truth/Results_ScaleRange3.txt'
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
 
@@ -882,7 +882,7 @@ class GatingTestCase(unittest.TestCase):
         gs.add_gate(rect_gate)
 
         res_path = 'examples/data/gate_ref/truth/Results_ScaleRange4.txt'
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
 
@@ -901,7 +901,7 @@ class GatingTestCase(unittest.TestCase):
         gs.add_gate(rect_gate)
 
         res_path = 'examples/data/gate_ref/truth/Results_ScaleRange5.txt'
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
 
@@ -925,7 +925,7 @@ class GatingTestCase(unittest.TestCase):
         gs.add_gate(rect_gate)
 
         res_path = 'examples/data/gate_ref/truth/Results_ScaleRange6.txt'
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
 
@@ -946,7 +946,7 @@ class GatingTestCase(unittest.TestCase):
         gs.add_gate(rect_gate)
 
         res_path = 'examples/data/gate_ref/truth/Results_ScaleRange1c.txt'
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
 
@@ -967,7 +967,7 @@ class GatingTestCase(unittest.TestCase):
         gs.add_gate(rect_gate)
 
         res_path = 'examples/data/gate_ref/truth/Results_ScaleRange2c.txt'
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
 
@@ -988,7 +988,7 @@ class GatingTestCase(unittest.TestCase):
         gs.add_gate(rect_gate)
 
         res_path = 'examples/data/gate_ref/truth/Results_ScaleRange3c.txt'
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
 
@@ -1009,7 +1009,7 @@ class GatingTestCase(unittest.TestCase):
         gs.add_gate(rect_gate)
 
         res_path = 'examples/data/gate_ref/truth/Results_ScaleRange4c.txt'
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
 
@@ -1030,7 +1030,7 @@ class GatingTestCase(unittest.TestCase):
         gs.add_gate(rect_gate)
 
         res_path = 'examples/data/gate_ref/truth/Results_ScaleRange5c.txt'
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
 
@@ -1051,7 +1051,7 @@ class GatingTestCase(unittest.TestCase):
         gs.add_gate(rect_gate)
 
         res_path = 'examples/data/gate_ref/truth/Results_ScaleRange6c.txt'
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
 
@@ -1072,7 +1072,7 @@ class GatingTestCase(unittest.TestCase):
         gs.add_gate(rect_gate)
 
         res_path = 'examples/data/gate_ref/truth/Results_ScaleRange7c.txt'
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
 
@@ -1093,7 +1093,7 @@ class GatingTestCase(unittest.TestCase):
         gs.add_gate(rect_gate)
 
         res_path = 'examples/data/gate_ref/truth/Results_ScaleRange8c.txt'
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
 
@@ -1115,7 +1115,7 @@ class GatingTestCase(unittest.TestCase):
         gs.add_gate(rect_gate)
 
         res_path = 'examples/data/gate_ref/truth/Results_ScaleRect1.txt'
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
 
@@ -1152,7 +1152,7 @@ class GatingTestCase(unittest.TestCase):
         gs.add_gate(bool_gate)
 
         res_path = 'examples/data/gate_ref/truth/Results_ParAnd2.txt'
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
 
@@ -1183,7 +1183,7 @@ class GatingTestCase(unittest.TestCase):
         gs.add_gate(bool_gate)
 
         res_path = 'examples/data/gate_ref/truth/Results_ParAnd3.txt'
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
 
@@ -1214,7 +1214,7 @@ class GatingTestCase(unittest.TestCase):
         gs.add_gate(rect_gate2)
 
         res_path = 'examples/data/gate_ref/truth/Results_ScalePar1.txt'
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
 
@@ -1233,7 +1233,7 @@ class GatingTestCase(unittest.TestCase):
         gs.add_gate(rect_gate1)
 
         res_path = 'examples/data/gate_ref/truth/Results_ParQuadRect.txt'
-        truth = pd.read_csv(res_path, header=None, squeeze=True, dtype='bool').values
+        truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
 

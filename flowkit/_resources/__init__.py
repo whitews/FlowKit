@@ -1,3 +1,6 @@
+"""
+Contains non-code resources used in FlowKit
+"""
 from pkg_resources import resource_stream, resource_filename
 from lxml import etree
 import pathlib

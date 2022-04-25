@@ -89,6 +89,13 @@ class GatingStrategyTestCase(unittest.TestCase):
 
         self.assertRaises(KeyError, gs.add_comp_matrix, comp_matrix_01)
 
+    def test_get_max_depth(self):
+        gml_path = 'examples/data/gate_ref/gml/gml_all_gates.xml'
+        gs = fk.parse_gating_xml(gml_path)
+        gs_depth = gs.get_max_depth()
+
+        self.assertEqual(gs_depth, 2)
+
     def test_absolute_percent(self):
         gs = fk.GatingStrategy()
 

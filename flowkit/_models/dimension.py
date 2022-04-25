@@ -10,7 +10,7 @@ class Dimension(object):
     :param dimension_id: A string identifying the dimension, typically matching the PnN label of a channel in an
         FCS sample
     :param compensation_ref: A string referencing the ID of a Matrix instance
-    :param transformation_ref: A string referencing the ID of an instance of a Transform sub-class
+    :param transformation_ref: A string referencing the ID of an instance of a Transform subclass
     :param range_min: For use in defining the boundaries of a RectangleGate. A float defining the minimum boundary
         for the dimension. If None, the minimum is unbounded.
     :param range_max: For use in defining the boundaries of a RectangleGate. A float defining the maximum boundary
@@ -58,7 +58,7 @@ class RatioDimension(object):
 
     :param ratio_ref: A string referencing the ID of a RatioTransform instance
     :param compensation_ref: A string referencing the ID of a Matrix instance
-    :param transformation_ref: A string referencing the ID of an instance of a Transform sub-class
+    :param transformation_ref: A string referencing the ID of an instance of a Transform subclass
     :param range_min: For use in defining the boundaries of a RectangleGate. A float defining the minimum boundary
         for the dimension. If None, the minimum is unbounded.
     :param range_max: For use in defining the boundaries of a RectangleGate. A float defining the maximum boundary
@@ -78,7 +78,7 @@ class RatioDimension(object):
 
         # a compensation reference is required, although the value can be
         # the string 'uncompensated' for non-compensated dimensions, or 'FCS'
-        # for using the embedded spill in the FCS file. Otherwise it is a
+        # for using the embedded spill in the FCS file. Otherwise, it is a
         # reference to a Matrix in the GatingStrategy
         self.compensation_ref = compensation_ref
 
@@ -105,7 +105,7 @@ class QuadrantDivider(object):
     :param dimension_ref: A string referencing the ID of an instance of the Dimension class
     :param compensation_ref: A string referencing the ID of a Matrix instance
     :param values: One or more values used for partitioning the given Dimension
-    :param transformation_ref: A string referencing the ID of an instance of a Transform sub-class
+    :param transformation_ref: A string referencing the ID of an instance of a Transform subclass
     """
     def __init__(
             self,
@@ -120,7 +120,7 @@ class QuadrantDivider(object):
 
         # a compensation reference is required, although the value can be
         # the string 'uncompensated' for non-compensated dimensions, or 'FCS'
-        # for using the embedded spill in the FCS file. Otherwise it is a
+        # for using the embedded spill in the FCS file. Otherwise, it is a
         # reference to a Matrix in the GatingStrategy
         self.compensation_ref = compensation_ref
 

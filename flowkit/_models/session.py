@@ -135,6 +135,49 @@ class Session(object):
 
         self.add_samples(fcs_samples)
 
+    def __repr__(self):
+        sample_count = len(self.sample_lut)
+        loaded_sample_count = len([k for k, v in self.sample_lut.items() if isinstance(v, Sample)])
+        sample_group_count = len(self._sample_group_lut)
+
+        return (
+            f'{self.__class__.__name__}('
+            f'{sample_count} samples [{loaded_sample_count} loaded], '
+            f'{sample_group_count} sample groups)'
+        )
+
+    def summary(self):
+        """
+        Retrieve a summary of Session information, including a list of
+        sample groups defined, along with the sample and gate counts
+        for those sample groups.
+
+        :return: Pandas DataFrame containing Session summary information
+        """
+        sg_list = []
+
+        for group_name, group_dict in self._sample_group_lut.items():
+            template_gs = group_dict['template']
+
+            loaded_sample_ids = self.get_group_sample_ids(group_name, loaded_only=True)
+            gate_ids = template_gs.get_gate_ids()
+            gate_depth = template_gs.get_max_depth()
+
+            sg_info = {
+                'group_name': group_name,
+                'samples': len(group_dict['samples']),
+                'loaded_samples': len(loaded_sample_ids),
+                'gates': len(gate_ids),
+                'max_gate_depth': gate_depth
+            }
+
+            sg_list.append(sg_info)
+
+        df = pd.DataFrame(sg_list)
+        df.set_index('group_name', inplace=True)
+
+        return df
+
     def add_sample_group(self, group_name, gating_strategy=None):
         """
         Create a new sample group to the session. The group name must be unique to the session.
@@ -228,8 +271,8 @@ class Session(object):
 
     def add_samples(self, fcs_samples, group_name=None):
         """
-        Adds FCS samples to the session. All added samples will be added to the 'default' sample group unless
-        an existing sample group is specified for the group_name.
+        Adds FCS samples to the session. All added samples will be added to the 'default' sample group.
+        The given samples will also be added to the provided group_name (if specified and the group exists).
 
         :param fcs_samples: str or list. If given a string, it can be a directory path or a file path.
             If a directory, any .fcs files in the directory will be loaded. If a list, then it must
@@ -354,7 +397,7 @@ class Session(object):
         Add a Gate instance to a sample group in the session. Gates will be added to
         the 'default' sample group by default.
 
-        :param gate: an instance of a Gate sub-class
+        :param gate: an instance of a Gate subclass
         :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
             Required if gate.gate_name and gate.parent combination is ambiguous
         :param group_name: a text string representing the sample group
@@ -374,7 +417,7 @@ class Session(object):
         Add a Transform instance to a sample group in the session. Transforms will be added to
         the 'default' sample group by default.
 
-        :param transform: an instance of a Transform sub-class
+        :param transform: an instance of a Transform subclass
         :param group_name: a text string representing the sample group
         :return: None
         """
@@ -407,7 +450,7 @@ class Session(object):
 
         :param group_name: a text string representing the sample group
         :param transform_id: a text string representing a Transform ID
-        :return: an instance of a Transform sub-class
+        :return: an instance of a Transform subclass
         """
         group = self._sample_group_lut[group_name]
         gating_strategy = group['template']
@@ -506,7 +549,7 @@ class Session(object):
 
         :param group_name: a text string representing the sample group
         :param sample_id: a text string representing a Sample instance
-        :return: list of Gate sub-class instances
+        :return: list of Gate subclass instances
         """
         group = self._sample_group_lut[group_name]
         gating_strategy = group['samples'][sample_id]
@@ -539,7 +582,7 @@ class Session(object):
 
         :param group_name: a text string representing the sample group
         :param sample_id: a text string representing a Sample instance
-        :return: list of Transform sub-class instances
+        :return: list of Transform subclass instances
         """
         group = self._sample_group_lut[group_name]
         gating_strategy = group['samples'][sample_id]
@@ -716,7 +759,7 @@ class Session(object):
         :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
             Required if gate_name is ambiguous
         :param matrix: an instance of the Matrix class
-        :param transform: an instance of a Transform sub-class
+        :param transform: an instance of a Transform subclass
         :return: pandas DataFrame containing only the events within the specified gate
         """
         sample = self.get_sample(sample_id)
