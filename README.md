@@ -93,7 +93,7 @@ Required Python dependencies:
 * lxml >= 4.4
 * matplotlib >= 3.1
 * networkx >= 2.3
-* numpy >= 1.19
+* numpy >= 1.20
 * pandas >= 1.1
 * psutils ~= 5.8
 * scipy >= 1.3
