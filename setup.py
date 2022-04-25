@@ -18,7 +18,7 @@ reqs = [
     'anytree>=2.6',
     'bokeh>=2,<3',
     'flowio>=1,<1.1',
-    'flowutils==1.0.0rc1',
+    'flowutils==>=1,<1.1',
     'lxml>=4.4',
     'matplotlib>=3.1',
     'networkx>=2.3',
