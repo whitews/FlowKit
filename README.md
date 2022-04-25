@@ -102,6 +102,10 @@ Required Python dependencies:
 
 ## Installation
 
+####**Note for MacOS users running on Apple Silicon (e.g. M1 CPUs)**
+
+**The version of `pip` may need to be upgraded prior to installing FlowKit in order to install the required dependencies.**
+
 ### From PyPI
 
 ```
