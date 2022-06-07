@@ -297,7 +297,7 @@ class Sample(object):
 
     def filter_negative_scatter(self, reapply_subsample=True):
         """
-        Determines indices of negative scatter events, optionally re-subsample the Sample events afterward
+        Determines indices of negative scatter events, optionally re-subsample the Sample events afterward.
 
         :param reapply_subsample: Whether to re-subsample the Sample events after filtering. Default is True
         """
