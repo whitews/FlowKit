@@ -237,6 +237,24 @@ class GatingStrategy(object):
 
         return node
 
+    def find_matching_gate_paths(self, gate_name):
+        """
+        Find all gate paths for given gate name.
+
+        :param gate_name: text string of a gate name
+        :return: list of gate paths (list of tuples)
+        """
+        node_matches = anytree.findall_by_attr(self._gate_tree, gate_name)
+
+        gate_path_list = []
+
+        for node in node_matches:
+            gate_path_list.append(
+                tuple((a.name for a in node.ancestors))
+            )
+
+        return gate_path_list
+
     def get_root_gates(self):
         """
         Retrieve list of root-level gate instances.
