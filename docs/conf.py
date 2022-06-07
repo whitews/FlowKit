@@ -45,6 +45,8 @@ author = 'Scott White'
 
 master_doc = 'index'
 autodoc_member_order = 'bysource'
+# use 'both' to show both Class and __init__ docstrings
+autoclass_content = 'both'
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
@@ -67,9 +69,6 @@ autodoc_default_options = {
 autoclasstoc_sections = [
         'public-methods'
 ]
-
-# use 'both' to show both Class and __init__ docstrings
-autoclass_content = 'both'
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
