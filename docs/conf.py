@@ -58,6 +58,7 @@ extensions = [
 autodoc_default_options = {
     'members': True,
     'private-members': False,
+    'special-members': '__init__',
     'inherited-members': True,
     'undoc-members': True,
     'exclude-members': '__weakref__'
