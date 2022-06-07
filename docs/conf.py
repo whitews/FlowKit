@@ -45,8 +45,6 @@ author = 'Scott White'
 
 master_doc = 'index'
 autodoc_member_order = 'bysource'
-# use 'both' to show both Class and __init__ docstrings
-autoclass_content = 'both'
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
@@ -60,7 +58,6 @@ extensions = [
 autodoc_default_options = {
     'members': True,
     'private-members': False,
-    'special-members': '__init__',
     'inherited-members': True,
     'undoc-members': True,
     'exclude-members': '__weakref__'
