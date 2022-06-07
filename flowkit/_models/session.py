@@ -523,6 +523,56 @@ class Session(object):
         gate = template.get_gate(gate_name)
         return gate.parent
 
+    def find_matching_gate_paths(self, group_name, gate_name):
+        """
+        Find all gate paths in a sample group for given gate name.
+
+        :param group_name: a text string representing the sample group
+        :param gate_name: text string of a gate name
+        :return: list of gate paths (list of tuples)
+        """
+        group = self._sample_group_lut[group_name]
+        template = group['template']
+
+        return template.find_matching_gate_paths(gate_name)
+
+    def get_child_gate_ids(self, group_name, gate_name, gate_path=None):
+        """
+        Retrieve list of child gate IDs given the parent gate name (and path if ambiguous)
+        in the gate hierarchy of the specified sample group
+        :param group_name: a text string representing the sample group
+        :param gate_name: text string of a gate name
+        :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
+            Required if gate.gate_name and gate.parent combination is ambiguous
+        :return: list of gate IDs (each gate ID is a gate name string & tuple of the gate path)
+        """
+        group = self._sample_group_lut[group_name]
+        template = group['template']
+
+        if gate_path is None:
+            # need to make sure the gate name isn't used more than once (ambiguous gate name)
+            gate_paths = template.find_matching_gate_paths(gate_name)
+
+            if len(gate_paths) > 1:
+                raise KeyError(
+                    "Multiple gates exist with gate name '%s'. Specify a gate_path to disambiguate." % gate_name
+                )
+
+            gate_path = gate_paths[0]
+
+        # tack on given gate_name to be the full path for any children
+        child_gate_path = list(gate_path)
+        child_gate_path.append(gate_name)
+        child_gate_path = tuple(child_gate_path)
+
+        child_gates = template.get_child_gates(gate_name, gate_path)
+        child_gate_ids = []
+
+        for child_gate in child_gates:
+            child_gate_ids.append((child_gate.gate_name, child_gate_path))
+
+        return child_gate_ids
+
     def get_gate(self, group_name, gate_name, gate_path=None, sample_id=None):
         """
         Retrieve a gate instance by its group, sample, and gate ID.
