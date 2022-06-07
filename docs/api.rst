@@ -36,6 +36,8 @@ transforms Module
    hyperlog_transform
    logicle_transform
    asinh_transform
+   wsp_log_transform
+   wsp_biex_transform
 
 gates Module
 ------------
