@@ -1,7 +1,7 @@
 RectangleGate Class
 ===================
 
-.. currentmodule:: RectangleGate
+.. currentmodule:: gates
 
 .. autoclass:: flowkit.gates.RectangleGate
     :members:
