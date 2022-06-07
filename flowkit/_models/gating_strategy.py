@@ -326,7 +326,7 @@ class GatingStrategy(object):
 
     def get_gate_ids(self):
         """
-        Retrieve the list of gate IDs (with ancestors) for the gating strategy
+        Retrieve the list of gate IDs (with ancestors) for the gating strategy.
 
         :return: list of tuples (1st item is gate name string, 2nd item is a list of ancestor gate names)
         """
@@ -339,7 +339,7 @@ class GatingStrategy(object):
 
     def get_max_depth(self):
         """
-        Returns the max depth of the gating hierarchy
+        Returns the max depth of the gating hierarchy.
         """
         return self._gate_tree.height
 
@@ -399,7 +399,7 @@ class GatingStrategy(object):
 
     def _get_cached_preprocessed_events(self, sample_id, comp_ref, xform_ref, dim_idx=None):
         """
-        Retrieve cached pre-processed events (if they exist)
+        Retrieve cached pre-processed events (if they exist).
 
         :param sample_id: a text string for a Sample ID
         :param comp_ref: text string for a Matrix ID
@@ -420,6 +420,7 @@ class GatingStrategy(object):
         Clears all cached pre-processed events stored in the GatingStrategy. This is useful to
         reduce memory usage after analyzing large data sets. Clearing the cache will not affect
         any results previously retrieved.
+
         :return: None
         """
         self._cached_preprocessed_events = {}
