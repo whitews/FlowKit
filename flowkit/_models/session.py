@@ -384,6 +384,7 @@ class Session(object):
     def get_gate_ids(self, group_name):
         """
         Retrieve the list of gate IDs defined in the specified sample group
+
         :param group_name: a text string representing the sample group
         :return: list of gate ID strings
         """
@@ -539,7 +540,8 @@ class Session(object):
     def get_child_gate_ids(self, group_name, gate_name, gate_path=None):
         """
         Retrieve list of child gate IDs given the parent gate name (and path if ambiguous)
-        in the gate hierarchy of the specified sample group
+        in the gate hierarchy of the specified sample group.
+
         :param group_name: a text string representing the sample group
         :param gate_name: text string of a gate name
         :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
@@ -684,7 +686,8 @@ class Session(object):
 
     def get_sample(self, sample_id):
         """
-        Retrieve a Sample instance from the Session
+        Retrieve a Sample instance from the Session.
+
         :param sample_id: a text string representing the sample
         :return: Sample instance
         """
