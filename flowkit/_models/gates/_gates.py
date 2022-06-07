@@ -26,6 +26,13 @@ class RectangleGate(Gate):
             parent_gate_name,
             dimensions
     ):
+        """
+        Create a RectangleGate instance.
+
+        :param gate_name: text string for the name of the gate
+        :param parent_gate_name: text string for the name of the parent gate
+        :param dimensions: list of Dimension instances used to define the gate boundaries
+        """
         super().__init__(
             gate_name,
             parent_gate_name,
@@ -217,6 +224,7 @@ class Quadrant(object):
     def get_divider_range(self, div_ref):
         """
         Returns the divider range values for the given QuadrantDivider ID reference.
+
         :param div_ref: QuadrantDivider ID string
         :return: min/max range values for the requested divider
         """
@@ -231,7 +239,7 @@ class Quadrant(object):
 
 class QuadrantGate(Gate):
     """
-    Represents a GatingML Quadrant Gate
+    Represents a GatingML Quadrant Gate.
 
     A QuadrantGate must have at least 1 divider, and must specify the labels
     of the resulting quadrants the dividers produce. Quadrant gates are
@@ -328,7 +336,7 @@ class QuadrantGate(Gate):
 
 class BooleanGate(Gate):
     """
-    Represents a GatingML Boolean Gate
+    Represents a GatingML Boolean Gate.
 
     A BooleanGate performs the boolean operations AND, OR, or NOT on one or
     more other gates. Note, the boolean operation XOR is not supported in the
