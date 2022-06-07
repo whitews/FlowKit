@@ -511,11 +511,11 @@ class Session(object):
 
     def get_parent_gate_name(self, group_name, gate_name):
         """
-        Retrieve a parent gate instance by the child gate ID, sample group, and sample ID.
+        Retrieve the gate name of the parent gate by the child gate ID and sample group.
 
         :param group_name: a text string representing the sample group
         :param gate_name: text string of a gate name
-        :return: Subclass of a Gate object
+        :return: string of the parent gate name
         """
         # this method doesn't need to lookup sample specific gates, as the gate names
         # and hierarchy must be the same for all samples in a group
