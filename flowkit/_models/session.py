@@ -216,25 +216,10 @@ class Session(object):
             ignore_transforms=False
     ):
         """
-        Imports a FlowJo workspace (version 10+) into the Session. Each sample group in the workspace will
+        Imports a FlowJo 10 workspace into the Session. Each sample group in the workspace will
         be a sample group in the FlowKit session. Referenced samples in the workspace will be imported as
         references in the session. Ideally, these samples should have already been loaded into the session,
         and a warning will be issued for each sample reference that has not yet been loaded.
-        Support for FlowJo workspaces is limited to the following
-        features:
-
-          - Transformations:
-
-            - linear
-            - log
-            - logicle
-          - Gates:
-
-            - rectangle
-            - polygon
-            - ellipse
-            - quadrant
-            - range
 
         :param workspace_file_or_path: WSP workspace file as a file name/path, file object, or file-like object
         :param ignore_missing_files: Controls whether UserWarning messages are issued for FCS files found in the
@@ -381,6 +366,7 @@ class Session(object):
 
         return samples
 
+    # start pass through methods for GatingStrategy class
     def get_gate_ids(self, group_name):
         """
         Retrieve the list of gate IDs defined in the specified sample group
@@ -392,7 +378,6 @@ class Session(object):
         template = group['template']
         return template.get_gate_ids()
 
-    # start pass through methods for GatingStrategy class
     def add_gate(self, gate, gate_path=None, group_name='default'):
         """
         Add a Gate instance to a sample group in the session. Gates will be added to
