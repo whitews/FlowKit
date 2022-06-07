@@ -49,4 +49,5 @@ gates Module
    ellipsoid_gate
    polygon_gate
    quadrant_gate
+   quadrant
    rectangle_gate
