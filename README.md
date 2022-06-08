@@ -82,7 +82,7 @@ via pip, and are listed below.
 
 Required Python dependencies:
 
-* [flowio](https://github.com/whitews/flowio) == 1.0.0
+* [flowio](https://github.com/whitews/flowio) == 1.0.1
 * [flowutils](https://github.com/whitews/flowutils) == 1.0.0
 * anytree >= 2.6
 * bokeh >= 1.4, <3
