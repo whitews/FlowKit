@@ -5,7 +5,7 @@ Main Classes
 ------------
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    sample
    gating_strategy
@@ -16,7 +16,7 @@ Supporting Classes
 ------------------
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    matrix
    dimension
@@ -28,7 +28,7 @@ transforms Module
 -----------------
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    linear_transform
    log_transform
@@ -43,7 +43,7 @@ gates Module
 ------------
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    boolean_gate
    ellipsoid_gate
