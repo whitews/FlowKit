@@ -52,7 +52,8 @@ autodoc_member_order = 'bysource'
 extensions = [
     'autoclasstoc',
     'sphinx.ext.autodoc',
-    'sphinx.ext.autosummary'
+    'sphinx.ext.autosummary',
+    'nbsphinx'
 ]
 
 autodoc_default_options = {
