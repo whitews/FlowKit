@@ -24,48 +24,11 @@ FlowKit is an intuitive Python toolkit for flow cytometry analysis and visualiza
 * :ref:`genindex`
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    api
 
-Features
---------
+.. toctree::
+   :maxdepth: 3
 
-* Read / Write FCS Files
-    * Read FCS files, supporting FCS versions 2.0, 3.0, and 3.1
-    * Export FCS data as:
-        * A new FCS 3.1 file
-        * NumPy array
-        * Pandas DataFrame
-        * CSV text file
-* Compensation
-    * Compensate events using spillover matrices from:
-        * $SPILL or $SPILLOVER keyword value
-        * FlowJo tab-delimited text
-        * NumPy array
-        * GatingML 2.0 spectrumMatrix XML element
-    * Create a compensation matrix from a set of compensation bead files
-* Transformation
-    * Logicle
-    * Inverse hyperbolic sine (ArcSinh)
-    * FlowJo Bi-exponential
-    * Hyperlog
-    * Logarithmic
-    * Channel ratios
-    * Linear
-* Gating
-    * Full support for the GatingML 2.0 specification
-        * Import GatingML XML documents as gating strategies
-        * Export gating strategies as a valid GatingML XML document
-    * Limited support for importing FlowJo 10 workspace files. Workspace files are currently limited to the following features:
-        * Linear, logarithmic, bi-exponential, and logicle transforms
-        * Polygon, rectangle, ellipse, and quadrant gates
-        * Export a Session's sample group analysis as a FlowJo 10 workspace file
-    * Programmatically create gating strategies including polygon, rectangle, range, ellipsoid, quadrant, and boolean gates
-    * Retrieve gating results as a Pandas DataFrame
-* Visualization
-    * Histogram of single channel data
-    * Contour density plot of two channels
-    * Interactive scatter plot of two channels
-    * Interactive scatter plot matrix of any combination of channels
-    * Interactive scatter plots of gates with sample events
+   tutorials
