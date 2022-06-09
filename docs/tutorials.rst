@@ -11,3 +11,4 @@ Basic Tutorial Series
     notebooks/flowkit-tutorial-part02-transforms-module-matrix-class.ipynb
     notebooks/flowkit-tutorial-part03-gating-strategy-and-gating-results-classes.ipynb
     notebooks/flowkit-tutorial-part04-gates-module.ipynb
+    notebooks/flowkit-tutorial-part05-session-class.ipynb
