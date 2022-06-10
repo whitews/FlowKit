@@ -72,7 +72,7 @@ class GatingStrategy(object):
             # Verify gate_path is a tuple, else user gets a cryptic error for
             # something that is simple to fix
             if not isinstance(gate_path, tuple):
-                raise TypeError("gate must be a sub-class of the Gate class")
+                raise TypeError("gate_path must be a tuple not %s" % str(type(gate_path)))
 
             if len(gate_path) != 0:
                 if parent_gate_name != gate_path[-1]:
