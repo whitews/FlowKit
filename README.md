@@ -117,7 +117,7 @@ python setup.py install
 
 ## Documentation
 
-The FlowKit API documentation is available [on ReadTheDocs here](https://flowkit.readthedocs.io/en/latest/?badge=latest). The tutorial notebooks in the `examples` directory are a great place to get started with FlowKit, and are linked below.
+The FlowKit API documentation is available [on ReadTheDocs here](https://flowkit.readthedocs.io/en/latest/?badge=latest). The tutorial notebooks in the `docs/notebooks` directory are a great place to get started with FlowKit, and are linked below.
 If you have any questions about FlowKit, find any bugs, or feel something is missing from the tutorials below [please submit an issue to the GitHub repository here](https://github.com/whitews/FlowKit/issues/new/).
 
 ### Changelogs
@@ -126,9 +126,9 @@ If you have any questions about FlowKit, find any bugs, or feel something is mis
 
 ### Tutorials
 
-The series of Jupyter notebook tutorials can be found in the `examples` directory of this repository. Note, the interactive scatterplots do not render on GitHub. Clone the repo (or download the example notebooks), and run them locally to see the fully interactive plots.
+The series of Jupyter notebook tutorials can be found in the `docs/notebooks` directory of this repository. Note, the interactive scatterplots do not render on GitHub. The rendered versions are available on our [documentation page here](https://flowkit.readthedocs.io/en/latest/?badge=latest). Or, clone the repo and run them locally to see the fully interactive plots.
 
-* [Part 1 - Sample Class](https://github.com/whitews/FlowKit/blob/master/examples/flowkit-tutorial-part01-sample-class.ipynb)
+* [Part 1 - Sample Class](https://github.com/whitews/FlowKit/blob/master/docs/notebooks/flowkit-tutorial-part01-sample-class.ipynb)
 * [Part 2 - transforms Module & Matrix Class](https://github.com/whitews/FlowKit/blob/master/examples/flowkit-tutorial-part02-transforms-module-matrix-class.ipynb)
 * [Part 3 - GatingStrategy & GatingResults Classes](https://github.com/whitews/FlowKit/blob/master/examples/flowkit-tutorial-part03-gating-strategy-and-gating-results-classes.ipynb)
 * [Part 4 - gates Module](https://github.com/whitews/FlowKit/blob/master/examples/flowkit-tutorial-part04-gates-module.ipynb)
