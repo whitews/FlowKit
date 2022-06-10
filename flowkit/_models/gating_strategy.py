@@ -149,6 +149,24 @@ class GatingStrategy(object):
                 gate_ref_node_tuple = tuple(gate_ref['path']) + (gate_ref['ref'],)
                 self._dag.add_edge(gate_ref_node_tuple, new_node_tuple)
 
+    def get_gate(self, gate_name, gate_path=None):
+        """
+        Retrieve a gate instance by its gate ID.
+
+        :param gate_name: text string of a gate name
+        :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
+            Required if gate_name is ambiguous
+        :return: Subclass of a Gate object
+        :raises KeyError: if gate ID is not found in gating strategy
+        """
+        node = self._get_gate_node(gate_name, gate_path)
+
+        if isinstance(node.gate, fk_gates.Quadrant):
+            # return the full QuadrantGate b/c a Quadrant by itself has no parent reference
+            node = node.parent
+
+        return node.gate
+
     def add_transform(self, transform):
         """
         Add a transform to the gating strategy, see `transforms` module. The transform ID must be unique in the
@@ -270,24 +288,6 @@ class GatingStrategy(object):
             root_gates.append(node.gate)
 
         return root_gates
-
-    def get_gate(self, gate_name, gate_path=None):
-        """
-        Retrieve a gate instance by its gate ID.
-
-        :param gate_name: text string of a gate name
-        :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
-            Required if gate_name is ambiguous
-        :return: Subclass of a Gate object
-        :raises KeyError: if gate ID is not found in gating strategy
-        """
-        node = self._get_gate_node(gate_name, gate_path)
-
-        if isinstance(node.gate, fk_gates.Quadrant):
-            # return the full QuadrantGate b/c a Quadrant by itself has no parent reference
-            node = node.parent
-
-        return node.gate
 
     def get_parent_gate(self, gate_name, gate_path=None):
         """
