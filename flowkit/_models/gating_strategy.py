@@ -60,7 +60,7 @@ class GatingStrategy(object):
         :return: None
         """
         if not isinstance(gate, Gate):
-            raise ValueError("gate must be a sub-class of the Gate class")
+            raise TypeError("gate must be a sub-class of the Gate class")
 
         parent_gate_name = gate.parent
         if parent_gate_name is None:
@@ -69,6 +69,11 @@ class GatingStrategy(object):
 
         # Verify the gate parent matches the last item in the gate path (if given)
         if gate_path is not None:
+            # Verify gate_path is a tuple, else user gets a cryptic error for
+            # something that is simple to fix
+            if not isinstance(gate_path, tuple):
+                raise TypeError("gate must be a sub-class of the Gate class")
+
             if len(gate_path) != 0:
                 if parent_gate_name != gate_path[-1]:
                     raise ValueError("The gate parent and the last item in gate path are different.")
@@ -176,7 +181,7 @@ class GatingStrategy(object):
         :return: None
         """
         if not isinstance(transform, Transform):
-            raise ValueError("transform must be a sub-class of the Transform class")
+            raise TypeError("transform must be a sub-class of the Transform class")
 
         if transform.id in self.transformations:
             raise KeyError("Transform ID '%s' is already defined" % transform.id)
@@ -202,7 +207,7 @@ class GatingStrategy(object):
         """
         # Only accept Matrix class instances as we need the ID
         if not isinstance(matrix, Matrix):
-            raise ValueError("matrix must be an instance of the Matrix class")
+            raise TypeError("matrix must be an instance of the Matrix class")
 
         if matrix.id in self.comp_matrices:
             raise KeyError("Matrix ID '%s' is already defined" % matrix.id)
