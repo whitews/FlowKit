@@ -35,7 +35,7 @@ class Dimension(object):
 
         # transformation is optional, but if present must be a string
         if transformation_ref is not None and not isinstance(transformation_ref, str):
-            raise ValueError("Transformation reference must be a text string or None")
+            raise TypeError("Transformation reference must be a text string or None")
 
         self.transformation_ref = transformation_ref
 

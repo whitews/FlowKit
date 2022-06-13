@@ -47,7 +47,7 @@ comp_matrix_01 = fk.Matrix('MySpill', spill01_data, spill01_detectors, spill01_f
 class GatingStrategyTestCase(unittest.TestCase):
     def test_add_gate_non_gate_class(self):
         gs = fk.GatingStrategy()
-        self.assertRaises(ValueError, gs.add_gate, "not a gate class")
+        self.assertRaises(TypeError, gs.add_gate, "not a gate class")
 
     def test_add_duplicate_gate_id(self):
         gs = fk.GatingStrategy()
@@ -71,7 +71,7 @@ class GatingStrategyTestCase(unittest.TestCase):
 
     def test_add_transform_non_transform_class(self):
         gs = fk.GatingStrategy()
-        self.assertRaises(ValueError, gs.add_transform, "not a transform class")
+        self.assertRaises(TypeError, gs.add_transform, "not a transform class")
 
     def test_add_duplicate_transform_id(self):
         gs = fk.GatingStrategy()
@@ -81,7 +81,7 @@ class GatingStrategyTestCase(unittest.TestCase):
 
     def test_add_matrix_non_matrix_class(self):
         gs = fk.GatingStrategy()
-        self.assertRaises(ValueError, gs.add_comp_matrix, "not a matrix class")
+        self.assertRaises(TypeError, gs.add_comp_matrix, "not a matrix class")
 
     def test_add_duplicate_matrix_id(self):
         gs = fk.GatingStrategy()

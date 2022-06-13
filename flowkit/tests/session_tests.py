@@ -178,6 +178,54 @@ class SessionTestCase(unittest.TestCase):
         self.assertIsInstance(df_gated_events, list)
         self.assertEqual(len(df_gated_events[0]), 133670)
 
+    def test_get_child_gate_ids(self):
+        wsp_path = "examples/data/8_color_data_set/8_color_ICS.wsp"
+        sample_grp = 'DEN'
+        gate_name = 'CD3+'
+
+        fks = Session()
+        fks.import_flowjo_workspace(wsp_path, ignore_missing_files=True)
+
+        child_gate_ids = fks.get_child_gate_ids(sample_grp, gate_name)
+
+        truth = [
+            ('CD4+', ('root', 'Time', 'Singlets', 'aAmine-', 'CD3+')),
+            ('CD8+', ('root', 'Time', 'Singlets', 'aAmine-', 'CD3+'))
+        ]
+
+        self.assertEqual(len(child_gate_ids), 2)
+        for gate_name, gate_path in child_gate_ids:
+            self.assertIn((gate_name, gate_path), truth)
+
+    def test_ambiguous_gate_raises_in_get_child_gate_ids(self):
+        wsp_path = "examples/data/8_color_data_set/8_color_ICS.wsp"
+        sample_grp = 'DEN'
+        gate_name = 'IFNg+'
+
+        fks = Session()
+        fks.import_flowjo_workspace(wsp_path, ignore_missing_files=True)
+
+        self.assertRaises(KeyError, fks.get_child_gate_ids, sample_grp, gate_name)
+
+    def test_find_matching_gate_paths(self):
+        wsp_path = "examples/data/8_color_data_set/8_color_ICS.wsp"
+        sample_grp = 'DEN'
+        gate_name = 'IFNg+'
+
+        fks = Session()
+        fks.import_flowjo_workspace(wsp_path, ignore_missing_files=True)
+
+        gate_paths = fks.find_matching_gate_paths(sample_grp, gate_name)
+
+        truth = [
+            ('root', 'Time', 'Singlets', 'aAmine-', 'CD3+', 'CD4+'),
+            ('root', 'Time', 'Singlets', 'aAmine-', 'CD3+', 'CD8+')
+        ]
+
+        self.assertEqual(len(gate_paths), 2)
+        for gate_path in gate_paths:
+            self.assertIn(gate_path, truth)
+
     @staticmethod
     def test_add_poly1_gate():
         fks = Session(fcs_samples=data1_sample)

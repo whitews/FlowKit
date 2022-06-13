@@ -60,7 +60,7 @@ class GatingStrategy(object):
         :return: None
         """
         if not isinstance(gate, Gate):
-            raise ValueError("gate must be a sub-class of the Gate class")
+            raise TypeError("gate must be a sub-class of the Gate class")
 
         parent_gate_name = gate.parent
         if parent_gate_name is None:
@@ -69,6 +69,11 @@ class GatingStrategy(object):
 
         # Verify the gate parent matches the last item in the gate path (if given)
         if gate_path is not None:
+            # Verify gate_path is a tuple, else user gets a cryptic error for
+            # something that is simple to fix
+            if not isinstance(gate_path, tuple):
+                raise TypeError("gate_path must be a tuple not %s" % str(type(gate_path)))
+
             if len(gate_path) != 0:
                 if parent_gate_name != gate_path[-1]:
                     raise ValueError("The gate parent and the last item in gate path are different.")
@@ -149,6 +154,24 @@ class GatingStrategy(object):
                 gate_ref_node_tuple = tuple(gate_ref['path']) + (gate_ref['ref'],)
                 self._dag.add_edge(gate_ref_node_tuple, new_node_tuple)
 
+    def get_gate(self, gate_name, gate_path=None):
+        """
+        Retrieve a gate instance by its gate ID.
+
+        :param gate_name: text string of a gate name
+        :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
+            Required if gate_name is ambiguous
+        :return: Subclass of a Gate object
+        :raises KeyError: if gate ID is not found in gating strategy
+        """
+        node = self._get_gate_node(gate_name, gate_path)
+
+        if isinstance(node.gate, fk_gates.Quadrant):
+            # return the full QuadrantGate b/c a Quadrant by itself has no parent reference
+            node = node.parent
+
+        return node.gate
+
     def add_transform(self, transform):
         """
         Add a transform to the gating strategy, see `transforms` module. The transform ID must be unique in the
@@ -158,7 +181,7 @@ class GatingStrategy(object):
         :return: None
         """
         if not isinstance(transform, Transform):
-            raise ValueError("transform must be a sub-class of the Transform class")
+            raise TypeError("transform must be a sub-class of the Transform class")
 
         if transform.id in self.transformations:
             raise KeyError("Transform ID '%s' is already defined" % transform.id)
@@ -184,7 +207,7 @@ class GatingStrategy(object):
         """
         # Only accept Matrix class instances as we need the ID
         if not isinstance(matrix, Matrix):
-            raise ValueError("matrix must be an instance of the Matrix class")
+            raise TypeError("matrix must be an instance of the Matrix class")
 
         if matrix.id in self.comp_matrices:
             raise KeyError("Matrix ID '%s' is already defined" % matrix.id)
@@ -237,6 +260,24 @@ class GatingStrategy(object):
 
         return node
 
+    def find_matching_gate_paths(self, gate_name):
+        """
+        Find all gate paths for given gate name.
+
+        :param gate_name: text string of a gate name
+        :return: list of gate paths (list of tuples)
+        """
+        node_matches = anytree.findall_by_attr(self._gate_tree, gate_name)
+
+        gate_path_list = []
+
+        for node in node_matches:
+            gate_path_list.append(
+                tuple((a.name for a in node.ancestors))
+            )
+
+        return gate_path_list
+
     def get_root_gates(self):
         """
         Retrieve list of root-level gate instances.
@@ -252,24 +293,6 @@ class GatingStrategy(object):
             root_gates.append(node.gate)
 
         return root_gates
-
-    def get_gate(self, gate_name, gate_path=None):
-        """
-        Retrieve a gate instance by its gate ID.
-
-        :param gate_name: text string of a gate name
-        :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
-            Required if gate_name is ambiguous
-        :return: Subclass of a Gate object
-        :raises KeyError: if gate ID is not found in gating strategy
-        """
-        node = self._get_gate_node(gate_name, gate_path)
-
-        if isinstance(node.gate, fk_gates.Quadrant):
-            # return the full QuadrantGate b/c a Quadrant by itself has no parent reference
-            node = node.parent
-
-        return node.gate
 
     def get_parent_gate(self, gate_name, gate_path=None):
         """
@@ -308,7 +331,7 @@ class GatingStrategy(object):
 
     def get_gate_ids(self):
         """
-        Retrieve the list of gate IDs (with ancestors) for the gating strategy
+        Retrieve the list of gate IDs (with ancestors) for the gating strategy.
 
         :return: list of tuples (1st item is gate name string, 2nd item is a list of ancestor gate names)
         """
@@ -321,7 +344,7 @@ class GatingStrategy(object):
 
     def get_max_depth(self):
         """
-        Returns the max depth of the gating hierarchy
+        Returns the max depth of the gating hierarchy.
         """
         return self._gate_tree.height
 
@@ -381,7 +404,7 @@ class GatingStrategy(object):
 
     def _get_cached_preprocessed_events(self, sample_id, comp_ref, xform_ref, dim_idx=None):
         """
-        Retrieve cached pre-processed events (if they exist)
+        Retrieve cached pre-processed events (if they exist).
 
         :param sample_id: a text string for a Sample ID
         :param comp_ref: text string for a Matrix ID
@@ -402,6 +425,7 @@ class GatingStrategy(object):
         Clears all cached pre-processed events stored in the GatingStrategy. This is useful to
         reduce memory usage after analyzing large data sets. Clearing the cache will not affect
         any results previously retrieved.
+
         :return: None
         """
         self._cached_preprocessed_events = {}

@@ -297,7 +297,7 @@ class Sample(object):
 
     def filter_negative_scatter(self, reapply_subsample=True):
         """
-        Determines indices of negative scatter events, optionally re-subsample the Sample events afterward
+        Determines indices of negative scatter events, optionally re-subsample the Sample events afterward.
 
         :param reapply_subsample: Whether to re-subsample the Sample events after filtering. Default is True
         """
@@ -330,7 +330,7 @@ class Sample(object):
             random_seed=1
     ):
         """
-        Returns a sub-sample of FCS raw events
+        Returns a sub-sample of FCS raw events.
 
         Returns NumPy array if sub-sampling succeeds
         Also updates self.subsample_indices
@@ -413,7 +413,7 @@ class Sample(object):
 
     def get_metadata(self):
         """
-        Retrieve FCS metadata
+        Retrieve FCS metadata.
 
         :return: Dictionary of FCS metadata
         """
@@ -523,7 +523,7 @@ class Sample(object):
 
     def as_dataframe(self, source='xform', subsample=False, col_order=None, col_names=None):
         """
-        Returns a pandas DataFrame of event data
+        Returns a pandas DataFrame of event data.
 
         :param source: 'orig', 'raw', 'comp', 'xform' for whether the original (no gain applied),
             raw (orig + gain), compensated (raw + comp), or transformed (comp + xform) events will

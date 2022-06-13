@@ -26,6 +26,13 @@ class RectangleGate(Gate):
             parent_gate_name,
             dimensions
     ):
+        """
+        Create a RectangleGate instance.
+
+        :param gate_name: text string for the name of the gate
+        :param parent_gate_name: text string for the name of the parent gate
+        :param dimensions: list of Dimension instances used to define the gate boundaries
+        """
         super().__init__(
             gate_name,
             parent_gate_name,
@@ -80,6 +87,14 @@ class PolygonGate(Gate):
             dimensions,
             vertices
     ):
+        """
+        Create a PolygonGate instance.
+
+        :param gate_name: text string for the name of the gate
+        :param parent_gate_name: text string for the name of the parent gate
+        :param dimensions: list of Dimension instances
+        :param vertices: list of Vertex instances used to define gate boundary
+        """
         super().__init__(
             gate_name,
             parent_gate_name,
@@ -139,6 +154,19 @@ class EllipsoidGate(Gate):
             covariance_matrix,
             distance_square
     ):
+        """
+        Create an EllipsoidGate instance.
+
+        :param gate_name: text string for the name of the gate
+        :param parent_gate_name: text string for the name of the parent gate
+        :param dimensions: list of Dimension instances
+        :param coordinates: center point of the ellipsoid for n-dimensions
+        :param covariance_matrix: Covariance matrix for the ellipsoid shape (NxN array)
+        :param distance_square: square of the Mahalanobis distance, controlling
+            the size of the ellipsoid. The distance square parameter is conceptually
+            similar to the number of standard deviations representing the boundary
+            for an n-dimensional distribution of points.
+        """
         super().__init__(
             gate_name,
             parent_gate_name,
@@ -193,8 +221,19 @@ class EllipsoidGate(Gate):
 class Quadrant(object):
     """
     Represents a single quadrant of a QuadrantGate.
+
+    A quadrant is a rectangular section where the boundaries are specified by QuadrantDivider
+    references.
     """
     def __init__(self, quadrant_id, divider_refs, divider_ranges):
+        """
+        Create a Quadrant instance.
+
+        :param quadrant_id: text string to identify the quadrant
+        :param divider_refs: list of text strings referencing QuadrantDivider instances
+        :param divider_ranges: list of min/max pairs corresponding to boundaries of the
+            given QuadrantDivider references.
+        """
         self.id = quadrant_id
 
         div_count = len(divider_refs)
@@ -217,6 +256,7 @@ class Quadrant(object):
     def get_divider_range(self, div_ref):
         """
         Returns the divider range values for the given QuadrantDivider ID reference.
+
         :param div_ref: QuadrantDivider ID string
         :return: min/max range values for the requested divider
         """
@@ -231,7 +271,7 @@ class Quadrant(object):
 
 class QuadrantGate(Gate):
     """
-    Represents a GatingML Quadrant Gate
+    Represents a GatingML Quadrant Gate.
 
     A QuadrantGate must have at least 1 divider, and must specify the labels
     of the resulting quadrants the dividers produce. Quadrant gates are
@@ -250,6 +290,14 @@ class QuadrantGate(Gate):
             dividers,
             quadrants
     ):
+        """
+        Create a QuadrantGate instance.
+
+        :param gate_name: text string for the name of the gate
+        :param parent_gate_name: text string for the name of the parent gate
+        :param dividers: a list of QuadrantDivider instances
+        :param quadrants: a list of Quadrant instances
+        """
         super().__init__(
             gate_name,
             parent_gate_name,
@@ -328,7 +376,7 @@ class QuadrantGate(Gate):
 
 class BooleanGate(Gate):
     """
-    Represents a GatingML Boolean Gate
+    Represents a GatingML Boolean Gate.
 
     A BooleanGate performs the boolean operations AND, OR, or NOT on one or
     more other gates. Note, the boolean operation XOR is not supported in the
@@ -342,6 +390,19 @@ class BooleanGate(Gate):
             bool_type,
             gate_refs
     ):
+        """
+        Create a BooleanGate instance.
+
+        A gate reference is a dictionary containing keywords `ref`, `path`, and `complement`. The
+        `ref` keyword is a text string referencing an existing gate ID. The `path` is a tuple of
+        that gate's full gate path. The `complement` is a boolean flag specifying whether to use
+        the boolean complement (i.e. "NOT").
+
+        :param gate_name: text string for the name of the gate
+        :param parent_gate_name: text string for the name of the parent gate
+        :param bool_type: string specifying boolean type. Accepted values: `and`, `or`, and `not` (case-insensitive)
+        :param gate_refs: list of "gate reference" dictionaries (see above description of a gate reference)
+        """
         super().__init__(
             gate_name,
             parent_gate_name,

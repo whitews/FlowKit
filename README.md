@@ -26,11 +26,11 @@
 
 FlowKit is an intuitive Python toolkit for flow cytometry analysis and visualization, with full support for the [GatingML 2.0 standard](http://flowcyt.sourceforge.net/gating/latest.pdf) and limited support for FlowJo 10 workspace files.
 
-**Version 0.6 added experimental support for exporting FlowJo 10 workspace files from a Session. Support is currently limited to exporting data from a single sample group. Please [submit an issue](https://github.com/whitews/FlowKit/issues/new/choose) if you find any bugs related to this feature.**
-
 [!["Screenshot of scatterplot"](https://raw.githubusercontent.com/whitews/FlowKit/master/docs/_static/fk_scatterplot.png)]()
 
 ## Features
+
+> **NOTE**: Version 0.6 added experimental support for exporting FlowJo 10 workspace files from a Session. Support is currently limited to exporting data from a single sample group. Please [submit an issue](https://github.com/whitews/FlowKit/issues/new/choose) if you find any bugs related to this feature.
 
 * Read / Write FCS Files
   * Read FCS files, supporting FCS versions 2.0, 3.0, and 3.1
@@ -76,17 +76,13 @@ FlowKit is an intuitive Python toolkit for flow cytometry analysis and visualiza
 FlowKit supports Python version 3.7 or above. All dependencies are installable 
 via pip, and are listed below.
 
-***Note: FlowUtils uses C extensions for significant performance 
-improvements. For the most common platforms and Python versions, pre-built
-binaries are available in PyPI (and installable via pip).***
-
-***If a pre-built binary of FlowUtils is not available for your environment,
-then the C extensions must be compiled using the source package. NumPy >=1.19 
-must be installed prior to compiling FlowUtils. If compiling using `gcc`, version 5 or later is required.***
+> **NOTE**: FlowUtils uses C extensions for significant performance improvements. For most platforms and Python versions, pre-built binaries are available in PyPI (i.e. installable via `pip`). 
+>
+> If a pre-built binary of FlowUtils is not available for your environment, the C extensions must be compiled using the source package. NumPy >=1.19 must be installed prior to compiling FlowUtils. If compiling using `gcc`, version 5 or later is required.
 
 Required Python dependencies:
 
-* [flowio](https://github.com/whitews/flowio) == 1.0.0
+* [flowio](https://github.com/whitews/flowio) == 1.0.1
 * [flowutils](https://github.com/whitews/flowutils) == 1.0.0
 * anytree >= 2.6
 * bokeh >= 1.4, <3
@@ -102,9 +98,7 @@ Required Python dependencies:
 
 ## Installation
 
-####**Note for MacOS users running on Apple Silicon (e.g. M1 CPUs)**
-
-**The version of `pip` may need to be upgraded prior to installing FlowKit in order to install the required dependencies.**
+> **NOTE**: For macOS users running on Apple Silicon, the version of `pip` may need to be upgraded prior to installing FlowKit in order to install the required dependencies.
 
 ### From PyPI
 
@@ -123,7 +117,7 @@ python setup.py install
 
 ## Documentation
 
-The FlowKit API documentation is available [on ReadTheDocs here](https://flowkit.readthedocs.io/en/latest/?badge=latest). The tutorial notebooks in the `examples` directory are a great place to get started with FlowKit, and are linked below.
+The FlowKit API documentation is available [on ReadTheDocs here](https://flowkit.readthedocs.io/en/latest/?badge=latest). The tutorial notebooks in the `docs/notebooks` directory are a great place to get started with FlowKit, and are linked below.
 If you have any questions about FlowKit, find any bugs, or feel something is missing from the tutorials below [please submit an issue to the GitHub repository here](https://github.com/whitews/FlowKit/issues/new/).
 
 ### Changelogs
@@ -132,9 +126,9 @@ If you have any questions about FlowKit, find any bugs, or feel something is mis
 
 ### Tutorials
 
-The series of Jupyter notebook tutorials can be found in the `examples` directory of this repository. Note, the interactive scatterplots do not render on GitHub. Clone the repo (or download the example notebooks), and run them locally to see the fully interactive plots.
+The series of Jupyter notebook tutorials can be found in the `docs/notebooks` directory of this repository. Note, the interactive scatterplots do not render on GitHub. The rendered versions are available on our [documentation page here](https://flowkit.readthedocs.io/en/latest/?badge=latest). Or, clone the repo and run them locally to see the fully interactive plots.
 
-* [Part 1 - Sample Class](https://github.com/whitews/FlowKit/blob/master/examples/flowkit-tutorial-part01-sample-class.ipynb)
+* [Part 1 - Sample Class](https://github.com/whitews/FlowKit/blob/master/docs/notebooks/flowkit-tutorial-part01-sample-class.ipynb)
 * [Part 2 - transforms Module & Matrix Class](https://github.com/whitews/FlowKit/blob/master/examples/flowkit-tutorial-part02-transforms-module-matrix-class.ipynb)
 * [Part 3 - GatingStrategy & GatingResults Classes](https://github.com/whitews/FlowKit/blob/master/examples/flowkit-tutorial-part03-gating-strategy-and-gating-results-classes.ipynb)
 * [Part 4 - gates Module](https://github.com/whitews/FlowKit/blob/master/examples/flowkit-tutorial-part04-gates-module.ipynb)

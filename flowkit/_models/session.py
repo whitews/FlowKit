@@ -216,25 +216,10 @@ class Session(object):
             ignore_transforms=False
     ):
         """
-        Imports a FlowJo workspace (version 10+) into the Session. Each sample group in the workspace will
+        Imports a FlowJo 10 workspace into the Session. Each sample group in the workspace will
         be a sample group in the FlowKit session. Referenced samples in the workspace will be imported as
         references in the session. Ideally, these samples should have already been loaded into the session,
         and a warning will be issued for each sample reference that has not yet been loaded.
-        Support for FlowJo workspaces is limited to the following
-        features:
-
-          - Transformations:
-
-            - linear
-            - log
-            - logicle
-          - Gates:
-
-            - rectangle
-            - polygon
-            - ellipse
-            - quadrant
-            - range
 
         :param workspace_file_or_path: WSP workspace file as a file name/path, file object, or file-like object
         :param ignore_missing_files: Controls whether UserWarning messages are issued for FCS files found in the
@@ -264,10 +249,11 @@ class Session(object):
                     gs.comp_matrices[matrix.id] = matrix
                 gs.transformations = {xform.id: xform for xform in data_dict['transforms']}
 
+                # group likely doesn't exist for the 1st sample, so try to create it
                 if group_name not in self._sample_group_lut:
                     self.add_sample_group(group_name, gs)
 
-                self._sample_group_lut[group_name]['samples'][sample] = gs
+                self.assign_samples(sample, group_name)
 
     def add_samples(self, fcs_samples, group_name=None):
         """
@@ -307,6 +293,7 @@ class Session(object):
         :return: None
         """
         group = self._sample_group_lut[group_name]
+        template = group['template']
 
         if isinstance(sample_ids, str):
             sample_ids = [sample_ids]
@@ -315,7 +302,7 @@ class Session(object):
             if sample_id in group['samples']:
                 warnings.warn("Sample %s is already assigned to the group %s...skipping" % (sample_id, group_name))
                 continue
-            template = group['template']
+
             group['samples'][sample_id] = copy.deepcopy(template)
 
     def get_sample_ids(self, loaded_only=True):
@@ -381,9 +368,11 @@ class Session(object):
 
         return samples
 
+    # start pass through methods for GatingStrategy class
     def get_gate_ids(self, group_name):
         """
         Retrieve the list of gate IDs defined in the specified sample group
+
         :param group_name: a text string representing the sample group
         :return: list of gate ID strings
         """
@@ -391,7 +380,6 @@ class Session(object):
         template = group['template']
         return template.get_gate_ids()
 
-    # start pass through methods for GatingStrategy class
     def add_gate(self, gate, gate_path=None, group_name='default'):
         """
         Add a Gate instance to a sample group in the session. Gates will be added to
@@ -408,6 +396,7 @@ class Session(object):
         s_members = group['samples']
 
         # first, add gate to template, then add a copy to each group sample gating strategy
+        # TODO: should the deepcopy occur in the GatingStrategy class?
         template.add_gate(copy.deepcopy(gate), gate_path=gate_path)
         for s_id, s_strategy in s_members.items():
             s_strategy.add_gate(copy.deepcopy(gate), gate_path=gate_path)
@@ -510,11 +499,11 @@ class Session(object):
 
     def get_parent_gate_name(self, group_name, gate_name):
         """
-        Retrieve a parent gate instance by the child gate ID, sample group, and sample ID.
+        Retrieve the gate name of the parent gate by the child gate ID and sample group.
 
         :param group_name: a text string representing the sample group
         :param gate_name: text string of a gate name
-        :return: Subclass of a Gate object
+        :return: string of the parent gate name
         """
         # this method doesn't need to lookup sample specific gates, as the gate names
         # and hierarchy must be the same for all samples in a group
@@ -522,6 +511,57 @@ class Session(object):
         template = group['template']
         gate = template.get_gate(gate_name)
         return gate.parent
+
+    def find_matching_gate_paths(self, group_name, gate_name):
+        """
+        Find all gate paths in a sample group for given gate name.
+
+        :param group_name: a text string representing the sample group
+        :param gate_name: text string of a gate name
+        :return: list of gate paths (list of tuples)
+        """
+        group = self._sample_group_lut[group_name]
+        template = group['template']
+
+        return template.find_matching_gate_paths(gate_name)
+
+    def get_child_gate_ids(self, group_name, gate_name, gate_path=None):
+        """
+        Retrieve list of child gate IDs given the parent gate name (and path if ambiguous)
+        in the gate hierarchy of the specified sample group.
+
+        :param group_name: a text string representing the sample group
+        :param gate_name: text string of a gate name
+        :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
+            Required if gate.gate_name and gate.parent combination is ambiguous
+        :return: list of gate IDs (each gate ID is a gate name string & tuple of the gate path)
+        """
+        group = self._sample_group_lut[group_name]
+        template = group['template']
+
+        if gate_path is None:
+            # need to make sure the gate name isn't used more than once (ambiguous gate name)
+            gate_paths = template.find_matching_gate_paths(gate_name)
+
+            if len(gate_paths) > 1:
+                raise KeyError(
+                    "Multiple gates exist with gate name '%s'. Specify a gate_path to disambiguate." % gate_name
+                )
+
+            gate_path = gate_paths[0]
+
+        # tack on given gate_name to be the full path for any children
+        child_gate_path = list(gate_path)
+        child_gate_path.append(gate_name)
+        child_gate_path = tuple(child_gate_path)
+
+        child_gates = template.get_child_gates(gate_name, gate_path)
+        child_gate_ids = []
+
+        for child_gate in child_gates:
+            child_gate_ids.append((child_gate.gate_name, child_gate_path))
+
+        return child_gate_ids
 
     def get_gate(self, group_name, gate_name, gate_path=None, sample_id=None):
         """
@@ -634,7 +674,8 @@ class Session(object):
 
     def get_sample(self, sample_id):
         """
-        Retrieve a Sample instance from the Session
+        Retrieve a Sample instance from the Session.
+
         :param sample_id: a text string representing the sample
         :return: Sample instance
         """

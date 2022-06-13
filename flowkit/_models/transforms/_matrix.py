@@ -70,6 +70,7 @@ class Matrix(object):
     def apply(self, sample):
         """
         Apply compensation matrix to given Sample instance.
+
         :param sample: Sample instance with matching set of detectors
         :return: NumPy array of compensated events
         """
@@ -87,6 +88,7 @@ class Matrix(object):
     def inverse(self, sample):
         """
         Apply compensation matrix to given Sample instance.
+
         :param sample: Sample instance with matching set of detectors
         :return: NumPy array of compensated events
         """
