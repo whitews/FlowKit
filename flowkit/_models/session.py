@@ -292,6 +292,7 @@ class Session(object):
         :return: None
         """
         group = self._sample_group_lut[group_name]
+        template = group['template']
 
         if isinstance(sample_ids, str):
             sample_ids = [sample_ids]
@@ -300,7 +301,7 @@ class Session(object):
             if sample_id in group['samples']:
                 warnings.warn("Sample %s is already assigned to the group %s...skipping" % (sample_id, group_name))
                 continue
-            template = group['template']
+
             group['samples'][sample_id] = copy.deepcopy(template)
 
     def get_sample_ids(self, loaded_only=True):
