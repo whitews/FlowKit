@@ -249,10 +249,11 @@ class Session(object):
                     gs.comp_matrices[matrix.id] = matrix
                 gs.transformations = {xform.id: xform for xform in data_dict['transforms']}
 
+                # group likely doesn't exist for the 1st sample, so try to create it
                 if group_name not in self._sample_group_lut:
                     self.add_sample_group(group_name, gs)
 
-                self._sample_group_lut[group_name]['samples'][sample] = gs
+                self.assign_samples(sample, group_name)
 
     def add_samples(self, fcs_samples, group_name=None):
         """
@@ -395,6 +396,7 @@ class Session(object):
         s_members = group['samples']
 
         # first, add gate to template, then add a copy to each group sample gating strategy
+        # TODO: should the deepcopy occur in the GatingStrategy class?
         template.add_gate(copy.deepcopy(gate), gate_path=gate_path)
         for s_id, s_strategy in s_members.items():
             s_strategy.add_gate(copy.deepcopy(gate), gate_path=gate_path)
