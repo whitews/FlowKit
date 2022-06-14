@@ -129,20 +129,20 @@ If you have any questions about FlowKit, find any bugs, or feel something is mis
 The series of Jupyter notebook tutorials can be found in the `docs/notebooks` directory of this repository. Note, the interactive scatterplots do not render on GitHub. The rendered versions are available on our [documentation page here](https://flowkit.readthedocs.io/en/latest/?badge=latest). Or, clone the repo and run them locally to see the fully interactive plots.
 
 * [Part 1 - Sample Class](https://github.com/whitews/FlowKit/blob/master/docs/notebooks/flowkit-tutorial-part01-sample-class.ipynb)
-* [Part 2 - transforms Module & Matrix Class](https://github.com/whitews/FlowKit/blob/master/examples/flowkit-tutorial-part02-transforms-module-matrix-class.ipynb)
-* [Part 3 - GatingStrategy & GatingResults Classes](https://github.com/whitews/FlowKit/blob/master/examples/flowkit-tutorial-part03-gating-strategy-and-gating-results-classes.ipynb)
-* [Part 4 - gates Module](https://github.com/whitews/FlowKit/blob/master/examples/flowkit-tutorial-part04-gates-module.ipynb)
-* [Part 5 - Session Class](https://github.com/whitews/FlowKit/blob/master/examples/flowkit-tutorial-part05-session-class.ipynb)
+* [Part 2 - transforms Module & Matrix Class](https://github.com/whitews/FlowKit/blob/master/docs/notebooks/flowkit-tutorial-part02-transforms-module-matrix-class.ipynb)
+* [Part 3 - GatingStrategy & GatingResults Classes](https://github.com/whitews/FlowKit/blob/master/docs/notebooks/flowkit-tutorial-part03-gating-strategy-and-gating-results-classes.ipynb)
+* [Part 4 - gates Module](https://github.com/whitews/FlowKit/blob/master/docs/notebooks/flowkit-tutorial-part04-gates-module.ipynb)
+* [Part 5 - Session Class](https://github.com/whitews/FlowKit/blob/master/docs/notebooks/flowkit-tutorial-part05-session-class.ipynb)
 
 ### Advanced Examples
 
 Below are more advanced and practical examples for using FlowKit. If you have an example you would like to submit for consideration in this list (preferably with data), please [submit an issue](https://github.com/whitews/FlowKit/issues/new/).
 
-* [Compare mean fluorescence intensity (MFI) in gated populations](https://github.com/whitews/FlowKit/blob/master/examples/flowkit-session-compare-mfi-of-gated-events.ipynb)
-* [Customize gate for a single Sample in a Session sample group](https://github.com/whitews/FlowKit/blob/master/examples/flowkit-session-create-custom-sample-gate.ipynb)
-* [Importing a FlowJo 10 WSP file & replicating analysis in FlowKit](https://github.com/whitews/FlowKit/blob/master/examples/flowkit-session-replicate-flowjo-wsp.ipynb)
-* [Dimension reduction on gated populations](https://github.com/whitews/FlowKit/blob/master/examples/dimension_reduction_on_gated_populations.ipynb)
-* [Comparison between Leiden & Louvain clustering](https://github.com/whitews/FlowKit/blob/master/examples/clustering_comparison_leiden_vs_louvain.ipynb)
+* [Compare mean fluorescence intensity (MFI) in gated populations](https://github.com/whitews/FlowKit/blob/master/docs/notebooks/advanced/flowkit-session-compare-mfi-of-gated-events.ipynb)
+* [Customize gate for a single Sample in a Session sample group](https://github.com/whitews/FlowKit/blob/master/docs/notebooks/advanced/flowkit-session-create-custom-sample-gate.ipynb)
+* [Importing a FlowJo 10 WSP file & replicating analysis in FlowKit](https://github.com/whitews/FlowKit/blob/master/docs/notebooks/advanced/flowkit-session-replicate-flowjo-wsp.ipynb)
+* [Dimension reduction on gated populations](https://github.com/whitews/FlowKit/blob/master/docs/notebooks/advanced/dimension_reduction_on_gated_populations.ipynb)
+* [Comparison between Leiden & Louvain clustering](https://github.com/whitews/FlowKit/blob/master/docs/notebooks/advanced/clustering_comparison_leiden_vs_louvain.ipynb)
 
 ## Contributing
 
