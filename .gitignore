@@ -1,6 +1,7 @@
 # User-specific stuff:
 .idea
-scratch/*
+scratch/
+scratch_data/
 *.png
 *.html
 *.xml
