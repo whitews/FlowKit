@@ -8,8 +8,8 @@ from bokeh.layouts import Column as bk_Column
 from matplotlib.pyplot import Figure as mpl_Figure
 import flowkit as fk
 
-fcs_path = 'examples/data/gate_ref/data1.fcs'
-gml_path = 'examples/data/gate_ref/gml/gml_all_gates.xml'
+fcs_path = 'data/gate_ref/data1.fcs'
+gml_path = 'data/gate_ref/gml/gml_all_gates.xml'
 test_sample = fk.Sample(fcs_path, subsample=2000)
 test_gating_strategy = fk.parse_gating_xml(gml_path)
 

@@ -3,7 +3,7 @@ import numpy as np
 import flowkit as fk
 
 
-data1_fcs_path = 'examples/data/gate_ref/data1.fcs'
+data1_fcs_path = 'data/gate_ref/data1.fcs'
 data1_sample = fk.Sample(data1_fcs_path)
 
 poly1_vertices = [
@@ -90,7 +90,7 @@ class GatingStrategyTestCase(unittest.TestCase):
         self.assertRaises(KeyError, gs.add_comp_matrix, comp_matrix_01)
 
     def test_get_max_depth(self):
-        gml_path = 'examples/data/gate_ref/gml/gml_all_gates.xml'
+        gml_path = 'data/gate_ref/gml/gml_all_gates.xml'
         gs = fk.parse_gating_xml(gml_path)
         gs_depth = gs.get_max_depth()
 

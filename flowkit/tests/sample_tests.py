@@ -15,7 +15,7 @@ sys.path.append(os.path.abspath('../..'))
 
 from flowkit import Sample, transforms
 
-data1_fcs_path = 'examples/data/gate_ref/data1.fcs'
+data1_fcs_path = 'data/gate_ref/data1.fcs'
 data1_sample = Sample(data1_fcs_path)
 data1_sample_with_orig = Sample(data1_fcs_path, cache_original_events=True)
 
@@ -23,10 +23,10 @@ xform_logicle = transforms.LogicleTransform('logicle', param_t=10000, param_w=0.
 xform_biex1 = transforms.WSPBiexTransform('neg0', width=-100.0, negative=0.0)
 xform_biex2 = transforms.WSPBiexTransform('neg1', width=-100.0, negative=1.0)
 
-fcs_file_path = "examples/data/test_comp_example.fcs"
-comp_file_path = "examples/data/comp_complete_example.csv"
+fcs_file_path = "data/test_comp_example.fcs"
+comp_file_path = "data/comp_complete_example.csv"
 
-fcs_2d_file_path = "examples/data/test_data_2d_01.fcs"
+fcs_2d_file_path = "data/test_data_2d_01.fcs"
 
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
@@ -77,7 +77,7 @@ class SampleTestCase(unittest.TestCase):
         self.assertIsInstance(sample, Sample)
 
     def test_load_from_numpy_array(self):
-        npy_file_path = "examples/data/test_comp_example.npy"
+        npy_file_path = "data/test_comp_example.npy"
         # noinspection SpellCheckingInspection
         channels = [
             'FSC-A', 'FSC-W', 'SSC-A',
@@ -98,7 +98,7 @@ class SampleTestCase(unittest.TestCase):
         self.assertIsInstance(sample, Sample)
 
     def test_load_from_pandas_multi_index(self):
-        sample_orig = Sample("examples/data/100715.fcs", cache_original_events=True)
+        sample_orig = Sample("data/100715.fcs", cache_original_events=True)
         pnn_orig = sample_orig.pnn_labels
         pns_orig = sample_orig.pns_labels
 
@@ -328,7 +328,7 @@ class SampleTestCase(unittest.TestCase):
 
     def test_filter_negative_scatter(self):
         # there are 2 negative SSC-A events in this file (of 65016 total events)
-        sample_file_path = "examples/data/100715.fcs"
+        sample_file_path = "data/100715.fcs"
         sample = Sample(fcs_path_or_data=sample_file_path, subsample=50000)
         sample.filter_negative_scatter(reapply_subsample=False)
 

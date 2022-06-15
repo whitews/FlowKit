@@ -6,7 +6,7 @@ import unittest
 from flowkit import Session
 from .session_tests import test_samples_8c_full_set
 
-wsp_path = "examples/data/8_color_data_set/reused_quad_gate_with_child.wsp"
+wsp_path = "data/8_color_data_set/reused_quad_gate_with_child.wsp"
 group_name = 'All Samples'
 sample_id = '101_DEN084Y5_15_E01_008_clean.fcs'
 
