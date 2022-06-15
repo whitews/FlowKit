@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<gating:Gating-ML
+    xmlns:gating="http://www.isac-net.org/std/Gating-ML/v2.0/gating"
+    xmlns:data-type="http://www.isac-net.org/std/Gating-ML/v2.0/datatypes">
+
+        <gating:PolygonGate gating:id="Polygon2">
+        <gating:dimension gating:compensation-ref="FCS">
+            <data-type:fcs-dimension data-type:name="FL1-H" />
+        </gating:dimension>
+        <gating:dimension gating:compensation-ref="FCS">
+            <data-type:fcs-dimension data-type:name="FL4-H" />
+        </gating:dimension>
+        <gating:vertex>
+            <gating:coordinate data-type:value="20" />
+            <gating:coordinate data-type:value="10" />
+        </gating:vertex>
+        <gating:vertex>
+            <gating:coordinate data-type:value="120" />
+            <gating:coordinate data-type:value="10" />
+        </gating:vertex>
+        <gating:vertex>
+            <gating:coordinate data-type:value="120" />
+            <gating:coordinate data-type:value="160" />
+        </gating:vertex>
+        <gating:vertex>
+            <gating:coordinate data-type:value="20" />
+            <gating:coordinate data-type:value="160" />
+        </gating:vertex>
+    </gating:PolygonGate>
+
+</gating:Gating-ML>

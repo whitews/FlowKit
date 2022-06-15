@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<gating:Gating-ML
+    xmlns:gating="http://www.isac-net.org/std/Gating-ML/v2.0/gating"
+    xmlns:data-type="http://www.isac-net.org/std/Gating-ML/v2.0/datatypes">
+
+    <gating:PolygonGate gating:id="Polygon3NS">
+        <gating:dimension gating:compensation-ref="uncompensated">
+            <data-type:fcs-dimension data-type:name="SSC-H" />
+        </gating:dimension>
+        <gating:dimension gating:compensation-ref="FCS">
+            <data-type:fcs-dimension data-type:name="FL3-H" />
+        </gating:dimension>
+        <gating:vertex>
+            <gating:coordinate data-type:value="10" />
+            <gating:coordinate data-type:value="10" />
+        </gating:vertex>
+        <gating:vertex>
+            <gating:coordinate data-type:value="500" />
+            <gating:coordinate data-type:value="10" />
+        </gating:vertex>
+        <gating:vertex>
+            <gating:coordinate data-type:value="500" />
+            <gating:coordinate data-type:value="390" />
+        </gating:vertex>
+        <gating:vertex>
+            <gating:coordinate data-type:value="100" />
+            <gating:coordinate data-type:value="390" />
+        </gating:vertex>
+        <gating:vertex>
+            <gating:coordinate data-type:value="100" />
+            <gating:coordinate data-type:value="180" />
+        </gating:vertex>
+        <gating:vertex>
+            <gating:coordinate data-type:value="200" />
+            <gating:coordinate data-type:value="180" />
+        </gating:vertex>
+        <gating:vertex>
+            <gating:coordinate data-type:value="200" />
+            <gating:coordinate data-type:value="300" />
+        </gating:vertex>
+        <gating:vertex>
+            <gating:coordinate data-type:value="10" />
+            <gating:coordinate data-type:value="300" />
+        </gating:vertex>
+    </gating:PolygonGate>
+
+</gating:Gating-ML>

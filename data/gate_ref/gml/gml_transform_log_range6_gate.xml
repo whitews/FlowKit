@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<gating:Gating-ML
+    xmlns:gating="http://www.isac-net.org/std/Gating-ML/v2.0/gating"
+    xmlns:transforms="http://www.isac-net.org/std/Gating-ML/v2.0/transformations"
+    xmlns:data-type="http://www.isac-net.org/std/Gating-ML/v2.0/datatypes">
+
+    <transforms:transformation transforms:id="Logarithmic_10000_5">
+        <transforms:flog transforms:T="10000" transforms:M="5" />
+    </transforms:transformation>
+
+    <gating:RectangleGate gating:id="ScaleRange6">
+        <gating:dimension gating:compensation-ref="uncompensated" gating:transformation-ref="Logarithmic_10000_5"
+            gating:min="0.37" gating:max="0.63">
+            <data-type:fcs-dimension data-type:name="FL1-H" />
+        </gating:dimension>
+    </gating:RectangleGate>
+    
+</gating:Gating-ML>
