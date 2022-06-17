@@ -28,6 +28,8 @@ comp_file_path = "data/comp_complete_example.csv"
 
 fcs_2d_file_path = "data/test_data_2d_01.fcs"
 
+fcs_index_sorted_path = "data/index_sorted/index_sorted_example.fcs"
+
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
     test_comp_sample = Sample(
@@ -341,3 +343,20 @@ class SampleTestCase(unittest.TestCase):
         self.assertEqual(len(common_idx), 0)
 
         self.assertEqual(sample.negative_scatter_indices.shape[0], 2)
+
+    def test_get_index_sorted_locations(self):
+        sample = Sample(fcs_path_or_data=fcs_index_sorted_path)
+
+        idx_sorted_locations = sample.get_index_sorted_locations()
+
+        # there are 384 events in the file, each should have a well location
+        self.assertEqual(len(idx_sorted_locations), 384)
+
+    def test_get_index_sorted_locations_is_empty(self):
+        # data 1 sample has no index sort locations, so should return empty list
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            idx_sorted_locations = data1_sample.get_index_sorted_locations()
+
+        # there are 384 events in the file, each should have a well location
+        self.assertEqual(len(idx_sorted_locations), 0)
