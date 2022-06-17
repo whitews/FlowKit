@@ -324,6 +324,49 @@ class Sample(object):
         """
         self.flagged_indices = event_indices
 
+    def get_index_sorted_locations(self):
+        """
+        Retrieve well locations for index sorted data (if present in metadata)
+
+        :return: list of 2-D tuples
+        """
+        # Index sorted FCS files contain data where each event corresponds
+        # to a location on a well plate (i.e. a 16x24 array for a 384 well plate).
+        # It appears that, by convention, these FCS files contain extra
+        # metadata keywords with values that list the well location (row & column)
+        # for each event. The keywords have the format "index sorting locations_1"
+        # and the value is a string of semicolon delimited coordinates that
+        # are comma delimited.
+        #
+        # We'll start by checking for the existence of any keywords
+        # starting with the string "index sorting locations"
+        idx_sort_keyword_base = "index sorting locations"
+        idx_sort_keywords = [k for k in self.metadata.keys() if k.startswith(idx_sort_keyword_base)]
+
+        # loop through in order, these will be indexed at 1
+        idx_sort_keyword_count = len(idx_sort_keywords)
+
+        idx_sort_data = []
+
+        if idx_sort_keyword_count == 0:
+            warnings.warn("Sample does not contain index sorted data")
+            return idx_sort_data
+
+        idx_locations_string = ''
+
+        for i in range(1, idx_sort_keyword_count + 1):
+            idx_sort_keyword = "_".join([idx_sort_keyword_base, str(i)])
+            idx_locations_string += self.metadata[idx_sort_keyword]
+
+        # strip any leading or trailing delimiters (there seems to always be a trailing one)
+        idx_locations_string = idx_locations_string.strip(';')
+
+        # finally, loop through and save the coordinates as tuples
+        for idx_loc_string in idx_locations_string.split(';'):
+            idx_sort_data.append(tuple(idx_loc_string.split(',')))
+
+        return idx_sort_data
+
     def subsample_events(
             self,
             subsample_count=10000,
