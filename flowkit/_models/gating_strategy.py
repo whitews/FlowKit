@@ -641,7 +641,12 @@ class GatingStrategy(object):
     @staticmethod
     def _apply_parent_results(sample, gate, results, parent_results):
         if parent_results is not None:
-            results_and_parent = np.logical_and(parent_results['events'], results)
+            if isinstance(gate, fk_gates.QuadrantGate):
+                results_and_parent = {}
+                for q_id, q_result in results.items():
+                    results_and_parent[q_id] = np.logical_and(parent_results['events'], q_result)
+            else:
+                results_and_parent = np.logical_and(parent_results['events'], results)
             parent_count = parent_results['count']
         else:
             # no parent, so results are unchanged & parent count is total count
