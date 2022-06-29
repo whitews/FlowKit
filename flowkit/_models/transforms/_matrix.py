@@ -17,7 +17,6 @@ class Matrix(object):
             - a file path or file handle to a CSV/TSF file
             - a pathlib Path object to a CSV/TSF file
             - a NumPy array of spill data
-            - a pandas DataFrame (channel labels as headers)
     :param detectors: A list of strings to use for the detector labels.
     :param fluorochromes: A list of strings to use for the fluorochrome labels.
     :param null_channels: List of PnN labels for channels that were collected
