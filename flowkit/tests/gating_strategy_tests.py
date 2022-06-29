@@ -232,7 +232,7 @@ class GatingStrategyReusedGatesTestCase(unittest.TestCase):
         """
         self.gs = fk.GatingStrategy()
 
-        time_dim = fk.Dimension('Gate_A', range_min=0.1, range_max=0.9)
+        time_dim = fk.Dimension('Time', range_min=0.1, range_max=0.9)
         dim_fsc_w = fk.Dimension('FSC-W')
         dim_fsc_h = fk.Dimension('FSC-H')
         dim_ssc_a = fk.Dimension('SSC-A')
