@@ -931,6 +931,10 @@ class Session(object):
         gating_strategy = group['samples'][sample_id]
         gate = gating_strategy.get_gate(gate_name, gate_path)
 
+        # check for a boolean gate, there's no reasonable way to plot these
+        if isinstance(gate, gates.BooleanGate):
+            raise TypeError("Plotting Boolean gates is not allowed (gate %s)" % gate.gate_name)
+
         dim_ids_ordered = []
         dim_is_ratio = []
         dim_comp_refs = []
