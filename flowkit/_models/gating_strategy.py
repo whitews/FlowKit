@@ -18,6 +18,13 @@ from .._models.transforms._matrix import Matrix
 from .._models.gating_results import GatingResults
 
 
+class GateTreeError(Exception):
+    """
+    Error related to modifying the gate tree within a GatingStrategy.
+    """
+    pass
+
+
 class GatingStrategy(object):
     """
     Represents a flow cytometry gating strategy, including instructions
@@ -171,6 +178,109 @@ class GatingStrategy(object):
             node = node.parent
 
         return node.gate
+
+    def _rebuild_dag(self):
+        dag_edges = []
+
+        for node in self._gate_tree.descendants:
+            node_tuple = tuple([n.name for n in node.path])
+            parent_node_tuple = node_tuple[:-1]
+            dag_edges.append((parent_node_tuple, node_tuple))
+
+            gate = node.gate
+
+            if isinstance(gate, fk_gates.BooleanGate):
+                bool_gate_refs = gate.gate_refs
+                for gate_ref in bool_gate_refs:
+                    gate_ref_node_tuple = tuple(gate_ref['path']) + (gate_ref['ref'],)
+                    dag_edges.append((gate_ref_node_tuple, node_tuple))
+
+            if isinstance(gate, fk_gates.QuadrantGate):
+                for q_id, q in gate.quadrants.items():
+                    q_node_tuple = node_tuple + (q_id,)
+
+                    dag_edges.append((node_tuple, q_node_tuple))
+
+        self._dag = nx.DiGraph(dag_edges)
+
+    def remove_gate(self, gate_name, gate_path=None, keep_children=False):
+        """
+        Remove a gate from the gating strategy. Any descendant gates will also be removed
+        unless keep_children=True. In all cases, if a BooleanGate exists that references
+        the gate to remove, a GateTreeError will be thrown indicating the BooleanGate
+        must be removed prior to removing the gate.
+
+        :param gate_name: text string of a gate name
+        :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
+            Required if gate_name is ambiguous
+        :param keep_children: Whether to keep child gates. If True, the child gates will be
+            remapped to the removed gate's parent. Default is False, which will delete all
+            descendant gates.
+        :return: None
+        """
+        # TODO: should the removed gates be returned to the user?
+        #    This could be helpful if they are trying to move the gate
+        #    in the tree or to keep track of what was removed.
+
+        # Removing a gate nullifies any previous results, so clear cached events
+        self.clear_cache()
+
+        # First, get the gate node from anytree
+        # Note, this will raise an error on ambiguous gates so no need
+        # to handle that case
+        gate_node = self._get_gate_node(gate_name, gate_path=gate_path)
+        gate = gate_node.gate
+
+        # single quadrants can't be removed, their "parent" QuadrantGate must be removed
+        if isinstance(gate, fk_gates.Quadrant):
+            raise TypeError(
+                "Quadrant '%s' cannot be removed, remove the full QuadrantGate '%s' instead"
+                % (gate.id, gate_node.parent.name)
+            )
+
+        node_tuple = tuple(n.name for n in gate_node.path)
+
+        # Use networkx graph to get dependent gates instead of anytree,
+        # since the DAG keeps track of all dependencies (incl. bool gates),
+        # which also covers bool gate dependencies of the children.
+        # Networkx descendants works for DAGs & returns a set of node strings.
+        descendant_node_tuples = nx.descendants(self._dag, node_tuple)
+
+        # check descendant gates for a boolean gate,
+        # if present throw a GateTreeError
+        for d_tuple in descendant_node_tuples:
+            d_gate_node = self._get_gate_node(d_tuple[-1], gate_path=d_tuple[:-1])
+            d_gate = d_gate_node.gate
+
+            if isinstance(d_gate, fk_gates.BooleanGate):
+                raise GateTreeError("BooleanGate %s references gate %s" % (d_gate.gate_name, gate_name))
+
+        if keep_children:
+            parent_node = gate_node.parent
+
+            # quadrant gates need to be handled differently from other gates
+            if isinstance(gate, fk_gates.QuadrantGate):
+                # The immediate children will be quadrants but they will get deleted.
+                # We do need to check if the quadrants have children and  set their
+                # parent to the quadrant gate parent.
+                child_nodes = []
+                for quad in gate_node.children:
+                    child_nodes.extend(quad.children)
+            else:
+                child_nodes = gate_node.children
+
+            for cn in child_nodes:
+                # set each child node to the parent of the removed node
+                cn.parent = parent_node
+
+                # now set the gate instance parent to the parent gate name
+                cn.gate.parent = parent_node.name
+
+        # remove from anytree, any descendants get removed so fine for keep_children=False
+        gate_node.parent = None
+
+        # Now, rebuild the DAG (easier than modifying it)
+        self._rebuild_dag()
 
     def add_transform(self, transform):
         """
