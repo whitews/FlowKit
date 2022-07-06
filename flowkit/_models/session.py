@@ -1204,15 +1204,18 @@ class Session(object):
         if gate_name is not None:
             gate_results = self.get_gating_results(group_name, sample_id=sample_id)
             is_gate_event = gate_results.get_gate_membership(gate_name)
-            if subsample:
-                is_subsample = np.zeros(sample.event_count, dtype=bool)
-                is_subsample[sample.subsample_indices] = True
-            else:
-                is_subsample = np.ones(sample.event_count, dtype=bool)
+        else:
+            is_gate_event = np.ones(sample.event_count, dtype=bool)
 
-            idx_to_plot = np.logical_and(is_gate_event, is_subsample)
-            x = x[idx_to_plot]
-            y = y[idx_to_plot]
+        if subsample:
+            is_subsample = np.zeros(sample.event_count, dtype=bool)
+            is_subsample[sample.subsample_indices] = True
+        else:
+            is_subsample = np.ones(sample.event_count, dtype=bool)
+
+        idx_to_plot = np.logical_and(is_gate_event, is_subsample)
+        x = x[idx_to_plot]
+        y = y[idx_to_plot]
 
         dim_ids = []
 
