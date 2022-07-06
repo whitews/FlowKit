@@ -131,6 +131,8 @@ class Session(object):
         self._results_lut = {}
         self._sample_group_lut = {}
 
+        # TODO: don't add a sample group by default, it should be explicit by user
+        #    Plus, it prevents the import of a gating strategy for the group
         self.add_sample_group('default')
 
         self.add_samples(fcs_samples)
