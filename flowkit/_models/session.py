@@ -755,7 +755,12 @@ class Session(object):
             assigned to the specified group
         :return: GatingResults instance
         """
-        gating_result = self._results_lut[group_name][sample_id]
+        try:
+            gating_result = self._results_lut[group_name][sample_id]
+        except KeyError:
+            raise KeyError(
+                "No results for for %s in group %s. Have you run `analyze_samples`?" % (sample_id, group_name)
+            )
         return copy.deepcopy(gating_result)
 
     def get_group_report(self, group_name):
