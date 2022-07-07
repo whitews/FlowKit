@@ -13,6 +13,7 @@ from ._models.vertex import Vertex
 from ._utils.xml_utils import parse_gating_xml, export_gatingml
 from ._utils.wsp_utils import parse_wsp, extract_wsp_sample_data
 from ._utils.sample_utils import load_samples, calculate_compensation_from_beads
+from . import exceptions
 
 from ._version import __version__
 
@@ -32,5 +33,6 @@ __all__ = [
     'parse_wsp',
     'extract_wsp_sample_data',
     'load_samples',
-    'calculate_compensation_from_beads'
+    'calculate_compensation_from_beads',
+    'exceptions'
 ]

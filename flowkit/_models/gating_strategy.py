@@ -16,13 +16,7 @@ from .._models.transforms._base_transform import Transform
 # noinspection PyProtectedMember
 from .._models.transforms._matrix import Matrix
 from .._models.gating_results import GatingResults
-
-
-class GateTreeError(Exception):
-    """
-    Error related to modifying the gate tree within a GatingStrategy.
-    """
-    pass
+from ..exceptions import GateTreeError
 
 
 class GatingStrategy(object):
