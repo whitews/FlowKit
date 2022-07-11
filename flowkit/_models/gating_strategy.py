@@ -360,7 +360,7 @@ class GatingStrategy(object):
             node = None
 
         if node is None:
-            raise ValueError("Gate name %s was not found in gating strategy" % gate_name)
+            raise GateTreeError("Gate name %s was not found in gating strategy" % gate_name)
 
         return node
 
