@@ -1,6 +1,7 @@
 """
 Tests for programmatically adding gates to a GatingStrategy
 """
+import copy
 import unittest
 import sys
 import os
@@ -1238,3 +1239,23 @@ class GatingTestCase(unittest.TestCase):
         result = gs.gate_sample(data1_sample)
 
         np.testing.assert_array_equal(truth, result.get_gate_membership('ParRectangle1'))
+
+    def test_quad_gate_with_parent_gate(self):
+        gs = fk.GatingStrategy()
+
+        dim1 = fk.Dimension('SSC-H', compensation_ref='uncompensated', range_min=20, range_max=80)
+        dim2 = fk.Dimension('FL1-H', compensation_ref='uncompensated', range_min=70, range_max=200)
+        dims = [dim1, dim2]
+
+        rect_gate = fk.gates.RectangleGate('Rectangle1', None, dims)
+        gs.add_gate(rect_gate)
+
+        quad_gate_copy = copy.deepcopy(quad1_gate)
+        quad_gate_copy.parent = 'Rectangle1'
+
+        gs.add_gate(quad_gate_copy)
+
+        result = gs.gate_sample(data1_sample)
+
+        # just ensure the above succeeded and made a GatingResults object w/ a DataFrame report
+        self.assertIsInstance(result.report, pd.DataFrame)
