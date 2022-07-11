@@ -25,6 +25,7 @@ fcs_file_paths = [
 ]
 test_samples_base_set = load_samples(fcs_file_paths)
 test_samples_8c_full_set = load_samples("data/8_color_data_set/fcs_files")
+test_samples_8c_full_set_dict = {s.original_filename: s for s in test_samples_8c_full_set}
 
 
 class SessionTestCase(unittest.TestCase):
