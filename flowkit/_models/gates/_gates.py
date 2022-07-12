@@ -40,7 +40,7 @@ class RectangleGate(Gate):
     def __repr__(self):
         return (
             f'{self.__class__.__name__}('
-            f'{self.gate_name}, parent: {self.parent}, dims: {len(self.dimensions)})'
+            f'{self.gate_name}, dims: {len(self.dimensions)})'
         )
 
     def apply(self, df_events):
@@ -100,7 +100,7 @@ class PolygonGate(Gate):
     def __repr__(self):
         return (
             f'{self.__class__.__name__}('
-            f'{self.gate_name}, parent: {self.parent}, vertices: {len(self.vertices)})'
+            f'{self.gate_name}, vertices: {len(self.vertices)})'
         )
 
     def apply(self, df_events):
@@ -181,7 +181,7 @@ class EllipsoidGate(Gate):
     def __repr__(self):
         return (
             f'{self.__class__.__name__}('
-            f'{self.gate_name}, parent: {self.parent}, coords: {self.coordinates})'
+            f'{self.gate_name}, coords: {self.coordinates})'
         )
 
     def apply(self, df_events):
@@ -406,7 +406,7 @@ class BooleanGate(Gate):
     def __repr__(self):
         return (
             f'{self.__class__.__name__}('
-            f'{self.gate_name}, parent: {self.parent}, type: {self.type})'
+            f'{self.gate_name}, type: {self.type})'
         )
 
     def apply(self, df_events):
