@@ -29,10 +29,10 @@ class GMLRectangleGate(gates.RectangleGate):
             gating_namespace,
             data_type_namespace
         )
+        self.parent = parent_gate_name
 
         super().__init__(
             gate_name,
-            parent_gate_name,
             dimensions
         )
 
@@ -57,6 +57,7 @@ class GMLPolygonGate(gates.PolygonGate):
             gating_namespace,
             data_type_namespace
         )
+        self.parent = parent_gate_name
 
         vert_els = gate_element.findall(
             '%s:vertex' % gating_namespace,
@@ -71,7 +72,6 @@ class GMLPolygonGate(gates.PolygonGate):
 
         super().__init__(
             gate_name,
-            parent_gate_name,
             dimensions,
             vertices
         )
@@ -96,6 +96,7 @@ class GMLEllipsoidGate(gates.EllipsoidGate):
             gating_namespace,
             data_type_namespace
         )
+        self.parent = parent_gate_name
 
         # First, we'll get the center of the ellipse, contained in
         # a 'mean' element, that holds 2 'coordinate' elements
@@ -169,7 +170,6 @@ class GMLEllipsoidGate(gates.EllipsoidGate):
 
         super().__init__(
             gate_name,
-            parent_gate_name,
             dimensions,
             coordinates,
             covariance_matrix,
@@ -202,6 +202,7 @@ class GMLQuadrantGate(gates.QuadrantGate):
             gating_namespace,
             data_type_namespace
         )
+        self.parent = parent_gate_name
 
         # First, we'll check dimension count
         if len(dividers) < 1:
@@ -271,7 +272,6 @@ class GMLQuadrantGate(gates.QuadrantGate):
 
         super().__init__(
             gate_name,
-            parent_gate_name,
             dividers,
             quadrants
         )
@@ -297,6 +297,7 @@ class GMLBooleanGate(gates.BooleanGate):
             gating_namespace,
             data_type_namespace
         )
+        self.parent = parent_gate_name
         
         # boolean gates do not mix multiple operations, so there should be only
         # one of the following: 'and', 'or', or 'not'
@@ -357,7 +358,6 @@ class GMLBooleanGate(gates.BooleanGate):
 
         super().__init__(
             gate_name,
-            parent_gate_name,
             bool_type,
             gate_refs
         )
