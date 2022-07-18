@@ -91,29 +91,7 @@ class GatingStrategy(object):
         except anytree.ResolverError:
             raise GateTreeError("Parent gate %s doesn't exist" % parent_abs_gate_path)
 
-            if matched_parent_count == 0:
-                # TODO: need to double-check whether this scenario could be in a quadrant gate
-                raise ValueError("Parent gate %s does not exist in the gating strategy" % parent_gate_name)
-            elif matched_parent_count == 1:
-                # There's only one match for the parent, so we're done
-                match_idx = 0
-            elif matched_parent_count > 1:
-                for i, matched_parent_node in enumerate(matching_parent_nodes):
-                    matched_parent_ancestors = tuple((pn.name for pn in matched_parent_node.path))
-                    if matched_parent_ancestors == gate_path:
-                        match_idx = i
-                        break
-
-            # look up the parent node, then do one final check to make sure the new gate doesn't
-            # already exist as a child of the parent
-            parent_node = matching_parent_nodes[match_idx]
-            parent_child_nodes = anytree.search.findall_by_attr(parent_node, gate.gate_name, maxlevel=1)
-            if len(parent_child_nodes) > 0:
-                raise ValueError(
-                    """A gate already exists matching gate name "%s" and the specified gate path""" % gate.gate_name
-                )
-
-        node = anytree.Node(gate.gate_name, parent=parent_node, gate=gate)
+        new_node = anytree.Node(gate.gate_name, parent=parent_node, gate=gate)
         parent_node_tuple = tuple(n.name for n in parent_node.path)
         new_node_tuple = parent_node_tuple + (gate.gate_name,)
         self._dag.add_node(new_node_tuple)
@@ -124,7 +102,7 @@ class GatingStrategy(object):
         # the individual quadrants as parents.
         if isinstance(gate, fk_gates.QuadrantGate):
             for q_id, q in gate.quadrants.items():
-                anytree.Node(q_id, parent=node, gate=q)
+                anytree.Node(q_id, parent=new_node, gate=q)
 
                 q_node_tuple = new_node_tuple + (q_id,)
 
