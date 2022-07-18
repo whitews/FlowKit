@@ -24,6 +24,8 @@ class GatingStrategy(object):
     Represents a flow cytometry gating strategy, including instructions
     for compensation and transformation.
     """
+    resolver = anytree.Resolver()
+
     def __init__(self):
         self._cached_preprocessed_events = {}
 
@@ -63,30 +65,19 @@ class GatingStrategy(object):
         if not isinstance(gate, Gate):
             raise TypeError("gate must be a sub-class of the Gate class")
 
-        parent_gate_name = gate.parent
-        if parent_gate_name is None:
-            # If no parent gate is specified, use root
-            parent_gate_name = 'root'
+        # Verify gate_path is a tuple, else user gets a cryptic error for
+        # something that is simple to fix
+        if not isinstance(gate_path, tuple):
+            raise TypeError("gate_path must be a tuple not %s" % str(type(gate_path)))
 
-        # Verify the gate parent matches the last item in the gate path (if given)
-        if gate_path is not None:
-            # Verify gate_path is a tuple, else user gets a cryptic error for
-            # something that is simple to fix
-            if not isinstance(gate_path, tuple):
-                raise TypeError("gate_path must be a tuple not %s" % str(type(gate_path)))
-
-            if len(gate_path) != 0:
-                if parent_gate_name != gate_path[-1]:
-                    raise ValueError("The gate parent and the last item in gate path are different.")
-
-        # Find simple case of matching gate name + parent where no gate_path is specified.
-        matched_nodes = anytree.findall(
-            self._gate_tree,
-            filter_=lambda g_node:
-            g_node.name == gate.gate_name and
-            g_node.parent.name == parent_gate_name
-        )
-        match_count = len(matched_nodes)
+        # determine if gate already exists with name and path
+        abs_gate_path = list(gate_path) + [gate.gate_name]
+        abs_gate_path = "/" + "/".join(abs_gate_path)
+        try:
+            node = self.resolver.get(self._gate_tree, abs_gate_path)
+        except anytree.ResolverError:
+            # this is expected if the gate doesn't already exist
+            node = None
 
         if match_count != 0 and gate_path is None:
             raise KeyError(
@@ -94,20 +85,11 @@ class GatingStrategy(object):
                 "You must specify a gate_path as a unique tuple of ancestors." % (gate.gate_name, parent_gate_name)
             )
 
-        # Here we either have a unique gate ID + parent, or an ambiguous gate ID + parent with a gate path.
-        # It is still possible that the given gate_path already exists, we'll check that.
-        # We'll find the parent node from the ID, and if there are multiple parent matches then resort
-        # to using the given gate path.
-        if parent_gate_name == 'root':
-            # Easiest case since a root parent is also the full path.
-            parent_node = self._gate_tree
-        else:
-            # Find all nodes with the parent ID name. If there's only one, we've identified the correct parent.
-            # If there are none, the parent doesn't exist (or is a Quad gate).
-            # If there are >1, we have to compare the gate paths.
-            matching_parent_nodes = anytree.search.findall_by_attr(self._gate_tree, parent_gate_name)
-            matched_parent_count = len(matching_parent_nodes)
-            match_idx = None
+        parent_abs_gate_path = "/" + "/".join(gate_path)
+        try:
+            parent_node = self.resolver.get(self._gate_tree, parent_abs_gate_path)
+        except anytree.ResolverError:
+            raise GateTreeError("Parent gate %s doesn't exist" % parent_abs_gate_path)
 
             if matched_parent_count == 0:
                 # TODO: need to double-check whether this scenario could be in a quadrant gate
