@@ -86,8 +86,7 @@ def parse_gating_xml(xml_file_or_path):
 
                 bool_edges.append((g_ref['ref'], g_id))
 
-    dag = nx.DiGraph()
-    dag.add_edges_from(deps)
+    dag = nx.DiGraph(deps)
 
     is_acyclic = nx.is_directed_acyclic_graph(dag)
 
@@ -118,7 +117,12 @@ def parse_gating_xml(xml_file_or_path):
                 gate_ref_path = list(nx.all_simple_paths(dag, 'root', gate_ref['ref']))[0]
                 gate_ref['path'] = tuple(gate_ref_path[:-1])  # don't repeat the gate name
 
-        gating_strategy.add_gate(gate)
+        # need to get the gate path
+        # again, since GML gate IDs must be unique, safe to lookup from graph
+        gate_path = tuple(nx.shortest_path(dag, 'root', g_id))[:-1]
+
+        # TODO: convert GML gates to their superclass
+        gating_strategy.add_gate(gate, gate_path)
 
     return gating_strategy
 
