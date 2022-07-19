@@ -382,14 +382,13 @@ class Session(object):
         template = group['template']
         return template.get_gate_ids()
 
-    def add_gate(self, gate, gate_path=None, group_name='default'):
+    def add_gate(self, gate, gate_path, group_name='default'):
         """
         Add a Gate instance to a sample group in the session. Gates will be added to
         the 'default' sample group by default.
 
         :param gate: an instance of a Gate subclass
-        :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
-            Required if gate.gate_name and gate.parent combination is ambiguous
+        :param gate_path: complete tuple of gate IDs for unique set of gate ancestors
         :param group_name: a text string representing the sample group
         :return: None
         """
