@@ -52,13 +52,10 @@ class GatingStrategy(object):
     def add_gate(self, gate, gate_path):
         """
         Add a gate to the gating strategy, see `gates` module. The gate ID and gate path must be
-        unique in the gating strategy. A gate with a unique gate ID and parent can be added without
-        specifying a gate_path. However, if the gate's ID and parent combination already exists in
-        the gating strategy, a unique gate path must be provided.
+        unique in the gating strategy.
 
         :param gate: instance from a subclass of the Gate class
-        :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
-            Required if gate.gate_name and gate.parent combination is ambiguous
+        :param gate_path: complete tuple of gate IDs for unique set of gate ancestors
 
         :return: None
         """
