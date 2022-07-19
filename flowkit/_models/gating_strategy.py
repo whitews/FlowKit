@@ -79,11 +79,8 @@ class GatingStrategy(object):
             # this is expected if the gate doesn't already exist
             node = None
 
-        if match_count != 0 and gate_path is None:
-            raise KeyError(
-                "A gate with name '%s' and parent gate name '%s' is already defined. " 
-                "You must specify a gate_path as a unique tuple of ancestors." % (gate.gate_name, parent_gate_name)
-            )
+        if node is not None:
+            raise GateTreeError("Gate %s already exists" % abs_gate_path)
 
         parent_abs_gate_path = "/" + "/".join(gate_path)
         try:
