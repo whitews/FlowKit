@@ -23,7 +23,7 @@ poly1_vertices = [
 poly1_dim1 = fk.Dimension('FL2-H', compensation_ref='FCS')
 poly1_dim2 = fk.Dimension('FL3-H', compensation_ref='FCS')
 poly1_dims1 = [poly1_dim1, poly1_dim2]
-poly1_gate = fk.gates.PolygonGate('Polygon1', None, poly1_dims1, poly1_vertices)
+poly1_gate = fk.gates.PolygonGate('Polygon1', poly1_dims1, poly1_vertices)
 
 quad1_div1 = fk.QuadrantDivider('FL2', 'FL2-H', 'FCS', [12.14748])
 quad1_div2 = fk.QuadrantDivider('FL4', 'FL4-H', 'FCS', [14.22417])
@@ -51,15 +51,15 @@ quad_4 = fk.gates.Quadrant(
 )
 quadrants_q1 = [quad_1, quad_2, quad_3, quad_4]
 
-quad1_gate = fk.gates.QuadrantGate('Quadrant1', None, quad1_divs, quadrants_q1)
+quad1_gate = fk.gates.QuadrantGate('Quadrant1', quad1_divs, quadrants_q1)
 
 range1_dim1 = fk.Dimension('FSC-H', compensation_ref='uncompensated', range_min=100)
 range1_dims = [range1_dim1]
-range1_gate = fk.gates.RectangleGate('Range1', None, range1_dims)
+range1_gate = fk.gates.RectangleGate('Range1', range1_dims)
 
 range2_dim1 = fk.Dimension('Time', compensation_ref='uncompensated', range_min=20, range_max=80)
 range2_dims = [range2_dim1]
-range2_gate = fk.gates.RectangleGate('Range2', None, range2_dims)
+range2_gate = fk.gates.RectangleGate('Range2', range2_dims)
 
 ell1_dim1 = fk.Dimension('FL3-H', compensation_ref='uncompensated')
 ell1_dim2 = fk.Dimension('FL4-H', compensation_ref='uncompensated')
@@ -69,7 +69,7 @@ ell1_coords = [12.99701, 16.22941]
 ell1_cov_mat = [[62.5, 37.5], [37.5, 62.5]]
 ell1_dist_square = 1
 
-ellipse1_gate = fk.gates.EllipsoidGate('Ellipse1', None, ellipse1_dims, ell1_coords, ell1_cov_mat, ell1_dist_square)
+ellipse1_gate = fk.gates.EllipsoidGate('Ellipse1', ellipse1_dims, ell1_coords, ell1_cov_mat, ell1_dist_square)
 
 spill01_fluoros = ['FITC', 'PE', 'PerCP']
 spill01_detectors = ['FL1-H', 'FL2-H', 'FL3-H']
