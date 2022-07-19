@@ -49,7 +49,7 @@ class GatingStrategy(object):
             f'{len(self.comp_matrices)} compensations)'
         )
 
-    def add_gate(self, gate, gate_path=None):
+    def add_gate(self, gate, gate_path):
         """
         Add a gate to the gating strategy, see `gates` module. The gate ID and gate path must be
         unique in the gating strategy. A gate with a unique gate ID and parent can be added without
@@ -211,7 +211,7 @@ class GatingStrategy(object):
 
             # quadrant gates need to be handled differently from other gates
             if isinstance(gate, fk_gates.QuadrantGate):
-                # The immediate children will be quadrants but they will get deleted.
+                # The immediate children will be quadrants, but they will get deleted.
                 # We do need to check if the quadrants have children and  set their
                 # parent to the quadrant gate parent.
                 child_nodes = []
