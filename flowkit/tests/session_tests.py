@@ -230,7 +230,7 @@ class SessionTestCase(unittest.TestCase):
     @staticmethod
     def test_add_poly1_gate():
         fks = Session(fcs_samples=data1_sample)
-        fks.add_gate(poly1_gate)
+        fks.add_gate(poly1_gate, ('root',))
         fks.analyze_samples()
         result = fks.get_gating_results('default', data1_sample.original_filename)
 
@@ -241,7 +241,7 @@ class SessionTestCase(unittest.TestCase):
 
     def test_get_gate_from_template(self):
         fks = Session(fcs_samples=data1_sample)
-        fks.add_gate(poly1_gate)
+        fks.add_gate(poly1_gate, ('root',))
 
         template_gate = fks.get_gate('default', 'Polygon1')
 
@@ -257,8 +257,8 @@ class SessionTestCase(unittest.TestCase):
         dim2 = Dimension('PerCP', compensation_ref='MySpill')
         dims = [dim1, dim2]
 
-        poly_gate = gates.PolygonGate('Polygon4', None, dims, poly1_vertices)
-        fks.add_gate(poly_gate)
+        poly_gate = gates.PolygonGate('Polygon4', dims, poly1_vertices)
+        fks.add_gate(poly_gate, ('root',))
 
         res_path = 'data/gate_ref/truth/Results_Polygon4.txt'
         truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
@@ -276,8 +276,8 @@ class SessionTestCase(unittest.TestCase):
         dim1 = Dimension('FL1-H', 'uncompensated', 'AsinH_10000_4_1', range_min=0.37, range_max=0.63)
         dims = [dim1]
 
-        rect_gate = gates.RectangleGate('ScaleRange1', None, dims)
-        fks.add_gate(rect_gate)
+        rect_gate = gates.RectangleGate('ScaleRange1', dims)
+        fks.add_gate(rect_gate, ('root',))
 
         res_path = 'data/gate_ref/truth/Results_ScaleRange1.txt'
         truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
