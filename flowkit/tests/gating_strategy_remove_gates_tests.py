@@ -76,8 +76,8 @@ class GatingStrategyRemoveGatesTestCase(unittest.TestCase):
         dim_cd107a = fk.Dimension('CD107a PE FLR-A', compensation_ref='spill', transformation_ref='flr-logicle')
 
         # Start with time gate
-        gate_time = fk.gates.RectangleGate('Time-range', None, [time_dim])
-        session.add_gate(gate_time, None, sample_group)
+        gate_time = fk.gates.RectangleGate('Time-range', [time_dim])
+        session.add_gate(gate_time, ('root',), sample_group)
 
         gate_singlets_poly_vertices = [
             fk.Vertex([0.328125, 0.2]),
@@ -88,11 +88,10 @@ class GatingStrategyRemoveGatesTestCase(unittest.TestCase):
         ]
         gate_singlets_poly = fk.gates.PolygonGate(
             'Singlets-poly',
-            parent_gate_name=gate_time.gate_name,
             dimensions=[dim_fsc_w, dim_fsc_h],
             vertices=gate_singlets_poly_vertices
         )
-        session.add_gate(gate_singlets_poly, None, sample_group)
+        session.add_gate(gate_singlets_poly, ('root', 'Time-range'), sample_group)
 
         gate_live_poly_vertices = [
             fk.Vertex([0.2629268137285685, 0.0625]),
@@ -105,45 +104,40 @@ class GatingStrategyRemoveGatesTestCase(unittest.TestCase):
             fk.Vertex([0.29042797365869377, 0.1484375]),
         ]
         gate_live_poly = fk.gates.PolygonGate(
-            'Live-poly',
-            parent_gate_name=gate_singlets_poly.gate_name,
-            dimensions=[dim_amine_a, dim_ssc_a],
-            vertices=gate_live_poly_vertices
+            'Live-poly', dimensions=[dim_amine_a, dim_ssc_a], vertices=gate_live_poly_vertices
         )
-        session.add_gate(gate_live_poly, None, sample_group)
+        session.add_gate(gate_live_poly, ('root', 'Time-range', 'Singlets-poly'), sample_group)
 
         dim_cd3_pos = copy.deepcopy(dim_cd3)
         dim_cd3_pos.min = 0.282
         dim_cd3_pos.max = None
 
-        gate_cd3_pos_range = fk.gates.RectangleGate(
-            'CD3-pos-range',
-            parent_gate_name=gate_live_poly.gate_name,
-            dimensions=[dim_cd3_pos]
+        gate_cd3_pos_range = fk.gates.RectangleGate('CD3-pos-range', dimensions=[dim_cd3_pos])
+        session.add_gate(
+            gate_cd3_pos_range, ('root', 'Time-range', 'Singlets-poly', 'Live-poly'), group_name=sample_group
         )
-        session.add_gate(gate_cd3_pos_range, group_name=sample_group)
+
+        gate_path_cd3_pos = ('root', 'Time-range', 'Singlets-poly', 'Live-poly', 'CD3-pos-range')
 
         gate_cd4_pos_coords = [[0.25, 0.38], [0.65, 0.5], [0.65, 0.8], [0.25, 0.8]]
 
         gate_cd4_pos_vertices = [fk.Vertex(c) for c in gate_cd4_pos_coords]
         gate_cd4_pos = fk.gates.PolygonGate(
             'CD4-pos-poly',
-            parent_gate_name=gate_cd3_pos_range.gate_name,
             dimensions=[dim_cd3, dim_cd4],
             vertices=gate_cd4_pos_vertices
         )
-        session.add_gate(gate_cd4_pos, group_name=sample_group)
+        session.add_gate(gate_cd4_pos, gate_path_cd3_pos, group_name=sample_group)
 
         gate_cd8_pos_coords = [[0.2, 0.38], [0.7, 0.38], [0.7, 0.9], [0.2, 0.9]]
 
         gate_cd8_pos_vertices = [fk.Vertex(c) for c in gate_cd8_pos_coords]
         gate_cd8_pos = fk.gates.PolygonGate(
             'CD8-pos-poly',
-            parent_gate_name=gate_cd3_pos_range.gate_name,
             dimensions=[dim_cd3, dim_cd8],
             vertices=gate_cd8_pos_vertices
         )
-        session.add_gate(gate_cd8_pos, group_name=sample_group)
+        session.add_gate(gate_cd8_pos, gate_path_cd3_pos, group_name=sample_group)
 
         cd4_pos_gate_paths = session.find_matching_gate_paths(sample_group, gate_cd4_pos.gate_name)
         cd8_pos_gate_paths = session.find_matching_gate_paths(sample_group, gate_cd8_pos.gate_name)
@@ -163,11 +157,10 @@ class GatingStrategyRemoveGatesTestCase(unittest.TestCase):
 
         gate_cd4_cd8_dbl_pos = fk.gates.BooleanGate(
             'CD4-CD8-dbl-pos-bool',
-            gate_cd3_pos_range.gate_name,
             'and',
             gate_cd4_cd8_dbl_pos_refs
         )
-        session.add_gate(gate_cd4_cd8_dbl_pos, group_name=sample_group)
+        session.add_gate(gate_cd4_cd8_dbl_pos, gate_path_cd3_pos, group_name=sample_group)
 
         quad1_div1 = fk.QuadrantDivider('div-cd4', dim_cd4.id, 'spill', [0.4], transformation_ref='flr-logicle')
         quad1_div2 = fk.QuadrantDivider('div-cd8', dim_cd8.id, 'spill', [0.4], transformation_ref='flr-logicle')
@@ -195,8 +188,8 @@ class GatingStrategyRemoveGatesTestCase(unittest.TestCase):
         )
         quadrants_q1 = [quad_1, quad_2, quad_3, quad_4]
 
-        quad1_gate = fk.gates.QuadrantGate('Q-CD4-CD8', gate_cd3_pos_range.gate_name, quad1_divs, quadrants_q1)
-        session.add_gate(quad1_gate, None, group_name=sample_group)
+        quad1_gate = fk.gates.QuadrantGate('Q-CD4-CD8', quad1_divs, quadrants_q1)
+        session.add_gate(quad1_gate, gate_path_cd3_pos, group_name=sample_group)
 
         # the next bool gate will be CD4+ OR CD8+ from the quadrants
         cd4_pos_q_gate_paths = session.find_matching_gate_paths(sample_group, 'CD4P-CD8N')
@@ -217,11 +210,11 @@ class GatingStrategyRemoveGatesTestCase(unittest.TestCase):
 
         gate_cd4_or_cd8_pos = fk.gates.BooleanGate(
             'CD4-or-CD8-pos-bool',
-            gate_cd3_pos_range.gate_name,
             'or',
             gate_cd4_or_cd8_pos_refs
         )
-        session.add_gate(gate_cd4_or_cd8_pos, group_name=sample_group)
+        session.add_gate(gate_cd4_or_cd8_pos, gate_path_cd3_pos, group_name=sample_group)
+        gate_path_cd4_or_cd8_pos = tuple(list(gate_path_cd3_pos) + [gate_cd4_or_cd8_pos.gate_name])
 
         dim_cd107a_pos = copy.deepcopy(dim_cd107a)
         dim_cd107a_pos.min = 0.4
@@ -229,17 +222,15 @@ class GatingStrategyRemoveGatesTestCase(unittest.TestCase):
 
         dim_cd107a_pos_range = fk.gates.RectangleGate(
             'CD107a-pos-range',
-            parent_gate_name='CD4N-CD8P',
             dimensions=[dim_cd107a_pos]
         )
-        session.add_gate(dim_cd107a_pos_range, group_name=sample_group)
+        session.add_gate(dim_cd107a_pos_range, cd8_pos_q_gate_paths[0], group_name=sample_group)
 
         dim_cd107a_pos_range2 = fk.gates.RectangleGate(
             'CD107a-pos-range',
-            parent_gate_name=gate_cd4_or_cd8_pos.gate_name,
             dimensions=[dim_cd107a_pos]
         )
-        session.add_gate(dim_cd107a_pos_range2, group_name=sample_group)
+        session.add_gate(dim_cd107a_pos_range2, gate_path_cd4_or_cd8_pos, group_name=sample_group)
 
         self.gating_strategy = session._sample_group_lut[sample_group]['template']
 
