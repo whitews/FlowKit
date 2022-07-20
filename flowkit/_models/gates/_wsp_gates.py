@@ -60,7 +60,6 @@ class WSPEllipsoidGate(Gate):
 
         super().__init__(
             gate_name,
-            parent_gate_name,
             dimensions
         )
 
@@ -198,7 +197,7 @@ class WSPEllipsoidGate(Gate):
         cov_mat = r.dot(diag_mat).dot(inv_r)
         distance_square = 1.
 
-        return EllipsoidGate(self.gate_name, self.parent, self.dimensions, center, cov_mat, distance_square)
+        return EllipsoidGate(self.gate_name, self.dimensions, center, cov_mat, distance_square)
 
     def apply(self, df_events):
         """
