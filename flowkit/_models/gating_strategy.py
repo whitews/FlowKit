@@ -723,7 +723,6 @@ class GatingStrategy(object):
                     'count': q_event_count,
                     'absolute_percent': (q_event_count / float(sample.event_count)) * 100.0,
                     'relative_percent': (q_event_count / float(parent_count)) * 100.0,
-                    'parent': gate.parent,
                     'gate_type': gate.gate_type
                 }
         else:
@@ -734,13 +733,13 @@ class GatingStrategy(object):
                 relative_percent = 0.0
             else:
                 relative_percent = (event_count / float(parent_count)) * 100.0
+
             final_results = {
                 'sample': sample.original_filename,
                 'events': results_and_parent,
                 'count': event_count,
                 'absolute_percent': (event_count / float(sample.event_count)) * 100.0,
                 'relative_percent': relative_percent,
-                'parent': gate.parent,
                 'gate_type': gate.gate_type
             }
 
@@ -804,7 +803,7 @@ class GatingStrategy(object):
 
             # look up parent results
             parent_results = None  # default to None
-            if gate.parent is not None:
+            if p_id != 'root':
                 parent_gate = self.get_gate(p_id, p_path)
                 if p_uid in results:
                     parent_results = results[p_uid]
@@ -848,8 +847,10 @@ class GatingStrategy(object):
 
             if isinstance(gate, fk_gates.QuadrantGate):
                 for quad_res in results[g_id, gate_path_str].values():
+                    quad_res['parent'] = p_id
                     quad_res['gate_path'] = g_path
             else:
+                results[g_id, gate_path_str]['parent'] = p_id
                 results[g_id, gate_path_str]['gate_path'] = g_path
 
         if not cache_events:
