@@ -221,9 +221,6 @@ class GatingStrategy(object):
                 # set each child node to the parent of the removed node
                 cn.parent = parent_node
 
-                # now set the gate instance parent to the parent gate name
-                cn.gate.parent = parent_node.name
-
         # remove from anytree, any descendants get removed so fine for keep_children=False
         gate_node.parent = None
 
