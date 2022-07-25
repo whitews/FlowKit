@@ -68,6 +68,8 @@ def parse_gating_xml(xml_file_or_path):
     bool_edges = []
 
     for g_id, gate in gates.items():
+        # GML gates have a parent reference & their gate names are
+        # required to be unique, so we can use them to assemble the tree
         if gate.parent is None:
             parent = 'root'
         else:
