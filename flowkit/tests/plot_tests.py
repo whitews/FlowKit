@@ -110,10 +110,16 @@ class PlotTestCase(unittest.TestCase):
         fks.analyze_samples(group_name, sample_id=sample_name)
 
         for gate_name, ancestors in gate_tuples:
-            gate = fks.get_gate(group_name, gate_name, sample_id=sample_name)
-            if isinstance(gate, fk.gates.Quadrant) or isinstance(gate, fk.gates.BooleanGate):
+            try:
+                gate = fks.get_gate(group_name, gate_name, sample_id=sample_name)
+            except fk.exceptions.QuadrantReferenceError:
                 # cannot plot single quadrants of a quadrant gate
                 continue
+
+            if isinstance(gate, fk.gates.BooleanGate):
+                # can't plot Boolean gates
+                continue
+
             try:
                 p = fks.plot_gate('my_group', sample_name, gate_name)
             except NotImplementedError:
