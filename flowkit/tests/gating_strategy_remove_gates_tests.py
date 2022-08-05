@@ -252,4 +252,4 @@ class GatingStrategyRemoveGatesTestCase(unittest.TestCase):
 
         gs.remove_gate(gate_name_to_remove)
 
-        self.assertRaises(fk.exceptions.GateTreeError, gs.get_gate, gate_name_to_remove)
+        self.assertRaises(fk.exceptions.GateReferenceError, gs.get_gate, gate_name_to_remove)
