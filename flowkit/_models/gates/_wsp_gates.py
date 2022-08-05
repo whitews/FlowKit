@@ -8,6 +8,7 @@ from ..gates import PolygonGate
 from ..vertex import Vertex
 from ..transforms import WSPBiexTransform
 from ..._utils import xml_utils
+from ...exceptions import FlowJoWSPParsingError
 
 
 def _rotate_point_around_point(point, cov_mat, center_point=(0, 0)):
@@ -77,7 +78,7 @@ class WSPEllipsoidGate(Gate):
         for coord_el in coord_els:
             value = xml_utils.find_attribute_value(coord_el, data_type_namespace, 'value')
             if value is None:
-                raise ValueError(
+                raise FlowJoWSPParsingError(
                     'A coordinate must have only 1 value (line %d)' % coord_el.sourceline
                 )
 
@@ -99,7 +100,7 @@ class WSPEllipsoidGate(Gate):
         )
 
         if len(foci_vertex_els) <= 1:
-            raise ValueError(
+            raise FlowJoWSPParsingError(
                 'Ellipsoids must have at least 2 dimensions (line %d)' % gate_element.sourceline
             )
 
@@ -124,7 +125,7 @@ class WSPEllipsoidGate(Gate):
         )
 
         if len(edge_vertex_els) < 4:
-            raise ValueError(
+            raise FlowJoWSPParsingError(
                 'FlowJo ellipsoids must have 4 edge points (line %d)' % gate_element.sourceline
             )
 
@@ -187,7 +188,7 @@ class WSPEllipsoidGate(Gate):
         rv3_max_pos = rv3.argmax()
 
         if rv1_max_pos == rv3_max_pos:
-            raise ValueError(
+            raise FlowJoWSPParsingError(
                 "Cannot determine major axis of FlowJo ellipse gate '%s'" % self.gate_name
             )
 
