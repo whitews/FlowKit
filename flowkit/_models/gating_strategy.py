@@ -16,7 +16,7 @@ from .._models.transforms._base_transform import Transform
 # noinspection PyProtectedMember
 from .._models.transforms._matrix import Matrix
 from .._models.gating_results import GatingResults
-from ..exceptions import GateTreeError
+from ..exceptions import GateTreeError, GateReferenceError, QuadrantReferenceError
 
 
 class GatingStrategy(object):
@@ -122,8 +122,10 @@ class GatingStrategy(object):
         node = self._get_gate_node(gate_name, gate_path)
 
         if isinstance(node.gate, fk_gates.Quadrant):
-            # return the full QuadrantGate b/c a Quadrant by itself has no parent reference
-            node = node.parent
+            # A Quadrant isn't a true gate, raise error indicating to call its QuadrantGate
+            raise QuadrantReferenceError(
+                "%s references a Quadrant, specify the owning QuadrantGate %s instead" % (gate_name, node.parent)
+            )
 
         return node.gate
 
@@ -288,7 +290,7 @@ class GatingStrategy(object):
             # need to match on full gate path
             # TODO: what if QuadrantGate is re-used, does this still work for that case
             if gate_path is None:
-                raise ValueError(
+                raise GateReferenceError(
                     "Found multiple gates with name %s. Provide full 'gate_path' to disambiguate." % gate_name
                 )
 
@@ -311,7 +313,7 @@ class GatingStrategy(object):
             node = None
 
         if node is None:
-            raise GateTreeError("Gate name %s was not found in gating strategy" % gate_name)
+            raise GateReferenceError("Gate name %s was not found in gating strategy" % gate_name)
 
         return node
 
@@ -567,6 +569,7 @@ class GatingStrategy(object):
         return events
 
     def _preprocess_sample_events(self, sample, gate, cache_events=False):
+        # TODO: consider making method public, could be useful for users
         pnn_labels = sample.pnn_labels
         pns_labels = sample.pns_labels
         # FlowJo replaces slashes with underscores, so make a set of labels with that replacement
@@ -785,15 +788,13 @@ class GatingStrategy(object):
             if g_uid in results:
                 continue
 
-            gate = self.get_gate(g_id, g_path)
-
-            # get_gate returns QuadrantGate when given on of its quadrant, let's check if we have
-            # just a quadrant or the full QuadrantGate
-            if isinstance(gate, fk_gates.QuadrantGate):
-                if g_id in gate.quadrants.keys():
-                    # This is a quadrant sub-gate, we'll process the quadrant sub-gates
-                    # all at once with the main QuadrantGate ID
-                    continue
+            # get_gate returns QuadrantReferenceError when requesting a single quadrant,
+            # we'll check for that. All quadrant sub-gates will get processed with the
+            # main QuadrantGate
+            try:
+                gate = self.get_gate(g_id, g_path)
+            except QuadrantReferenceError:
+                continue
 
             if verbose:
                 print("%s: processing gate %s" % (sample.original_filename, g_id))
@@ -801,11 +802,12 @@ class GatingStrategy(object):
             # look up parent results
             parent_results = None  # default to None
             if p_id != 'root':
-                parent_gate = self.get_gate(p_id, p_path)
-                if p_uid in results:
-                    parent_results = results[p_uid]
-                elif isinstance(parent_gate, fk_gates.QuadrantGate):
-                    # need to check for quadrant results in a quadrant gate
+                try:
+                    _ = self.get_gate(p_id, p_path)
+                    if p_uid in results:
+                        parent_results = results[p_uid]
+                except QuadrantReferenceError:
+                    # get quadrant results from quadrant gate
                     q_gate_name = p_path[-1]
                     q_gate_path = p_path[:-1]
                     q_gate_res_key = (q_gate_name, "/".join(q_gate_path))
@@ -817,11 +819,14 @@ class GatingStrategy(object):
                 # BooleanGate is a bit different, needs a DataFrame of gate ref results
                 bool_gate_ref_results = {}
                 for gate_ref in gate.gate_refs:
-                    gate_ref_gate = self.get_gate(gate_ref['ref'], gate_ref['path'])
                     gate_ref_res_key = (gate_ref['ref'], "/".join(gate_ref['path']))
 
-                    if isinstance(gate_ref_gate, fk_gates.QuadrantGate):
-                        quad_gate_name = gate_ref_gate.gate_name
+                    try:
+                        # get_gate used just to differentiate between quadrant results & regular gate results
+                        _ = self.get_gate(gate_ref['ref'], gate_ref['path'])
+                        bool_gate_ref_results[gate_ref_res_key] = results[gate_ref_res_key]['events']
+                    except QuadrantReferenceError:
+                        quad_gate_name = gate_ref['path'][-1]
                         quad_gate_path = gate_ref['path'][:-1]
 
                         quad_gate_res_key = (quad_gate_name, "/".join(quad_gate_path))
@@ -829,8 +834,6 @@ class GatingStrategy(object):
 
                         # but the quadrant result is what we're after
                         bool_gate_ref_results[gate_ref_res_key] = quad_gate_results[gate_ref['ref']]['events']
-                    else:
-                        bool_gate_ref_results[gate_ref_res_key] = results[gate_ref_res_key]['events']
 
                 gate_results = gate.apply(pd.DataFrame(bool_gate_ref_results))
             else:
