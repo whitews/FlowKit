@@ -59,7 +59,7 @@ class GatingStrategyTestCase(unittest.TestCase):
         gs = fk.GatingStrategy()
         gs.add_gate(poly1_gate, ('root',))
 
-        self.assertRaises(fk.exceptions.GateTreeError, gs.get_gate, 'nonexistent-gate')
+        self.assertRaises(fk.exceptions.GateReferenceError, gs.get_gate, 'nonexistent-gate')
 
     def test_get_parent_gate_is_none(self):
         gs = fk.GatingStrategy()
@@ -333,4 +333,4 @@ class GatingStrategyReusedGatesTestCase(unittest.TestCase):
         self.assertListEqual(child_gate_names, sorted(retrieved_gate_names))
 
     def test_get_gate_fails_without_path(self):
-        self.assertRaises(ValueError, self.gs.get_gate, 'ReusedParent')
+        self.assertRaises(fk.exceptions.GateReferenceError, self.gs.get_gate, 'ReusedParent')
