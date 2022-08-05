@@ -284,7 +284,11 @@ def _convert_wsp_gate(wsp_gate, comp_matrix, xform_lut, ignore_transforms=False)
         gate = copy.deepcopy(wsp_gate)
         gate.dimensions = new_dims
     elif isinstance(wsp_gate, WSPEllipsoidGate):
-        gate = wsp_gate.convert_to_ellipsoid_gate(xforms)
+        # FlowJo ellipse gates must be converted to approximate polygons.
+        # When a mixed set of transforms where 1 transform is the biex,
+        # the ellipse is not a true ellipse. FlowJo also converts all
+        # ellipses to polygons internally when processing gates.
+        gate = wsp_gate.convert_to_polygon_gate(xforms)
         gate.dimensions = new_dims
     else:
         raise NotImplemented(
