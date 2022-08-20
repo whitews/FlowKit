@@ -820,39 +820,6 @@ class GatingMLTestCase(unittest.TestCase):
 
         np.testing.assert_array_equal(truth, result)
 
-    def test_get_parent_rect_gate(self):
-        gml_path = 'data/gate_ref/gml/gml_parent_rect1_rect_par1_gate.xml'
-
-        s = Session()
-        group_name = 'gml'
-        s.add_sample_group(group_name, gating_strategy=gml_path)
-        s.add_samples(data1_sample)
-        s.assign_samples(data1_sample.original_filename, group_name)
-        parent_gate_name = s.get_parent_gate_name(group_name, 'ScalePar1')
-
-        self.assertEqual(parent_gate_name, 'ScaleRect1')
-
-        parent_gate = s.get_gate(group_name, parent_gate_name, sample_id=data1_sample.original_filename)
-
-        self.assertIsInstance(parent_gate, gates.RectangleGate)
-
-    def test_get_parent_quadrant_gate(self):
-        gml_path = 'data/gate_ref/gml/gml_parent_quadrant_rect_gate.xml'
-
-        s = Session()
-        group_name = 'gml'
-        s.add_sample_group(group_name, gating_strategy=gml_path)
-        s.add_samples(data1_sample)
-        s.assign_samples(data1_sample.original_filename, group_name)
-        parent_gate_name = s.get_parent_gate_name(group_name, 'ParRectangle1')
-
-        self.assertEqual(parent_gate_name, 'FL2P-FL4P')
-
-        parent_gate = s.get_gate(group_name, parent_gate_name, sample_id=data1_sample.original_filename)
-
-        self.assertIsInstance(parent_gate, gates.QuadrantGate)
-        self.assertIn('FL2P-FL4P', parent_gate.quadrants.keys())
-
     def test_gate_gating_hierarchy(self):
         gml_path = 'data/gate_ref/gml/gml_all_gates.xml'
         gs = parse_gating_xml(gml_path)

@@ -1095,57 +1095,6 @@ class ExportGMLTestCase(unittest.TestCase):
 
         np.testing.assert_array_equal(truth, result.get_gate_membership('ParRectangle1'))
 
-    def test_get_parent_rect_gate(self):
-        gml_path = 'data/gate_ref/gml/gml_parent_rect1_rect_par1_gate.xml'
-
-        s = Session()
-        group_name = 'gml'
-        s.add_sample_group(group_name, gating_strategy=gml_path)
-
-        out_file = BytesIO()
-        s.export_gml(out_file, group_name)
-        out_file.seek(0)
-
-        sess_out = Session()
-        sess_out.add_sample_group(group_name, gating_strategy=out_file)
-        sess_out.add_samples(data1_sample)
-        sess_out.assign_samples(data1_sample.original_filename, group_name)
-        sess_out.analyze_samples(group_name)
-
-        parent_gate_name = sess_out.get_parent_gate_name(group_name, 'ScalePar1')
-
-        self.assertEqual(parent_gate_name, 'ScaleRect1')
-
-        parent_gate = sess_out.get_gate(group_name, parent_gate_name, sample_id=data1_sample.original_filename)
-
-        self.assertIsInstance(parent_gate, gates.RectangleGate)
-
-    def test_get_parent_quadrant_gate(self):
-        gml_path = 'data/gate_ref/gml/gml_parent_quadrant_rect_gate.xml'
-
-        s = Session()
-        group_name = 'gml'
-        s.add_sample_group(group_name, gating_strategy=gml_path)
-
-        out_file = BytesIO()
-        s.export_gml(out_file, group_name)
-        out_file.seek(0)
-
-        sess_out = Session()
-        sess_out.add_sample_group(group_name, gating_strategy=out_file)
-        sess_out.add_samples(data1_sample)
-        sess_out.assign_samples(data1_sample.original_filename, group_name)
-        sess_out.analyze_samples(group_name)
-
-        parent_gate_name = sess_out.get_parent_gate_name(group_name, 'ParRectangle1')
-
-        self.assertEqual(parent_gate_name, 'FL2P-FL4P')
-
-        parent_gate = sess_out.get_gate(group_name, parent_gate_name, sample_id=data1_sample.original_filename)
-
-        self.assertIsInstance(parent_gate, gates.QuadrantGate)
-        self.assertIn('FL2P-FL4P', parent_gate.quadrants.keys())
-
     @staticmethod
     def test_all_gates():
         gml_path = 'data/gate_ref/gml/gml_all_gates.xml'
