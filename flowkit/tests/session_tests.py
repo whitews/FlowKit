@@ -16,6 +16,7 @@ from flowkit import Session, Sample, Matrix, Dimension, gates, transforms, load_
 from flowkit._models.transforms._base_transform import Transform
 # noinspection PyProtectedMember
 from flowkit._models.gates._base_gate import Gate
+from flowkit.exceptions import GateReferenceError
 from .gating_strategy_prog_gate_tests import data1_sample, poly1_gate, poly1_vertices, comp_matrix_01, asinh_xform1
 
 fcs_file_paths = [
@@ -206,7 +207,7 @@ class SessionTestCase(unittest.TestCase):
         fks = Session()
         fks.import_flowjo_workspace(wsp_path, ignore_missing_files=True)
 
-        self.assertRaises(KeyError, fks.get_child_gate_ids, sample_grp, gate_name)
+        self.assertRaises(GateReferenceError, fks.get_child_gate_ids, sample_grp, gate_name)
 
     def test_find_matching_gate_paths(self):
         wsp_path = "data/8_color_data_set/8_color_ICS.wsp"
