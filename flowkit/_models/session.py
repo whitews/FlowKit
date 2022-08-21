@@ -16,6 +16,7 @@ from .._models.transforms._matrix import Matrix
 from .._models import gates, dimension
 from .._models.sample import Sample
 from .._utils import plot_utils, xml_utils, wsp_utils, sample_utils
+from ..exceptions import GateReferenceError
 import warnings
 
 
@@ -382,14 +383,13 @@ class Session(object):
         template = group['template']
         return template.get_gate_ids()
 
-    def add_gate(self, gate, gate_path=None, group_name='default'):
+    def add_gate(self, gate, gate_path, group_name='default'):
         """
         Add a Gate instance to a sample group in the session. Gates will be added to
         the 'default' sample group by default.
 
         :param gate: an instance of a Gate subclass
-        :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
-            Required if gate.gate_name and gate.parent combination is ambiguous
+        :param gate_path: complete tuple of gate IDs for unique set of gate ancestors
         :param group_name: a text string representing the sample group
         :return: None
         """
@@ -499,21 +499,6 @@ class Session(object):
         comp_mat = gating_strategy.get_comp_matrix(matrix_id)
         return comp_mat
 
-    def get_parent_gate_name(self, group_name, gate_name):
-        """
-        Retrieve the gate name of the parent gate by the child gate ID and sample group.
-
-        :param group_name: a text string representing the sample group
-        :param gate_name: text string of a gate name
-        :return: string of the parent gate name
-        """
-        # this method doesn't need to lookup sample specific gates, as the gate names
-        # and hierarchy must be the same for all samples in a group
-        group = self._sample_group_lut[group_name]
-        template = group['template']
-        gate = template.get_gate(gate_name)
-        return gate.parent
-
     def find_matching_gate_paths(self, group_name, gate_name):
         """
         Find all gate paths in a sample group for given gate name.
@@ -535,7 +520,7 @@ class Session(object):
         :param group_name: a text string representing the sample group
         :param gate_name: text string of a gate name
         :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
-            Required if gate.gate_name and gate.parent combination is ambiguous
+            Required if gate.gate_name is ambiguous
         :return: list of gate IDs (each gate ID is a gate name string & tuple of the gate path)
         """
         group = self._sample_group_lut[group_name]
@@ -546,7 +531,7 @@ class Session(object):
             gate_paths = template.find_matching_gate_paths(gate_name)
 
             if len(gate_paths) > 1:
-                raise KeyError(
+                raise GateReferenceError(
                     "Multiple gates exist with gate name '%s'. Specify a gate_path to disambiguate." % gate_name
                 )
 
@@ -929,11 +914,24 @@ class Session(object):
         """
         group = self._sample_group_lut[group_name]
         gating_strategy = group['samples'][sample_id]
+
+        if gate_path is None:
+            # verify the gate_name isn't ambiguous
+            gate_paths = self.find_matching_gate_paths(group_name, gate_name)
+            if len(gate_paths) > 1:
+                raise GateReferenceError(
+                    "Multiple gates exist with gate name '%s'. Specify a gate_path to disambiguate." % gate_name
+                )
+            gate_path = gate_paths[0]
+
         gate = gating_strategy.get_gate(gate_name, gate_path)
 
         # check for a boolean gate, there's no reasonable way to plot these
         if isinstance(gate, gates.BooleanGate):
             raise TypeError("Plotting Boolean gates is not allowed (gate %s)" % gate.gate_name)
+
+        parent_gate_name = gate_path[-1]
+        parent_gate_path = gate_path[:-1]
 
         dim_ids_ordered = []
         dim_is_ratio = []
@@ -979,10 +977,9 @@ class Session(object):
         )
 
         # get parent gate results to display only those events
-        if gate.parent is not None:
+        if parent_gate_name != 'root':
             # TODO:  make it clear to call analyze_samples prior to calling this method
-            gating_results = self.get_gating_results(group_name, sample_id)
-            is_parent_event = gating_results.get_gate_membership(gate.parent)
+            is_parent_event = self.get_gate_membership(group_name, sample_id, parent_gate_name, parent_gate_path)
             is_subsample = np.zeros(sample_to_plot.event_count, dtype=bool)
             is_subsample[sample_to_plot.subsample_indices] = True
             idx_to_plot = np.logical_and(is_parent_event, is_subsample)

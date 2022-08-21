@@ -45,13 +45,13 @@ class FlowJoWSPTestCase(unittest.TestCase):
                 'ellipse1',
                 sample_id='data_set_simple_line_100.fcs'
             ),
-            gates.EllipsoidGate
+            gates.PolygonGate
         )
 
         fks.analyze_samples(group_name='All Samples')
         results = fks.get_gating_results('All Samples', 'data_set_simple_line_100.fcs')
         gate_count = results.get_gate_count('ellipse1')
-        self.assertEqual(gate_count, 48)
+        self.assertEqual(gate_count, 51)
 
     def test_load_wsp_single_quad(self):
         wsp_path = "data/simple_diamond_example/simple_diamond_example_quad_gate.wsp"
@@ -194,7 +194,7 @@ class FlowJoWSPTestCase(unittest.TestCase):
         gate_indices = fks.get_gate_membership(sample_grp, sample_id, gate_name, gate_path=gate_path)
 
         self.assertIsInstance(gate_indices, np.ndarray)
-        self.assertEqual(np.sum(gate_indices), 7018)
+        self.assertEqual(np.sum(gate_indices), 7023)
 
     def test_get_ambiguous_gate_objects(self):
         wsp_path = "data/8_color_data_set/8_color_ICS.wsp"

@@ -16,7 +16,7 @@ from .._models.transforms._base_transform import Transform
 # noinspection PyProtectedMember
 from .._models.transforms._matrix import Matrix
 from .._models.gating_results import GatingResults
-from ..exceptions import GateTreeError
+from ..exceptions import GateTreeError, GateReferenceError, QuadrantReferenceError
 
 
 class GatingStrategy(object):
@@ -24,6 +24,8 @@ class GatingStrategy(object):
     Represents a flow cytometry gating strategy, including instructions
     for compensation and transformation.
     """
+    resolver = anytree.Resolver()
+
     def __init__(self):
         self._cached_preprocessed_events = {}
 
@@ -47,91 +49,43 @@ class GatingStrategy(object):
             f'{len(self.comp_matrices)} compensations)'
         )
 
-    def add_gate(self, gate, gate_path=None):
+    def add_gate(self, gate, gate_path):
         """
         Add a gate to the gating strategy, see `gates` module. The gate ID and gate path must be
-        unique in the gating strategy. A gate with a unique gate ID and parent can be added without
-        specifying a gate_path. However, if the gate's ID and parent combination already exists in
-        the gating strategy, a unique gate path must be provided.
+        unique in the gating strategy.
 
         :param gate: instance from a subclass of the Gate class
-        :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
-            Required if gate.gate_name and gate.parent combination is ambiguous
+        :param gate_path: complete tuple of gate IDs for unique set of gate ancestors
 
         :return: None
         """
         if not isinstance(gate, Gate):
             raise TypeError("gate must be a sub-class of the Gate class")
 
-        parent_gate_name = gate.parent
-        if parent_gate_name is None:
-            # If no parent gate is specified, use root
-            parent_gate_name = 'root'
+        # Verify gate_path is a tuple, else user gets a cryptic error for
+        # something that is simple to fix
+        if not isinstance(gate_path, tuple):
+            raise TypeError("gate_path must be a tuple not %s" % str(type(gate_path)))
 
-        # Verify the gate parent matches the last item in the gate path (if given)
-        if gate_path is not None:
-            # Verify gate_path is a tuple, else user gets a cryptic error for
-            # something that is simple to fix
-            if not isinstance(gate_path, tuple):
-                raise TypeError("gate_path must be a tuple not %s" % str(type(gate_path)))
+        # determine if gate already exists with name and path
+        abs_gate_path = list(gate_path) + [gate.gate_name]
+        abs_gate_path = "/" + "/".join(abs_gate_path)
+        try:
+            node = self.resolver.get(self._gate_tree, abs_gate_path)
+        except anytree.ResolverError:
+            # this is expected if the gate doesn't already exist
+            node = None
 
-            if len(gate_path) != 0:
-                if parent_gate_name != gate_path[-1]:
-                    raise ValueError("The gate parent and the last item in gate path are different.")
+        if node is not None:
+            raise GateTreeError("Gate %s already exists" % abs_gate_path)
 
-        # Find simple case of matching gate name + parent where no gate_path is specified.
-        matched_nodes = anytree.findall(
-            self._gate_tree,
-            filter_=lambda g_node:
-            g_node.name == gate.gate_name and
-            g_node.parent.name == parent_gate_name
-        )
-        match_count = len(matched_nodes)
+        parent_abs_gate_path = "/" + "/".join(gate_path)
+        try:
+            parent_node = self.resolver.get(self._gate_tree, parent_abs_gate_path)
+        except anytree.ResolverError:
+            raise GateTreeError("Parent gate %s doesn't exist" % parent_abs_gate_path)
 
-        if match_count != 0 and gate_path is None:
-            raise KeyError(
-                "A gate with name '%s' and parent gate name '%s' is already defined. " 
-                "You must specify a gate_path as a unique tuple of ancestors." % (gate.gate_name, parent_gate_name)
-            )
-
-        # Here we either have a unique gate ID + parent, or an ambiguous gate ID + parent with a gate path.
-        # It is still possible that the given gate_path already exists, we'll check that.
-        # We'll find the parent node from the ID, and if there are multiple parent matches then resort
-        # to using the given gate path.
-        if parent_gate_name == 'root':
-            # Easiest case since a root parent is also the full path.
-            parent_node = self._gate_tree
-        else:
-            # Find all nodes with the parent ID name. If there's only one, we've identified the correct parent.
-            # If there are none, the parent doesn't exist (or is a Quad gate).
-            # If there are >1, we have to compare the gate paths.
-            matching_parent_nodes = anytree.search.findall_by_attr(self._gate_tree, parent_gate_name)
-            matched_parent_count = len(matching_parent_nodes)
-            match_idx = None
-
-            if matched_parent_count == 0:
-                # TODO: need to double-check whether this scenario could be in a quadrant gate
-                raise ValueError("Parent gate %s does not exist in the gating strategy" % parent_gate_name)
-            elif matched_parent_count == 1:
-                # There's only one match for the parent, so we're done
-                match_idx = 0
-            elif matched_parent_count > 1:
-                for i, matched_parent_node in enumerate(matching_parent_nodes):
-                    matched_parent_ancestors = tuple((pn.name for pn in matched_parent_node.path))
-                    if matched_parent_ancestors == gate_path:
-                        match_idx = i
-                        break
-
-            # look up the parent node, then do one final check to make sure the new gate doesn't
-            # already exist as a child of the parent
-            parent_node = matching_parent_nodes[match_idx]
-            parent_child_nodes = anytree.search.findall_by_attr(parent_node, gate.gate_name, maxlevel=1)
-            if len(parent_child_nodes) > 0:
-                raise ValueError(
-                    """A gate already exists matching gate name "%s" and the specified gate path""" % gate.gate_name
-                )
-
-        node = anytree.Node(gate.gate_name, parent=parent_node, gate=gate)
+        new_node = anytree.Node(gate.gate_name, parent=parent_node, gate=gate)
         parent_node_tuple = tuple(n.name for n in parent_node.path)
         new_node_tuple = parent_node_tuple + (gate.gate_name,)
         self._dag.add_node(new_node_tuple)
@@ -142,7 +96,7 @@ class GatingStrategy(object):
         # the individual quadrants as parents.
         if isinstance(gate, fk_gates.QuadrantGate):
             for q_id, q in gate.quadrants.items():
-                anytree.Node(q_id, parent=node, gate=q)
+                anytree.Node(q_id, parent=new_node, gate=q)
 
                 q_node_tuple = new_node_tuple + (q_id,)
 
@@ -168,8 +122,10 @@ class GatingStrategy(object):
         node = self._get_gate_node(gate_name, gate_path)
 
         if isinstance(node.gate, fk_gates.Quadrant):
-            # return the full QuadrantGate b/c a Quadrant by itself has no parent reference
-            node = node.parent
+            # A Quadrant isn't a true gate, raise error indicating to call its QuadrantGate
+            raise QuadrantReferenceError(
+                "%s references a Quadrant, specify the owning QuadrantGate %s instead" % (gate_name, node.parent)
+            )
 
         return node.gate
 
@@ -254,7 +210,7 @@ class GatingStrategy(object):
 
             # quadrant gates need to be handled differently from other gates
             if isinstance(gate, fk_gates.QuadrantGate):
-                # The immediate children will be quadrants but they will get deleted.
+                # The immediate children will be quadrants, but they will get deleted.
                 # We do need to check if the quadrants have children and  set their
                 # parent to the quadrant gate parent.
                 child_nodes = []
@@ -266,9 +222,6 @@ class GatingStrategy(object):
             for cn in child_nodes:
                 # set each child node to the parent of the removed node
                 cn.parent = parent_node
-
-                # now set the gate instance parent to the parent gate name
-                cn.gate.parent = parent_node.name
 
         # remove from anytree, any descendants get removed so fine for keep_children=False
         gate_node.parent = None
@@ -337,7 +290,7 @@ class GatingStrategy(object):
             # need to match on full gate path
             # TODO: what if QuadrantGate is re-used, does this still work for that case
             if gate_path is None:
-                raise ValueError(
+                raise GateReferenceError(
                     "Found multiple gates with name %s. Provide full 'gate_path' to disambiguate." % gate_name
                 )
 
@@ -360,7 +313,7 @@ class GatingStrategy(object):
             node = None
 
         if node is None:
-            raise GateTreeError("Gate name %s was not found in gating strategy" % gate_name)
+            raise GateReferenceError("Gate name %s was not found in gating strategy" % gate_name)
 
         return node
 
@@ -616,6 +569,7 @@ class GatingStrategy(object):
         return events
 
     def _preprocess_sample_events(self, sample, gate, cache_events=False):
+        # TODO: consider making method public, could be useful for users
         pnn_labels = sample.pnn_labels
         pns_labels = sample.pns_labels
         # FlowJo replaces slashes with underscores, so make a set of labels with that replacement
@@ -769,7 +723,6 @@ class GatingStrategy(object):
                     'count': q_event_count,
                     'absolute_percent': (q_event_count / float(sample.event_count)) * 100.0,
                     'relative_percent': (q_event_count / float(parent_count)) * 100.0,
-                    'parent': gate.parent,
                     'gate_type': gate.gate_type
                 }
         else:
@@ -780,13 +733,13 @@ class GatingStrategy(object):
                 relative_percent = 0.0
             else:
                 relative_percent = (event_count / float(parent_count)) * 100.0
+
             final_results = {
                 'sample': sample.original_filename,
                 'events': results_and_parent,
                 'count': event_count,
                 'absolute_percent': (event_count / float(sample.event_count)) * 100.0,
                 'relative_percent': relative_percent,
-                'parent': gate.parent,
                 'gate_type': gate.gate_type
             }
 
@@ -835,27 +788,26 @@ class GatingStrategy(object):
             if g_uid in results:
                 continue
 
-            gate = self.get_gate(g_id, g_path)
-
-            # get_gate returns QuadrantGate when given on of its quadrant, let's check if we have
-            # just a quadrant or the full QuadrantGate
-            if isinstance(gate, fk_gates.QuadrantGate):
-                if g_id in gate.quadrants.keys():
-                    # This is a quadrant sub-gate, we'll process the quadrant sub-gates
-                    # all at once with the main QuadrantGate ID
-                    continue
+            # get_gate returns QuadrantReferenceError when requesting a single quadrant,
+            # we'll check for that. All quadrant sub-gates will get processed with the
+            # main QuadrantGate
+            try:
+                gate = self.get_gate(g_id, g_path)
+            except QuadrantReferenceError:
+                continue
 
             if verbose:
                 print("%s: processing gate %s" % (sample.original_filename, g_id))
 
             # look up parent results
             parent_results = None  # default to None
-            if gate.parent is not None:
-                parent_gate = self.get_gate(p_id, p_path)
-                if p_uid in results:
-                    parent_results = results[p_uid]
-                elif isinstance(parent_gate, fk_gates.QuadrantGate):
-                    # need to check for quadrant results in a quadrant gate
+            if p_id != 'root':
+                try:
+                    _ = self.get_gate(p_id, p_path)
+                    if p_uid in results:
+                        parent_results = results[p_uid]
+                except QuadrantReferenceError:
+                    # get quadrant results from quadrant gate
                     q_gate_name = p_path[-1]
                     q_gate_path = p_path[:-1]
                     q_gate_res_key = (q_gate_name, "/".join(q_gate_path))
@@ -867,11 +819,14 @@ class GatingStrategy(object):
                 # BooleanGate is a bit different, needs a DataFrame of gate ref results
                 bool_gate_ref_results = {}
                 for gate_ref in gate.gate_refs:
-                    gate_ref_gate = self.get_gate(gate_ref['ref'], gate_ref['path'])
                     gate_ref_res_key = (gate_ref['ref'], "/".join(gate_ref['path']))
 
-                    if isinstance(gate_ref_gate, fk_gates.QuadrantGate):
-                        quad_gate_name = gate_ref_gate.gate_name
+                    try:
+                        # get_gate used just to differentiate between quadrant results & regular gate results
+                        _ = self.get_gate(gate_ref['ref'], gate_ref['path'])
+                        bool_gate_ref_results[gate_ref_res_key] = results[gate_ref_res_key]['events']
+                    except QuadrantReferenceError:
+                        quad_gate_name = gate_ref['path'][-1]
                         quad_gate_path = gate_ref['path'][:-1]
 
                         quad_gate_res_key = (quad_gate_name, "/".join(quad_gate_path))
@@ -879,8 +834,6 @@ class GatingStrategy(object):
 
                         # but the quadrant result is what we're after
                         bool_gate_ref_results[gate_ref_res_key] = quad_gate_results[gate_ref['ref']]['events']
-                    else:
-                        bool_gate_ref_results[gate_ref_res_key] = results[gate_ref_res_key]['events']
 
                 gate_results = gate.apply(pd.DataFrame(bool_gate_ref_results))
             else:
@@ -894,8 +847,10 @@ class GatingStrategy(object):
 
             if isinstance(gate, fk_gates.QuadrantGate):
                 for quad_res in results[g_id, gate_path_str].values():
+                    quad_res['parent'] = p_id
                     quad_res['gate_path'] = g_path
             else:
+                results[g_id, gate_path_str]['parent'] = p_id
                 results[g_id, gate_path_str]['gate_path'] = g_path
 
         if not cache_events:

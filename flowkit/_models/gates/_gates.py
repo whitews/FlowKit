@@ -23,19 +23,16 @@ class RectangleGate(Gate):
     def __init__(
             self,
             gate_name,
-            parent_gate_name,
             dimensions
     ):
         """
         Create a RectangleGate instance.
 
         :param gate_name: text string for the name of the gate
-        :param parent_gate_name: text string for the name of the parent gate
         :param dimensions: list of Dimension instances used to define the gate boundaries
         """
         super().__init__(
             gate_name,
-            parent_gate_name,
             dimensions
         )
         self.gate_type = "RectangleGate"
@@ -43,7 +40,7 @@ class RectangleGate(Gate):
     def __repr__(self):
         return (
             f'{self.__class__.__name__}('
-            f'{self.gate_name}, parent: {self.parent}, dims: {len(self.dimensions)})'
+            f'{self.gate_name}, dims: {len(self.dimensions)})'
         )
 
     def apply(self, df_events):
@@ -83,7 +80,6 @@ class PolygonGate(Gate):
     def __init__(
             self,
             gate_name,
-            parent_gate_name,
             dimensions,
             vertices
     ):
@@ -91,13 +87,11 @@ class PolygonGate(Gate):
         Create a PolygonGate instance.
 
         :param gate_name: text string for the name of the gate
-        :param parent_gate_name: text string for the name of the parent gate
         :param dimensions: list of Dimension instances
         :param vertices: list of Vertex instances used to define gate boundary
         """
         super().__init__(
             gate_name,
-            parent_gate_name,
             dimensions
         )
         self.vertices = vertices
@@ -106,7 +100,7 @@ class PolygonGate(Gate):
     def __repr__(self):
         return (
             f'{self.__class__.__name__}('
-            f'{self.gate_name}, parent: {self.parent}, vertices: {len(self.vertices)})'
+            f'{self.gate_name}, vertices: {len(self.vertices)})'
         )
 
     def apply(self, df_events):
@@ -148,7 +142,6 @@ class EllipsoidGate(Gate):
     def __init__(
             self,
             gate_name,
-            parent_gate_name,
             dimensions,
             coordinates,
             covariance_matrix,
@@ -158,7 +151,6 @@ class EllipsoidGate(Gate):
         Create an EllipsoidGate instance.
 
         :param gate_name: text string for the name of the gate
-        :param parent_gate_name: text string for the name of the parent gate
         :param dimensions: list of Dimension instances
         :param coordinates: center point of the ellipsoid for n-dimensions
         :param covariance_matrix: Covariance matrix for the ellipsoid shape (NxN array)
@@ -169,7 +161,6 @@ class EllipsoidGate(Gate):
         """
         super().__init__(
             gate_name,
-            parent_gate_name,
             dimensions
         )
         self.gate_type = "EllipsoidGate"
@@ -190,7 +181,7 @@ class EllipsoidGate(Gate):
     def __repr__(self):
         return (
             f'{self.__class__.__name__}('
-            f'{self.gate_name}, parent: {self.parent}, coords: {self.coordinates})'
+            f'{self.gate_name}, coords: {self.coordinates})'
         )
 
     def apply(self, df_events):
@@ -286,7 +277,6 @@ class QuadrantGate(Gate):
     def __init__(
             self,
             gate_name,
-            parent_gate_name,
             dividers,
             quadrants
     ):
@@ -294,13 +284,11 @@ class QuadrantGate(Gate):
         Create a QuadrantGate instance.
 
         :param gate_name: text string for the name of the gate
-        :param parent_gate_name: text string for the name of the parent gate
         :param dividers: a list of QuadrantDivider instances
         :param quadrants: a list of Quadrant instances
         """
         super().__init__(
             gate_name,
-            parent_gate_name,
             dividers
         )
         self.gate_type = "QuadrantGate"
@@ -333,7 +321,7 @@ class QuadrantGate(Gate):
     def __repr__(self):
         return (
             f'{self.__class__.__name__}('
-            f'{self.gate_name}, parent: {self.parent}, quadrants: {len(self.quadrants)})'
+            f'{self.gate_name}, quadrants: {len(self.quadrants)})'
         )
 
     def apply(self, df_events):
@@ -386,7 +374,6 @@ class BooleanGate(Gate):
     def __init__(
             self,
             gate_name,
-            parent_gate_name,
             bool_type,
             gate_refs
     ):
@@ -399,13 +386,11 @@ class BooleanGate(Gate):
         the boolean complement (i.e. "NOT").
 
         :param gate_name: text string for the name of the gate
-        :param parent_gate_name: text string for the name of the parent gate
         :param bool_type: string specifying boolean type. Accepted values: `and`, `or`, and `not` (case-insensitive)
         :param gate_refs: list of "gate reference" dictionaries (see above description of a gate reference)
         """
         super().__init__(
             gate_name,
-            parent_gate_name,
             None
         )
         self.gate_type = "BooleanGate"
@@ -421,7 +406,7 @@ class BooleanGate(Gate):
     def __repr__(self):
         return (
             f'{self.__class__.__name__}('
-            f'{self.gate_name}, parent: {self.parent}, type: {self.type})'
+            f'{self.gate_name}, type: {self.type})'
         )
 
     def apply(self, df_events):

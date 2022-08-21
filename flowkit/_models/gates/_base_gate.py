@@ -11,11 +11,9 @@ class Gate(ABC):
     def __init__(
             self,
             gate_name,
-            parent_gate_name,
             dimensions
     ):
         self.gate_name = gate_name
-        self.parent = parent_gate_name
         if dimensions is None:
             self.dimensions = []
         else:
