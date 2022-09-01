@@ -1,4 +1,4 @@
 """
 FlowKit version
 """
-__version__ = "0.9.3b0"
+__version__ = "0.9.3"
