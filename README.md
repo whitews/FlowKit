@@ -85,13 +85,13 @@ Required Python dependencies:
 * [flowio](https://github.com/whitews/flowio) == 1.0.1
 * [flowutils](https://github.com/whitews/flowutils) == 1.0.0
 * anytree >= 2.6
-* bokeh >= 1.4, <3
+* bokeh >= 2, <3.0
 * lxml >= 4.4
 * matplotlib >= 3.1
 * networkx >= 2.3
 * numpy >= 1.20
 * pandas >= 1.1
-* psutils ~= 5.8
+* psutils >= 5.8
 * scipy >= 1.3
 * seaborn >= 0.11
 * statsmodels
@@ -108,10 +108,13 @@ pip install flowkit
 
 ### From source
 
+Clone the repository and ensure `pip` is up-to-date. It is recommended to use `pip` to install requirements as relying on `setuptools` may result in incompatible dependency versions.
+
 ```
 git clone https://github.com/whitews/flowkit
 cd flowkit
-
+pip install --upgrade pip
+pip install -r requirements.txt
 python setup.py install
 ```
 
