@@ -24,7 +24,7 @@
 
 ## Overview
 
-FlowKit is an intuitive Python toolkit for flow cytometry analysis and visualization, with full support for the [GatingML 2.0 standard](http://flowcyt.sourceforge.net/gating/latest.pdf) and limited support for FlowJo 10 workspace files.
+FlowKit is a Python toolkit for flow cytometry analysis and visualization, with support for the [GatingML 2.0 standard](http://flowcyt.sourceforge.net/gating/latest.pdf) and [FlowJo 10](https://www.flowjo.com/solutions/flowjo) workspace files.
 
 <img alt="FlowKit Overview" src="https://raw.githubusercontent.com/whitews/FlowKit/master/docs/_static/flowkit_overview.jpg" style="width:400px;" />
 
