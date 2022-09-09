@@ -93,8 +93,7 @@ Required Python dependencies:
 * pandas >= 1.1
 * psutils >= 5.8
 * scipy >= 1.3
-* seaborn >= 0.11
-* statsmodels
+* seaborn >= 0.11, <0.12
 
 ## Installation
 
