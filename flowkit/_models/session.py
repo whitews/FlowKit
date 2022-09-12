@@ -132,10 +132,6 @@ class Session(object):
         self._results_lut = {}
         self._sample_group_lut = {}
 
-        # TODO: don't add a sample group by default, it should be explicit by user
-        #    Plus, it prevents the import of a gating strategy for the group
-        self.add_sample_group('default')
-
         self.add_samples(fcs_samples)
 
     def __repr__(self):
@@ -260,15 +256,15 @@ class Session(object):
 
     def add_samples(self, fcs_samples, group_name=None):
         """
-        Adds FCS samples to the session. All added samples will be added to the 'default' sample group.
-        The given samples will also be added to the provided group_name (if specified and the group exists).
+        Adds FCS samples to the session.  The given samples will also be added to the provided
+        group_name (if specified and the group exists).
 
         :param fcs_samples: str or list. If given a string, it can be a directory path or a file path.
             If a directory, any .fcs files in the directory will be loaded. If a list, then it must
             be a list of file paths or a list of Sample instances. Lists of mixed types are not
             supported.
         :param group_name: a text string representing the sample group to which to assign samples. If None,
-            samples are only added to the 'default' group.
+            samples are only loaded and not assigned to a group.
         :return: None
         """
         new_samples = sample_utils.load_samples(fcs_samples)
@@ -282,8 +278,7 @@ class Session(object):
                     continue
             self.sample_lut[s.original_filename] = s
 
-            # all samples get added to the 'default' group
-            self.assign_samples(s.original_filename, 'default')
+            # assign to group if specified
             if group_name is not None:
                 self.assign_samples(s.original_filename, group_name)
 
@@ -383,10 +378,9 @@ class Session(object):
         template = group['template']
         return template.get_gate_ids()
 
-    def add_gate(self, gate, gate_path, group_name='default'):
+    def add_gate(self, gate, gate_path, group_name):
         """
-        Add a Gate instance to a sample group in the session. Gates will be added to
-        the 'default' sample group by default.
+        Add a Gate instance to a sample group in the session.
 
         :param gate: an instance of a Gate subclass
         :param gate_path: complete tuple of gate IDs for unique set of gate ancestors
@@ -403,10 +397,9 @@ class Session(object):
         for s_id, s_strategy in s_members.items():
             s_strategy.add_gate(copy.deepcopy(gate), gate_path=gate_path)
 
-    def add_transform(self, transform, group_name='default'):
+    def add_transform(self, transform, group_name):
         """
-        Add a Transform instance to a sample group in the session. Transforms will be added to
-        the 'default' sample group by default.
+        Add a Transform instance to a sample group in the session.
 
         :param transform: an instance of a Transform subclass
         :param group_name: a text string representing the sample group
@@ -449,10 +442,9 @@ class Session(object):
 
         return xform
 
-    def add_comp_matrix(self, matrix, group_name='default'):
+    def add_comp_matrix(self, matrix, group_name):
         """
-        Add a Matrix instance to a sample group in the session. Matrices will be added to
-        the 'default' sample group by default.
+        Add a Matrix instance to a sample group in the session.
 
         :param matrix: an instance of the Matrix class
         :param group_name: a text string representing the sample group
@@ -668,7 +660,7 @@ class Session(object):
         """
         return self.sample_lut[sample_id]
 
-    def analyze_samples(self, group_name='default', sample_id=None, cache_events=False, use_mp=True, verbose=False):
+    def analyze_samples(self, group_name, sample_id=None, cache_events=False, use_mp=True, verbose=False):
         """
         Process gates for samples in a sample group. After running, results can be
         retrieved using the `get_gating_results`, `get_group_report`, and  `get_gate_membership`,
@@ -1128,7 +1120,7 @@ class Session(object):
             sample_id,
             x_dim,
             y_dim,
-            group_name='default',
+            group_name,
             gate_name=None,
             subsample=False,
             color_density=True,
