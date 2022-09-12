@@ -48,9 +48,12 @@ class SessionTestCase(unittest.TestCase):
         self.assertIsInstance(fks.get_sample('100715.fcs'), Sample)
 
     def test_get_comp_matrix(self):
-        fks = Session(fcs_samples=data1_sample)
-        fks.add_comp_matrix(comp_matrix_01)
-        comp_mat = fks.get_comp_matrix('default', 'B07', 'MySpill')
+        fks = Session()
+        sample_group = 'default'
+        fks.add_sample_group(sample_group)
+        fks.add_samples(data1_sample, sample_group)
+        fks.add_comp_matrix(comp_matrix_01, sample_group)
+        comp_mat = fks.get_comp_matrix(sample_group, 'B07', 'MySpill')
 
         self.assertIsInstance(comp_mat, Matrix)
 
@@ -82,9 +85,12 @@ class SessionTestCase(unittest.TestCase):
             self.assertIsInstance(cm, Matrix)
 
     def test_get_transform(self):
-        fks = Session(fcs_samples=data1_sample)
-        fks.add_transform(asinh_xform1)
-        comp_mat = fks.get_transform('default', 'AsinH_10000_4_1')
+        fks = Session()
+        sample_group = 'default'
+        fks.add_sample_group(sample_group)
+        fks.add_samples(data1_sample, sample_group)
+        fks.add_transform(asinh_xform1, sample_group)
+        comp_mat = fks.get_transform(sample_group, 'AsinH_10000_4_1')
 
         self.assertIsInstance(comp_mat, transforms.AsinhTransform)
 
@@ -230,10 +236,13 @@ class SessionTestCase(unittest.TestCase):
 
     @staticmethod
     def test_add_poly1_gate():
-        fks = Session(fcs_samples=data1_sample)
-        fks.add_gate(poly1_gate, ('root',))
-        fks.analyze_samples()
-        result = fks.get_gating_results('default', data1_sample.original_filename)
+        fks = Session()
+        sample_group = 'default'
+        fks.add_sample_group(sample_group)
+        fks.add_samples(data1_sample, sample_group)
+        fks.add_gate(poly1_gate, ('root',), sample_group)
+        fks.analyze_samples(sample_group)
+        result = fks.get_gating_results(sample_group, data1_sample.original_filename)
 
         res_path = 'data/gate_ref/truth/Results_Polygon1.txt'
         truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
@@ -241,50 +250,59 @@ class SessionTestCase(unittest.TestCase):
         np.testing.assert_array_equal(truth, result.get_gate_membership('Polygon1'))
 
     def test_get_gate_from_template(self):
-        fks = Session(fcs_samples=data1_sample)
-        fks.add_gate(poly1_gate, ('root',))
+        fks = Session()
+        sample_group = 'default'
+        fks.add_sample_group(sample_group)
+        fks.add_samples(data1_sample, sample_group)
+        fks.add_gate(poly1_gate, ('root',), sample_group)
 
-        template_gate = fks.get_gate('default', 'Polygon1')
+        template_gate = fks.get_gate(sample_group, 'Polygon1')
 
         self.assertEqual(template_gate.gate_name, 'Polygon1')
 
     @staticmethod
     def test_add_matrix_poly4_gate():
-        fks = Session(fcs_samples=data1_sample)
+        fks = Session()
+        sample_group = 'default'
+        fks.add_sample_group(sample_group)
+        fks.add_samples(data1_sample, sample_group)
 
-        fks.add_comp_matrix(comp_matrix_01)
+        fks.add_comp_matrix(comp_matrix_01, sample_group)
 
         dim1 = Dimension('PE', compensation_ref='MySpill')
         dim2 = Dimension('PerCP', compensation_ref='MySpill')
         dims = [dim1, dim2]
 
         poly_gate = gates.PolygonGate('Polygon4', dims, poly1_vertices)
-        fks.add_gate(poly_gate, ('root',))
+        fks.add_gate(poly_gate, ('root',), sample_group)
 
         res_path = 'data/gate_ref/truth/Results_Polygon4.txt'
         truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
-        fks.analyze_samples()
-        result = fks.get_gating_results('default', data1_sample.original_filename)
+        fks.analyze_samples(sample_group)
+        result = fks.get_gating_results(sample_group, data1_sample.original_filename)
 
         np.testing.assert_array_equal(truth, result.get_gate_membership('Polygon4'))
 
     @staticmethod
     def test_add_transform_asinh_range1_gate():
-        fks = Session(fcs_samples=data1_sample)
-        fks.add_transform(asinh_xform1)
+        fks = Session()
+        sample_group = 'default'
+        fks.add_sample_group(sample_group)
+        fks.add_samples(data1_sample, sample_group)
+        fks.add_transform(asinh_xform1, sample_group)
 
         dim1 = Dimension('FL1-H', 'uncompensated', 'AsinH_10000_4_1', range_min=0.37, range_max=0.63)
         dims = [dim1]
 
         rect_gate = gates.RectangleGate('ScaleRange1', dims)
-        fks.add_gate(rect_gate, ('root',))
+        fks.add_gate(rect_gate, ('root',), sample_group)
 
         res_path = 'data/gate_ref/truth/Results_ScaleRange1.txt'
         truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
-        fks.analyze_samples()
-        result = fks.get_gating_results('default', data1_sample.original_filename)
+        fks.analyze_samples(sample_group)
+        result = fks.get_gating_results(sample_group, data1_sample.original_filename)
 
         np.testing.assert_array_equal(truth, result.get_gate_membership('ScaleRange1'))
 

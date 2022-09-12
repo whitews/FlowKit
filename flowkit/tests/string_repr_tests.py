@@ -170,6 +170,6 @@ class StringReprTestCase(unittest.TestCase):
         session = fk.Session()
         session.import_flowjo_workspace(wsp_path, ignore_missing_files=True)
 
-        session_string = "Session(3 samples [0 loaded], 3 sample groups)"
+        session_string = "Session(3 samples [0 loaded], 2 sample groups)"
 
         self.assertEqual(repr(session), session_string)
