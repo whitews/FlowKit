@@ -274,10 +274,10 @@ def _convert_wsp_gate(wsp_gate, comp_matrix, xform_lut, ignore_transforms=False)
     if isinstance(wsp_gate, GMLPolygonGate):
         # convert vertices using saved xforms
         vertices = copy.deepcopy(wsp_gate.vertices)
-        for v in vertices:
-            for i, c in enumerate(v.coordinates):
+        for vertex in vertices:
+            for i, coordinate in enumerate(vertex):
                 if xforms[i] is not None:
-                    v.coordinates[i] = xforms[i].apply(np.array([[float(c)]]))[0][0]
+                    vertex[i] = xforms[i].apply(np.array([[float(coordinate)]]))[0][0]
 
         gate = PolygonGate(wsp_gate.gate_name, new_dims, vertices)
     elif isinstance(wsp_gate, GMLRectangleGate):
@@ -738,7 +738,7 @@ def _add_polygon_gate(parent_el, gate, fj_gate_id, fj_parent_gate_id, gating_str
 
     for vertex in gate.vertices:
         vertex_el = etree.SubElement(gate_instance_el, "{%s}vertex" % ns_map['gating'])
-        for dim_idx, coord in enumerate(vertex.coordinates):
+        for dim_idx, coord in enumerate(vertex):
             if xform_refs[dim_idx] is not None:
                 xform = gating_strategy.get_transform(xform_refs[dim_idx])
                 inv_coord = xform.inverse(np.array([[coord]]))[0, 0]
