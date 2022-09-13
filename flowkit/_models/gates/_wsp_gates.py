@@ -5,7 +5,6 @@ import copy
 import numpy as np
 from ._base_gate import Gate
 from ..gates import PolygonGate
-from ..vertex import Vertex
 from ..transforms import WSPBiexTransform
 from ..._utils import xml_utils
 from ...exceptions import FlowJoWSPParsingError
@@ -224,6 +223,8 @@ class WSPEllipsoidGate(Gate):
         # rotate ellipse to the original orientation, then translate
         inv_r = np.linalg.inv(r)
         xy = np.vstack([x, y]).T
+
+        # this will be the final set of polygon vertices
         xy_rot_trans = np.dot(xy, inv_r) + center
 
         # the final complication is the different scaling of biex transforms
@@ -237,10 +238,7 @@ class WSPEllipsoidGate(Gate):
 
             xy_rot_trans[:, i] *= xform_range
 
-        # can finally create the Vertex instances for our polygon
-        vertices = [Vertex((p_x, p_y)) for p_x, p_y in xy_rot_trans]
-
-        return PolygonGate(self.gate_name, self.dimensions, vertices)
+        return PolygonGate(self.gate_name, self.dimensions, xy_rot_trans)
 
     def apply(self, df_events):
         """

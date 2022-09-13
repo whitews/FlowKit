@@ -88,7 +88,7 @@ class PolygonGate(Gate):
 
         :param gate_name: text string for the name of the gate
         :param dimensions: list of Dimension instances
-        :param vertices: list of Vertex instances used to define gate boundary
+        :param vertices: list of 2-D coordinates used to define gate boundary
         """
         super().__init__(
             gate_name,
@@ -111,8 +111,6 @@ class PolygonGate(Gate):
         :param df_events: pandas DataFrame with column labels matching Dimension IDs
         :return: NumPy array of boolean values for each event  (True is inside gate)
         """
-        path_vertices = []
-
         dim_ids_ordered = []
         for i, dim in enumerate(self.dimensions):
             if isinstance(dim, RatioDimension):
@@ -120,11 +118,8 @@ class PolygonGate(Gate):
             else:
                 dim_ids_ordered.append(dim.id)
 
-        for vert in self.vertices:
-            path_vertices.append(vert.coordinates)
-
         results = gating.points_in_polygon(
-            np.array(path_vertices, dtype=np.float64),
+            np.array(self.vertices, dtype=np.float64),
             df_events[dim_ids_ordered].values  # send a NumPy array and not a DataFrame
         )
 
