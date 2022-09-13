@@ -6,7 +6,6 @@ from lxml import etree
 import networkx as nx
 from .._resources import gml_schema
 from .._models.dimension import Dimension, RatioDimension, QuadrantDivider
-from .._models.vertex import Vertex
 from .._models.gating_strategy import GatingStrategy
 # noinspection PyProtectedMember
 from .._models.transforms import _transforms, _gml_transforms
@@ -489,8 +488,7 @@ def _parse_divider_element(divider_element, gating_namespace, data_type_namespac
 
 def parse_vertex_element(vertex_element, gating_namespace, data_type_namespace):
     """
-    This class parses a GatingML-2.0 compatible vertex XML element and returns a Vertex object
-     parent gate ID, and dimensions.
+    This class parses a GatingML-2.0 compatible vertex XML element and returns a list of coordinates.
 
     :param vertex_element: vertex XML element from a GatingML-2.0 document
     :param gating_namespace: XML namespace for gating elements/attributes
@@ -518,7 +516,7 @@ def parse_vertex_element(vertex_element, gating_namespace, data_type_namespace):
 
         coordinates.append(float(value))
 
-    return Vertex(coordinates)
+    return coordinates
 
 
 def _parse_matrix_element(
@@ -669,9 +667,9 @@ def _add_gate_to_gml(root, gate, ns_map):
 
         for v in gate.vertices:
             vert_ml = etree.SubElement(gate_ml, '{%s}vertex' % ns_map['gating'])
-            for c in v.coordinates:
+            for coord in v:
                 coord_ml = etree.SubElement(vert_ml, '{%s}coordinate' % ns_map['gating'])
-                coord_ml.set('{%s}value' % ns_map['data-type'], str(c))
+                coord_ml.set('{%s}value' % ns_map['data-type'], str(coord))
     elif isinstance(gate, BooleanGate):
         gate_ml = etree.SubElement(root, "{%s}BooleanGate" % ns_map['gating'])
 
