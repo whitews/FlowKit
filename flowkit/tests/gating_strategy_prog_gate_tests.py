@@ -16,9 +16,9 @@ data1_fcs_path = 'data/gate_ref/data1.fcs'
 data1_sample = fk.Sample(data1_fcs_path)
 
 poly1_vertices = [
-    fk.Vertex([5, 5]),
-    fk.Vertex([500, 5]),
-    fk.Vertex([500, 500])
+    [5, 5],
+    [500, 5],
+    [500, 500]
 ]
 poly1_dim1 = fk.Dimension('FL2-H', compensation_ref='FCS')
 poly1_dim2 = fk.Dimension('FL3-H', compensation_ref='FCS')
@@ -199,10 +199,10 @@ class GatingTestCase(unittest.TestCase):
         dims = [dim1, dim2]
 
         vertices = [
-            fk.Vertex([20, 10]),
-            fk.Vertex([120, 10]),
-            fk.Vertex([120, 160]),
-            fk.Vertex([20, 160])
+            [20, 10],
+            [120, 10],
+            [120, 160],
+            [20, 160]
         ]
 
         poly_gate = fk.gates.PolygonGate('Polygon2', dims, vertices)
@@ -224,14 +224,14 @@ class GatingTestCase(unittest.TestCase):
         dims = [dim1, dim2]
 
         vertices = [
-            fk.Vertex([10, 10]),
-            fk.Vertex([500, 10]),
-            fk.Vertex([500, 390]),
-            fk.Vertex([100, 390]),
-            fk.Vertex([100, 180]),
-            fk.Vertex([200, 180]),
-            fk.Vertex([200, 300]),
-            fk.Vertex([10, 300])
+            [10, 10],
+            [500, 10],
+            [500, 390],
+            [100, 390],
+            [100, 180],
+            [200, 180],
+            [200, 300],
+            [10, 300]
         ]
 
         poly_gate = fk.gates.PolygonGate('Polygon3NS', dims, vertices)

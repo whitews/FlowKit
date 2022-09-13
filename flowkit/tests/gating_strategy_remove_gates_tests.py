@@ -80,11 +80,11 @@ class GatingStrategyRemoveGatesTestCase(unittest.TestCase):
         session.add_gate(gate_time, ('root',), sample_group)
 
         gate_singlets_poly_vertices = [
-            fk.Vertex([0.328125, 0.2]),
-            fk.Vertex([0.28, 0.25]),
-            fk.Vertex([0.29, 0.83]),
-            fk.Vertex([0.34765625, 0.3984375]),
-            fk.Vertex([0.3359375, 0.2])
+            [0.328125, 0.2],
+            [0.28, 0.25],
+            [0.29, 0.83],
+            [0.34765625, 0.3984375],
+            [0.3359375, 0.2]
         ]
         gate_singlets_poly = fk.gates.PolygonGate(
             'Singlets-poly',
@@ -94,14 +94,14 @@ class GatingStrategyRemoveGatesTestCase(unittest.TestCase):
         session.add_gate(gate_singlets_poly, ('root', 'Time-range'), sample_group)
 
         gate_live_poly_vertices = [
-            fk.Vertex([0.2629268137285685, 0.0625]),
-            fk.Vertex([0.24318837264468562, 0.03515625]),
-            fk.Vertex([0.21573453285608676, 0.0390625]),
-            fk.Vertex([0.202, 0.216]),
-            fk.Vertex([0.228, 0.288]),
-            fk.Vertex([0.280, 0.319]),
-            fk.Vertex([0.29042797365869377, 0.24609375]),
-            fk.Vertex([0.29042797365869377, 0.1484375]),
+            [0.2629268137285685, 0.0625],
+            [0.24318837264468562, 0.03515625],
+            [0.21573453285608676, 0.0390625],
+            [0.202, 0.216],
+            [0.228, 0.288],
+            [0.280, 0.319],
+            [0.29042797365869377, 0.24609375],
+            [0.29042797365869377, 0.1484375],
         ]
         gate_live_poly = fk.gates.PolygonGate(
             'Live-poly', dimensions=[dim_amine_a, dim_ssc_a], vertices=gate_live_poly_vertices
@@ -119,9 +119,8 @@ class GatingStrategyRemoveGatesTestCase(unittest.TestCase):
 
         gate_path_cd3_pos = ('root', 'Time-range', 'Singlets-poly', 'Live-poly', 'CD3-pos-range')
 
-        gate_cd4_pos_coords = [[0.25, 0.38], [0.65, 0.5], [0.65, 0.8], [0.25, 0.8]]
+        gate_cd4_pos_vertices = [[0.25, 0.38], [0.65, 0.5], [0.65, 0.8], [0.25, 0.8]]
 
-        gate_cd4_pos_vertices = [fk.Vertex(c) for c in gate_cd4_pos_coords]
         gate_cd4_pos = fk.gates.PolygonGate(
             'CD4-pos-poly',
             dimensions=[dim_cd3, dim_cd4],
@@ -129,9 +128,8 @@ class GatingStrategyRemoveGatesTestCase(unittest.TestCase):
         )
         session.add_gate(gate_cd4_pos, gate_path_cd3_pos, group_name=sample_group)
 
-        gate_cd8_pos_coords = [[0.2, 0.38], [0.7, 0.38], [0.7, 0.9], [0.2, 0.9]]
+        gate_cd8_pos_vertices = [[0.2, 0.38], [0.7, 0.38], [0.7, 0.9], [0.2, 0.9]]
 
-        gate_cd8_pos_vertices = [fk.Vertex(c) for c in gate_cd8_pos_coords]
         gate_cd8_pos = fk.gates.PolygonGate(
             'CD8-pos-poly',
             dimensions=[dim_cd3, dim_cd8],
