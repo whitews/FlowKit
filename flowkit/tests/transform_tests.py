@@ -7,7 +7,7 @@ import warnings
 
 from flowkit import Sample, transforms
 
-data1_fcs_path = 'examples/data/gate_ref/data1.fcs'
+data1_fcs_path = 'data/gate_ref/data1.fcs'
 data1_sample = Sample(data1_fcs_path)
 data1_raw_events = data1_sample.get_events(source='raw')
 

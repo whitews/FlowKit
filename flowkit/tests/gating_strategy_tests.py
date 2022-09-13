@@ -1,20 +1,23 @@
+"""
+Tests for GatingStrategy Class
+"""
 import unittest
 import numpy as np
 import flowkit as fk
 
 
-data1_fcs_path = 'examples/data/gate_ref/data1.fcs'
+data1_fcs_path = 'data/gate_ref/data1.fcs'
 data1_sample = fk.Sample(data1_fcs_path)
 
 poly1_vertices = [
-    fk.Vertex([5, 5]),
-    fk.Vertex([500, 5]),
-    fk.Vertex([500, 500])
+    [5, 5],
+    [500, 5],
+    [500, 500]
 ]
 poly1_dim1 = fk.Dimension('FL2-H', compensation_ref='FCS')
 poly1_dim2 = fk.Dimension('FL3-H', compensation_ref='FCS')
 poly1_dims1 = [poly1_dim1, poly1_dim2]
-poly1_gate = fk.gates.PolygonGate('Polygon1', None, poly1_dims1, poly1_vertices)
+poly1_gate = fk.gates.PolygonGate('Polygon1', poly1_dims1, poly1_vertices)
 
 hyperlog_xform1 = fk.transforms.HyperlogTransform(
     'Hyperlog_10000_1_4.5_0',
@@ -49,21 +52,21 @@ class GatingStrategyTestCase(unittest.TestCase):
         gs = fk.GatingStrategy()
         self.assertRaises(TypeError, gs.add_gate, "not a gate class")
 
-    def test_add_duplicate_gate_id(self):
+    def test_add_duplicate_gate_id_raises(self):
         gs = fk.GatingStrategy()
-        gs.add_gate(poly1_gate)
+        gs.add_gate(poly1_gate, ('root',))
 
-        self.assertRaises(KeyError, gs.add_gate, poly1_gate)
+        self.assertRaises(fk.exceptions.GateTreeError, gs.add_gate, poly1_gate, ('root',))
 
     def test_get_gate_raises_ValueError(self):
         gs = fk.GatingStrategy()
-        gs.add_gate(poly1_gate)
+        gs.add_gate(poly1_gate, ('root',))
 
-        self.assertRaises(ValueError, gs.get_gate, 'nonexistent-gate')
+        self.assertRaises(fk.exceptions.GateReferenceError, gs.get_gate, 'nonexistent-gate')
 
     def test_get_parent_gate_is_none(self):
         gs = fk.GatingStrategy()
-        gs.add_gate(poly1_gate)
+        gs.add_gate(poly1_gate, ('root',))
 
         parent_gate = gs.get_parent_gate('Polygon1')
 
@@ -90,7 +93,7 @@ class GatingStrategyTestCase(unittest.TestCase):
         self.assertRaises(KeyError, gs.add_comp_matrix, comp_matrix_01)
 
     def test_get_max_depth(self):
-        gml_path = 'examples/data/gate_ref/gml/gml_all_gates.xml'
+        gml_path = 'data/gate_ref/gml/gml_all_gates.xml'
         gs = fk.parse_gating_xml(gml_path)
         gs_depth = gs.get_max_depth()
 
@@ -104,20 +107,20 @@ class GatingStrategyTestCase(unittest.TestCase):
         gs.add_transform(logicle_xform1)
         gs.add_transform(hyperlog_xform1)
 
-        gs.add_gate(poly1_gate)
+        gs.add_gate(poly1_gate, ('root',))
 
         dim1 = fk.Dimension('PE', 'MySpill', 'Logicle_10000_0.5_4.5_0', range_min=0.31, range_max=0.69)
         dim2 = fk.Dimension('PerCP', 'MySpill', 'Logicle_10000_0.5_4.5_0', range_min=0.27, range_max=0.73)
         dims1 = [dim1, dim2]
 
-        rect_gate1 = fk.gates.RectangleGate('ScaleRect1', None, dims1)
-        gs.add_gate(rect_gate1)
+        rect_gate1 = fk.gates.RectangleGate('ScaleRect1', dims1)
+        gs.add_gate(rect_gate1, ('root',))
 
         dim3 = fk.Dimension('FITC', 'MySpill', 'Hyperlog_10000_1_4.5_0', range_min=0.12, range_max=0.43)
         dims2 = [dim3]
 
-        rect_gate2 = fk.gates.RectangleGate('ScalePar1', 'ScaleRect1', dims2)
-        gs.add_gate(rect_gate2)
+        rect_gate2 = fk.gates.RectangleGate('ScalePar1', dims2)
+        gs.add_gate(rect_gate2, ('root', 'ScaleRect1'))
 
         result = gs.gate_sample(data1_sample)
         parent_gate = gs.get_parent_gate(rect_gate2.gate_name)
@@ -142,20 +145,20 @@ class GatingStrategyTestCase(unittest.TestCase):
         gs.add_transform(logicle_xform1)
         gs.add_transform(hyperlog_xform1)
 
-        gs.add_gate(poly1_gate)
+        gs.add_gate(poly1_gate, ('root',))
 
         dim1 = fk.Dimension('PE', 'MySpill', 'Logicle_10000_0.5_4.5_0', range_min=0.31, range_max=0.69)
         dim2 = fk.Dimension('PerCP', 'MySpill', 'Logicle_10000_0.5_4.5_0', range_min=0.27, range_max=0.73)
         dims1 = [dim1, dim2]
 
-        rect_gate1 = fk.gates.RectangleGate('ScaleRect1', None, dims1)
-        gs.add_gate(rect_gate1)
+        rect_gate1 = fk.gates.RectangleGate('ScaleRect1', dims1)
+        gs.add_gate(rect_gate1, ('root',))
 
         dim3 = fk.Dimension('FITC', 'MySpill', 'Hyperlog_10000_1_4.5_0', range_min=0.12, range_max=0.43)
         dims2 = [dim3]
 
-        rect_gate2 = fk.gates.RectangleGate('ScalePar1', 'ScaleRect1', dims2)
-        gs.add_gate(rect_gate2)
+        rect_gate2 = fk.gates.RectangleGate('ScalePar1', dims2)
+        gs.add_gate(rect_gate2, ('root', 'ScaleRect1'))
 
         _ = gs.gate_sample(data1_sample, cache_events=True)
 
@@ -183,20 +186,20 @@ class GatingStrategyTestCase(unittest.TestCase):
         gs.add_transform(logicle_xform1)
         gs.add_transform(hyperlog_xform1)
 
-        gs.add_gate(poly1_gate)
+        gs.add_gate(poly1_gate, ('root',))
 
         dim1 = fk.Dimension('PE', 'MySpill', 'Logicle_10000_0.5_4.5_0', range_min=0.31, range_max=0.69)
         dim2 = fk.Dimension('PerCP', 'MySpill', 'Logicle_10000_0.5_4.5_0', range_min=0.27, range_max=0.73)
         dims1 = [dim1, dim2]
 
-        rect_gate1 = fk.gates.RectangleGate('ScaleRect1', None, dims1)
-        gs.add_gate(rect_gate1)
+        rect_gate1 = fk.gates.RectangleGate('ScaleRect1', dims1)
+        gs.add_gate(rect_gate1, ('root',))
 
         dim3 = fk.Dimension('FITC', 'MySpill', 'Hyperlog_10000_1_4.5_0', range_min=0.12, range_max=0.43)
         dims2 = [dim3]
 
-        rect_gate2 = fk.gates.RectangleGate('ScalePar1', 'ScaleRect1', dims2)
-        gs.add_gate(rect_gate2)
+        rect_gate2 = fk.gates.RectangleGate('ScalePar1', dims2)
+        gs.add_gate(rect_gate2, ('root', 'ScaleRect1'))
 
         _ = gs.gate_sample(data1_sample, cache_events=True)
 
@@ -232,67 +235,67 @@ class GatingStrategyReusedGatesTestCase(unittest.TestCase):
         """
         self.gs = fk.GatingStrategy()
 
-        time_dim = fk.Dimension('Gate_A', range_min=0.1, range_max=0.9)
+        time_dim = fk.Dimension('Time', range_min=0.1, range_max=0.9)
         dim_fsc_w = fk.Dimension('FSC-W')
         dim_fsc_h = fk.Dimension('FSC-H')
         dim_ssc_a = fk.Dimension('SSC-A')
         dim_amine_a = fk.Dimension('Aqua Amine FLR-A')
         dim_cd3_a = fk.Dimension('CD3 APC-H7 FLR-A')
 
-        gate_a = fk.gates.RectangleGate('Gate_A', None, [time_dim])
-        self.gs.add_gate(gate_a)
+        gate_a = fk.gates.RectangleGate('Gate_A', [time_dim])
+        self.gs.add_gate(gate_a, ('root',))
 
         gate_b_vertices = [
-            fk.Vertex([0.328125, 0.1640625]),
-            fk.Vertex([0.296875, 0.1484375]),
-            fk.Vertex([0.30859375, 0.8515625]),
-            fk.Vertex([0.34765625, 0.3984375]),
-            fk.Vertex([0.3359375, 0.1875])
+            [0.328125, 0.1640625],
+            [0.296875, 0.1484375],
+            [0.30859375, 0.8515625],
+            [0.34765625, 0.3984375],
+            [0.3359375, 0.1875]
         ]
         gate_b = fk.gates.PolygonGate(
-            'Gate_B', parent_gate_name=gate_a.gate_name, dimensions=[dim_fsc_w, dim_fsc_h], vertices=gate_b_vertices
+            'Gate_B', dimensions=[dim_fsc_w, dim_fsc_h], vertices=gate_b_vertices
         )
-        self.gs.add_gate(gate_b)
+        self.gs.add_gate(gate_b, ('root', 'Gate_A'))
 
         gate_c_vertices = [
-            fk.Vertex([0.328125, 0.1640625]),
-            fk.Vertex([0.296875, 0.1484375]),
-            fk.Vertex([0.30859375, 0.8515625]),
-            fk.Vertex([0.34765625, 0.3984375]),
-            fk.Vertex([0.3359375, 0.1875])
+            [0.328125, 0.1640625],
+            [0.296875, 0.1484375],
+            [0.30859375, 0.8515625],
+            [0.34765625, 0.3984375],
+            [0.3359375, 0.1875]
         ]
         gate_c = fk.gates.PolygonGate(
-            'Gate_C', parent_gate_name=gate_a.gate_name, dimensions=[dim_fsc_h, dim_fsc_w], vertices=gate_c_vertices
+            'Gate_C', dimensions=[dim_fsc_h, dim_fsc_w], vertices=gate_c_vertices
         )
-        self.gs.add_gate(gate_c)
+        self.gs.add_gate(gate_c, ('root', 'Gate_A'))
 
         reused_parent_vertices = [
-            fk.Vertex([0.2629268137285685, 0.0625]),
-            fk.Vertex([0.24318837264468562, 0.03515625]),
-            fk.Vertex([0.21573453285608676, 0.0390625]),
-            fk.Vertex([0.29042797365869377, 0.24609375]),
-            fk.Vertex([0.29042797365869377, 0.1484375])
+            [0.2629268137285685, 0.0625],
+            [0.24318837264468562, 0.03515625],
+            [0.21573453285608676, 0.0390625],
+            [0.29042797365869377, 0.24609375],
+            [0.29042797365869377, 0.1484375]
         ]
 
         reused_parent_gate_1 = fk.gates.PolygonGate(
-            'ReusedParent', gate_b.gate_name, [dim_amine_a, dim_ssc_a], reused_parent_vertices
+            'ReusedParent', [dim_amine_a, dim_ssc_a], reused_parent_vertices
         )
         reused_parent_gate_2 = fk.gates.PolygonGate(
-            'ReusedParent', gate_c.gate_name, [dim_amine_a, dim_ssc_a], reused_parent_vertices
+            'ReusedParent', [dim_amine_a, dim_ssc_a], reused_parent_vertices
         )
-        self.gs.add_gate(reused_parent_gate_1)
-        self.gs.add_gate(reused_parent_gate_2)
+        self.gs.add_gate(reused_parent_gate_1, ('root', 'Gate_A', 'Gate_B'))
+        self.gs.add_gate(reused_parent_gate_2, ('root', 'Gate_A', 'Gate_C'))
 
         reused_child_vertices = [
-            fk.Vertex([0.28415161867527605, 0.11328125]),
-            fk.Vertex([0.3132637699981912, 0.203125]),
-            fk.Vertex([0.6896802981119161, 0.05078125]),
-            fk.Vertex([0.5692952580886116, 0.01953125]),
-            fk.Vertex([0.3192472844795108, 0.01953125])
+            [0.28415161867527605, 0.11328125],
+            [0.3132637699981912, 0.203125],
+            [0.6896802981119161, 0.05078125],
+            [0.5692952580886116, 0.01953125],
+            [0.3192472844795108, 0.01953125]
         ]
 
         reused_child_gate = fk.gates.PolygonGate(
-            'ReusedChild', 'ReusedParent', [dim_cd3_a, dim_ssc_a], reused_child_vertices
+            'ReusedChild', [dim_cd3_a, dim_ssc_a], reused_child_vertices
         )
 
         gate_path_1 = ('root', 'Gate_A', 'Gate_B', 'ReusedParent')
@@ -333,4 +336,4 @@ class GatingStrategyReusedGatesTestCase(unittest.TestCase):
         self.assertListEqual(child_gate_names, sorted(retrieved_gate_names))
 
     def test_get_gate_fails_without_path(self):
-        self.assertRaises(ValueError, self.gs.get_gate, 'ReusedParent')
+        self.assertRaises(fk.exceptions.GateReferenceError, self.gs.get_gate, 'ReusedParent')

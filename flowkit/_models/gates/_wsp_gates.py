@@ -5,9 +5,9 @@ import copy
 import numpy as np
 from ._base_gate import Gate
 from ..gates import PolygonGate
-from ..vertex import Vertex
 from ..transforms import WSPBiexTransform
 from ..._utils import xml_utils
+from ...exceptions import FlowJoWSPParsingError
 
 
 def _rotate_point_around_point(point, cov_mat, center_point=(0, 0)):
@@ -62,7 +62,6 @@ class WSPEllipsoidGate(Gate):
 
         super().__init__(
             gate_name,
-            parent_gate_name,
             dimensions
         )
 
@@ -78,7 +77,7 @@ class WSPEllipsoidGate(Gate):
         for coord_el in coord_els:
             value = xml_utils.find_attribute_value(coord_el, data_type_namespace, 'value')
             if value is None:
-                raise ValueError(
+                raise FlowJoWSPParsingError(
                     'A coordinate must have only 1 value (line %d)' % coord_el.sourceline
                 )
 
@@ -100,7 +99,7 @@ class WSPEllipsoidGate(Gate):
         )
 
         if len(foci_vertex_els) <= 1:
-            raise ValueError(
+            raise FlowJoWSPParsingError(
                 'Ellipsoids must have at least 2 dimensions (line %d)' % gate_element.sourceline
             )
 
@@ -125,7 +124,7 @@ class WSPEllipsoidGate(Gate):
         )
 
         if len(edge_vertex_els) < 4:
-            raise ValueError(
+            raise FlowJoWSPParsingError(
                 'FlowJo ellipsoids must have 4 edge points (line %d)' % gate_element.sourceline
             )
 
@@ -188,7 +187,7 @@ class WSPEllipsoidGate(Gate):
         rv3_max_pos = rv3.argmax()
 
         if rv1_max_pos == rv3_max_pos:
-            raise ValueError(
+            raise FlowJoWSPParsingError(
                 "Cannot determine major axis of FlowJo ellipse gate '%s'" % self.gate_name
             )
 
@@ -224,6 +223,8 @@ class WSPEllipsoidGate(Gate):
         # rotate ellipse to the original orientation, then translate
         inv_r = np.linalg.inv(r)
         xy = np.vstack([x, y]).T
+
+        # this will be the final set of polygon vertices
         xy_rot_trans = np.dot(xy, inv_r) + center
 
         # the final complication is the different scaling of biex transforms
@@ -237,10 +238,7 @@ class WSPEllipsoidGate(Gate):
 
             xy_rot_trans[:, i] *= xform_range
 
-        # can finally create the Vertex instances for our polygon
-        vertices = [Vertex((p_x, p_y)) for p_x, p_y in xy_rot_trans]
-
-        return PolygonGate(self.gate_name, self.parent, self.dimensions, vertices)
+        return PolygonGate(self.gate_name, self.dimensions, xy_rot_trans)
 
     def apply(self, df_events):
         """

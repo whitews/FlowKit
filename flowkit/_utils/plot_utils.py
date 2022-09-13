@@ -125,7 +125,7 @@ def render_polygon(vertices):
     :param vertices: list of 2-D coordinates representing vertices of the polygon
     :return: tuple containing the Bokeh ColumnDataSource and polygon glyphs (as Patch object)
     """
-    x_coords, y_coords = list(zip(*[v.coordinates for v in vertices]))
+    x_coords, y_coords = list(zip(*[v for v in vertices]))
 
     source = ColumnDataSource(dict(x=x_coords, y=y_coords))
 

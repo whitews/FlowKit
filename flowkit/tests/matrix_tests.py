@@ -40,7 +40,7 @@ fcs_spill_header = [
     'G560-A'
 ]
 
-csv_8c_comp_file_path = 'examples/data/8_color_data_set/den_comp.csv'
+csv_8c_comp_file_path = 'data/8_color_data_set/den_comp.csv'
 detectors_8c = [
     'TNFa FITC FLR-A',
     'CD8 PerCP-Cy55 FLR-A',
@@ -101,8 +101,8 @@ class MatrixTestCase(unittest.TestCase):
 
     @staticmethod
     def test_matrix_inverse():
-        fcs_file_path = "examples/data/test_comp_example.fcs"
-        comp_file_path = "examples/data/comp_complete_example.csv"
+        fcs_file_path = "data/test_comp_example.fcs"
+        comp_file_path = "data/comp_complete_example.csv"
 
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')

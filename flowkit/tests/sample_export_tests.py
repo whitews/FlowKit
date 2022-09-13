@@ -15,9 +15,9 @@ class SampleExportTestCase(unittest.TestCase):
     def test_export_as_fcs(self):
         sample = test_comp_sample
 
-        sample.export("test_fcs_export.fcs", source='comp', directory="examples")
+        sample.export("test_fcs_export.fcs", source='comp', directory="data")
 
-        exported_fcs_file = "examples/test_fcs_export.fcs"
+        exported_fcs_file = "data/test_fcs_export.fcs"
         exported_sample = Sample(fcs_path_or_data=exported_fcs_file)
         os.unlink(exported_fcs_file)
 
@@ -37,13 +37,13 @@ class SampleExportTestCase(unittest.TestCase):
         # File 100715.fcs has a timestep value of 0.08.
         # The purpose here is to verify that importing the exported file has the same raw events
         # as the original file's raw events. Here we export the 'orig' events.
-        fcs_file_path = "examples/data/100715.fcs"
+        fcs_file_path = "data/100715.fcs"
 
         sample = Sample(fcs_path_or_data=fcs_file_path, cache_original_events=True)
 
-        sample.export("test_fcs_export.fcs", source='orig', directory="examples")
+        sample.export("test_fcs_export.fcs", source='orig', directory="data")
 
-        exported_fcs_file = "examples/test_fcs_export.fcs"
+        exported_fcs_file = "data/test_fcs_export.fcs"
         exported_sample = Sample(fcs_path_or_data=exported_fcs_file)
         os.unlink(exported_fcs_file)
 
@@ -66,9 +66,9 @@ class SampleExportTestCase(unittest.TestCase):
         # This test exports the orig events to make sure the gain values were exported correctly.
         sample = Sample(fcs_path_or_data=data1_fcs_path, cache_original_events=True)
 
-        sample.export("test_fcs_export.fcs", source='orig', directory="examples", include_metadata=True)
+        sample.export("test_fcs_export.fcs", source='orig', directory="data", include_metadata=True)
 
-        exported_fcs_file = "examples/test_fcs_export.fcs"
+        exported_fcs_file = "data/test_fcs_export.fcs"
         exported_sample = Sample(fcs_path_or_data=exported_fcs_file)
         os.unlink(exported_fcs_file)
 
@@ -90,9 +90,9 @@ class SampleExportTestCase(unittest.TestCase):
         # as the original file's raw events.
         sample = Sample(fcs_path_or_data=data1_fcs_path)
 
-        sample.export("test_fcs_export.fcs", source='raw', directory="examples", include_metadata=True)
+        sample.export("test_fcs_export.fcs", source='raw', directory="data", include_metadata=True)
 
-        exported_fcs_file = "examples/test_fcs_export.fcs"
+        exported_fcs_file = "data/test_fcs_export.fcs"
         exported_sample = Sample(fcs_path_or_data=exported_fcs_file)
         os.unlink(exported_fcs_file)
 
@@ -111,13 +111,13 @@ class SampleExportTestCase(unittest.TestCase):
         # This test uses a file where the preprocessing makes the orig & raw events different.
         # The purpose here is to verify that importing the exported file has the same raw events
         # as the original file's raw events.
-        fcs_file_path = "examples/data/8_color_data_set/fcs_files/101_DEN084Y5_15_E01_008_clean.fcs"
+        fcs_file_path = "data/8_color_data_set/fcs_files/101_DEN084Y5_15_E01_008_clean.fcs"
 
         sample = Sample(fcs_path_or_data=fcs_file_path)
 
-        sample.export("test_fcs_export.fcs", source='raw', directory="examples")
+        sample.export("test_fcs_export.fcs", source='raw', directory="data")
 
-        exported_fcs_file = "examples/test_fcs_export.fcs"
+        exported_fcs_file = "data/test_fcs_export.fcs"
         exported_sample = Sample(fcs_path_or_data=exported_fcs_file)
         os.unlink(exported_fcs_file)
 
@@ -135,9 +135,9 @@ class SampleExportTestCase(unittest.TestCase):
     def test_export_as_csv(self):
         sample = test_comp_sample
 
-        sample.export("test_fcs_export.csv", source='comp', directory="examples")
+        sample.export("test_fcs_export.csv", source='comp', directory="data")
 
-        exported_csv_file = "examples/test_fcs_export.csv"
+        exported_csv_file = "data/test_fcs_export.csv"
         exported_df = pd.read_csv(exported_csv_file)
         exported_sample = Sample(exported_df)
         os.unlink(exported_csv_file)
@@ -155,13 +155,13 @@ class SampleExportTestCase(unittest.TestCase):
 
     def test_export_exclude_negative_scatter(self):
         # there are 2 negative SSC-A events in this file (of 65016 total events)
-        fcs_file_path = "examples/data/100715.fcs"
+        fcs_file_path = "data/100715.fcs"
         sample = Sample(fcs_path_or_data=fcs_file_path)
         sample.filter_negative_scatter()
 
         neg_scatter_count = len(sample.negative_scatter_indices)
 
-        exported_fcs_file = "examples/test_fcs_export.fcs"
+        exported_fcs_file = "data/test_fcs_export.fcs"
         sample.export(exported_fcs_file, source='raw', exclude_neg_scatter=True)
         exported_sample = Sample(exported_fcs_file)
         os.unlink(exported_fcs_file)

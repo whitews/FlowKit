@@ -1,6 +1,7 @@
 """
 Tests for programmatically adding gates to a GatingStrategy
 """
+import copy
 import unittest
 import sys
 import os
@@ -11,18 +12,18 @@ sys.path.append(os.path.abspath('../..'))
 
 import flowkit as fk
 
-data1_fcs_path = 'examples/data/gate_ref/data1.fcs'
+data1_fcs_path = 'data/gate_ref/data1.fcs'
 data1_sample = fk.Sample(data1_fcs_path)
 
 poly1_vertices = [
-    fk.Vertex([5, 5]),
-    fk.Vertex([500, 5]),
-    fk.Vertex([500, 500])
+    [5, 5],
+    [500, 5],
+    [500, 500]
 ]
 poly1_dim1 = fk.Dimension('FL2-H', compensation_ref='FCS')
 poly1_dim2 = fk.Dimension('FL3-H', compensation_ref='FCS')
 poly1_dims1 = [poly1_dim1, poly1_dim2]
-poly1_gate = fk.gates.PolygonGate('Polygon1', None, poly1_dims1, poly1_vertices)
+poly1_gate = fk.gates.PolygonGate('Polygon1', poly1_dims1, poly1_vertices)
 
 quad1_div1 = fk.QuadrantDivider('FL2', 'FL2-H', 'FCS', [12.14748])
 quad1_div2 = fk.QuadrantDivider('FL4', 'FL4-H', 'FCS', [14.22417])
@@ -50,15 +51,15 @@ quad_4 = fk.gates.Quadrant(
 )
 quadrants_q1 = [quad_1, quad_2, quad_3, quad_4]
 
-quad1_gate = fk.gates.QuadrantGate('Quadrant1', None, quad1_divs, quadrants_q1)
+quad1_gate = fk.gates.QuadrantGate('Quadrant1', quad1_divs, quadrants_q1)
 
 range1_dim1 = fk.Dimension('FSC-H', compensation_ref='uncompensated', range_min=100)
 range1_dims = [range1_dim1]
-range1_gate = fk.gates.RectangleGate('Range1', None, range1_dims)
+range1_gate = fk.gates.RectangleGate('Range1', range1_dims)
 
 range2_dim1 = fk.Dimension('Time', compensation_ref='uncompensated', range_min=20, range_max=80)
 range2_dims = [range2_dim1]
-range2_gate = fk.gates.RectangleGate('Range2', None, range2_dims)
+range2_gate = fk.gates.RectangleGate('Range2', range2_dims)
 
 ell1_dim1 = fk.Dimension('FL3-H', compensation_ref='uncompensated')
 ell1_dim2 = fk.Dimension('FL4-H', compensation_ref='uncompensated')
@@ -68,7 +69,7 @@ ell1_coords = [12.99701, 16.22941]
 ell1_cov_mat = [[62.5, 37.5], [37.5, 62.5]]
 ell1_dist_square = 1
 
-ellipse1_gate = fk.gates.EllipsoidGate('Ellipse1', None, ellipse1_dims, ell1_coords, ell1_cov_mat, ell1_dist_square)
+ellipse1_gate = fk.gates.EllipsoidGate('Ellipse1', ellipse1_dims, ell1_coords, ell1_cov_mat, ell1_dist_square)
 
 spill01_fluoros = ['FITC', 'PE', 'PerCP']
 spill01_detectors = ['FL1-H', 'FL2-H', 'FL3-H']
@@ -128,11 +129,11 @@ logicle_xform3 = fk.transforms.LogicleTransform(
 class GatingTestCase(unittest.TestCase):
     @staticmethod
     def test_add_min_range_gate():
-        res_path = 'examples/data/gate_ref/truth/Results_Range1.txt'
+        res_path = 'data/gate_ref/truth/Results_Range1.txt'
 
         gs = fk.GatingStrategy()
 
-        gs.add_gate(range1_gate)
+        gs.add_gate(range1_gate, ('root',))
 
         truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
@@ -148,10 +149,10 @@ class GatingTestCase(unittest.TestCase):
         dim2 = fk.Dimension('FL1-H', compensation_ref='uncompensated', range_min=70, range_max=200)
         dims = [dim1, dim2]
 
-        rect_gate = fk.gates.RectangleGate('Rectangle1', None, dims)
-        gs.add_gate(rect_gate)
+        rect_gate = fk.gates.RectangleGate('Rectangle1', dims)
+        gs.add_gate(rect_gate, ('root',))
 
-        res_path = 'examples/data/gate_ref/truth/Results_Rectangle1.txt'
+        res_path = 'data/gate_ref/truth/Results_Rectangle1.txt'
         truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
@@ -166,10 +167,10 @@ class GatingTestCase(unittest.TestCase):
         dim2 = fk.Dimension('FL1-H', compensation_ref='FCS', range_min=70, range_max=200)
         dims = [dim1, dim2]
 
-        rect_gate = fk.gates.RectangleGate('Rectangle2', None, dims)
-        gs.add_gate(rect_gate)
+        rect_gate = fk.gates.RectangleGate('Rectangle2', dims)
+        gs.add_gate(rect_gate, ('root',))
 
-        res_path = 'examples/data/gate_ref/truth/Results_Rectangle2.txt'
+        res_path = 'data/gate_ref/truth/Results_Rectangle2.txt'
         truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
@@ -180,9 +181,9 @@ class GatingTestCase(unittest.TestCase):
     def test_add_poly1_gate():
         gs = fk.GatingStrategy()
 
-        gs.add_gate(poly1_gate)
+        gs.add_gate(poly1_gate, ('root',))
 
-        res_path = 'examples/data/gate_ref/truth/Results_Polygon1.txt'
+        res_path = 'data/gate_ref/truth/Results_Polygon1.txt'
         truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
@@ -198,16 +199,16 @@ class GatingTestCase(unittest.TestCase):
         dims = [dim1, dim2]
 
         vertices = [
-            fk.Vertex([20, 10]),
-            fk.Vertex([120, 10]),
-            fk.Vertex([120, 160]),
-            fk.Vertex([20, 160])
+            [20, 10],
+            [120, 10],
+            [120, 160],
+            [20, 160]
         ]
 
-        poly_gate = fk.gates.PolygonGate('Polygon2', None, dims, vertices)
-        gs.add_gate(poly_gate)
+        poly_gate = fk.gates.PolygonGate('Polygon2', dims, vertices)
+        gs.add_gate(poly_gate, ('root',))
 
-        res_path = 'examples/data/gate_ref/truth/Results_Polygon2.txt'
+        res_path = 'data/gate_ref/truth/Results_Polygon2.txt'
         truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
@@ -223,20 +224,20 @@ class GatingTestCase(unittest.TestCase):
         dims = [dim1, dim2]
 
         vertices = [
-            fk.Vertex([10, 10]),
-            fk.Vertex([500, 10]),
-            fk.Vertex([500, 390]),
-            fk.Vertex([100, 390]),
-            fk.Vertex([100, 180]),
-            fk.Vertex([200, 180]),
-            fk.Vertex([200, 300]),
-            fk.Vertex([10, 300])
+            [10, 10],
+            [500, 10],
+            [500, 390],
+            [100, 390],
+            [100, 180],
+            [200, 180],
+            [200, 300],
+            [10, 300]
         ]
 
-        poly_gate = fk.gates.PolygonGate('Polygon3NS', None, dims, vertices)
-        gs.add_gate(poly_gate)
+        poly_gate = fk.gates.PolygonGate('Polygon3NS', dims, vertices)
+        gs.add_gate(poly_gate, ('root',))
 
-        res_path = 'examples/data/gate_ref/truth/Results_Polygon3NS.txt'
+        res_path = 'data/gate_ref/truth/Results_Polygon3NS.txt'
         truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
@@ -247,9 +248,9 @@ class GatingTestCase(unittest.TestCase):
     def test_add_ellipse1_gate():
         gs = fk.GatingStrategy()
 
-        gs.add_gate(ellipse1_gate)
+        gs.add_gate(ellipse1_gate, ('root',))
 
-        res_path = 'examples/data/gate_ref/truth/Results_Ellipse1.txt'
+        res_path = 'data/gate_ref/truth/Results_Ellipse1.txt'
         truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
@@ -269,10 +270,10 @@ class GatingTestCase(unittest.TestCase):
         cov_mat = [[2.5, 7.5, 17.5], [7.5, 7.0, 13.5], [15.5, 13.5, 4.3]]
         dist_square = 1
 
-        poly_gate = fk.gates.EllipsoidGate('Ellipsoid3D', None, dims, coords, cov_mat, dist_square)
-        gs.add_gate(poly_gate)
+        poly_gate = fk.gates.EllipsoidGate('Ellipsoid3D', dims, coords, cov_mat, dist_square)
+        gs.add_gate(poly_gate, ('root',))
 
-        res_path = 'examples/data/gate_ref/truth/Results_Ellipsoid3D.txt'
+        res_path = 'data/gate_ref/truth/Results_Ellipsoid3D.txt'
         truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
@@ -281,11 +282,11 @@ class GatingTestCase(unittest.TestCase):
 
     @staticmethod
     def test_add_time_range_gate():
-        res_path = 'examples/data/gate_ref/truth/Results_Range2.txt'
+        res_path = 'data/gate_ref/truth/Results_Range2.txt'
 
         gs = fk.GatingStrategy()
 
-        gs.add_gate(range2_gate)
+        gs.add_gate(range2_gate, ('root',))
 
         truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
@@ -295,14 +296,14 @@ class GatingTestCase(unittest.TestCase):
 
     @staticmethod
     def test_add_quadrant1_gate():
-        res1_path = 'examples/data/gate_ref/truth/Results_FL2N-FL4N.txt'
-        res2_path = 'examples/data/gate_ref/truth/Results_FL2N-FL4P.txt'
-        res3_path = 'examples/data/gate_ref/truth/Results_FL2P-FL4N.txt'
-        res4_path = 'examples/data/gate_ref/truth/Results_FL2P-FL4P.txt'
+        res1_path = 'data/gate_ref/truth/Results_FL2N-FL4N.txt'
+        res2_path = 'data/gate_ref/truth/Results_FL2N-FL4P.txt'
+        res3_path = 'data/gate_ref/truth/Results_FL2P-FL4N.txt'
+        res4_path = 'data/gate_ref/truth/Results_FL2P-FL4P.txt'
 
         gs = fk.GatingStrategy()
 
-        gs.add_gate(quad1_gate)
+        gs.add_gate(quad1_gate, ('root',))
 
         truth1 = pd.read_csv(res1_path, header=None, dtype='bool').squeeze().values
         truth2 = pd.read_csv(res2_path, header=None, dtype='bool').squeeze().values
@@ -319,7 +320,7 @@ class GatingTestCase(unittest.TestCase):
     def test_add_quadrant_gate_relative_percent(self):
         gs = fk.GatingStrategy()
 
-        gs.add_gate(quad1_gate)
+        gs.add_gate(quad1_gate, ('root',))
 
         result = gs.gate_sample(data1_sample)
 
@@ -332,11 +333,11 @@ class GatingTestCase(unittest.TestCase):
 
     @staticmethod
     def test_add_quadrant2_gate():
-        res1_path = 'examples/data/gate_ref/truth/Results_FSCN-SSCN.txt'
-        res2_path = 'examples/data/gate_ref/truth/Results_FSCD-SSCN-FL1N.txt'
-        res3_path = 'examples/data/gate_ref/truth/Results_FSCP-SSCN-FL1N.txt'
-        res4_path = 'examples/data/gate_ref/truth/Results_FSCD-FL1P.txt'
-        res5_path = 'examples/data/gate_ref/truth/Results_FSCN-SSCP-FL1P.txt'
+        res1_path = 'data/gate_ref/truth/Results_FSCN-SSCN.txt'
+        res2_path = 'data/gate_ref/truth/Results_FSCD-SSCN-FL1N.txt'
+        res3_path = 'data/gate_ref/truth/Results_FSCP-SSCN-FL1N.txt'
+        res4_path = 'data/gate_ref/truth/Results_FSCD-FL1P.txt'
+        res5_path = 'data/gate_ref/truth/Results_FSCN-SSCP-FL1P.txt'
 
         truth1 = pd.read_csv(res1_path, header=None, dtype='bool').squeeze().values
         truth2 = pd.read_csv(res2_path, header=None, dtype='bool').squeeze().values
@@ -380,8 +381,8 @@ class GatingTestCase(unittest.TestCase):
 
         quadrants_q2 = [q2_quad_1, q2_quad_2, q2_quad_3, q2_quad_4, q2_quad_5]
 
-        quad_gate = fk.gates.QuadrantGate('Quadrant2', None, divs, quadrants_q2)
-        gs.add_gate(quad_gate)
+        quad_gate = fk.gates.QuadrantGate('Quadrant2', divs, quadrants_q2)
+        gs.add_gate(quad_gate, ('root',))
 
         result = gs.gate_sample(data1_sample)
 
@@ -412,10 +413,10 @@ class GatingTestCase(unittest.TestCase):
         )
         dims = [dim_rat1]
 
-        rect_gate = fk.gates.RectangleGate('RatRange1', None, dims)
-        gs.add_gate(rect_gate)
+        rect_gate = fk.gates.RectangleGate('RatRange1', dims)
+        gs.add_gate(rect_gate, ('root',))
 
-        res_path = 'examples/data/gate_ref/truth/Results_RatRange1.txt'
+        res_path = 'data/gate_ref/truth/Results_RatRange1.txt'
         truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
@@ -443,10 +444,10 @@ class GatingTestCase(unittest.TestCase):
         )
         dims = [dim_rat2]
 
-        rect_gate = fk.gates.RectangleGate('RatRange2', None, dims)
-        gs.add_gate(rect_gate)
+        rect_gate = fk.gates.RectangleGate('RatRange2', dims)
+        gs.add_gate(rect_gate, ('root',))
 
-        res_path = 'examples/data/gate_ref/truth/Results_RatRange2.txt'
+        res_path = 'data/gate_ref/truth/Results_RatRange2.txt'
         truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
@@ -478,10 +479,10 @@ class GatingTestCase(unittest.TestCase):
         )
         dims = [dim_rat1]
 
-        rect_gate = fk.gates.RectangleGate('RatRange1a', None, dims)
-        gs.add_gate(rect_gate)
+        rect_gate = fk.gates.RectangleGate('RatRange1a', dims)
+        gs.add_gate(rect_gate, ('root',))
 
-        res_path = 'examples/data/gate_ref/truth/Results_RatRange1a.txt'
+        res_path = 'data/gate_ref/truth/Results_RatRange1a.txt'
         truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
@@ -492,8 +493,8 @@ class GatingTestCase(unittest.TestCase):
     def test_add_boolean_and1_gate():
         gs = fk.GatingStrategy()
 
-        gs.add_gate(poly1_gate)
-        gs.add_gate(range2_gate)
+        gs.add_gate(poly1_gate, ('root',))
+        gs.add_gate(range2_gate, ('root',))
 
         gate_refs = [
             {
@@ -508,10 +509,10 @@ class GatingTestCase(unittest.TestCase):
             }
         ]
 
-        bool_gate = fk.gates.BooleanGate('And1', None, 'and', gate_refs)
-        gs.add_gate(bool_gate)
+        bool_gate = fk.gates.BooleanGate('And1', 'and', gate_refs)
+        gs.add_gate(bool_gate, ('root',))
 
-        res_path = 'examples/data/gate_ref/truth/Results_And1.txt'
+        res_path = 'data/gate_ref/truth/Results_And1.txt'
         truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
@@ -522,9 +523,9 @@ class GatingTestCase(unittest.TestCase):
     def test_add_boolean_and2_gate():
         gs = fk.GatingStrategy()
 
-        gs.add_gate(range1_gate)
-        gs.add_gate(poly1_gate)
-        gs.add_gate(ellipse1_gate)
+        gs.add_gate(range1_gate, ('root',))
+        gs.add_gate(poly1_gate, ('root',))
+        gs.add_gate(ellipse1_gate, ('root',))
 
         gate_refs = [
             {
@@ -544,10 +545,10 @@ class GatingTestCase(unittest.TestCase):
             }
         ]
 
-        bool_gate = fk.gates.BooleanGate('And2', None, 'and', gate_refs)
-        gs.add_gate(bool_gate)
+        bool_gate = fk.gates.BooleanGate('And2', 'and', gate_refs)
+        gs.add_gate(bool_gate, ('root',))
 
-        res_path = 'examples/data/gate_ref/truth/Results_And2.txt'
+        res_path = 'data/gate_ref/truth/Results_And2.txt'
         truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
@@ -558,9 +559,9 @@ class GatingTestCase(unittest.TestCase):
     def test_add_boolean_or1_gate():
         gs = fk.GatingStrategy()
 
-        gs.add_gate(range1_gate)
-        gs.add_gate(poly1_gate)
-        gs.add_gate(ellipse1_gate)
+        gs.add_gate(range1_gate, ('root',))
+        gs.add_gate(poly1_gate, ('root',))
+        gs.add_gate(ellipse1_gate, ('root',))
 
         gate_refs = [
             {
@@ -580,10 +581,10 @@ class GatingTestCase(unittest.TestCase):
             }
         ]
 
-        bool_gate = fk.gates.BooleanGate('Or1', None, 'or', gate_refs)
-        gs.add_gate(bool_gate)
+        bool_gate = fk.gates.BooleanGate('Or1', 'or', gate_refs)
+        gs.add_gate(bool_gate, ('root',))
 
-        res_path = 'examples/data/gate_ref/truth/Results_Or1.txt'
+        res_path = 'data/gate_ref/truth/Results_Or1.txt'
         truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
@@ -594,9 +595,9 @@ class GatingTestCase(unittest.TestCase):
     def test_add_boolean_and3_complement_gate():
         gs = fk.GatingStrategy()
 
-        gs.add_gate(range1_gate)
-        gs.add_gate(poly1_gate)
-        gs.add_gate(ellipse1_gate)
+        gs.add_gate(range1_gate, ('root',))
+        gs.add_gate(poly1_gate, ('root',))
+        gs.add_gate(ellipse1_gate, ('root',))
 
         gate_refs = [
             {
@@ -616,10 +617,10 @@ class GatingTestCase(unittest.TestCase):
             }
         ]
 
-        bool_gate = fk.gates.BooleanGate('And3', None, 'and', gate_refs)
-        gs.add_gate(bool_gate)
+        bool_gate = fk.gates.BooleanGate('And3', 'and', gate_refs)
+        gs.add_gate(bool_gate, ('root',))
 
-        res_path = 'examples/data/gate_ref/truth/Results_And3.txt'
+        res_path = 'data/gate_ref/truth/Results_And3.txt'
         truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
@@ -630,7 +631,7 @@ class GatingTestCase(unittest.TestCase):
     def test_add_boolean_not1_gate():
         gs = fk.GatingStrategy()
 
-        gs.add_gate(ellipse1_gate)
+        gs.add_gate(ellipse1_gate, ('root',))
 
         gate_refs = [
             {
@@ -640,10 +641,10 @@ class GatingTestCase(unittest.TestCase):
             }
         ]
 
-        bool_gate = fk.gates.BooleanGate('Not1', None, 'not', gate_refs)
-        gs.add_gate(bool_gate)
+        bool_gate = fk.gates.BooleanGate('Not1', 'not', gate_refs)
+        gs.add_gate(bool_gate, ('root',))
 
-        res_path = 'examples/data/gate_ref/truth/Results_Not1.txt'
+        res_path = 'data/gate_ref/truth/Results_Not1.txt'
         truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
@@ -654,9 +655,9 @@ class GatingTestCase(unittest.TestCase):
     def test_add_boolean_and4_not_gate():
         gs = fk.GatingStrategy()
 
-        gs.add_gate(range1_gate)
-        gs.add_gate(poly1_gate)
-        gs.add_gate(ellipse1_gate)
+        gs.add_gate(range1_gate, ('root',))
+        gs.add_gate(poly1_gate, ('root',))
+        gs.add_gate(ellipse1_gate, ('root',))
 
         gate1_refs = [
             {
@@ -666,8 +667,8 @@ class GatingTestCase(unittest.TestCase):
             }
         ]
 
-        bool1_gate = fk.gates.BooleanGate('Not1', None, 'not', gate1_refs)
-        gs.add_gate(bool1_gate)
+        bool1_gate = fk.gates.BooleanGate('Not1', 'not', gate1_refs)
+        gs.add_gate(bool1_gate, ('root',))
 
         gate2_refs = [
             {
@@ -687,10 +688,10 @@ class GatingTestCase(unittest.TestCase):
             }
         ]
 
-        bool2_gate = fk.gates.BooleanGate('And4', None, 'and', gate2_refs)
-        gs.add_gate(bool2_gate)
+        bool2_gate = fk.gates.BooleanGate('And4', 'and', gate2_refs)
+        gs.add_gate(bool2_gate, ('root',))
 
-        res_path = 'examples/data/gate_ref/truth/Results_And4.txt'
+        res_path = 'data/gate_ref/truth/Results_And4.txt'
         truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
@@ -705,9 +706,9 @@ class GatingTestCase(unittest.TestCase):
         dim2 = fk.Dimension('FL1-H', compensation_ref='FCS', range_min=70, range_max=200)
         rect_dims = [dim1, dim2]
 
-        rect_gate = fk.gates.RectangleGate('Rectangle2', None, rect_dims)
-        gs.add_gate(rect_gate)
-        gs.add_gate(quad1_gate)
+        rect_gate = fk.gates.RectangleGate('Rectangle2', rect_dims)
+        gs.add_gate(rect_gate, ('root',))
+        gs.add_gate(quad1_gate, ('root',))
 
         gate1_refs = [
             {
@@ -722,10 +723,10 @@ class GatingTestCase(unittest.TestCase):
             }
         ]
 
-        bool1_gate = fk.gates.BooleanGate('Or2', None, 'or', gate1_refs)
-        gs.add_gate(bool1_gate)
+        bool1_gate = fk.gates.BooleanGate('Or2', 'or', gate1_refs)
+        gs.add_gate(bool1_gate, ('root',))
 
-        res_path = 'examples/data/gate_ref/truth/Results_Or2.txt'
+        res_path = 'data/gate_ref/truth/Results_Or2.txt'
         truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
@@ -742,10 +743,10 @@ class GatingTestCase(unittest.TestCase):
         dim2 = fk.Dimension('PerCP', compensation_ref='MySpill')
         dims = [dim1, dim2]
 
-        poly_gate = fk.gates.PolygonGate('Polygon4', None, dims, poly1_vertices)
-        gs.add_gate(poly_gate)
+        poly_gate = fk.gates.PolygonGate('Polygon4', dims, poly1_vertices)
+        gs.add_gate(poly_gate, ('root',))
 
-        res_path = 'examples/data/gate_ref/truth/Results_Polygon4.txt'
+        res_path = 'data/gate_ref/truth/Results_Polygon4.txt'
         truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
@@ -762,10 +763,10 @@ class GatingTestCase(unittest.TestCase):
         dim2 = fk.Dimension('PE', compensation_ref='MySpill', range_min=9, range_max=208)
         dims = [dim1, dim2]
 
-        rect_gate = fk.gates.RectangleGate('Rectangle3', None, dims)
-        gs.add_gate(rect_gate)
+        rect_gate = fk.gates.RectangleGate('Rectangle3', dims)
+        gs.add_gate(rect_gate, ('root',))
 
-        res_path = 'examples/data/gate_ref/truth/Results_Rectangle3.txt'
+        res_path = 'data/gate_ref/truth/Results_Rectangle3.txt'
         truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
@@ -782,10 +783,10 @@ class GatingTestCase(unittest.TestCase):
         dim2 = fk.Dimension('FSC-H', compensation_ref='uncompensated', range_min=10, range_max=133)
         dims = [dim1, dim2]
 
-        rect_gate = fk.gates.RectangleGate('Rectangle4', None, dims)
-        gs.add_gate(rect_gate)
+        rect_gate = fk.gates.RectangleGate('Rectangle4', dims)
+        gs.add_gate(rect_gate, ('root',))
 
-        res_path = 'examples/data/gate_ref/truth/Results_Rectangle4.txt'
+        res_path = 'data/gate_ref/truth/Results_Rectangle4.txt'
         truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
@@ -802,10 +803,10 @@ class GatingTestCase(unittest.TestCase):
         dim2 = fk.Dimension('FSC-H', compensation_ref='uncompensated', range_min=10)
         dims = [dim1, dim2]
 
-        rect_gate = fk.gates.RectangleGate('Rectangle5', None, dims)
-        gs.add_gate(rect_gate)
+        rect_gate = fk.gates.RectangleGate('Rectangle5', dims)
+        gs.add_gate(rect_gate, ('root',))
 
-        res_path = 'examples/data/gate_ref/truth/Results_Rectangle5.txt'
+        res_path = 'data/gate_ref/truth/Results_Rectangle5.txt'
         truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
@@ -821,10 +822,10 @@ class GatingTestCase(unittest.TestCase):
         dim1 = fk.Dimension('FL1-H', 'uncompensated', 'AsinH_10000_4_1', range_min=0.37, range_max=0.63)
         dims = [dim1]
 
-        rect_gate = fk.gates.RectangleGate('ScaleRange1', None, dims)
-        gs.add_gate(rect_gate)
+        rect_gate = fk.gates.RectangleGate('ScaleRange1', dims)
+        gs.add_gate(rect_gate, ('root',))
 
-        res_path = 'examples/data/gate_ref/truth/Results_ScaleRange1.txt'
+        res_path = 'data/gate_ref/truth/Results_ScaleRange1.txt'
         truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
@@ -840,10 +841,10 @@ class GatingTestCase(unittest.TestCase):
         dim1 = fk.Dimension('FL1-H', 'uncompensated', 'Hyperlog_10000_1_4.5_0', range_min=0.37, range_max=0.63)
         dims = [dim1]
 
-        rect_gate = fk.gates.RectangleGate('ScaleRange2', None, dims)
-        gs.add_gate(rect_gate)
+        rect_gate = fk.gates.RectangleGate('ScaleRange2', dims)
+        gs.add_gate(rect_gate, ('root',))
 
-        res_path = 'examples/data/gate_ref/truth/Results_ScaleRange2.txt'
+        res_path = 'data/gate_ref/truth/Results_ScaleRange2.txt'
         truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
@@ -859,10 +860,10 @@ class GatingTestCase(unittest.TestCase):
         dim1 = fk.Dimension('FL1-H', 'uncompensated', 'Linear_10000_500', range_min=0.049, range_max=0.055)
         dims = [dim1]
 
-        rect_gate = fk.gates.RectangleGate('ScaleRange3', None, dims)
-        gs.add_gate(rect_gate)
+        rect_gate = fk.gates.RectangleGate('ScaleRange3', dims)
+        gs.add_gate(rect_gate, ('root',))
 
-        res_path = 'examples/data/gate_ref/truth/Results_ScaleRange3.txt'
+        res_path = 'data/gate_ref/truth/Results_ScaleRange3.txt'
         truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
@@ -878,10 +879,10 @@ class GatingTestCase(unittest.TestCase):
         dim1 = fk.Dimension('FL1-H', 'uncompensated', 'Logicle_10000_0.5_4.5_0', range_min=0.37, range_max=0.63)
         dims = [dim1]
 
-        rect_gate = fk.gates.RectangleGate('ScaleRange4', None, dims)
-        gs.add_gate(rect_gate)
+        rect_gate = fk.gates.RectangleGate('ScaleRange4', dims)
+        gs.add_gate(rect_gate, ('root',))
 
-        res_path = 'examples/data/gate_ref/truth/Results_ScaleRange4.txt'
+        res_path = 'data/gate_ref/truth/Results_ScaleRange4.txt'
         truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
@@ -897,10 +898,10 @@ class GatingTestCase(unittest.TestCase):
         dim1 = fk.Dimension('FL1-H', 'uncompensated', 'Logicle_10000_1_4_0.5', range_min=0.37, range_max=0.63)
         dims = [dim1]
 
-        rect_gate = fk.gates.RectangleGate('ScaleRange5', None, dims)
-        gs.add_gate(rect_gate)
+        rect_gate = fk.gates.RectangleGate('ScaleRange5', dims)
+        gs.add_gate(rect_gate, ('root',))
 
-        res_path = 'examples/data/gate_ref/truth/Results_ScaleRange5.txt'
+        res_path = 'data/gate_ref/truth/Results_ScaleRange5.txt'
         truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
@@ -921,10 +922,10 @@ class GatingTestCase(unittest.TestCase):
         dim1 = fk.Dimension('FL1-H', 'uncompensated', 'Logarithmic_10000_5', range_min=0.37, range_max=0.63)
         dims = [dim1]
 
-        rect_gate = fk.gates.RectangleGate('ScaleRange6', None, dims)
-        gs.add_gate(rect_gate)
+        rect_gate = fk.gates.RectangleGate('ScaleRange6', dims)
+        gs.add_gate(rect_gate, ('root',))
 
-        res_path = 'examples/data/gate_ref/truth/Results_ScaleRange6.txt'
+        res_path = 'data/gate_ref/truth/Results_ScaleRange6.txt'
         truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
@@ -942,10 +943,10 @@ class GatingTestCase(unittest.TestCase):
         dim1 = fk.Dimension('FITC', 'MySpill', 'AsinH_10000_4_1', range_min=0.37, range_max=0.63)
         dims = [dim1]
 
-        rect_gate = fk.gates.RectangleGate('ScaleRange1c', None, dims)
-        gs.add_gate(rect_gate)
+        rect_gate = fk.gates.RectangleGate('ScaleRange1c', dims)
+        gs.add_gate(rect_gate, ('root',))
 
-        res_path = 'examples/data/gate_ref/truth/Results_ScaleRange1c.txt'
+        res_path = 'data/gate_ref/truth/Results_ScaleRange1c.txt'
         truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
@@ -963,10 +964,10 @@ class GatingTestCase(unittest.TestCase):
         dim1 = fk.Dimension('FITC', 'MySpill', 'Hyperlog_10000_1_4.5_0', range_min=0.37, range_max=0.63)
         dims = [dim1]
 
-        rect_gate = fk.gates.RectangleGate('ScaleRange2c', None, dims)
-        gs.add_gate(rect_gate)
+        rect_gate = fk.gates.RectangleGate('ScaleRange2c', dims)
+        gs.add_gate(rect_gate, ('root',))
 
-        res_path = 'examples/data/gate_ref/truth/Results_ScaleRange2c.txt'
+        res_path = 'data/gate_ref/truth/Results_ScaleRange2c.txt'
         truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
@@ -984,10 +985,10 @@ class GatingTestCase(unittest.TestCase):
         dim1 = fk.Dimension('FITC', 'MySpill', 'Linear_10000_500', range_min=0.049, range_max=0.055)
         dims = [dim1]
 
-        rect_gate = fk.gates.RectangleGate('ScaleRange3c', None, dims)
-        gs.add_gate(rect_gate)
+        rect_gate = fk.gates.RectangleGate('ScaleRange3c', dims)
+        gs.add_gate(rect_gate, ('root',))
 
-        res_path = 'examples/data/gate_ref/truth/Results_ScaleRange3c.txt'
+        res_path = 'data/gate_ref/truth/Results_ScaleRange3c.txt'
         truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
@@ -1005,10 +1006,10 @@ class GatingTestCase(unittest.TestCase):
         dim1 = fk.Dimension('FITC', 'MySpill', 'Logicle_10000_0.5_4.5_0', range_min=0.37, range_max=0.63)
         dims = [dim1]
 
-        rect_gate = fk.gates.RectangleGate('ScaleRange4c', None, dims)
-        gs.add_gate(rect_gate)
+        rect_gate = fk.gates.RectangleGate('ScaleRange4c', dims)
+        gs.add_gate(rect_gate, ('root',))
 
-        res_path = 'examples/data/gate_ref/truth/Results_ScaleRange4c.txt'
+        res_path = 'data/gate_ref/truth/Results_ScaleRange4c.txt'
         truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
@@ -1026,10 +1027,10 @@ class GatingTestCase(unittest.TestCase):
         dim1 = fk.Dimension('FITC', 'MySpill', 'Logicle_10000_1_4_0.5', range_min=0.37, range_max=0.63)
         dims = [dim1]
 
-        rect_gate = fk.gates.RectangleGate('ScaleRange5c', None, dims)
-        gs.add_gate(rect_gate)
+        rect_gate = fk.gates.RectangleGate('ScaleRange5c', dims)
+        gs.add_gate(rect_gate, ('root',))
 
-        res_path = 'examples/data/gate_ref/truth/Results_ScaleRange5c.txt'
+        res_path = 'data/gate_ref/truth/Results_ScaleRange5c.txt'
         truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
@@ -1047,10 +1048,10 @@ class GatingTestCase(unittest.TestCase):
         dim1 = fk.Dimension('PE', 'MySpill', 'AsinH_10000_4_1', range_min=0.09, range_max=0.36)
         dims = [dim1]
 
-        rect_gate = fk.gates.RectangleGate('ScaleRange6c', None, dims)
-        gs.add_gate(rect_gate)
+        rect_gate = fk.gates.RectangleGate('ScaleRange6c', dims)
+        gs.add_gate(rect_gate, ('root',))
 
-        res_path = 'examples/data/gate_ref/truth/Results_ScaleRange6c.txt'
+        res_path = 'data/gate_ref/truth/Results_ScaleRange6c.txt'
         truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
@@ -1068,10 +1069,10 @@ class GatingTestCase(unittest.TestCase):
         dim1 = fk.Dimension('PE', 'MySpill', 'Hyperlog_10000_1_4.5_0', range_min=0.09, range_max=0.36)
         dims = [dim1]
 
-        rect_gate = fk.gates.RectangleGate('ScaleRange7c', None, dims)
-        gs.add_gate(rect_gate)
+        rect_gate = fk.gates.RectangleGate('ScaleRange7c', dims)
+        gs.add_gate(rect_gate, ('root',))
 
-        res_path = 'examples/data/gate_ref/truth/Results_ScaleRange7c.txt'
+        res_path = 'data/gate_ref/truth/Results_ScaleRange7c.txt'
         truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
@@ -1089,10 +1090,10 @@ class GatingTestCase(unittest.TestCase):
         dim1 = fk.Dimension('PE', 'MySpill', 'Logicle_10000_1_4_0.5', range_min=0.09, range_max=0.36)
         dims = [dim1]
 
-        rect_gate = fk.gates.RectangleGate('ScaleRange8c', None, dims)
-        gs.add_gate(rect_gate)
+        rect_gate = fk.gates.RectangleGate('ScaleRange8c', dims)
+        gs.add_gate(rect_gate, ('root',))
 
-        res_path = 'examples/data/gate_ref/truth/Results_ScaleRange8c.txt'
+        res_path = 'data/gate_ref/truth/Results_ScaleRange8c.txt'
         truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
@@ -1111,10 +1112,10 @@ class GatingTestCase(unittest.TestCase):
         dim2 = fk.Dimension('PerCP', 'MySpill', 'Logicle_10000_0.5_4.5_0', range_min=0.27, range_max=0.73)
         dims = [dim1, dim2]
 
-        rect_gate = fk.gates.RectangleGate('ScaleRect1', None, dims)
-        gs.add_gate(rect_gate)
+        rect_gate = fk.gates.RectangleGate('ScaleRect1', dims)
+        gs.add_gate(rect_gate, ('root',))
 
-        res_path = 'examples/data/gate_ref/truth/Results_ScaleRect1.txt'
+        res_path = 'data/gate_ref/truth/Results_ScaleRect1.txt'
         truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
@@ -1125,15 +1126,15 @@ class GatingTestCase(unittest.TestCase):
     def test_add_parent_poly1_boolean_and2_gate():
         gs = fk.GatingStrategy()
 
-        gs.add_gate(poly1_gate)
+        gs.add_gate(poly1_gate, ('root',))
 
         dim3 = fk.Dimension('FL3-H', compensation_ref='FCS')
         dim4 = fk.Dimension('FL4-H', compensation_ref='FCS')
         dims2 = [dim3, dim4]
 
-        ellipse_gate = fk.gates.EllipsoidGate('Ellipse1', None, dims2, ell1_coords, ell1_cov_mat, ell1_dist_square)
-        gs.add_gate(ellipse_gate)
-        gs.add_gate(range1_gate)
+        ellipse_gate = fk.gates.EllipsoidGate('Ellipse1', dims2, ell1_coords, ell1_cov_mat, ell1_dist_square)
+        gs.add_gate(ellipse_gate, ('root',))
+        gs.add_gate(range1_gate, ('root',))
 
         gate_refs = [
             {
@@ -1148,10 +1149,10 @@ class GatingTestCase(unittest.TestCase):
             }
         ]
 
-        bool_gate = fk.gates.BooleanGate('ParAnd2', 'Polygon1', 'and', gate_refs)
-        gs.add_gate(bool_gate)
+        bool_gate = fk.gates.BooleanGate('ParAnd2', 'and', gate_refs)
+        gs.add_gate(bool_gate, ('root', 'Polygon1'))
 
-        res_path = 'examples/data/gate_ref/truth/Results_ParAnd2.txt'
+        res_path = 'data/gate_ref/truth/Results_ParAnd2.txt'
         truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
@@ -1162,9 +1163,9 @@ class GatingTestCase(unittest.TestCase):
     def test_add_parent_range1_boolean_and3_gate():
         gs = fk.GatingStrategy()
 
-        gs.add_gate(poly1_gate)
-        gs.add_gate(ellipse1_gate)
-        gs.add_gate(range1_gate)
+        gs.add_gate(poly1_gate, ('root',))
+        gs.add_gate(ellipse1_gate, ('root',))
+        gs.add_gate(range1_gate, ('root',))
 
         gate_refs = [
             {
@@ -1179,10 +1180,10 @@ class GatingTestCase(unittest.TestCase):
             }
         ]
 
-        bool_gate = fk.gates.BooleanGate('ParAnd3', 'Range1', 'and', gate_refs)
-        gs.add_gate(bool_gate)
+        bool_gate = fk.gates.BooleanGate('ParAnd3', 'and', gate_refs)
+        gs.add_gate(bool_gate, ('root', 'Range1'))
 
-        res_path = 'examples/data/gate_ref/truth/Results_ParAnd3.txt'
+        res_path = 'data/gate_ref/truth/Results_ParAnd3.txt'
         truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
@@ -1198,22 +1199,22 @@ class GatingTestCase(unittest.TestCase):
         gs.add_transform(logicle_xform1)
         gs.add_transform(hyperlog_xform1)
 
-        gs.add_gate(poly1_gate)
+        gs.add_gate(poly1_gate, ('root',))
 
         dim1 = fk.Dimension('PE', 'MySpill', 'Logicle_10000_0.5_4.5_0', range_min=0.31, range_max=0.69)
         dim2 = fk.Dimension('PerCP', 'MySpill', 'Logicle_10000_0.5_4.5_0', range_min=0.27, range_max=0.73)
         dims1 = [dim1, dim2]
 
-        rect_gate1 = fk.gates.RectangleGate('ScaleRect1', None, dims1)
-        gs.add_gate(rect_gate1)
+        rect_gate1 = fk.gates.RectangleGate('ScaleRect1', dims1)
+        gs.add_gate(rect_gate1, ('root',))
 
         dim3 = fk.Dimension('FITC', 'MySpill', 'Hyperlog_10000_1_4.5_0', range_min=0.12, range_max=0.43)
         dims2 = [dim3]
 
-        rect_gate2 = fk.gates.RectangleGate('ScalePar1', 'ScaleRect1', dims2)
-        gs.add_gate(rect_gate2)
+        rect_gate2 = fk.gates.RectangleGate('ScalePar1', dims2)
+        gs.add_gate(rect_gate2, ('root', 'ScaleRect1'))
 
-        res_path = 'examples/data/gate_ref/truth/Results_ScalePar1.txt'
+        res_path = 'data/gate_ref/truth/Results_ScalePar1.txt'
         truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
@@ -1223,18 +1224,37 @@ class GatingTestCase(unittest.TestCase):
     @staticmethod
     def test_add_parent_quadrant_rect_gate():
         gs = fk.GatingStrategy()
-        gs.add_gate(quad1_gate)
+        gs.add_gate(quad1_gate, ('root',))
 
         dim1 = fk.Dimension('FL2-H', 'uncompensated', None, range_min=6, range_max=14.4)
         dim2 = fk.Dimension('FL4-H', 'uncompensated', None, range_min=7, range_max=16)
         dims1 = [dim1, dim2]
 
-        rect_gate1 = fk.gates.RectangleGate('ParRectangle1', 'FL2P-FL4P', dims1)
-        gs.add_gate(rect_gate1)
+        rect_gate1 = fk.gates.RectangleGate('ParRectangle1', dims1)
+        gs.add_gate(rect_gate1, ('root', 'Quadrant1', 'FL2P-FL4P'))
 
-        res_path = 'examples/data/gate_ref/truth/Results_ParQuadRect.txt'
+        res_path = 'data/gate_ref/truth/Results_ParQuadRect.txt'
         truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         result = gs.gate_sample(data1_sample)
 
         np.testing.assert_array_equal(truth, result.get_gate_membership('ParRectangle1'))
+
+    def test_quad_gate_with_parent_gate(self):
+        gs = fk.GatingStrategy()
+
+        dim1 = fk.Dimension('SSC-H', compensation_ref='uncompensated', range_min=20, range_max=80)
+        dim2 = fk.Dimension('FL1-H', compensation_ref='uncompensated', range_min=70, range_max=200)
+        dims = [dim1, dim2]
+
+        rect_gate = fk.gates.RectangleGate('Rectangle1', dims)
+        gs.add_gate(rect_gate, ('root',))
+
+        quad_gate_copy = copy.deepcopy(quad1_gate)
+
+        gs.add_gate(quad_gate_copy, ('root', 'Rectangle1'))
+
+        result = gs.gate_sample(data1_sample)
+
+        # just ensure the above succeeded and made a GatingResults object w/ a DataFrame report
+        self.assertIsInstance(result.report, pd.DataFrame)

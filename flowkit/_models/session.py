@@ -16,6 +16,7 @@ from .._models.transforms._matrix import Matrix
 from .._models import gates, dimension
 from .._models.sample import Sample
 from .._utils import plot_utils, xml_utils, wsp_utils, sample_utils
+from ..exceptions import GateReferenceError
 import warnings
 
 
@@ -130,8 +131,6 @@ class Session(object):
         self.sample_lut = {}
         self._results_lut = {}
         self._sample_group_lut = {}
-
-        self.add_sample_group('default')
 
         self.add_samples(fcs_samples)
 
@@ -257,15 +256,15 @@ class Session(object):
 
     def add_samples(self, fcs_samples, group_name=None):
         """
-        Adds FCS samples to the session. All added samples will be added to the 'default' sample group.
-        The given samples will also be added to the provided group_name (if specified and the group exists).
+        Adds FCS samples to the session.  The given samples will also be added to the provided
+        group_name (if specified and the group exists).
 
         :param fcs_samples: str or list. If given a string, it can be a directory path or a file path.
             If a directory, any .fcs files in the directory will be loaded. If a list, then it must
             be a list of file paths or a list of Sample instances. Lists of mixed types are not
             supported.
         :param group_name: a text string representing the sample group to which to assign samples. If None,
-            samples are only added to the 'default' group.
+            samples are only loaded and not assigned to a group.
         :return: None
         """
         new_samples = sample_utils.load_samples(fcs_samples)
@@ -279,8 +278,7 @@ class Session(object):
                     continue
             self.sample_lut[s.original_filename] = s
 
-            # all samples get added to the 'default' group
-            self.assign_samples(s.original_filename, 'default')
+            # assign to group if specified
             if group_name is not None:
                 self.assign_samples(s.original_filename, group_name)
 
@@ -380,14 +378,12 @@ class Session(object):
         template = group['template']
         return template.get_gate_ids()
 
-    def add_gate(self, gate, gate_path=None, group_name='default'):
+    def add_gate(self, gate, gate_path, group_name):
         """
-        Add a Gate instance to a sample group in the session. Gates will be added to
-        the 'default' sample group by default.
+        Add a Gate instance to a sample group in the session.
 
         :param gate: an instance of a Gate subclass
-        :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
-            Required if gate.gate_name and gate.parent combination is ambiguous
+        :param gate_path: complete tuple of gate IDs for unique set of gate ancestors
         :param group_name: a text string representing the sample group
         :return: None
         """
@@ -401,10 +397,9 @@ class Session(object):
         for s_id, s_strategy in s_members.items():
             s_strategy.add_gate(copy.deepcopy(gate), gate_path=gate_path)
 
-    def add_transform(self, transform, group_name='default'):
+    def add_transform(self, transform, group_name):
         """
-        Add a Transform instance to a sample group in the session. Transforms will be added to
-        the 'default' sample group by default.
+        Add a Transform instance to a sample group in the session.
 
         :param transform: an instance of a Transform subclass
         :param group_name: a text string representing the sample group
@@ -447,10 +442,9 @@ class Session(object):
 
         return xform
 
-    def add_comp_matrix(self, matrix, group_name='default'):
+    def add_comp_matrix(self, matrix, group_name):
         """
-        Add a Matrix instance to a sample group in the session. Matrices will be added to
-        the 'default' sample group by default.
+        Add a Matrix instance to a sample group in the session.
 
         :param matrix: an instance of the Matrix class
         :param group_name: a text string representing the sample group
@@ -497,21 +491,6 @@ class Session(object):
         comp_mat = gating_strategy.get_comp_matrix(matrix_id)
         return comp_mat
 
-    def get_parent_gate_name(self, group_name, gate_name):
-        """
-        Retrieve the gate name of the parent gate by the child gate ID and sample group.
-
-        :param group_name: a text string representing the sample group
-        :param gate_name: text string of a gate name
-        :return: string of the parent gate name
-        """
-        # this method doesn't need to lookup sample specific gates, as the gate names
-        # and hierarchy must be the same for all samples in a group
-        group = self._sample_group_lut[group_name]
-        template = group['template']
-        gate = template.get_gate(gate_name)
-        return gate.parent
-
     def find_matching_gate_paths(self, group_name, gate_name):
         """
         Find all gate paths in a sample group for given gate name.
@@ -533,7 +512,7 @@ class Session(object):
         :param group_name: a text string representing the sample group
         :param gate_name: text string of a gate name
         :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
-            Required if gate.gate_name and gate.parent combination is ambiguous
+            Required if gate.gate_name is ambiguous
         :return: list of gate IDs (each gate ID is a gate name string & tuple of the gate path)
         """
         group = self._sample_group_lut[group_name]
@@ -544,7 +523,7 @@ class Session(object):
             gate_paths = template.find_matching_gate_paths(gate_name)
 
             if len(gate_paths) > 1:
-                raise KeyError(
+                raise GateReferenceError(
                     "Multiple gates exist with gate name '%s'. Specify a gate_path to disambiguate." % gate_name
                 )
 
@@ -681,7 +660,7 @@ class Session(object):
         """
         return self.sample_lut[sample_id]
 
-    def analyze_samples(self, group_name='default', sample_id=None, cache_events=False, use_mp=True, verbose=False):
+    def analyze_samples(self, group_name, sample_id=None, cache_events=False, use_mp=True, verbose=False):
         """
         Process gates for samples in a sample group. After running, results can be
         retrieved using the `get_gating_results`, `get_group_report`, and  `get_gate_membership`,
@@ -753,7 +732,12 @@ class Session(object):
             assigned to the specified group
         :return: GatingResults instance
         """
-        gating_result = self._results_lut[group_name][sample_id]
+        try:
+            gating_result = self._results_lut[group_name][sample_id]
+        except KeyError:
+            raise KeyError(
+                "No results for for %s in group %s. Have you run `analyze_samples`?" % (sample_id, group_name)
+            )
         return copy.deepcopy(gating_result)
 
     def get_group_report(self, group_name):
@@ -922,7 +906,24 @@ class Session(object):
         """
         group = self._sample_group_lut[group_name]
         gating_strategy = group['samples'][sample_id]
+
+        if gate_path is None:
+            # verify the gate_name isn't ambiguous
+            gate_paths = self.find_matching_gate_paths(group_name, gate_name)
+            if len(gate_paths) > 1:
+                raise GateReferenceError(
+                    "Multiple gates exist with gate name '%s'. Specify a gate_path to disambiguate." % gate_name
+                )
+            gate_path = gate_paths[0]
+
         gate = gating_strategy.get_gate(gate_name, gate_path)
+
+        # check for a boolean gate, there's no reasonable way to plot these
+        if isinstance(gate, gates.BooleanGate):
+            raise TypeError("Plotting Boolean gates is not allowed (gate %s)" % gate.gate_name)
+
+        parent_gate_name = gate_path[-1]
+        parent_gate_path = gate_path[:-1]
 
         dim_ids_ordered = []
         dim_is_ratio = []
@@ -968,10 +969,9 @@ class Session(object):
         )
 
         # get parent gate results to display only those events
-        if gate.parent is not None:
+        if parent_gate_name != 'root':
             # TODO:  make it clear to call analyze_samples prior to calling this method
-            gating_results = self.get_gating_results(group_name, sample_id)
-            is_parent_event = gating_results.get_gate_membership(gate.parent)
+            is_parent_event = self.get_gate_membership(group_name, sample_id, parent_gate_name, parent_gate_path)
             is_subsample = np.zeros(sample_to_plot.event_count, dtype=bool)
             is_subsample[sample_to_plot.subsample_indices] = True
             idx_to_plot = np.logical_and(is_parent_event, is_subsample)
@@ -1120,7 +1120,7 @@ class Session(object):
             sample_id,
             x_dim,
             y_dim,
-            group_name='default',
+            group_name,
             gate_name=None,
             subsample=False,
             color_density=True,
@@ -1193,15 +1193,18 @@ class Session(object):
         if gate_name is not None:
             gate_results = self.get_gating_results(group_name, sample_id=sample_id)
             is_gate_event = gate_results.get_gate_membership(gate_name)
-            if subsample:
-                is_subsample = np.zeros(sample.event_count, dtype=bool)
-                is_subsample[sample.subsample_indices] = True
-            else:
-                is_subsample = np.ones(sample.event_count, dtype=bool)
+        else:
+            is_gate_event = np.ones(sample.event_count, dtype=bool)
 
-            idx_to_plot = np.logical_and(is_gate_event, is_subsample)
-            x = x[idx_to_plot]
-            y = y[idx_to_plot]
+        if subsample:
+            is_subsample = np.zeros(sample.event_count, dtype=bool)
+            is_subsample[sample.subsample_indices] = True
+        else:
+            is_subsample = np.ones(sample.event_count, dtype=bool)
+
+        idx_to_plot = np.logical_and(is_gate_event, is_subsample)
+        x = x[idx_to_plot]
+        y = y[idx_to_plot]
 
         dim_ids = []
 

@@ -6,7 +6,6 @@ from lxml import etree
 import networkx as nx
 from .._resources import gml_schema
 from .._models.dimension import Dimension, RatioDimension, QuadrantDivider
-from .._models.vertex import Vertex
 from .._models.gating_strategy import GatingStrategy
 # noinspection PyProtectedMember
 from .._models.transforms import _transforms, _gml_transforms
@@ -26,6 +25,7 @@ from .._models.gates._gates import \
     QuadrantGate, \
     PolygonGate, \
     RectangleGate
+from ..exceptions import QuadrantReferenceError
 
 
 # map GatingML gate keys to our GML gate classes
@@ -68,6 +68,8 @@ def parse_gating_xml(xml_file_or_path):
     bool_edges = []
 
     for g_id, gate in gates.items():
+        # GML gates have a parent reference & their gate names are
+        # required to be unique, so we can use them to assemble the tree
         if gate.parent is None:
             parent = 'root'
         else:
@@ -86,8 +88,7 @@ def parse_gating_xml(xml_file_or_path):
 
                 bool_edges.append((g_ref['ref'], g_id))
 
-    dag = nx.DiGraph()
-    dag.add_edges_from(deps)
+    dag = nx.DiGraph(deps)
 
     is_acyclic = nx.is_directed_acyclic_graph(dag)
 
@@ -118,7 +119,12 @@ def parse_gating_xml(xml_file_or_path):
                 gate_ref_path = list(nx.all_simple_paths(dag, 'root', gate_ref['ref']))[0]
                 gate_ref['path'] = tuple(gate_ref_path[:-1])  # don't repeat the gate name
 
-        gating_strategy.add_gate(gate)
+        # need to get the gate path
+        # again, since GML gate IDs must be unique, safe to lookup from graph
+        gate_path = tuple(nx.shortest_path(dag, 'root', g_id))[:-1]
+
+        # Convert GML gates to their superclass & add to gating strategy
+        gating_strategy.add_gate(gate.convert_to_parent_class(), gate_path)
 
     return gating_strategy
 
@@ -482,8 +488,7 @@ def _parse_divider_element(divider_element, gating_namespace, data_type_namespac
 
 def parse_vertex_element(vertex_element, gating_namespace, data_type_namespace):
     """
-    This class parses a GatingML-2.0 compatible vertex XML element and returns a Vertex object
-     parent gate ID, and dimensions.
+    This class parses a GatingML-2.0 compatible vertex XML element and returns a list of coordinates.
 
     :param vertex_element: vertex XML element from a GatingML-2.0 document
     :param gating_namespace: XML namespace for gating elements/attributes
@@ -511,7 +516,7 @@ def parse_vertex_element(vertex_element, gating_namespace, data_type_namespace):
 
         coordinates.append(float(value))
 
-    return Vertex(coordinates)
+    return coordinates
 
 
 def _parse_matrix_element(
@@ -662,9 +667,9 @@ def _add_gate_to_gml(root, gate, ns_map):
 
         for v in gate.vertices:
             vert_ml = etree.SubElement(gate_ml, '{%s}vertex' % ns_map['gating'])
-            for c in v.coordinates:
+            for coord in v:
                 coord_ml = etree.SubElement(vert_ml, '{%s}coordinate' % ns_map['gating'])
-                coord_ml.set('{%s}value' % ns_map['data-type'], str(c))
+                coord_ml.set('{%s}value' % ns_map['data-type'], str(coord))
     elif isinstance(gate, BooleanGate):
         gate_ml = etree.SubElement(root, "{%s}BooleanGate" % ns_map['gating'])
 
@@ -771,15 +776,14 @@ def _add_gates_from_gate_dict(gating_strategy, gate_dict, ns_map, parent_ml):
     # the gate_dict will have keys 'name' and 'children'. top-level 'name' value is 'root'
     for child in gate_dict['children']:
         gate_id = child['name']
-        skip = False
 
-        gate = gating_strategy.get_gate(gate_id)
-        if isinstance(gate, QuadrantGate):
-            if gate_id in gate.quadrants.keys():
-                # single quadrants will be handled in the owning quadrant gate
-                skip = True
+        try:
+            gate = gating_strategy.get_gate(gate_id)
+        except QuadrantReferenceError:
+            # single quadrants will be handled in the owning quadrant gate
+            gate = None
 
-        if not skip:
+        if gate is not None:
             child_ml = _add_gate_to_gml(parent_ml, gate, ns_map)
 
             if gate_dict['name'] != 'root':

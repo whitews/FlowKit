@@ -102,7 +102,8 @@ class QuadrantDivider(object):
     Represents a divider for a single Dimension, used as part of a QuadrantGate definition.
 
     :param divider_id: A string identifying the divider
-    :param dimension_ref: A string referencing the ID of an instance of the Dimension class
+    :param dimension_ref: A string identifying the dimension, typically matching the PnN label
+        of a channel in an FCS sample
     :param compensation_ref: A string referencing the ID of a Matrix instance
     :param values: One or more values used for partitioning the given Dimension
     :param transformation_ref: A string referencing the ID of an instance of a Transform subclass

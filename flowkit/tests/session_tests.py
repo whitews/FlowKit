@@ -16,15 +16,17 @@ from flowkit import Session, Sample, Matrix, Dimension, gates, transforms, load_
 from flowkit._models.transforms._base_transform import Transform
 # noinspection PyProtectedMember
 from flowkit._models.gates._base_gate import Gate
+from flowkit.exceptions import GateReferenceError
 from .gating_strategy_prog_gate_tests import data1_sample, poly1_gate, poly1_vertices, comp_matrix_01, asinh_xform1
 
 fcs_file_paths = [
-    "examples/data/100715.fcs",
-    "examples/data/109567.fcs",
-    "examples/data/113548.fcs"
+    "data/100715.fcs",
+    "data/109567.fcs",
+    "data/113548.fcs"
 ]
 test_samples_base_set = load_samples(fcs_file_paths)
-test_samples_8c_full_set = load_samples("examples/data/8_color_data_set/fcs_files")
+test_samples_8c_full_set = load_samples("data/8_color_data_set/fcs_files")
+test_samples_8c_full_set_dict = {s.original_filename: s for s in test_samples_8c_full_set}
 
 
 class SessionTestCase(unittest.TestCase):
@@ -46,14 +48,17 @@ class SessionTestCase(unittest.TestCase):
         self.assertIsInstance(fks.get_sample('100715.fcs'), Sample)
 
     def test_get_comp_matrix(self):
-        fks = Session(fcs_samples=data1_sample)
-        fks.add_comp_matrix(comp_matrix_01)
-        comp_mat = fks.get_comp_matrix('default', 'B07', 'MySpill')
+        fks = Session()
+        sample_group = 'default'
+        fks.add_sample_group(sample_group)
+        fks.add_samples(data1_sample, sample_group)
+        fks.add_comp_matrix(comp_matrix_01, sample_group)
+        comp_mat = fks.get_comp_matrix(sample_group, 'B07', 'MySpill')
 
         self.assertIsInstance(comp_mat, Matrix)
 
     def test_get_sample_comp_matrices(self):
-        wsp_path = "examples/data/8_color_data_set/8_color_ICS_simple.wsp"
+        wsp_path = "data/8_color_data_set/8_color_ICS_simple.wsp"
         sample_grp = 'DEN'
         sample_id = '101_DEN084Y5_15_E01_008_clean.fcs'
 
@@ -67,7 +72,7 @@ class SessionTestCase(unittest.TestCase):
             self.assertIsInstance(cm, Matrix)
 
     def test_get_group_comp_matrices(self):
-        wsp_path = "examples/data/8_color_data_set/8_color_ICS_simple.wsp"
+        wsp_path = "data/8_color_data_set/8_color_ICS_simple.wsp"
         sample_grp = 'DEN'
 
         fks = Session(copy.deepcopy(test_samples_8c_full_set))
@@ -80,14 +85,17 @@ class SessionTestCase(unittest.TestCase):
             self.assertIsInstance(cm, Matrix)
 
     def test_get_transform(self):
-        fks = Session(fcs_samples=data1_sample)
-        fks.add_transform(asinh_xform1)
-        comp_mat = fks.get_transform('default', 'AsinH_10000_4_1')
+        fks = Session()
+        sample_group = 'default'
+        fks.add_sample_group(sample_group)
+        fks.add_samples(data1_sample, sample_group)
+        fks.add_transform(asinh_xform1, sample_group)
+        comp_mat = fks.get_transform(sample_group, 'AsinH_10000_4_1')
 
         self.assertIsInstance(comp_mat, transforms.AsinhTransform)
 
     def test_get_group_transforms(self):
-        wsp_path = "examples/data/8_color_data_set/8_color_ICS_simple.wsp"
+        wsp_path = "data/8_color_data_set/8_color_ICS_simple.wsp"
         sample_grp = 'DEN'
 
         fks = Session(copy.deepcopy(test_samples_8c_full_set))
@@ -100,7 +108,7 @@ class SessionTestCase(unittest.TestCase):
             self.assertIsInstance(cm, Transform)
 
     def test_get_sample_transforms(self):
-        wsp_path = "examples/data/8_color_data_set/8_color_ICS_simple.wsp"
+        wsp_path = "data/8_color_data_set/8_color_ICS_simple.wsp"
         sample_grp = 'DEN'
         sample_id = '101_DEN084Y5_15_E01_008_clean.fcs'
 
@@ -114,7 +122,7 @@ class SessionTestCase(unittest.TestCase):
             self.assertIsInstance(cm, Transform)
 
     def test_get_sample_gates(self):
-        wsp_path = "examples/data/8_color_data_set/8_color_ICS_simple.wsp"
+        wsp_path = "data/8_color_data_set/8_color_ICS_simple.wsp"
         sample_grp = 'DEN'
         sample_id = '101_DEN084Y5_15_E01_008_clean.fcs'
 
@@ -128,7 +136,7 @@ class SessionTestCase(unittest.TestCase):
             self.assertIsInstance(cm, Gate)
 
     def test_get_sample_gate_events(self):
-        wsp_path = "examples/data/8_color_data_set/8_color_ICS_simple.wsp"
+        wsp_path = "data/8_color_data_set/8_color_ICS_simple.wsp"
         sample_grp = 'DEN'
         sample_id = '101_DEN084Y5_15_E01_008_clean.fcs'
         gate_name = 'CD3+'
@@ -159,7 +167,7 @@ class SessionTestCase(unittest.TestCase):
         self.assertEqual(len(df_gated_events), 133670)
 
     def test_get_wsp_gated_events(self):
-        wsp_path = "examples/data/8_color_data_set/8_color_ICS_simple.wsp"
+        wsp_path = "data/8_color_data_set/8_color_ICS_simple.wsp"
         sample_grp = 'DEN'
         sample_id = '101_DEN084Y5_15_E01_008_clean.fcs'
         gate_name = 'CD3+'
@@ -179,7 +187,7 @@ class SessionTestCase(unittest.TestCase):
         self.assertEqual(len(df_gated_events[0]), 133670)
 
     def test_get_child_gate_ids(self):
-        wsp_path = "examples/data/8_color_data_set/8_color_ICS.wsp"
+        wsp_path = "data/8_color_data_set/8_color_ICS.wsp"
         sample_grp = 'DEN'
         gate_name = 'CD3+'
 
@@ -198,17 +206,17 @@ class SessionTestCase(unittest.TestCase):
             self.assertIn((gate_name, gate_path), truth)
 
     def test_ambiguous_gate_raises_in_get_child_gate_ids(self):
-        wsp_path = "examples/data/8_color_data_set/8_color_ICS.wsp"
+        wsp_path = "data/8_color_data_set/8_color_ICS.wsp"
         sample_grp = 'DEN'
         gate_name = 'IFNg+'
 
         fks = Session()
         fks.import_flowjo_workspace(wsp_path, ignore_missing_files=True)
 
-        self.assertRaises(KeyError, fks.get_child_gate_ids, sample_grp, gate_name)
+        self.assertRaises(GateReferenceError, fks.get_child_gate_ids, sample_grp, gate_name)
 
     def test_find_matching_gate_paths(self):
-        wsp_path = "examples/data/8_color_data_set/8_color_ICS.wsp"
+        wsp_path = "data/8_color_data_set/8_color_ICS.wsp"
         sample_grp = 'DEN'
         gate_name = 'IFNg+'
 
@@ -228,67 +236,79 @@ class SessionTestCase(unittest.TestCase):
 
     @staticmethod
     def test_add_poly1_gate():
-        fks = Session(fcs_samples=data1_sample)
-        fks.add_gate(poly1_gate)
-        fks.analyze_samples()
-        result = fks.get_gating_results('default', data1_sample.original_filename)
+        fks = Session()
+        sample_group = 'default'
+        fks.add_sample_group(sample_group)
+        fks.add_samples(data1_sample, sample_group)
+        fks.add_gate(poly1_gate, ('root',), sample_group)
+        fks.analyze_samples(sample_group)
+        result = fks.get_gating_results(sample_group, data1_sample.original_filename)
 
-        res_path = 'examples/data/gate_ref/truth/Results_Polygon1.txt'
+        res_path = 'data/gate_ref/truth/Results_Polygon1.txt'
         truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         np.testing.assert_array_equal(truth, result.get_gate_membership('Polygon1'))
 
     def test_get_gate_from_template(self):
-        fks = Session(fcs_samples=data1_sample)
-        fks.add_gate(poly1_gate)
+        fks = Session()
+        sample_group = 'default'
+        fks.add_sample_group(sample_group)
+        fks.add_samples(data1_sample, sample_group)
+        fks.add_gate(poly1_gate, ('root',), sample_group)
 
-        template_gate = fks.get_gate('default', 'Polygon1')
+        template_gate = fks.get_gate(sample_group, 'Polygon1')
 
         self.assertEqual(template_gate.gate_name, 'Polygon1')
 
     @staticmethod
     def test_add_matrix_poly4_gate():
-        fks = Session(fcs_samples=data1_sample)
+        fks = Session()
+        sample_group = 'default'
+        fks.add_sample_group(sample_group)
+        fks.add_samples(data1_sample, sample_group)
 
-        fks.add_comp_matrix(comp_matrix_01)
+        fks.add_comp_matrix(comp_matrix_01, sample_group)
 
         dim1 = Dimension('PE', compensation_ref='MySpill')
         dim2 = Dimension('PerCP', compensation_ref='MySpill')
         dims = [dim1, dim2]
 
-        poly_gate = gates.PolygonGate('Polygon4', None, dims, poly1_vertices)
-        fks.add_gate(poly_gate)
+        poly_gate = gates.PolygonGate('Polygon4', dims, poly1_vertices)
+        fks.add_gate(poly_gate, ('root',), sample_group)
 
-        res_path = 'examples/data/gate_ref/truth/Results_Polygon4.txt'
+        res_path = 'data/gate_ref/truth/Results_Polygon4.txt'
         truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
-        fks.analyze_samples()
-        result = fks.get_gating_results('default', data1_sample.original_filename)
+        fks.analyze_samples(sample_group)
+        result = fks.get_gating_results(sample_group, data1_sample.original_filename)
 
         np.testing.assert_array_equal(truth, result.get_gate_membership('Polygon4'))
 
     @staticmethod
     def test_add_transform_asinh_range1_gate():
-        fks = Session(fcs_samples=data1_sample)
-        fks.add_transform(asinh_xform1)
+        fks = Session()
+        sample_group = 'default'
+        fks.add_sample_group(sample_group)
+        fks.add_samples(data1_sample, sample_group)
+        fks.add_transform(asinh_xform1, sample_group)
 
         dim1 = Dimension('FL1-H', 'uncompensated', 'AsinH_10000_4_1', range_min=0.37, range_max=0.63)
         dims = [dim1]
 
-        rect_gate = gates.RectangleGate('ScaleRange1', None, dims)
-        fks.add_gate(rect_gate)
+        rect_gate = gates.RectangleGate('ScaleRange1', dims)
+        fks.add_gate(rect_gate, ('root',), sample_group)
 
-        res_path = 'examples/data/gate_ref/truth/Results_ScaleRange1.txt'
+        res_path = 'data/gate_ref/truth/Results_ScaleRange1.txt'
         truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
-        fks.analyze_samples()
-        result = fks.get_gating_results('default', data1_sample.original_filename)
+        fks.analyze_samples(sample_group)
+        result = fks.get_gating_results(sample_group, data1_sample.original_filename)
 
         np.testing.assert_array_equal(truth, result.get_gate_membership('ScaleRange1'))
 
     def test_wsp_export_simple_poly50(self):
-        wsp_path = "examples/data/simple_line_example/simple_poly_and_rect_v2_poly50.wsp"
-        fcs_path = "examples/data/simple_line_example/data_set_simple_line_100.fcs"
+        wsp_path = "data/simple_line_example/simple_poly_and_rect_v2_poly50.wsp"
+        fcs_path = "data/simple_line_example/data_set_simple_line_100.fcs"
         sample_group = 'my_group'
         sample_id = 'data_set_simple_line_100.fcs'
 
@@ -352,7 +372,7 @@ class SessionTestCase(unittest.TestCase):
         self.assertListEqual(s_sample_ids, [])
 
     def test_session_summary(self):
-        wsp_path = "examples/data/8_color_data_set/8_color_ICS.wsp"
+        wsp_path = "data/8_color_data_set/8_color_ICS.wsp"
         sample_grp = 'DEN'
 
         fks = Session()
@@ -368,7 +388,7 @@ class SessionTestCase(unittest.TestCase):
         self.assertEqual(group_stats.loaded_samples, 0)
 
     def test_analyze_samples_multiproc(self):
-        wsp_path = "examples/data/8_color_data_set/8_color_ICS_simple.wsp"
+        wsp_path = "data/8_color_data_set/8_color_ICS_simple.wsp"
         sample_grp = 'DEN'
         sample_id = '101_DEN084Y5_15_E01_008_clean.fcs'
         gate_name = 'CD3+'

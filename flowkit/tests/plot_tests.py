@@ -8,8 +8,8 @@ from bokeh.layouts import Column as bk_Column
 from matplotlib.pyplot import Figure as mpl_Figure
 import flowkit as fk
 
-fcs_path = 'examples/data/gate_ref/data1.fcs'
-gml_path = 'examples/data/gate_ref/gml/gml_all_gates.xml'
+fcs_path = 'data/gate_ref/data1.fcs'
+gml_path = 'data/gate_ref/gml/gml_all_gates.xml'
 test_sample = fk.Sample(fcs_path, subsample=2000)
 test_gating_strategy = fk.parse_gating_xml(gml_path)
 
@@ -110,10 +110,16 @@ class PlotTestCase(unittest.TestCase):
         fks.analyze_samples(group_name, sample_id=sample_name)
 
         for gate_name, ancestors in gate_tuples:
-            gate = fks.get_gate(group_name, gate_name, sample_id=sample_name)
-            if isinstance(gate, fk.gates.Quadrant):
+            try:
+                gate = fks.get_gate(group_name, gate_name, sample_id=sample_name)
+            except fk.exceptions.QuadrantReferenceError:
                 # cannot plot single quadrants of a quadrant gate
                 continue
+
+            if isinstance(gate, fk.gates.BooleanGate):
+                # can't plot Boolean gates
+                continue
+
             try:
                 p = fks.plot_gate('my_group', sample_name, gate_name)
             except NotImplementedError:

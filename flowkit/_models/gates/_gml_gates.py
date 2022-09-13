@@ -1,5 +1,12 @@
 """
 Module for GatingML gate classes
+
+All GML gates are intended for internal use and exist to convert XML-based
+GatingML elements to an intermediate Gate subclass. GML gates differ from
+their parent class in that they retain a parent gate reference which is
+used to assemble the gate tree. They also each provide a
+`convert_to_parent_class` for converting them to their parent class for
+public interaction in a GatingStrategy.
 """
 from .. import gates
 from ..._utils import xml_utils
@@ -29,12 +36,20 @@ class GMLRectangleGate(gates.RectangleGate):
             gating_namespace,
             data_type_namespace
         )
+        self.parent = parent_gate_name
 
         super().__init__(
             gate_name,
-            parent_gate_name,
             dimensions
         )
+
+    def convert_to_parent_class(self):
+        """
+        Convert to parent RectangleGate class.
+
+        :return: RectangleGate
+        """
+        return gates.RectangleGate(self.gate_name, self.dimensions)
 
 
 class GMLPolygonGate(gates.PolygonGate):
@@ -57,6 +72,7 @@ class GMLPolygonGate(gates.PolygonGate):
             gating_namespace,
             data_type_namespace
         )
+        self.parent = parent_gate_name
 
         vert_els = gate_element.findall(
             '%s:vertex' % gating_namespace,
@@ -71,10 +87,17 @@ class GMLPolygonGate(gates.PolygonGate):
 
         super().__init__(
             gate_name,
-            parent_gate_name,
             dimensions,
             vertices
         )
+
+    def convert_to_parent_class(self):
+        """
+        Convert to parent PolygonGate class.
+
+        :return: PolygonGate
+        """
+        return gates.PolygonGate(self.gate_name, self.dimensions, self.vertices)
 
 
 class GMLEllipsoidGate(gates.EllipsoidGate):
@@ -96,6 +119,7 @@ class GMLEllipsoidGate(gates.EllipsoidGate):
             gating_namespace,
             data_type_namespace
         )
+        self.parent = parent_gate_name
 
         # First, we'll get the center of the ellipse, contained in
         # a 'mean' element, that holds 2 'coordinate' elements
@@ -169,11 +193,20 @@ class GMLEllipsoidGate(gates.EllipsoidGate):
 
         super().__init__(
             gate_name,
-            parent_gate_name,
             dimensions,
             coordinates,
             covariance_matrix,
             distance_square
+        )
+
+    def convert_to_parent_class(self):
+        """
+        Convert to parent EllipsoidGate class.
+
+        :return: EllipsoidGate
+        """
+        return gates.EllipsoidGate(
+            self.gate_name, self.dimensions, self.coordinates, self.covariance_matrix, self.distance_square
         )
 
 
@@ -202,6 +235,7 @@ class GMLQuadrantGate(gates.QuadrantGate):
             gating_namespace,
             data_type_namespace
         )
+        self.parent = parent_gate_name
 
         # First, we'll check dimension count
         if len(dividers) < 1:
@@ -271,10 +305,17 @@ class GMLQuadrantGate(gates.QuadrantGate):
 
         super().__init__(
             gate_name,
-            parent_gate_name,
             dividers,
             quadrants
         )
+
+    def convert_to_parent_class(self):
+        """
+        Convert to parent QuadrantGate class.
+
+        :return: QuadrantGate
+        """
+        return gates.QuadrantGate(self.gate_name, self.dimensions, self.quadrants.values())
 
 
 class GMLBooleanGate(gates.BooleanGate):
@@ -297,6 +338,7 @@ class GMLBooleanGate(gates.BooleanGate):
             gating_namespace,
             data_type_namespace
         )
+        self.parent = parent_gate_name
         
         # boolean gates do not mix multiple operations, so there should be only
         # one of the following: 'and', 'or', or 'not'
@@ -357,7 +399,14 @@ class GMLBooleanGate(gates.BooleanGate):
 
         super().__init__(
             gate_name,
-            parent_gate_name,
             bool_type,
             gate_refs
         )
+
+    def convert_to_parent_class(self):
+        """
+        Convert to parent BooleanGate class.
+
+        :return: BooleanGate
+        """
+        return gates.BooleanGate(self.gate_name, self.type, self.gate_refs)

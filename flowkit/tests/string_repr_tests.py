@@ -5,18 +5,12 @@ import unittest
 import flowkit as fk
 from . import gating_strategy_prog_gate_tests as prog_test_data
 
-data1_fcs_path = 'examples/data/gate_ref/data1.fcs'
+data1_fcs_path = 'data/gate_ref/data1.fcs'
 data1_sample = fk.Sample(data1_fcs_path)
 
 
 class StringReprTestCase(unittest.TestCase):
     """Tests related to string representations of FlowKit classes"""
-    def test_vert_repr(self):
-        vert = fk.Vertex([500, 5])
-        vert_string = "Vertex([500, 5])"
-
-        self.assertEqual(repr(vert), vert_string)
-
     def test_dim_repr(self):
         poly1_dim1 = fk.Dimension('FL2-H', compensation_ref='FCS')
         dim_string = "Dimension(id: FL2-H)"
@@ -84,7 +78,7 @@ class StringReprTestCase(unittest.TestCase):
         self.assertEqual(repr(xform), xform_string)
 
     def test_sample_repr(self):
-        fcs_file_path = "examples/data/gate_ref/data1.fcs"
+        fcs_file_path = "data/gate_ref/data1.fcs"
         sample = fk.Sample(fcs_path_or_data=fcs_file_path)
         sample_string = "Sample(v2.0, B07, 8 channels, 13367 events)"
 
@@ -93,28 +87,28 @@ class StringReprTestCase(unittest.TestCase):
     def test_rect_gate_repr(self):
         gate = prog_test_data.range1_gate
 
-        repr_string = "RectangleGate(Range1, parent: None, dims: 1)"
+        repr_string = "RectangleGate(Range1, dims: 1)"
 
         self.assertEqual(repr(gate), repr_string)
 
     def test_poly_gate_repr(self):
         gate = prog_test_data.poly1_gate
 
-        repr_string = "PolygonGate(Polygon1, parent: None, vertices: 3)"
+        repr_string = "PolygonGate(Polygon1, vertices: 3)"
 
         self.assertEqual(repr(gate), repr_string)
 
     def test_ellipsoid_gate_repr(self):
         gate = prog_test_data.ellipse1_gate
 
-        repr_string = "EllipsoidGate(Ellipse1, parent: None, coords: [12.99701, 16.22941])"
+        repr_string = "EllipsoidGate(Ellipse1, coords: [12.99701, 16.22941])"
 
         self.assertEqual(repr(gate), repr_string)
 
     def test_quad_gate_repr(self):
         gate = prog_test_data.quad1_gate
 
-        repr_string = "QuadrantGate(Quadrant1, parent: None, quadrants: 4)"
+        repr_string = "QuadrantGate(Quadrant1, quadrants: 4)"
 
         self.assertEqual(repr(gate), repr_string)
 
@@ -132,9 +126,9 @@ class StringReprTestCase(unittest.TestCase):
             }
         ]
 
-        gate = fk.gates.BooleanGate('And1', None, 'and', gate_refs)
+        gate = fk.gates.BooleanGate('And1', 'and', gate_refs)
 
-        repr_string = "BooleanGate(And1, parent: None, type: and)"
+        repr_string = "BooleanGate(And1, type: and)"
 
         self.assertEqual(repr(gate), repr_string)
 
@@ -146,30 +140,30 @@ class StringReprTestCase(unittest.TestCase):
         gs.add_transform(prog_test_data.logicle_xform1)
         gs.add_transform(prog_test_data.hyperlog_xform1)
 
-        gs.add_gate(prog_test_data.poly1_gate)
+        gs.add_gate(prog_test_data.poly1_gate, ('root',))
 
         dim1 = fk.Dimension('PE', 'MySpill', 'Logicle_10000_0.5_4.5_0', range_min=0.31, range_max=0.69)
         dim2 = fk.Dimension('PerCP', 'MySpill', 'Logicle_10000_0.5_4.5_0', range_min=0.27, range_max=0.73)
         dims1 = [dim1, dim2]
 
-        rect_gate1 = fk.gates.RectangleGate('ScaleRect1', None, dims1)
-        gs.add_gate(rect_gate1)
+        rect_gate1 = fk.gates.RectangleGate('ScaleRect1', dims1)
+        gs.add_gate(rect_gate1, ('root',))
 
         dim3 = fk.Dimension('FITC', 'MySpill', 'Hyperlog_10000_1_4.5_0', range_min=0.12, range_max=0.43)
         dims2 = [dim3]
 
-        rect_gate2 = fk.gates.RectangleGate('ScalePar1', 'ScaleRect1', dims2)
-        gs.add_gate(rect_gate2)
+        rect_gate2 = fk.gates.RectangleGate('ScalePar1', dims2)
+        gs.add_gate(rect_gate2, ('root', 'ScaleRect1'))
 
         gs_string = "GatingStrategy(3 gates, 2 transforms, 1 compensations)"
 
         self.assertEqual(repr(gs), gs_string)
 
     def test_session_repr(self):
-        wsp_path = "examples/data/8_color_data_set/8_color_ICS_simple.wsp"
+        wsp_path = "data/8_color_data_set/8_color_ICS_simple.wsp"
         session = fk.Session()
         session.import_flowjo_workspace(wsp_path, ignore_missing_files=True)
 
-        session_string = "Session(3 samples [0 loaded], 3 sample groups)"
+        session_string = "Session(3 samples [0 loaded], 2 sample groups)"
 
         self.assertEqual(repr(session), session_string)
