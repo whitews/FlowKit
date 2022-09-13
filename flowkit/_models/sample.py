@@ -1130,7 +1130,6 @@ class Sample(object):
         events = self.get_events(source=source)
         events = events[idx, :]
 
-        # TODO: support exporting to HDF5 format, but as optional dependency/import
         if ext == '.csv':
             np.savetxt(
                 output_path,
