@@ -1,3 +1,6 @@
+"""
+Tests for GatingStrategy Class
+"""
 import unittest
 import numpy as np
 import flowkit as fk
@@ -7,9 +10,9 @@ data1_fcs_path = 'data/gate_ref/data1.fcs'
 data1_sample = fk.Sample(data1_fcs_path)
 
 poly1_vertices = [
-    fk.Vertex([5, 5]),
-    fk.Vertex([500, 5]),
-    fk.Vertex([500, 500])
+    [5, 5],
+    [500, 5],
+    [500, 500]
 ]
 poly1_dim1 = fk.Dimension('FL2-H', compensation_ref='FCS')
 poly1_dim2 = fk.Dimension('FL3-H', compensation_ref='FCS')
@@ -243,11 +246,11 @@ class GatingStrategyReusedGatesTestCase(unittest.TestCase):
         self.gs.add_gate(gate_a, ('root',))
 
         gate_b_vertices = [
-            fk.Vertex([0.328125, 0.1640625]),
-            fk.Vertex([0.296875, 0.1484375]),
-            fk.Vertex([0.30859375, 0.8515625]),
-            fk.Vertex([0.34765625, 0.3984375]),
-            fk.Vertex([0.3359375, 0.1875])
+            [0.328125, 0.1640625],
+            [0.296875, 0.1484375],
+            [0.30859375, 0.8515625],
+            [0.34765625, 0.3984375],
+            [0.3359375, 0.1875]
         ]
         gate_b = fk.gates.PolygonGate(
             'Gate_B', dimensions=[dim_fsc_w, dim_fsc_h], vertices=gate_b_vertices
@@ -255,11 +258,11 @@ class GatingStrategyReusedGatesTestCase(unittest.TestCase):
         self.gs.add_gate(gate_b, ('root', 'Gate_A'))
 
         gate_c_vertices = [
-            fk.Vertex([0.328125, 0.1640625]),
-            fk.Vertex([0.296875, 0.1484375]),
-            fk.Vertex([0.30859375, 0.8515625]),
-            fk.Vertex([0.34765625, 0.3984375]),
-            fk.Vertex([0.3359375, 0.1875])
+            [0.328125, 0.1640625],
+            [0.296875, 0.1484375],
+            [0.30859375, 0.8515625],
+            [0.34765625, 0.3984375],
+            [0.3359375, 0.1875]
         ]
         gate_c = fk.gates.PolygonGate(
             'Gate_C', dimensions=[dim_fsc_h, dim_fsc_w], vertices=gate_c_vertices
@@ -267,11 +270,11 @@ class GatingStrategyReusedGatesTestCase(unittest.TestCase):
         self.gs.add_gate(gate_c, ('root', 'Gate_A'))
 
         reused_parent_vertices = [
-            fk.Vertex([0.2629268137285685, 0.0625]),
-            fk.Vertex([0.24318837264468562, 0.03515625]),
-            fk.Vertex([0.21573453285608676, 0.0390625]),
-            fk.Vertex([0.29042797365869377, 0.24609375]),
-            fk.Vertex([0.29042797365869377, 0.1484375])
+            [0.2629268137285685, 0.0625],
+            [0.24318837264468562, 0.03515625],
+            [0.21573453285608676, 0.0390625],
+            [0.29042797365869377, 0.24609375],
+            [0.29042797365869377, 0.1484375]
         ]
 
         reused_parent_gate_1 = fk.gates.PolygonGate(
@@ -284,11 +287,11 @@ class GatingStrategyReusedGatesTestCase(unittest.TestCase):
         self.gs.add_gate(reused_parent_gate_2, ('root', 'Gate_A', 'Gate_C'))
 
         reused_child_vertices = [
-            fk.Vertex([0.28415161867527605, 0.11328125]),
-            fk.Vertex([0.3132637699981912, 0.203125]),
-            fk.Vertex([0.6896802981119161, 0.05078125]),
-            fk.Vertex([0.5692952580886116, 0.01953125]),
-            fk.Vertex([0.3192472844795108, 0.01953125])
+            [0.28415161867527605, 0.11328125],
+            [0.3132637699981912, 0.203125],
+            [0.6896802981119161, 0.05078125],
+            [0.5692952580886116, 0.01953125],
+            [0.3192472844795108, 0.01953125]
         ]
 
         reused_child_gate = fk.gates.PolygonGate(
