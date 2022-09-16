@@ -8,6 +8,7 @@ from anytree.exporter import DotExporter
 import numpy as np
 import networkx as nx
 from .._models import dimension
+from .._models.gate_node import GateNode
 # noinspection PyProtectedMember
 from .._models.gates._base_gate import Gate
 from .._models import gates as fk_gates
@@ -49,13 +50,16 @@ class GatingStrategy(object):
             f'{len(self.comp_matrices)} compensations)'
         )
 
-    def add_gate(self, gate, gate_path):
+    def add_gate(self, gate, gate_path, sample_id=None):
         """
-        Add a gate to the gating strategy, see `gates` module. The gate ID and gate path must be
-        unique in the gating strategy.
+        Add a gate to the gating strategy, see `gates` module. The gate ID and gate path
+        must be unique in the gating strategy. Custom sample gates may be added by specifying
+        an optional sample ID. Note, the gate & gate path must already exist prior to adding
+        custom sample gates.
 
         :param gate: instance from a subclass of the Gate class
         :param gate_path: complete tuple of gate IDs for unique set of gate ancestors
+        :param sample_id: text string for specifying given gate as a custom Sample gate
 
         :return: None
         """
@@ -77,37 +81,26 @@ class GatingStrategy(object):
             node = None
 
         if node is not None:
-            raise GateTreeError("Gate %s already exists" % abs_gate_path)
+            # A node was found. If no sample ID is given, the gate
+            # already exists and is the template gate.
+            if sample_id is None:
+                raise GateTreeError("Gate %s already exists" % abs_gate_path)
+            else:
+                # Attempt to create sample custom gate, GateNode.add_gate will
+                # raise a GateTreeError if it already exists.
+                node.add_custom_gate(sample_id, gate)
+        else:
+            # We need to create a new node in the tree.
+            # Get the parent Node so we can create it.
+            parent_abs_gate_path = "/" + "/".join(gate_path)
+            try:
+                parent_node = self.resolver.get(self._gate_tree, parent_abs_gate_path)
+            except anytree.ResolverError:
+                # this should never happen unless someone messed with the gate tree
+                raise GateTreeError("Parent gate %s doesn't exist" % parent_abs_gate_path)
 
-        parent_abs_gate_path = "/" + "/".join(gate_path)
-        try:
-            parent_node = self.resolver.get(self._gate_tree, parent_abs_gate_path)
-        except anytree.ResolverError:
-            raise GateTreeError("Parent gate %s doesn't exist" % parent_abs_gate_path)
-
-        new_node = anytree.Node(gate.gate_name, parent=parent_node, gate=gate)
-        parent_node_tuple = tuple(n.name for n in parent_node.path)
-        new_node_tuple = parent_node_tuple + (gate.gate_name,)
-        self._dag.add_node(new_node_tuple)
-        self._dag.add_edge(parent_node_tuple, new_node_tuple)
-
-        # Quadrant gates need special handling to add their individual quadrants as children.
-        # Other gates cannot have the main quadrant gate as a parent, they can only reference
-        # the individual quadrants as parents.
-        if isinstance(gate, fk_gates.QuadrantGate):
-            for q_id, q in gate.quadrants.items():
-                anytree.Node(q_id, parent=new_node, gate=q)
-
-                q_node_tuple = new_node_tuple + (q_id,)
-
-                self._dag.add_node(q_node_tuple)
-                self._dag.add_edge(new_node_tuple, q_node_tuple)
-
-        if isinstance(gate, fk_gates.BooleanGate):
-            bool_gate_refs = gate.gate_refs
-            for gate_ref in bool_gate_refs:
-                gate_ref_node_tuple = tuple(gate_ref['path']) + (gate_ref['ref'],)
-                self._dag.add_edge(gate_ref_node_tuple, new_node_tuple)
+            GateNode(gate, parent_node)
+            self._rebuild_dag()
 
     def get_gate(self, gate_name, gate_path=None):
         """
@@ -117,7 +110,7 @@ class GatingStrategy(object):
         :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
             Required if gate_name is ambiguous
         :return: Subclass of a Gate object
-        :raises KeyError: if gate ID is not found in gating strategy
+        :raises GateReferenceError: if gate ID is not found in gating strategy
         """
         node = self._get_gate_node(gate_name, gate_path)
 
@@ -281,6 +274,18 @@ class GatingStrategy(object):
         return self.comp_matrices[matrix_id]
 
     def _get_gate_node(self, gate_name, gate_path=None):
+        """
+        Retrieve a GateNode instance by its gate ID (gate name and optional gate_path).
+        A GateNode contains the Gate instance (and any custom sample gates). A GateNode
+        can also be used to navigate the gate tree independent of the GatingStrategy,
+        though the GateNode should not be used to modify the gate tree.
+
+        :param gate_name: text string of a gate name
+        :param gate_path: complete ordered tuple of gate names for unique set of gate ancestors.
+            Required if gate_name is ambiguous
+        :return: GateNode object
+        :raises GateReferenceError: if gate ID is not found in gating strategy
+        """
         node_matches = anytree.findall_by_attr(self._gate_tree, gate_name)
         node_match_count = len(node_matches)
 
