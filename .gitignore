@@ -39,5 +39,5 @@ wheels/
 /docs/_build/*
 
 # R stuff
-.RData/
+.RData
 .Rhistory
