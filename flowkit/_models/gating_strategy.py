@@ -767,6 +767,7 @@ class GatingStrategy(object):
         :param verbose: If True, print a line for each gate processed
         :return: GatingResults instance
         """
+        sample_id = sample.original_filename
         results = {}
 
         # The goal here is to avoid re-analyzing any gates.
@@ -802,12 +803,12 @@ class GatingStrategy(object):
             # we'll check for that. All quadrant sub-gates will get processed with the
             # main QuadrantGate
             try:
-                gate = self.get_gate(g_id, g_path)
+                gate = self.get_gate(g_id, g_path, sample_id=sample_id)
             except QuadrantReferenceError:
                 continue
 
             if verbose:
-                print("%s: processing gate %s" % (sample.original_filename, g_id))
+                print("%s: processing gate %s" % (sample_id, g_id))
 
             # look up parent results
             parent_results = None  # default to None
@@ -866,4 +867,4 @@ class GatingStrategy(object):
         if not cache_events:
             self.clear_cache()
 
-        return GatingResults(results, sample_id=sample.original_filename)
+        return GatingResults(results, sample_id=sample_id)
