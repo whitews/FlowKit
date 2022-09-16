@@ -282,6 +282,7 @@ def _convert_wsp_gate(wsp_gate, comp_matrix, xform_lut, ignore_transforms=False)
         gate = PolygonGate(wsp_gate.gate_name, new_dims, vertices)
     elif isinstance(wsp_gate, GMLRectangleGate):
         gate = copy.deepcopy(wsp_gate)
+        gate = gate.convert_to_parent_class()
         gate.dimensions = new_dims
     elif isinstance(wsp_gate, WSPEllipsoidGate):
         # FlowJo ellipse gates must be converted to approximate polygons.
