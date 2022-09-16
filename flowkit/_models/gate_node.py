@@ -60,3 +60,16 @@ class GateNode(anytree.Node):
 
         # If all the above passed, we simply store the custom gate
         self.custom_gates[sample_id] = gate
+
+    def get_gate(self, sample_id=None):
+        """
+        Get Gate instance from GateNode. Specify sample_id to get sample custom gate.
+        If sample_id is None or not found in GateNode, the template gate is returned.
+
+        :param sample_id: Sample ID string to lookup custom gate. If None or not found, template gate is returned
+        :return: Gate instance
+        """
+        if sample_id in self.custom_gates:
+            return self.custom_gates[sample_id]
+
+        return self.gate
