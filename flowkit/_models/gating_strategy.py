@@ -102,15 +102,20 @@ class GatingStrategy(object):
             GateNode(gate, parent_node)
             self._rebuild_dag()
 
-    def get_gate(self, gate_name, gate_path=None):
+    def get_gate(self, gate_name, gate_path=None, sample_id=None):
         """
         Retrieve a gate instance by its gate ID (gate name and optional gate_path).
+        If a sample_id is specified, the custom sample gate will be returned if it
+        exists.
 
         :param gate_name: text string of a gate name
         :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
             Required if gate_name is ambiguous
+        :param sample_id: Sample ID string to lookup custom gate. If None or not found, template gate is returned
         :return: Subclass of a Gate object
-        :raises GateReferenceError: if gate ID is not found in gating strategy
+        :raises
+            GateReferenceError: if gate ID is not found in gating strategy
+            QuadrantReferenceError: if gate ID references a single Quadrant (specify the QuadrantGate ID instead)
         """
         node = self._get_gate_node(gate_name, gate_path)
 
@@ -120,7 +125,7 @@ class GatingStrategy(object):
                 "%s references a Quadrant, specify the owning QuadrantGate %s instead" % (gate_name, node.parent)
             )
 
-        return node.gate
+        return node.get_gate(sample_id=sample_id)
 
     def _rebuild_dag(self):
         dag_edges = []
