@@ -933,7 +933,7 @@ def export_flowjo_wsp(group_gating_strategies, group_name, samples, file_handle)
     groups_el = etree.SubElement(root, "Groups")
     sample_list_el = etree.SubElement(root, "SampleList")
 
-    template_strategy = group_gating_strategies['template']
+    template_strategy = group_gating_strategies['gating_strategy']
     sample_strategies = group_gating_strategies['samples']
 
     # For now, we'll assume all the comps are in the template
