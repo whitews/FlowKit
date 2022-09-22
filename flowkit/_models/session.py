@@ -68,7 +68,7 @@ def _estimate_cpu_count_for_workload(sample_count, total_event_count):
     return proc_count
 
 
-def _gate_samples(gating_strategies, samples, cache_events, verbose, use_mp=False):
+def _gate_samples(gating_strategy, samples, cache_events, verbose, use_mp=False):
     # NOTE: Multiprocessing can fail for very large workloads (lots of gates) due
     #       to running out of memory. For those cases setting use_mp should be set
     #       to False in the Session.analyze_samples() method
@@ -90,7 +90,7 @@ def _gate_samples(gating_strategies, samples, cache_events, verbose, use_mp=Fals
                     '#### Processing gates for %d samples (multiprocessing is enabled - %d cpus) ####'
                     % (sample_count, proc_count)
                 )
-            data = [(gating_strategies[i], sample, cache_events, verbose) for i, sample in enumerate(samples)]
+            data = [(gating_strategy, sample, cache_events, verbose) for i, sample in enumerate(samples)]
 
             async_results = [pool.apply_async(_gate_sample, args=(d,)) for d in data]
             # all_results = pool.map_async(_gate_sample, data).get()
@@ -105,7 +105,7 @@ def _gate_samples(gating_strategies, samples, cache_events, verbose, use_mp=Fals
 
         all_results = []
         for i, sample in enumerate(samples):
-            results = gating_strategies[i].gate_sample(sample, verbose=verbose)
+            results = gating_strategy.gate_sample(sample, verbose=verbose)
             all_results.append(results)
 
     return all_results
@@ -115,7 +115,7 @@ class Session(object):
     """
     The Session class is intended as the main interface in FlowKit for complex flow cytometry analysis.
     A Session represents a collection of gating strategies and FCS samples. FCS samples are added and assigned to sample
-    groups, and each sample group has a single gating strategy template. The gates in a template can be customized
+    groups, and each sample group has a single gating strategy. The gates in the gating strategy can be customized
     per sample.
 
     :param fcs_samples: str or list. If given a string, it can be a directory path or a file path.
@@ -156,11 +156,11 @@ class Session(object):
         sg_list = []
 
         for group_name, group_dict in self._sample_group_lut.items():
-            template_gs = group_dict['template']
+            gs = group_dict['gating_strategy']
 
             loaded_sample_ids = self.get_group_sample_ids(group_name, loaded_only=True)
-            gate_ids = template_gs.get_gate_ids()
-            gate_depth = template_gs.get_max_depth()
+            gate_ids = gs.get_gate_ids()
+            gate_depth = gs.get_max_depth()
 
             sg_info = {
                 'group_name': group_name,
@@ -182,7 +182,7 @@ class Session(object):
         Create a new sample group to the session. The group name must be unique to the session.
 
         :param group_name: a text string representing the sample group
-        :param gating_strategy: an optional gating strategy to use for the group template. Can be
+        :param gating_strategy: an optional gating strategy to use for the group. Can be
             a path or file to a GatingML 2.0 file or a GatingStrategy instance. If None, then a new,
             blank gating strategy will be created.
         :return: None
@@ -204,8 +204,8 @@ class Session(object):
             )
 
         self._sample_group_lut[group_name] = {
-            'template': gating_strategy,
-            'samples': {}
+            'gating_strategy': gating_strategy,
+            'samples': []
         }
 
     def import_flowjo_workspace(
@@ -291,7 +291,6 @@ class Session(object):
         :return: None
         """
         group = self._sample_group_lut[group_name]
-        template = group['template']
 
         if isinstance(sample_ids, str):
             sample_ids = [sample_ids]
@@ -301,7 +300,7 @@ class Session(object):
                 warnings.warn("Sample %s is already assigned to the group %s...skipping" % (sample_id, group_name))
                 continue
 
-            group['samples'][sample_id] = copy.deepcopy(template)
+            group['samples'].append(sample_id)
 
     def get_sample_ids(self, loaded_only=True):
         """
@@ -341,7 +340,7 @@ class Session(object):
         :return: list of Sample IDs
         """
         # convert to list instead of dict_keys
-        sample_ids = list(self._sample_group_lut[group_name]['samples'].keys())
+        sample_ids = list(self._sample_group_lut[group_name]['samples'])
         if loaded_only:
             loaded_sample_ids = self.get_sample_ids()
             sample_ids = list(set(sample_ids).intersection(set(loaded_sample_ids)))
@@ -375,27 +374,25 @@ class Session(object):
         :return: list of gate ID strings
         """
         group = self._sample_group_lut[group_name]
-        template = group['template']
-        return template.get_gate_ids()
+        gs = group['gating_strategy']
+        return gs.get_gate_ids()
 
-    def add_gate(self, gate, gate_path, group_name):
+    def add_gate(self, gate, gate_path, group_name, sample_id=None):
         """
-        Add a Gate instance to a sample group in the session.
+        Add a Gate instance to a sample group's gating strategy. The gate ID and gate path
+        must be unique in the gating strategy. Custom sample gates may be added by specifying
+        an optional sample ID. Note, the gate & gate path must already exist prior to adding
+        custom sample gates.
 
         :param gate: an instance of a Gate subclass
         :param gate_path: complete tuple of gate IDs for unique set of gate ancestors
         :param group_name: a text string representing the sample group
+        :param sample_id: text string for specifying given gate as a custom Sample gate
         :return: None
         """
         group = self._sample_group_lut[group_name]
-        template = group['template']
-        s_members = group['samples']
-
-        # first, add gate to template, then add a copy to each group sample gating strategy
-        # TODO: should the deepcopy occur in the GatingStrategy class?
-        template.add_gate(copy.deepcopy(gate), gate_path=gate_path)
-        for s_id, s_strategy in s_members.items():
-            s_strategy.add_gate(copy.deepcopy(gate), gate_path=gate_path)
+        gs = group['gating_strategy']
+        gs.add_gate(copy.deepcopy(gate), gate_path=gate_path, sample_id=sample_id)
 
     def add_transform(self, transform, group_name):
         """
@@ -406,13 +403,8 @@ class Session(object):
         :return: None
         """
         group = self._sample_group_lut[group_name]
-        template = group['template']
-        s_members = group['samples']
-
-        # first, add gate to template, then add a copy to each group sample gating strategy
-        template.add_transform(copy.deepcopy(transform))
-        for s_id, s_strategy in s_members.items():
-            s_strategy.add_transform(copy.deepcopy(transform))
+        gs = group['gating_strategy']
+        gs.add_transform(copy.deepcopy(transform))
 
     def get_group_transforms(self, group_name):
         """
@@ -423,7 +415,7 @@ class Session(object):
         :return: list of Transform instances
         """
         group = self._sample_group_lut[group_name]
-        gating_strategy = group['template']
+        gating_strategy = group['gating_strategy']
 
         return list(gating_strategy.transformations.values())
 
@@ -437,7 +429,7 @@ class Session(object):
         :return: an instance of a Transform subclass
         """
         group = self._sample_group_lut[group_name]
-        gating_strategy = group['template']
+        gating_strategy = group['gating_strategy']
         xform = gating_strategy.get_transform(transform_id)
 
         return xform
@@ -451,13 +443,8 @@ class Session(object):
         :return: None
         """
         group = self._sample_group_lut[group_name]
-        template = group['template']
-        s_members = group['samples']
-
-        # first, add gate to template, then add a copy to each group sample gating strategy
-        template.add_comp_matrix(copy.deepcopy(matrix))
-        for s_id, s_strategy in s_members.items():
-            s_strategy.add_comp_matrix(copy.deepcopy(matrix))
+        gs = group['gating_strategy']
+        gs.add_comp_matrix(copy.deepcopy(matrix))
 
     def get_group_comp_matrices(self, group_name):
         """
@@ -468,13 +455,9 @@ class Session(object):
         :return: list of Matrix instances
         """
         group = self._sample_group_lut[group_name]
-        comp_matrices = []
+        gating_strategy = group['gating_strategy']
 
-        for sample_id in group['samples']:
-            gating_strategy = group['samples'][sample_id]
-            comp_matrices.extend(list(gating_strategy.comp_matrices.values()))
-
-        return comp_matrices
+        return gating_strategy.comp_matrices.values()
 
     def get_comp_matrix(self, group_name, sample_id, matrix_id):
         """
@@ -487,7 +470,7 @@ class Session(object):
         :return: a Matrix instance
         """
         group = self._sample_group_lut[group_name]
-        gating_strategy = group['samples'][sample_id]
+        gating_strategy = group['gating_strategy']
         comp_mat = gating_strategy.get_comp_matrix(matrix_id)
         return comp_mat
 
@@ -500,9 +483,9 @@ class Session(object):
         :return: list of gate paths (list of tuples)
         """
         group = self._sample_group_lut[group_name]
-        template = group['template']
+        gs = group['gating_strategy']
 
-        return template.find_matching_gate_paths(gate_name)
+        return gs.find_matching_gate_paths(gate_name)
 
     def get_child_gate_ids(self, group_name, gate_name, gate_path=None):
         """
@@ -516,11 +499,11 @@ class Session(object):
         :return: list of gate IDs (each gate ID is a gate name string & tuple of the gate path)
         """
         group = self._sample_group_lut[group_name]
-        template = group['template']
+        gs = group['gating_strategy']
 
         if gate_path is None:
             # need to make sure the gate name isn't used more than once (ambiguous gate name)
-            gate_paths = template.find_matching_gate_paths(gate_name)
+            gate_paths = gs.find_matching_gate_paths(gate_name)
 
             if len(gate_paths) > 1:
                 raise GateReferenceError(
@@ -534,7 +517,7 @@ class Session(object):
         child_gate_path.append(gate_name)
         child_gate_path = tuple(child_gate_path)
 
-        child_gates = template.get_child_gates(gate_name, gate_path)
+        child_gates = gs.get_child_gates(gate_name, gate_path)
         child_gate_ids = []
 
         for child_gate in child_gates:
@@ -553,13 +536,9 @@ class Session(object):
         :return: Subclass of a Gate object
         """
         group = self._sample_group_lut[group_name]
-        if sample_id is None:
-            # get the default template gate
-            gating_strategy = group['template']
-        else:
-            # get the custom sample gate
-            gating_strategy = group['samples'][sample_id]
-        gate = gating_strategy.get_gate(gate_name, gate_path=gate_path)
+        gating_strategy = group['gating_strategy']
+        gate = gating_strategy.get_gate(gate_name, gate_path=gate_path, sample_id=sample_id)
+
         return gate
 
     def get_sample_gates(self, group_name, sample_id):
@@ -571,13 +550,13 @@ class Session(object):
         :return: list of Gate subclass instances
         """
         group = self._sample_group_lut[group_name]
-        gating_strategy = group['samples'][sample_id]
+        gating_strategy = group['gating_strategy']
         gate_tuples = gating_strategy.get_gate_ids()
 
         sample_gates = []
 
         for gate_name, ancestors in gate_tuples:
-            gate = gating_strategy.get_gate(gate_name, gate_path=ancestors)
+            gate = gating_strategy.get_gate(gate_name, gate_path=ancestors, sample_id=sample_id)
             sample_gates.append(gate)
 
         return sample_gates
@@ -590,6 +569,9 @@ class Session(object):
         :param sample_id: a text string representing a Sample instance
         :return: list of Matrix instances
         """
+        # TODO: this no longer works b/c GS is not copied per Sample
+        #    Need to investigate whether comp matrices & transforms of same name are
+        #    actually different within a FlowJo WSP file.
         group = self._sample_group_lut[group_name]
         gating_strategy = group['samples'][sample_id]
 
@@ -603,6 +585,7 @@ class Session(object):
         :param sample_id: a text string representing a Sample instance
         :return: list of Transform subclass instances
         """
+        # TODO: this no longer works b/c GS is not copied per Sample
         group = self._sample_group_lut[group_name]
         gating_strategy = group['samples'][sample_id]
 
@@ -619,7 +602,7 @@ class Session(object):
             'dict', or 'JSON' (default is 'ascii')
         :return: gate hierarchy as a text string or a dictionary
         """
-        return self._sample_group_lut[group_name]['template'].get_gate_hierarchy(output, **kwargs)
+        return self._sample_group_lut[group_name]['gating_strategy'].get_gate_hierarchy(output, **kwargs)
     # end pass through methods for GatingStrategy
 
     def export_gml(self, file_handle, group_name, sample_id=None):
@@ -632,10 +615,9 @@ class Session(object):
         :return: None
         """
         group = self._sample_group_lut[group_name]
-        if sample_id is not None:
-            gating_strategy = group['samples'][sample_id]
-        else:
-            gating_strategy = group['template']
+        gating_strategy = group['gating_strategy']
+
+        # TODO: export_gatingml function needs to be updated to handle sample_id in GS
         xml_utils.export_gatingml(gating_strategy, file_handle)
 
     def export_wsp(self, file_handle, group_name):
@@ -695,13 +677,12 @@ class Session(object):
 
             samples = [self.get_sample(sample_id)]
 
-        gating_strategies = []
+        gating_strategy = self._sample_group_lut[group_name]['gating_strategy']
         samples_to_run = []
         for s in samples:
             if s is None:
                 # sample hasn't been added to Session
                 continue
-            gating_strategies.append(self._sample_group_lut[group_name]['samples'][s.original_filename])
             samples_to_run.append(s)
 
             # clear any existing results
@@ -711,7 +692,7 @@ class Session(object):
                     gc.collect()
 
         results = _gate_samples(
-            gating_strategies,
+            gating_strategy,
             samples_to_run,
             cache_events,
             verbose, use_mp=False if debug else use_mp
