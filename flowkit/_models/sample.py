@@ -1026,7 +1026,10 @@ class Sample(object):
 
                 ignore_keywords.extend([gain_keyword, scale_keyword, range_keyword])
         else:
-            # for 'raw', 'comp', or 'xform' the event values
+            # for 'raw', 'comp', or 'xform' cases, set data type to float
+            metadata_dict['datatype'] = 'F'
+
+            # And set proper values for channel metadata
             for _, channel_row in self.channels.iterrows():
                 chan_num = channel_row['channel_number']
 
@@ -1099,6 +1102,15 @@ class Sample(object):
                 "Exporting original events as CSV will not include the metadata (gain, timestep, etc.) "
                 "to properly interpret the exported event values."
             )
+        elif ext == '.fcs' and source == 'orig':
+            # Related to above: If exporting original events as an FCS file,
+            # verify the data type is float ('F'). FlowIO doesn't support
+            # creating non-float FCS files
+            data_type = self.metadata['datatype']
+            if data_type != 'F':
+                raise NotImplementedError(
+                    "Exporting original events is not supported for FCS files with data type %s." % data_type
+                )
 
         if directory is not None:
             output_path = os.path.join(directory, filename)
