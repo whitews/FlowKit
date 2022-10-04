@@ -58,29 +58,20 @@ class SampleExportTestCase(unittest.TestCase):
             exported_sample._raw_events.astype(np.float32)
         )
 
-    def test_export_fcs_as_orig_with_gain(self):
-        # This test uses a file where the preprocessing makes the orig & raw events different.
-        # File data1.fcs has 2 channels that specify a gain value other than 1.0.
-        # The purpose here is to verify that importing the exported file has the same raw events
-        # as the original file's raw events.
-        # This test exports the orig events to make sure the gain values were exported correctly.
+    def test_export_fcs_as_orig_with_int_type_fails(self):
+        # This test uses a file where with int data type.
+        # FlowIO only supports creating FCS files with float data type.
+        # A NotImplementedError should be raised when attempting to
+        # export this file's original events
         sample = Sample(fcs_path_or_data=data1_fcs_path, cache_original_events=True)
 
-        sample.export("test_fcs_export.fcs", source='orig', directory="data", include_metadata=True)
-
-        exported_fcs_file = "data/test_fcs_export.fcs"
-        exported_sample = Sample(fcs_path_or_data=exported_fcs_file)
-        os.unlink(exported_fcs_file)
-
-        self.assertIsInstance(exported_sample, Sample)
-
-        # When the events are exported, they are saved as single precision (32-bit). We'll test the
-        # arrays with the original sample data converted to 32-bit float. The original sample data
-        # was also originally in 32-bit. Comparing both in single precision is then the most
-        # "correct" thing to do here.
-        np.testing.assert_array_equal(
-            sample._raw_events.astype(np.float32),
-            exported_sample._raw_events.astype(np.float32)
+        self.assertRaises(
+            NotImplementedError,
+            sample.export,
+            "test_fcs_export.fcs",
+            source='orig',
+            directory="data",
+            include_metadata=True
         )
 
     def test_export_fcs_as_raw_with_gain(self):
