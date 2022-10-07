@@ -886,7 +886,7 @@ class Session(object):
         :return: A Bokeh Figure object containing the interactive scatter plot.
         """
         group = self._sample_group_lut[group_name]
-        gating_strategy = group['samples'][sample_id]
+        gating_strategy = group['gating_strategy']
 
         if gate_path is None:
             # verify the gate_name isn't ambiguous
@@ -1135,7 +1135,7 @@ class Session(object):
         """
         sample = self.get_sample(sample_id)
         group = self._sample_group_lut[group_name]
-        gating_strategy = group['samples'][sample_id]
+        gating_strategy = group['gating_strategy']
 
         x_index = sample.get_channel_index(x_dim.id)
         y_index = sample.get_channel_index(y_dim.id)

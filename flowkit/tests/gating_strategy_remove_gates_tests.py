@@ -230,7 +230,7 @@ class GatingStrategyRemoveGatesTestCase(unittest.TestCase):
         )
         session.add_gate(dim_cd107a_pos_range2, gate_path_cd4_or_cd8_pos, group_name=sample_group)
 
-        self.gating_strategy = session._sample_group_lut[sample_group]['template']
+        self.gating_strategy = session._sample_group_lut[sample_group]['gating_strategy']
 
     def test_remove_quadrant_fails(self):
         gs = copy.deepcopy(self.gating_strategy)
