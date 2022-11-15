@@ -55,14 +55,26 @@ def _estimate_cpu_count_for_workload(sample_count, total_event_count):
     return proc_count
 
 
-def _gate_samples(gating_strategy, samples, cache_events, verbose, use_mp=False):
+def gate_samples(sample_data, cache_events, verbose, use_mp=False):
+    """
+    Process gating strategies for multiple Sample instances. Attempts to use
+    multiprocessing to optimize analysis.
+
+    :param sample_data: list of dictionaries where keys are 'gating_strategy' & 'sample'
+    :param cache_events: whether to cache processed event data in each GatingStrategy
+    :param verbose: enables printing of progress status
+    :param use_mp: enables multiprocessing
+    :return: List of GatingResults instances
+    """
     # NOTE: Multiprocessing can fail for very large workloads (lots of gates) due
     #       to running out of memory. For those cases setting use_mp should be set
     #       to False in the Session.analyze_samples() method
-    sample_count = len(samples)
+
+    # sample_data is a list of dictionaries, where each contains keys: 'gating_strategy' & 'sample'
+    sample_count = len(sample_data)
 
     # get total number of data values for all samples
-    event_dim_info = [(s.event_count, len(s.pnn_labels)) for s in samples]
+    event_dim_info = [(sd['sample'].event_count, len(sd['sample'].pnn_labels)) for sd in sample_data]
     total_data_size = sum([event_count * dim_count for event_count, dim_count in event_dim_info])
 
     proc_count = _estimate_cpu_count_for_workload(sample_count, total_data_size)
@@ -77,7 +89,7 @@ def _gate_samples(gating_strategy, samples, cache_events, verbose, use_mp=False)
                     '#### Processing gates for %d samples (multiprocessing is enabled - %d cpus) ####'
                     % (sample_count, proc_count)
                 )
-            data = [(gating_strategy, sample, cache_events, verbose) for i, sample in enumerate(samples)]
+            data = [(sd['gating_strategy'], sd['sample'], cache_events, verbose) for sd in sample_data]
 
             async_results = [pool.apply_async(_gate_sample, args=(d,)) for d in data]
             # all_results = pool.map_async(_gate_sample, data).get()
@@ -91,8 +103,8 @@ def _gate_samples(gating_strategy, samples, cache_events, verbose, use_mp=False)
             print('#### Processing gates for %d samples (multiprocessing is disabled) ####' % sample_count)
 
         all_results = []
-        for i, sample in enumerate(samples):
-            results = gating_strategy.gate_sample(sample, verbose=verbose)
+        for sd in sample_data:
+            results = sd['gating_strategy'].gate_sample(sd['sample'], verbose=verbose)
             all_results.append(results)
 
     return all_results
