@@ -11,7 +11,7 @@ from .._conf import debug
 from .._models.gating_strategy import GatingStrategy
 from .._models import gates, dimension
 from .._models.sample import Sample
-from .._utils import plot_utils, xml_utils, wsp_utils, sample_utils
+from .._utils import plot_utils, xml_utils, wsp_utils, sample_utils, gating_utils
 from ..exceptions import GateReferenceError
 import warnings
 
@@ -63,14 +63,12 @@ class Session(object):
         for group_name, group_dict in self._sample_group_lut.items():
             gs = group_dict['gating_strategy']
 
-            loaded_sample_ids = self.get_group_sample_ids(group_name, loaded_only=True)
             gate_ids = gs.get_gate_ids()
             gate_depth = gs.get_max_depth()
 
             sg_info = {
                 'group_name': group_name,
                 'samples': len(group_dict['samples']),
-                'loaded_samples': len(loaded_sample_ids),
                 'gates': len(gate_ids),
                 'max_gate_depth': gate_depth
             }
@@ -99,7 +97,7 @@ class Session(object):
         if isinstance(gating_strategy, GatingStrategy):
             gating_strategy = gating_strategy
         elif isinstance(gating_strategy, str) or isinstance(gating_strategy, io.IOBase):
-            # assume a path to an XML file representing either a GatingML document or FlowJo workspace
+            # assume a path to an XML file representing a GatingML document
             gating_strategy = xml_utils.parse_gating_xml(gating_strategy)
         elif gating_strategy is None:
             gating_strategy = GatingStrategy()
@@ -112,52 +110,6 @@ class Session(object):
             'gating_strategy': gating_strategy,
             'samples': []
         }
-
-    def import_flowjo_workspace(
-            self,
-            workspace_file_or_path,
-            ignore_missing_files=False,
-            ignore_transforms=False
-    ):
-        """
-        Imports a FlowJo 10 workspace into the Session. Each sample group in the workspace will
-        be a sample group in the FlowKit session. Referenced samples in the workspace will be imported as
-        references in the session. Ideally, these samples should have already been loaded into the session,
-        and a warning will be issued for each sample reference that has not yet been loaded.
-
-        :param workspace_file_or_path: WSP workspace file as a file name/path, file object, or file-like object
-        :param ignore_missing_files: Controls whether UserWarning messages are issued for FCS files found in the
-            workspace that have not yet been loaded in the Session. Default is False, displaying warnings.
-        :param ignore_transforms: Controls whether transformations are applied to the gate definitions within the
-            FlowJo workspace. Useful for extracting gate vertices in the un-transformed space. Default is False.
-        :return: None
-        """
-        wsp_sample_groups = wsp_utils.parse_wsp(workspace_file_or_path, ignore_transforms=ignore_transforms)
-        for group_name, sample_data in wsp_sample_groups.items():
-            for sample, data_dict in sample_data.items():
-                if sample not in self.sample_lut:
-                    self.sample_lut[sample] = None
-                    if not ignore_missing_files:
-                        msg = "Sample %s has not been added to the session. \n" % sample
-                        msg += "A GatingStrategy was loaded for this sample ID, but the file needs to be added " \
-                               "to the Session prior to running the analyze_samples method."
-                        warnings.warn(msg)
-
-                gs = GatingStrategy()
-
-                for gate_dict in data_dict['gates']:
-                    gs.add_gate(gate_dict['gate'], gate_path=gate_dict['gate_path'])
-
-                matrix = data_dict['compensation']
-                if isinstance(matrix, Matrix):
-                    gs.comp_matrices[matrix.id] = matrix
-                gs.transformations = {xform.id: xform for xform in data_dict['transforms']}
-
-                # group likely doesn't exist for the 1st sample, so try to create it
-                if group_name not in self._sample_group_lut:
-                    self.add_sample_group(group_name, gs)
-
-                self.assign_samples(sample, group_name)
 
     def add_samples(self, fcs_samples, group_name=None):
         """
@@ -176,11 +128,8 @@ class Session(object):
         for s in new_samples:
             s.subsample_events(self.subsample_count)
             if s.original_filename in self.sample_lut:
-                # sample ID may have been added via a FlowJo workspace,
-                # check if Sample value is None
-                if self.sample_lut[s.original_filename] is not None:
-                    warnings.warn("A sample with ID %s already exists...skipping" % s.original_filename)
-                    continue
+                warnings.warn("A sample with ID %s already exists...skipping" % s.original_filename)
+                continue
             self.sample_lut[s.original_filename] = s
 
             # assign to group if specified
@@ -207,21 +156,15 @@ class Session(object):
 
             group['samples'].append(sample_id)
 
-    def get_sample_ids(self, loaded_only=True):
+    def get_sample_ids(self, group_name=None):
         """
         Retrieve the list of Sample IDs that have been loaded or referenced in the Session.
 
-        :param loaded_only: only return IDs for samples loaded in the Session (relevant
-            when a FlowJo workspace was imported without samples)
-
         :return: list of Sample ID strings
         """
-        if loaded_only:
-            sample_ids = []
-
-            for k, v in self.sample_lut.items():
-                if isinstance(v, Sample):
-                    sample_ids.append(k)
+        if group_name is not None:
+            # convert to list instead of dict_keys
+            sample_ids = list(self._sample_group_lut[group_name]['samples'])
         else:
             sample_ids = list(self.sample_lut.keys())
 
@@ -235,33 +178,27 @@ class Session(object):
         """
         return list(self._sample_group_lut.keys())
 
-    def get_group_sample_ids(self, group_name, loaded_only=True):
+    def get_group_sample_ids(self, group_name):
         """
         Retrieve the list of Sample IDs belonging to the specified sample group.
         
         :param group_name: a text string representing the sample group
-        :param loaded_only: only return IDs for samples loaded in the Session (relevant
-            when a FlowJo workspace was imported without samples)
         :return: list of Sample IDs
         """
         # convert to list instead of dict_keys
         sample_ids = list(self._sample_group_lut[group_name]['samples'])
-        if loaded_only:
-            loaded_sample_ids = self.get_sample_ids()
-            sample_ids = list(set(sample_ids).intersection(set(loaded_sample_ids)))
 
         return sample_ids
 
     def get_group_samples(self, group_name):
         """
         Retrieve the list of Sample instances belonging to the specified sample group.
-        Only samples that have been loaded into the Session are returned.
 
         :param group_name: a text string representing the sample group
         :return: list of Sample instances
         """
         # don't return samples that haven't been loaded
-        sample_ids = self.get_group_sample_ids(group_name, loaded_only=True)
+        sample_ids = self.get_group_sample_ids(group_name)
 
         samples = []
         for s_id in sample_ids:
@@ -583,12 +520,17 @@ class Session(object):
             samples = [self.get_sample(sample_id)]
 
         gating_strategy = self._sample_group_lut[group_name]['gating_strategy']
-        samples_to_run = []
+        sample_data_to_run = []
         for s in samples:
             if s is None:
                 # sample hasn't been added to Session
                 continue
-            samples_to_run.append(s)
+            sample_data_to_run.append(
+                {
+                    'gating_strategy': gating_strategy,
+                    'sample': s
+                }
+            )
 
             # clear any existing results
             if group_name in self._results_lut:
@@ -596,11 +538,11 @@ class Session(object):
                     del self._results_lut[group_name][sample_id]
                     gc.collect()
 
-        results = _gate_samples(
-            gating_strategy,
-            samples_to_run,
+        results = gating_utils.gate_samples(
+            sample_data_to_run,
             cache_events,
-            verbose, use_mp=False if debug else use_mp
+            verbose,
+            use_mp=False if debug else use_mp
         )
 
         if group_name not in self._results_lut:
@@ -622,7 +564,7 @@ class Session(object):
             gating_result = self._results_lut[group_name][sample_id]
         except KeyError:
             raise KeyError(
-                "No results for for %s in group %s. Have you run `analyze_samples`?" % (sample_id, group_name)
+                "No results for %s in group %s. Have you run `analyze_samples`?" % (sample_id, group_name)
             )
         return copy.deepcopy(gating_result)
 
@@ -693,68 +635,6 @@ class Session(object):
             events_df = events_df[gate_idx]
 
         return events_df
-
-    def get_wsp_gated_events(self, group_name, sample_ids=None, gate_name=None, gate_path=None):
-        """
-        Convert gated events in FlowJo WSP sample group to
-        list of compensated and transformed DataFrames.
-
-        :param group_name: a text string representing the sample group
-        :param sample_ids: a list of Sample ID strings
-        :param gate_name: text string of a gate ID. If None, all Sample events will be returned (i.e. un-gated)
-        :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
-            Required if gate_name is ambiguous
-        :return: a list of pandas DataFrames with the gated events, compensated & transformed according
-            to the group's compensation matrix and transforms
-        """
-
-        if sample_ids is None:
-            sample_ids = self.get_group_sample_ids(group_name)
-
-        df_events_list = []
-
-        for sample_id in sample_ids:
-            # determine sample's comp matrix...possible there are many
-            comp_matrices = self.get_sample_comp_matrices(group_name, sample_id)
-
-            if len(comp_matrices) > 1:
-                # choose first transform, we'll verify the rest match it
-                ref_cm = comp_matrices[0]
-
-                for cm in comp_matrices:
-                    diff_mat = ref_cm.matrix != cm.matrix
-                    if np.sum(diff_mat) != 0:
-                        warnings.warn(
-                            "Sample %s has multiple comp matrices that differ, choosing the 1st." % sample_id,
-                            UserWarning
-                        )
-            elif len(comp_matrices) == 1:
-                ref_cm = comp_matrices[0]
-            else:
-                ref_cm = None
-
-            xforms = self.get_sample_transforms(group_name, sample_id)
-
-            xform_lut = {xform.id: xform for xform in xforms if not xform.id.startswith('Comp')}
-
-            df = self.get_gate_events(
-                group_name=group_name,
-                sample_id=sample_id,
-                gate_name=gate_name,
-                gate_path=gate_path,
-                matrix=ref_cm,
-                transform=xform_lut,
-            )
-
-            # TODO: not sure if this column merging is best to do here
-            df.columns = [' '.join(col).strip() for col in df.columns]
-
-            df.insert(0, 'sample_group', group_name)
-            df.insert(1, 'sample_id', sample_id)
-
-            df_events_list.append(df)
-
-        return df_events_list
 
     def plot_gate(
             self,
