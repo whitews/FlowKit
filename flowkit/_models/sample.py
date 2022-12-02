@@ -373,7 +373,9 @@ class Sample(object):
             random_seed=1
     ):
         """
-        Returns a sub-sample of FCS raw events.
+        Stores a set of sub-sampled indices for event data. Sub-sampled events
+        can be accessed via the `get_events` method by setting the keyword
+        argument `subsample=True`.
 
         Returns NumPy array if sub-sampling succeeds
         Also updates self.subsample_indices
@@ -382,6 +384,7 @@ class Sample(object):
             events in the Sample is less than the requested sub-sample count, then the
             maximum number of available events is used for the sub-sample.
         :param random_seed: Random seed used for sub-sampling events
+        :return: None
         """
         # get raw event count as it might be less than original event count
         # due to filtered negative scatter events
