@@ -10,7 +10,6 @@ from bokeh.models import Title
 from .._conf import debug
 from .._models.gating_strategy import GatingStrategy
 from .._models import gates, dimension
-from .._models.sample import Sample
 from .._utils import plot_utils, xml_utils, wsp_utils, sample_utils, gating_utils
 from ..exceptions import GateReferenceError
 import warnings
@@ -18,21 +17,16 @@ import warnings
 
 class Session(object):
     """
-    The Session class is intended as the main interface in FlowKit for complex flow cytometry analysis.
-    A Session represents a collection of gating strategies and FCS samples. FCS samples are added and assigned to sample
-    groups, and each sample group has a single gating strategy. The gates in the gating strategy can be customized
-    per sample.
+    The Session class enables the programmatic creation of a gating strategy or for importing
+    GatingML compliant documents. A Session combines multiple Sample instances with a single
+    GatingStrategy. The gates in the gating strategy can be customized per sample.
 
     :param fcs_samples: str or list. If given a string, it can be a directory path or a file path.
             If a directory, any .fcs files in the directory will be loaded. If a list, then it must
             be a list of file paths or a list of Sample instances. Lists of mixed types are not
             supported.
-    :param subsample: Number of events to use as a sub-sample. If the number of
-        events in the Sample is less than the requested sub-sample count, then the
-        maximum number of available events is used for the sub-sample.
     """
-    def __init__(self, fcs_samples=None, subsample=10000):
-        self.subsample_count = subsample
+    def __init__(self, gating_strategy=None, fcs_samples=None):
         self.sample_lut = {}
         self._results_lut = {}
         self._sample_group_lut = {}
@@ -126,7 +120,6 @@ class Session(object):
         """
         new_samples = sample_utils.load_samples(fcs_samples)
         for s in new_samples:
-            s.subsample_events(self.subsample_count)
             if s.original_filename in self.sample_lut:
                 warnings.warn("A sample with ID %s already exists...skipping" % s.original_filename)
                 continue
@@ -642,6 +635,8 @@ class Session(object):
             sample_id,
             gate_name,
             gate_path=None,
+            subsample_count=10000,
+            random_seed=1,
             x_min=None,
             x_max=None,
             y_min=None,
@@ -658,6 +653,10 @@ class Session(object):
         :param gate_name: Gate name to filter events (only events within the given gate will be plotted)
         :param gate_path: tuple of gate names for full set of gate ancestors.
             Required if gate_name is ambiguous
+        :param subsample_count: Number of events to use as a sub-sample. If the number of
+            events in the Sample is less than the requested sub-sample count, then the
+            maximum number of available events is used for the sub-sample.
+        :param random_seed: Random seed used for sub-sampling events
         :param x_min: Lower bound of x-axis. If None, channel's min value will
             be used with some padding to keep events off the edge of the plot.
         :param x_max: Upper bound of x-axis. If None, channel's max value will
@@ -727,7 +726,9 @@ class Session(object):
         else:
             raise NotImplementedError("Plotting of gates with >2 dimensions is not yet supported")
 
+        # Get Sample instance and apply requested subsampling
         sample_to_plot = self.get_sample(sample_id)
+        sample_to_plot.subsample_events(subsample_count=subsample_count, random_seed=random_seed)
         # noinspection PyProtectedMember
         events = gating_strategy._preprocess_sample_events(
             sample_to_plot,
@@ -888,7 +889,8 @@ class Session(object):
             y_dim,
             group_name,
             gate_name=None,
-            subsample=False,
+            subsample_count=10000,
+            random_seed=1,
             color_density=True,
             x_min=None,
             x_max=None,
@@ -903,9 +905,10 @@ class Session(object):
         :param y_dim: Dimension instance to use for the y-axis data
         :param group_name: The sample group containing the sample ID (and, optionally the gate ID)
         :param gate_name: Gate name to filter events (only events within the given gate will be plotted)
-        :param subsample: Whether to use all events for plotting or just the
-            sub-sampled events. Default is False (all events). Plotting
-            sub-sampled events can be much faster.
+        :param subsample_count: Number of events to use as a sub-sample. If the number of
+            events in the Sample is less than the requested sub-sample count, then the
+            maximum number of available events is used for the sub-sample.
+        :param random_seed: Random seed used for sub-sampling events
         :param color_density: Whether to color the events by density, similar
             to a heat map. Default is True.
         :param x_min: Lower bound of x-axis. If None, channel's min value will
@@ -918,7 +921,10 @@ class Session(object):
             be used with some padding to keep events off the edge of the plot.
         :return: A Bokeh Figure object containing the interactive scatter plot.
         """
+        # Get Sample instance and apply requested subsampling
         sample = self.get_sample(sample_id)
+        sample.subsample_events(subsample_count=subsample_count, random_seed=random_seed)
+
         group = self._sample_group_lut[group_name]
         gating_strategy = group['gating_strategy']
 
@@ -962,11 +968,8 @@ class Session(object):
         else:
             is_gate_event = np.ones(sample.event_count, dtype=bool)
 
-        if subsample:
-            is_subsample = np.zeros(sample.event_count, dtype=bool)
-            is_subsample[sample.subsample_indices] = True
-        else:
-            is_subsample = np.ones(sample.event_count, dtype=bool)
+        is_subsample = np.zeros(sample.event_count, dtype=bool)
+        is_subsample[sample.subsample_indices] = True
 
         idx_to_plot = np.logical_and(is_gate_event, is_subsample)
         x = x[idx_to_plot]
