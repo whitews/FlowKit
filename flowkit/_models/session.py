@@ -29,19 +29,29 @@ class Session(object):
     def __init__(self, gating_strategy=None, fcs_samples=None):
         self.sample_lut = {}
         self._results_lut = {}
-        self._sample_group_lut = {}
+
+        if isinstance(gating_strategy, GatingStrategy):
+            gating_strategy = gating_strategy
+        elif isinstance(gating_strategy, str) or isinstance(gating_strategy, io.IOBase):
+            # assume a path to an XML file representing a GatingML document
+            gating_strategy = xml_utils.parse_gating_xml(gating_strategy)
+        elif gating_strategy is None:
+            gating_strategy = GatingStrategy()
+        else:
+            raise ValueError(
+                "'gating_strategy' must be a GatingStrategy instance, GatingML document path, or None"
+            )
+
+        self.gating_strategy = gating_strategy
 
         self.add_samples(fcs_samples)
 
     def __repr__(self):
         sample_count = len(self.sample_lut)
-        loaded_sample_count = len([k for k, v in self.sample_lut.items() if isinstance(v, Sample)])
-        sample_group_count = len(self._sample_group_lut)
 
         return (
             f'{self.__class__.__name__}('
-            f'{sample_count} samples [{loaded_sample_count} loaded], '
-            f'{sample_group_count} sample groups)'
+            f'{sample_count} samples)'
         )
 
     def summary(self):
