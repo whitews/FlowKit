@@ -54,78 +54,14 @@ class Session(object):
             f'{sample_count} samples)'
         )
 
-    def summary(self):
+    def add_samples(self, fcs_samples):
         """
-        Retrieve a summary of Session information, including a list of
-        sample groups defined, along with the sample and gate counts
-        for those sample groups.
-
-        :return: Pandas DataFrame containing Session summary information
-        """
-        sg_list = []
-
-        for group_name, group_dict in self._sample_group_lut.items():
-            gs = group_dict['gating_strategy']
-
-            gate_ids = gs.get_gate_ids()
-            gate_depth = gs.get_max_depth()
-
-            sg_info = {
-                'group_name': group_name,
-                'samples': len(group_dict['samples']),
-                'gates': len(gate_ids),
-                'max_gate_depth': gate_depth
-            }
-
-            sg_list.append(sg_info)
-
-        df = pd.DataFrame(sg_list)
-        df.set_index('group_name', inplace=True)
-
-        return df
-
-    def add_sample_group(self, group_name, gating_strategy=None):
-        """
-        Create a new sample group to the session. The group name must be unique to the session.
-
-        :param group_name: a text string representing the sample group
-        :param gating_strategy: an optional gating strategy to use for the group. Can be
-            a path or file to a GatingML 2.0 file or a GatingStrategy instance. If None, then a new,
-            blank gating strategy will be created.
-        :return: None
-        """
-        if group_name in self._sample_group_lut:
-            warnings.warn("A sample group with this name already exists...skipping")
-            return
-
-        if isinstance(gating_strategy, GatingStrategy):
-            gating_strategy = gating_strategy
-        elif isinstance(gating_strategy, str) or isinstance(gating_strategy, io.IOBase):
-            # assume a path to an XML file representing a GatingML document
-            gating_strategy = xml_utils.parse_gating_xml(gating_strategy)
-        elif gating_strategy is None:
-            gating_strategy = GatingStrategy()
-        else:
-            raise ValueError(
-                "'gating_strategy' must be either a GatingStrategy instance or a path to a GatingML document"
-            )
-
-        self._sample_group_lut[group_name] = {
-            'gating_strategy': gating_strategy,
-            'samples': []
-        }
-
-    def add_samples(self, fcs_samples, group_name=None):
-        """
-        Adds FCS samples to the session.  The given samples will also be added to the provided
-        group_name (if specified and the group exists).
+        Adds FCS samples to the session.
 
         :param fcs_samples: str or list. If given a string, it can be a directory path or a file path.
             If a directory, any .fcs files in the directory will be loaded. If a list, then it must
             be a list of file paths or a list of Sample instances. Lists of mixed types are not
             supported.
-        :param group_name: a text string representing the sample group to which to assign samples. If None,
-            samples are only loaded and not assigned to a group.
         :return: None
         """
         new_samples = sample_utils.load_samples(fcs_samples)
@@ -135,63 +71,13 @@ class Session(object):
                 continue
             self.sample_lut[s.original_filename] = s
 
-            # assign to group if specified
-            if group_name is not None:
-                self.assign_samples(s.original_filename, group_name)
-
-    def assign_samples(self, sample_ids, group_name):
+    def get_sample_ids(self):
         """
-        Assigns a sample ID to a sample group. Samples can belong to more than one sample group.
-
-        :param sample_ids: a text string of a Sample ID or list of Sample IDs to assign to the specified sample group
-        :param group_name: name of sample group to which the sample will be assigned
-        :return: None
-        """
-        group = self._sample_group_lut[group_name]
-
-        if isinstance(sample_ids, str):
-            sample_ids = [sample_ids]
-
-        for sample_id in sample_ids:
-            if sample_id in group['samples']:
-                warnings.warn("Sample %s is already assigned to the group %s...skipping" % (sample_id, group_name))
-                continue
-
-            group['samples'].append(sample_id)
-
-    def get_sample_ids(self, group_name=None):
-        """
-        Retrieve the list of Sample IDs that have been loaded or referenced in the Session.
+        Retrieve the list of Sample IDs in the Session.
 
         :return: list of Sample ID strings
         """
-        if group_name is not None:
-            # convert to list instead of dict_keys
-            sample_ids = list(self._sample_group_lut[group_name]['samples'])
-        else:
-            sample_ids = list(self.sample_lut.keys())
-
-        return sample_ids
-
-    def get_sample_groups(self):
-        """
-        Retrieve the list of sample group labels defined in the Session.
-
-        :return: list of sample group ID strings
-        """
-        return list(self._sample_group_lut.keys())
-
-    def get_group_sample_ids(self, group_name):
-        """
-        Retrieve the list of Sample IDs belonging to the specified sample group.
-        
-        :param group_name: a text string representing the sample group
-        :return: list of Sample IDs
-        """
-        # convert to list instead of dict_keys
-        sample_ids = list(self._sample_group_lut[group_name]['samples'])
-
-        return sample_ids
+        return list(self.sample_lut.keys())
 
     def get_group_samples(self, group_name):
         """
