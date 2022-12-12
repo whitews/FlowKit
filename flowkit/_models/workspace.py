@@ -152,7 +152,7 @@ class Workspace(object):
         :return: list of Sample ID strings
         """
         if group_name is not None:
-            sample_ids = self._group_lut['samples']
+            sample_ids = self._group_lut[group_name]['samples']
         else:
             sample_ids = list(self._sample_lut.keys())
 
