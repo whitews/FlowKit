@@ -107,7 +107,13 @@ class Workspace(object):
         sg_list = []
 
         for group_name, group_dict in self._group_lut.items():
-            sample_count = len(group_dict['samples'])
+            group_sample_ids = group_dict['samples']
+            sample_count = len(group_sample_ids)
+
+            loaded_sample_count = 0
+            for g_sample_id in group_sample_ids:
+                if g_sample_id in self._sample_lut:
+                    loaded_sample_count += 1
 
             if sample_count > 0:
                 # There's at least one sample, so grab the first one
@@ -126,6 +132,7 @@ class Workspace(object):
             sg_info = {
                 'group_name': group_name,
                 'samples': sample_count,
+                'loaded_samples': loaded_sample_count,
                 'gates': gate_count,
                 'max_gate_depth': gate_depth
             }
