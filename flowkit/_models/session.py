@@ -79,34 +79,16 @@ class Session(object):
         """
         return list(self.sample_lut.keys())
 
-    def get_group_samples(self, group_name):
+    def get_gate_ids(self):
         """
-        Retrieve the list of Sample instances belonging to the specified sample group.
+        Retrieve the list of gate IDs defined for the Session's gating
+        strategy. The gate ID is a 2-item tuple where the first item
+        is a string representing the gate name and the second item is
+        a tuple of the gate path.
 
-        :param group_name: a text string representing the sample group
-        :return: list of Sample instances
+        :return: list of gate ID tuples
         """
-        # don't return samples that haven't been loaded
-        sample_ids = self.get_group_sample_ids(group_name)
-
-        samples = []
-        for s_id in sample_ids:
-            sample = self.sample_lut[s_id]
-            samples.append(sample)
-
-        return samples
-
-    # start pass through methods for GatingStrategy class
-    def get_gate_ids(self, group_name):
-        """
-        Retrieve the list of gate IDs defined in the specified sample group
-
-        :param group_name: a text string representing the sample group
-        :return: list of gate ID strings
-        """
-        group = self._sample_group_lut[group_name]
-        gs = group['gating_strategy']
-        return gs.get_gate_ids()
+        return self.gating_strategy.get_gate_ids()
 
     def add_gate(self, gate, gate_path, group_name, sample_id=None):
         """
