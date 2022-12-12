@@ -434,7 +434,7 @@ def _parse_wsp_samples(sample_els, ns_map, gating_ns, transform_ns, data_type_ns
         sample_root_sub_pop_el = sample_node_el.find('Subpopulations', ns_map)
 
         if sample_root_sub_pop_el is None:
-            sample_gates = []
+            sample_gates = {}
         else:
             sample_gates = _recurse_wsp_sub_populations(
                 sample_root_sub_pop_el,
