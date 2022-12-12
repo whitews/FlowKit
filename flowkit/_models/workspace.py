@@ -165,7 +165,7 @@ class Workspace(object):
         :param sample_id: a text string representing the sample
         :return: Sample instance
         """
-        return self._sample_lut[sample_id]['sample']
+        return self._sample_lut[sample_id]
 
     def get_samples(self, group_name=None):
         """
@@ -202,7 +202,7 @@ class Workspace(object):
         :param sample_id: a text string representing a Sample instance
         :return: list of gate ID tuples
         """
-        gs = self._sample_lut[sample_id]['gating_strategy']
+        gs = self._sample_data_lut[sample_id]['gating_strategy']
         return gs.get_gate_ids()
 
     def get_gate_hierarchy(self, sample_id, output='ascii', **kwargs):
@@ -216,7 +216,7 @@ class Workspace(object):
             'dict', or 'JSON' (default is 'ascii')
         :return: gate hierarchy as a text string or a dictionary
         """
-        gs = self._sample_lut[sample_id]['gating_strategy']
+        gs = self._sample_data_lut[sample_id]['gating_strategy']
         return gs.get_gate_hierarchy(output, **kwargs)
 
     def get_gating_strategy(self, sample_id):
@@ -227,7 +227,7 @@ class Workspace(object):
         :param sample_id: a text string representing a Sample instance
         :return: a copy of the GatingStrategy instance
         """
-        return copy.deepcopy(self._sample_lut[sample_id]['gating_strategy'])
+        return copy.deepcopy(self._sample_data_lut[sample_id]['gating_strategy'])
 
     def get_comp_matrix(self, sample_id):
         """
@@ -236,7 +236,7 @@ class Workspace(object):
         :param sample_id: a text string representing a Sample instance
         :return: a copy of a Matrix instance
         """
-        sample_dict = self._sample_lut[sample_id]
+        sample_dict = self._sample_data_lut[sample_id]
 
         if sample_dict['compensation'] is not None:
             comp_matrix = copy.deepcopy(sample_dict['compensation']['matrix'])
@@ -252,7 +252,7 @@ class Workspace(object):
         :param sample_id: a text string representing a Sample instance
         :return: a list of Transform instances
         """
-        sample_dict = self._sample_lut[sample_id]
+        sample_dict = self._sample_data_lut[sample_id]
 
         if sample_dict['transforms'] is not None:
             xforms = copy.deepcopy(list(sample_dict['transforms'].values()))
@@ -296,8 +296,8 @@ class Workspace(object):
 
         sample_data_to_run = []
         for s_id in sample_ids:
-            sample = self._sample_lut[s_id]['sample']
-            gating_strategy = self._sample_lut[s_id]['gating_strategy']
+            sample = self._sample_lut[s_id]
+            gating_strategy = self._sample_data_lut[s_id]['gating_strategy']
 
             sample_data_to_run.append(
                 {
