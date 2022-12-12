@@ -260,6 +260,18 @@ class Workspace(object):
 
         return xforms
 
+    def get_gate(self, sample_id, gate_name, gate_path=None):
+        """
+        Retrieve a gate instance for a sample by its gate ID.
+
+        :param sample_id: a text string representing a Sample instance.
+        :param gate_name: text string of a gate ID
+        :param gate_path: tuple of gate IDs for unique set of gate ancestors. Required if gate_name is ambiguous
+        :return: Subclass of a Gate object
+        """
+        gs = self._sample_data_lut[sample_id]['gating_strategy']
+        return gs.get_gate(gate_name, gate_path=gate_path)
+
     def analyze_samples(self, group_name=None, sample_id=None, cache_events=False, use_mp=True, verbose=False):
         """
         Process gates for samples. Samples to analyze can be filtered by group name or sample ID.
