@@ -179,8 +179,7 @@ class Workspace(object):
 
         samples = []
         for s_id in sample_ids:
-            sample_dict = self._sample_lut[s_id]
-            samples.append(sample_dict['sample'])
+            samples.append(self._sample_lut[s_id])
 
         return samples
 
