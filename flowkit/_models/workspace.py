@@ -23,16 +23,19 @@ class Workspace(object):
             WSP file that were not loaded in the Workspace. Default is False, displaying warnings.
     """
     def __init__(self, wsp_file_path, fcs_samples=None, ignore_missing_files=False):
-        # The sample LUT keys will hold sample IDs only for
-        # loaded samples that have WSP gating data. The value
-        # is a dict containing the following items:
+        # The sample LUT holds sample IDs (keys) only for loaded samples.
+        # The values are the Sample instances
+        self._sample_lut = {}
+
+        # The sample data LUT holds sample IDs (keys) for all samples
+        # that have WSP gating data whether the sample is loaded or not.
+        # The value is a dict containing the following items:
         #   - 'keywords': dict of FCS metadata found in WSP file
         #   - 'compensation' dict of spill info found in WSP file
         #   - 'transforms': dict of channel transforms found in WSP file
         #   - 'custom_gate_ids': set of gate paths for custom gates
         #   - 'gating_strategy': GatingStrategy assembled from WSP file
-        #   - 'sample': the Sample instance
-        self._sample_lut = {}
+        self._sample_data_lut = {}
 
         # The group LUT keys are the available sample group names.
         # The values are dicts with keys 'gates' & 'samples'.
@@ -51,9 +54,8 @@ class Workspace(object):
 
         # load samples
         loaded_samples = sample_utils.load_samples(fcs_samples)
-        loaded_sample_lut = {}  # tmp LUT to sync sample instances to WSP data
         for s in loaded_samples:
-            loaded_sample_lut[s.original_filename] = s
+            self._sample_lut[s.original_filename] = s
 
         wsp_data = wsp_utils.parse_wsp(wsp_file_path)
 
@@ -62,19 +64,25 @@ class Workspace(object):
 
         # save sample data, including the GatingStrategy & Sample instance
         for sample_id, sample_dict in wsp_data['samples'].items():
-            if sample_id in loaded_sample_lut:
+            if sample_id in self._sample_lut:
                 # add to sample data
-                sample_dict['sample'] = loaded_sample_lut[sample_id]
-                self._sample_lut[sample_id] = sample_dict
+                self._sample_data_lut[sample_id] = sample_dict
             else:
-                if not ignore_missing_files:
+                # we have gating info for a sample that wasn't loaded
+                if ignore_missing_files:
+                    # we're instructed to ignore missing files, so we'll still
+                    # save the gate info for retrieval purposes
+                    self._sample_data_lut[sample_id] = sample_dict
+                else:
+                    # we won't ignore missing files, issue a warning
+                    # and remove any references to the sample
                     msg = "WSP references %s, but sample was not loaded." % sample_id
                     warnings.warn(msg)
 
-                # search for this missing sample ID in group data & remove
-                for group_name, group_dict in group_lut.items():
-                    if sample_id in group_dict['samples']:
-                        group_dict['samples'].remove(sample_id)
+                    # search for this missing sample ID in group data & remove
+                    for group_name, group_dict in group_lut.items():
+                        if sample_id in group_dict['samples']:
+                            group_dict['samples'].remove(sample_id)
 
         self._group_lut = group_lut
 
