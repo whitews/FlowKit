@@ -173,36 +173,28 @@ class Session(object):
         comp_mat = gating_strategy.get_comp_matrix(matrix_id)
         return comp_mat
 
-    def find_matching_gate_paths(self, group_name, gate_name):
+    def find_matching_gate_paths(self, gate_name):
         """
-        Find all gate paths in a sample group for given gate name.
+        Find all gate paths in the gating strategy matching the given gate name.
 
-        :param group_name: a text string representing the sample group
         :param gate_name: text string of a gate name
         :return: list of gate paths (list of tuples)
         """
-        group = self._sample_group_lut[group_name]
-        gs = group['gating_strategy']
+        return self.gating_strategy.find_matching_gate_paths(gate_name)
 
-        return gs.find_matching_gate_paths(gate_name)
-
-    def get_child_gate_ids(self, group_name, gate_name, gate_path=None):
+    def get_child_gate_ids(self, gate_name, gate_path=None):
         """
         Retrieve list of child gate IDs given the parent gate name (and path if ambiguous)
-        in the gate hierarchy of the specified sample group.
+        in the gating strategy.
 
-        :param group_name: a text string representing the sample group
         :param gate_name: text string of a gate name
         :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
             Required if gate.gate_name is ambiguous
         :return: list of gate IDs (each gate ID is a gate name string & tuple of the gate path)
         """
-        group = self._sample_group_lut[group_name]
-        gs = group['gating_strategy']
-
         if gate_path is None:
             # need to make sure the gate name isn't used more than once (ambiguous gate name)
-            gate_paths = gs.find_matching_gate_paths(gate_name)
+            gate_paths = self.gating_strategy.find_matching_gate_paths(gate_name)
 
             if len(gate_paths) > 1:
                 raise GateReferenceError(
@@ -216,7 +208,7 @@ class Session(object):
         child_gate_path.append(gate_name)
         child_gate_path = tuple(child_gate_path)
 
-        child_gates = gs.get_child_gates(gate_name, gate_path)
+        child_gates = self.gating_strategy.get_child_gates(gate_name, gate_path)
         child_gate_ids = []
 
         for child_gate in child_gates:
