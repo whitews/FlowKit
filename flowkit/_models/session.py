@@ -200,38 +200,31 @@ class Session(object):
 
         return child_gate_ids
 
-    def get_gate(self, group_name, gate_name, gate_path=None, sample_id=None):
+    def get_gate(self, gate_name, gate_path=None, sample_id=None):
         """
-        Retrieve a gate instance by its group, sample, and gate ID.
+        Retrieve a gate instance by its gate ID (and sample ID for custom sample gates).
 
-        :param group_name: a text string representing the sample group
         :param gate_name: text string of a gate ID
         :param gate_path: tuple of gate IDs for unique set of gate ancestors. Required if gate_name is ambiguous
         :param sample_id: a text string representing a Sample instance. If None, the template gate is returned.
         :return: Subclass of a Gate object
         """
-        group = self._sample_group_lut[group_name]
-        gating_strategy = group['gating_strategy']
-        gate = gating_strategy.get_gate(gate_name, gate_path=gate_path, sample_id=sample_id)
+        return self.gating_strategy.get_gate(gate_name, gate_path=gate_path, sample_id=sample_id)
 
-        return gate
-
-    def get_sample_gates(self, group_name, sample_id):
+    def get_sample_gates(self, sample_id):
         """
-        Retrieve all gates for a sample in a sample group.
+        Retrieve all gates for a sample in the gating strategy. This returns custom sample
+        gates for the specified sample ID.
 
-        :param group_name: a text string representing the sample group
         :param sample_id: a text string representing a Sample instance
         :return: list of Gate subclass instances
         """
-        group = self._sample_group_lut[group_name]
-        gating_strategy = group['gating_strategy']
-        gate_tuples = gating_strategy.get_gate_ids()
+        gate_tuples = self.gating_strategy.get_gate_ids()
 
         sample_gates = []
 
         for gate_name, ancestors in gate_tuples:
-            gate = gating_strategy.get_gate(gate_name, gate_path=ancestors, sample_id=sample_id)
+            gate = self.gating_strategy.get_gate(gate_name, gate_path=ancestors, sample_id=sample_id)
             sample_gates.append(gate)
 
         return sample_gates
