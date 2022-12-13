@@ -331,62 +331,57 @@ class Session(object):
         for r in results:
             self._results_lut[r.sample_id] = r
 
-    def get_gating_results(self, group_name, sample_id):
+    def get_gating_results(self, sample_id):
         """
-        Retrieve analyzed gating results gates for a sample in a sample group.
+        Retrieve analyzed gating results gates for a sample.
 
-        :param group_name: a text string representing the sample group
-        :param sample_id: a text string representing a loaded Sample instance that is
-            assigned to the specified group
+        :param sample_id: a text string representing a loaded Sample instance
         :return: GatingResults instance
         """
         try:
-            gating_result = self._results_lut[group_name][sample_id]
+            gating_result = self._results_lut[sample_id]
         except KeyError:
             raise KeyError(
-                "No results for %s in group %s. Have you run `analyze_samples`?" % (sample_id, group_name)
+                "No results for %s. Have you run `analyze_samples`?" % sample_id
             )
         return copy.deepcopy(gating_result)
 
-    def get_group_report(self, group_name):
+    def get_analysis_report(self):
         """
-        Retrieve the report of an analyzed sample group as a pandas DataFrame.
+        Retrieve the report for the analyzed samples as a pandas DataFrame.
 
-        :param group_name: a text string representing the sample group
         :return: pandas DataFrame
         """
-        all_group_reports = []
+        all_reports = []
 
-        for s_id, result in self._results_lut[group_name].items():
-            all_group_reports.append(result.report)
+        for s_id, result in self._results_lut.items():
+            all_reports.append(result.report)
 
-        return copy.deepcopy(pd.concat(all_group_reports))
+        return copy.deepcopy(pd.concat(all_reports))
 
-    def get_gate_membership(self, group_name, sample_id, gate_name, gate_path=None):
+    def get_gate_membership(self, sample_id, gate_name, gate_path=None):
         """
         Retrieve a boolean array indicating gate membership for the events in the
         specified sample. Note, the same gate ID may be found in multiple gate paths,
         i.e. the gate ID can be ambiguous. In this case, specify the full gate path
         to retrieve gate indices.
 
-        :param group_name: a text string representing the sample group
         :param sample_id: a text string representing a Sample instance
         :param gate_name: text string of a gate name
         :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
             Required if gate_name is ambiguous
         :return: NumPy boolean array (length of sample event count)
         """
-        gating_result = self._results_lut[group_name][sample_id]
+        gating_result = self._results_lut[sample_id]
         return gating_result.get_gate_membership(gate_name, gate_path=gate_path)
 
-    def get_gate_events(self, group_name, sample_id, gate_name=None, gate_path=None, matrix=None, transform=None):
+    def get_gate_events(self, sample_id, gate_name=None, gate_path=None, matrix=None, transform=None):
         """
         Retrieve a pandas DataFrame containing only the events within the specified gate.
         If an optional compensation matrix and/or a transform is provided, the returned
         event data will be compensated or transformed. If both a compensation matrix and
         a transform is provided the event data will be both compensated and transformed.
 
-        :param group_name: a text string representing the sample group
         :param sample_id: a text string representing a Sample instance
         :param gate_name: text string of a gate name. If None, all Sample events will be returned (i.e. un-gated)
         :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
@@ -411,7 +406,7 @@ class Session(object):
         events_df = sample.as_dataframe(source=event_source)
 
         if gate_name is not None:
-            gate_idx = self.get_gate_membership(group_name, sample_id, gate_name, gate_path)
+            gate_idx = self.get_gate_membership(sample_id, gate_name, gate_path)
             events_df = events_df[gate_idx]
 
         return events_df
