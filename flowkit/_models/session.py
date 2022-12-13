@@ -415,7 +415,6 @@ class Session(object):
 
     def plot_gate(
             self,
-            group_name,
             sample_id,
             gate_name,
             gate_path=None,
@@ -428,11 +427,11 @@ class Session(object):
             color_density=True
     ):
         """
-        Returns an interactive plot for the specified gate. The type of plot is determined by the number of
-         dimensions used to define the gate: single dimension gates will be histograms, 2-D gates will be returned
-         as a scatter plot.
+        Returns an interactive plot for the specified gate. The type of plot is
+        determined by the number of dimensions used to define the gate: single
+        dimension gates will be histograms, 2-D gates will be returned as a
+        scatter plot.
 
-        :param group_name: The sample group containing the sample ID (and, optionally the gate ID)
         :param sample_id: The sample ID for the FCS sample to plot
         :param gate_name: Gate name to filter events (only events within the given gate will be plotted)
         :param gate_path: tuple of gate names for full set of gate ancestors.
@@ -453,19 +452,16 @@ class Session(object):
             to a heat map. Default is True.
         :return: A Bokeh Figure object containing the interactive scatter plot.
         """
-        group = self._sample_group_lut[group_name]
-        gating_strategy = group['gating_strategy']
-
         if gate_path is None:
             # verify the gate_name isn't ambiguous
-            gate_paths = self.find_matching_gate_paths(group_name, gate_name)
+            gate_paths = self.find_matching_gate_paths(gate_name)
             if len(gate_paths) > 1:
                 raise GateReferenceError(
                     "Multiple gates exist with gate name '%s'. Specify a gate_path to disambiguate." % gate_name
                 )
             gate_path = gate_paths[0]
 
-        gate = gating_strategy.get_gate(gate_name, gate_path)
+        gate = self.gating_strategy.get_gate(gate_name, gate_path=gate_path, sample_id=sample_id)
 
         # check for a boolean gate, there's no reasonable way to plot these
         if isinstance(gate, gates.BooleanGate):
@@ -514,7 +510,7 @@ class Session(object):
         sample_to_plot = self.get_sample(sample_id)
         sample_to_plot.subsample_events(subsample_count=subsample_count, random_seed=random_seed)
         # noinspection PyProtectedMember
-        events = gating_strategy._preprocess_sample_events(
+        events = self.gating_strategy._preprocess_sample_events(
             sample_to_plot,
             gate
         )
@@ -522,7 +518,7 @@ class Session(object):
         # get parent gate results to display only those events
         if parent_gate_name != 'root':
             # TODO:  make it clear to call analyze_samples prior to calling this method
-            is_parent_event = self.get_gate_membership(group_name, sample_id, parent_gate_name, parent_gate_path)
+            is_parent_event = self.get_gate_membership(sample_id, parent_gate_name, parent_gate_path)
             is_subsample = np.zeros(sample_to_plot.event_count, dtype=bool)
             is_subsample[sample_to_plot.subsample_indices] = True
             idx_to_plot = np.logical_and(is_parent_event, is_subsample)
@@ -541,7 +537,7 @@ class Session(object):
                 x_index = sample_to_plot.get_channel_index(dim_ids_ordered[0])
             except ValueError:
                 # might be a label reference in the comp matrix
-                matrix = gating_strategy.get_comp_matrix(dim_comp_refs[0])
+                matrix = self.gating_strategy.get_comp_matrix(dim_comp_refs[0])
                 try:
                     matrix_dim_idx = matrix.fluorochomes.index(dim_ids_ordered[0])
                 except ValueError:
@@ -567,7 +563,7 @@ class Session(object):
                     y_index = sample_to_plot.get_channel_index(dim_ids_ordered[1])
                 except ValueError:
                     # might be a label reference in the comp matrix
-                    matrix = gating_strategy.get_comp_matrix(dim_comp_refs[1])
+                    matrix = self.gating_strategy.get_comp_matrix(dim_comp_refs[1])
                     try:
                         matrix_dim_idx = matrix.fluorochomes.index(dim_ids_ordered[1])
                     except ValueError:
@@ -658,7 +654,7 @@ class Session(object):
                 'above'
             )
 
-        plot_title = "%s (%s)" % (sample_id, group_name)
+        plot_title = "%s" % sample_id
         p.add_layout(
             Title(text=plot_title, text_font_size="1.1em", align='center'),
             'above'
@@ -671,7 +667,6 @@ class Session(object):
             sample_id,
             x_dim,
             y_dim,
-            group_name,
             gate_name=None,
             subsample_count=10000,
             random_seed=1,
@@ -687,7 +682,6 @@ class Session(object):
         :param sample_id: The sample ID for the FCS sample to plot
         :param x_dim:  Dimension instance to use for the x-axis data
         :param y_dim: Dimension instance to use for the y-axis data
-        :param group_name: The sample group containing the sample ID (and, optionally the gate ID)
         :param gate_name: Gate name to filter events (only events within the given gate will be plotted)
         :param subsample_count: Number of events to use as a sub-sample. If the number of
             events in the Sample is less than the requested sub-sample count, then the
@@ -709,9 +703,6 @@ class Session(object):
         sample = self.get_sample(sample_id)
         sample.subsample_events(subsample_count=subsample_count, random_seed=random_seed)
 
-        group = self._sample_group_lut[group_name]
-        gating_strategy = group['gating_strategy']
-
         x_index = sample.get_channel_index(x_dim.id)
         y_index = sample.get_channel_index(y_dim.id)
 
@@ -722,7 +713,7 @@ class Session(object):
         y_xform_ref = y_dim.transformation_ref
 
         if x_comp_ref is not None and x_comp_ref != 'uncompensated':
-            x_comp = gating_strategy.get_comp_matrix(x_dim.compensation_ref)
+            x_comp = self.gating_strategy.get_comp_matrix(x_dim.compensation_ref)
             comp_events = x_comp.apply(sample)
             x = comp_events[:, x_index]
         else:
@@ -732,7 +723,7 @@ class Session(object):
         if y_comp_ref is not None and x_comp_ref != 'uncompensated':
             # this is likely unnecessary as the x & y comp should be the same,
             # but requires more conditionals to cover
-            y_comp = gating_strategy.get_comp_matrix(x_dim.compensation_ref)
+            y_comp = self.gating_strategy.get_comp_matrix(x_dim.compensation_ref)
             comp_events = y_comp.apply(sample)
             y = comp_events[:, y_index]
         else:
@@ -740,14 +731,14 @@ class Session(object):
             y = sample.get_channel_events(y_index, source='raw', subsample=False)
 
         if x_xform_ref is not None:
-            x_xform = gating_strategy.get_transform(x_xform_ref)
+            x_xform = self.gating_strategy.get_transform(x_xform_ref)
             x = x_xform.apply(x.reshape(-1, 1))[:, 0]
         if y_xform_ref is not None:
-            y_xform = gating_strategy.get_transform(y_xform_ref)
+            y_xform = self.gating_strategy.get_transform(y_xform_ref)
             y = y_xform.apply(y.reshape(-1, 1))[:, 0]
 
         if gate_name is not None:
-            gate_results = self.get_gating_results(group_name, sample_id=sample_id)
+            gate_results = self.get_gating_results(sample_id=sample_id)
             is_gate_event = gate_results.get_gate_membership(gate_name)
         else:
             is_gate_event = np.ones(sample.event_count, dtype=bool)
