@@ -131,47 +131,31 @@ class Session(object):
         """
         return self.gating_strategy.get_transform(transform_id)
 
-        return xform
-
-    def add_comp_matrix(self, matrix, group_name):
+    def add_comp_matrix(self, matrix):
         """
-        Add a Matrix instance to a sample group in the session.
+        Add a Matrix instance to use in the gating strategy.
 
         :param matrix: an instance of the Matrix class
-        :param group_name: a text string representing the sample group
         :return: None
         """
-        group = self._sample_group_lut[group_name]
-        gs = group['gating_strategy']
-        gs.add_comp_matrix(copy.deepcopy(matrix))
+        self.gating_strategy.add_comp_matrix(copy.deepcopy(matrix))
 
-    def get_group_comp_matrices(self, group_name):
+    def get_comp_matrices(self):
         """
-        Retrieve the list of compensation Matrix instances stored within the specified
-        sample group.
+        Retrieve the list of compensation Matrix instances stored in the gating strategy.
 
-        :param group_name: a text string representing the sample group
         :return: list of Matrix instances
         """
-        group = self._sample_group_lut[group_name]
-        gating_strategy = group['gating_strategy']
+        return self.gating_strategy.comp_matrices.values()
 
-        return gating_strategy.comp_matrices.values()
-
-    def get_comp_matrix(self, group_name, sample_id, matrix_id):
+    def get_comp_matrix(self, matrix_id):
         """
-        Retrieve a compensation Matrix instance stored within the specified
-        sample group associated with the given sample ID & having the given matrix ID.
+        Retrieve a compensation Matrix instance stored in the gating strategy by its ID.
 
-        :param group_name: a text string representing the sample group
-        :param sample_id: a text string representing a Sample instance
         :param matrix_id: a text string representing a Matrix ID
         :return: a Matrix instance
         """
-        group = self._sample_group_lut[group_name]
-        gating_strategy = group['gating_strategy']
-        comp_mat = gating_strategy.get_comp_matrix(matrix_id)
-        return comp_mat
+        return self.gating_strategy.get_comp_matrix(matrix_id)
 
     def find_matching_gate_paths(self, gate_name):
         """
