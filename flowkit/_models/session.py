@@ -229,49 +229,17 @@ class Session(object):
 
         return sample_gates
 
-    def get_sample_comp_matrices(self, group_name, sample_id):
+    def get_gate_hierarchy(self, output='ascii', **kwargs):
         """
-        Retrieve all compensation matrices for a sample in a sample group.
-
-        :param group_name: a text string representing the sample group
-        :param sample_id: a text string representing a Sample instance
-        :return: list of Matrix instances
-        """
-        # TODO: this no longer works b/c GS is not copied per Sample
-        #    Need to investigate whether comp matrices & transforms of same name are
-        #    actually different within a FlowJo WSP file.
-        group = self._sample_group_lut[group_name]
-        gating_strategy = group['samples'][sample_id]
-
-        return list(gating_strategy.comp_matrices.values())
-
-    def get_sample_transforms(self, group_name, sample_id):
-        """
-        Retrieve all Transform instances for a sample in a sample group.
-
-        :param group_name: a text string representing the sample group
-        :param sample_id: a text string representing a Sample instance
-        :return: list of Transform subclass instances
-        """
-        # TODO: this no longer works b/c GS is not copied per Sample
-        group = self._sample_group_lut[group_name]
-        gating_strategy = group['samples'][sample_id]
-
-        return list(gating_strategy.transformations.values())
-
-    def get_gate_hierarchy(self, group_name, output='ascii', **kwargs):
-        """
-        Retrieve the hierarchy of gates in the sample group's gating strategy. Output is available
+        Retrieve the hierarchy of gates in the gating strategy. Output is available
         in several formats, including text, dictionary, or JSON. If output == 'json', extra
         keyword arguments are passed to json.dumps
 
-        :param group_name: a text string representing the sample group
         :param output: Determines format of hierarchy returned, either 'ascii',
             'dict', or 'JSON' (default is 'ascii')
         :return: gate hierarchy as a text string or a dictionary
         """
-        return self._sample_group_lut[group_name]['gating_strategy'].get_gate_hierarchy(output, **kwargs)
-    # end pass through methods for GatingStrategy
+        return self.gating_strategy.get_gate_hierarchy(output, **kwargs)
 
     def export_gml(self, file_handle, group_name, sample_id=None):
         """
