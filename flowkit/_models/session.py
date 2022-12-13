@@ -278,13 +278,12 @@ class Session(object):
         """
         return self.sample_lut[sample_id]
 
-    def analyze_samples(self, group_name, sample_id=None, cache_events=False, use_mp=True, verbose=False):
+    def analyze_samples(self, sample_id=None, cache_events=False, use_mp=True, verbose=False):
         """
-        Process gates for samples in a sample group. After running, results can be
-        retrieved using the `get_gating_results`, `get_group_report`, and  `get_gate_membership`,
+        Process gating strategy for samples. After running, results can be retrieved
+        using the `get_gating_results`, `get_report`, and  `get_gate_membership`,
         methods.
 
-        :param group_name: a text string representing the sample group
         :param sample_id: optional sample ID, if specified only this sample will be processed
         :param cache_events: Whether to cache pre-processed events (compensated and transformed). This can
             be useful to speed up processing of gates that share the same pre-processing instructions for
@@ -300,37 +299,27 @@ class Session(object):
         # Don't save just the DataFrame report, save the entire
         # GatingResults objects for each sample, since we'll need the gate
         # indices for each sample.
-        samples = self.get_group_samples(group_name)
+        samples = self.sample_lut.values()
         if len(samples) == 0:
-            warnings.warn("No samples have been assigned to sample group %s" % group_name)
+            warnings.warn("No samples have been loaded in the Session")
             return
 
         if sample_id is not None:
-            sample_ids = self.get_group_sample_ids(group_name)
-            if sample_id not in sample_ids:
-                warnings.warn("%s is not assigned to sample group %s" % (sample_id, group_name))
-                return
-
             samples = [self.get_sample(sample_id)]
 
-        gating_strategy = self._sample_group_lut[group_name]['gating_strategy']
         sample_data_to_run = []
         for s in samples:
-            if s is None:
-                # sample hasn't been added to Session
-                continue
             sample_data_to_run.append(
                 {
-                    'gating_strategy': gating_strategy,
+                    'gating_strategy': self.gating_strategy,
                     'sample': s
                 }
             )
 
             # clear any existing results
-            if group_name in self._results_lut:
-                if sample_id in self._results_lut[group_name]:
-                    del self._results_lut[group_name][sample_id]
-                    gc.collect()
+            if sample_id in self._results_lut:
+                del self._results_lut[sample_id]
+                gc.collect()
 
         results = gating_utils.gate_samples(
             sample_data_to_run,
@@ -339,11 +328,8 @@ class Session(object):
             use_mp=False if debug else use_mp
         )
 
-        if group_name not in self._results_lut:
-            self._results_lut[group_name] = {}
-
         for r in results:
-            self._results_lut[group_name][r.sample_id] = r
+            self._results_lut[r.sample_id] = r
 
     def get_gating_results(self, group_name, sample_id):
         """
