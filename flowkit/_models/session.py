@@ -104,43 +104,32 @@ class Session(object):
         """
         self.gating_strategy.add_gate(copy.deepcopy(gate), gate_path=gate_path, sample_id=sample_id)
 
-    def add_transform(self, transform, group_name):
+    def add_transform(self, transform):
         """
-        Add a Transform instance to a sample group in the session.
+        Add a Transform instance to use in the gating strategy.
 
         :param transform: an instance of a Transform subclass
-        :param group_name: a text string representing the sample group
         :return: None
         """
-        group = self._sample_group_lut[group_name]
-        gs = group['gating_strategy']
-        gs.add_transform(copy.deepcopy(transform))
+        self.gating_strategy.add_transform(copy.deepcopy(transform))
 
-    def get_group_transforms(self, group_name):
+    def get_transforms(self):
         """
-        Retrieve the list of Transform instances stored within the specified
-        sample group.
+        Retrieve the list of Transform instances stored in the gating strategy.
 
-        :param group_name: a text string representing the sample group
         :return: list of Transform instances
         """
-        group = self._sample_group_lut[group_name]
-        gating_strategy = group['gating_strategy']
 
-        return list(gating_strategy.transformations.values())
+        return list(self.gating_strategy.transformations.values())
 
-    def get_transform(self, group_name, transform_id):
+    def get_transform(self, transform_id):
         """
-        Retrieve a Transform instance stored within the specified
-        sample group associated with the given sample ID & having the given transform ID.
+        Retrieve a Transform stored in the gating strategy by its ID.
 
-        :param group_name: a text string representing the sample group
         :param transform_id: a text string representing a Transform ID
         :return: an instance of a Transform subclass
         """
-        group = self._sample_group_lut[group_name]
-        gating_strategy = group['gating_strategy']
-        xform = gating_strategy.get_transform(transform_id)
+        return self.gating_strategy.get_transform(transform_id)
 
         return xform
 
