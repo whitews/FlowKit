@@ -241,33 +241,31 @@ class Session(object):
         """
         return self.gating_strategy.get_gate_hierarchy(output, **kwargs)
 
-    def export_gml(self, file_handle, group_name, sample_id=None):
+    def export_gml(self, file_handle, sample_id=None):
         """
-        Export a GatingML 2.0 file for the specified sample group and sample ID
+        Export a GatingML 2.0 file for the gating strategy. Specify the sample ID to use
+        that sample's custom gates in the exported file.
 
         :param file_handle: file handle for exporting data
-        :param group_name: a text string representing the sample group
-        :param sample_id: a text string representing a Sample instance
+        :param sample_id: an optional text string representing a Sample instance
         :return: None
         """
-        group = self._sample_group_lut[group_name]
-        gating_strategy = group['gating_strategy']
-
         # TODO: export_gatingml function needs to be updated to handle sample_id in GS
-        xml_utils.export_gatingml(gating_strategy, file_handle)
+        #   or add export_gatingml as method to GS that takes an optional sample_id.
+        xml_utils.export_gatingml(self.gating_strategy, file_handle)
 
     def export_wsp(self, file_handle, group_name):
         """
-        Export a FlowJo 10 workspace file (.wsp) for the specified sample group
+        Export a FlowJo 10 workspace file (.wsp) for the gating strategy.
 
         :param file_handle: file handle for exporting data
-        :param group_name: a text string representing the sample group
+        :param group_name: a text string representing the sample group to add to the WSP file
         :return: None
         """
-        group_gating_strategies = self._sample_group_lut[group_name]
-        samples = self.get_group_samples(group_name)
+        samples = self.sample_lut.values()
 
-        wsp_utils.export_flowjo_wsp(group_gating_strategies, group_name, samples, file_handle)
+        # TODO: export_flowjo_wsp needs to be updated to handle the new design
+        wsp_utils.export_flowjo_wsp(self.gating_strategy, group_name, samples, file_handle)
 
     def get_sample(self, sample_id):
         """
