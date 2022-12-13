@@ -390,6 +390,8 @@ class Session(object):
         :param transform: an instance of a Transform subclass
         :return: pandas DataFrame containing only the events within the specified gate
         """
+        # TODO: re-evaluate whether this method should be removed or modified...the
+        #   ambiguous transforms per channel make this tricky to implement.
         sample = self.get_sample(sample_id)
         sample = copy.deepcopy(sample)
 
