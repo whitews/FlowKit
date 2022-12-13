@@ -90,22 +90,19 @@ class Session(object):
         """
         return self.gating_strategy.get_gate_ids()
 
-    def add_gate(self, gate, gate_path, group_name, sample_id=None):
+    def add_gate(self, gate, gate_path, sample_id=None):
         """
-        Add a Gate instance to a sample group's gating strategy. The gate ID and gate path
-        must be unique in the gating strategy. Custom sample gates may be added by specifying
-        an optional sample ID. Note, the gate & gate path must already exist prior to adding
-        custom sample gates.
+        Add a Gate instance to the gating strategy. The gate ID and gate path
+        must be unique in the gating strategy. Custom sample gates may be added
+        by specifying an optional sample ID. Note, the gate & gate path must
+        already exist prior to adding custom sample gates.
 
         :param gate: an instance of a Gate subclass
         :param gate_path: complete tuple of gate IDs for unique set of gate ancestors
-        :param group_name: a text string representing the sample group
         :param sample_id: text string for specifying given gate as a custom Sample gate
         :return: None
         """
-        group = self._sample_group_lut[group_name]
-        gs = group['gating_strategy']
-        gs.add_gate(copy.deepcopy(gate), gate_path=gate_path, sample_id=sample_id)
+        self.gating_strategy.add_gate(copy.deepcopy(gate), gate_path=gate_path, sample_id=sample_id)
 
     def add_transform(self, transform, group_name):
         """
