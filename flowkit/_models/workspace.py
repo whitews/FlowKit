@@ -356,6 +356,12 @@ class Workspace(object):
 
         sample_data_to_run = []
         for s_id in sample_ids:
+            if s_id not in self._sample_data_lut:
+                # sample ID provided isn't present in Workspace
+                # or was referenced but has no gate data.
+                warnings.warn("Sample %s has no gate data" % s_id)
+                continue
+
             sample = self._sample_lut[s_id]
             gating_strategy = self._sample_data_lut[s_id]['gating_strategy']
 
