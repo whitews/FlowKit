@@ -824,7 +824,16 @@ def _add_group_node_to_wsp(parent_el, group_name, sample_id_list):
         sample_ref_el.set('sampleID', sample_id)
 
 
-def _recurse_add_sub_populations(parent_el, gate_id, gate_path, gating_strategy, gate_fj_id_lut, comp_prefix, ns_map):
+def _recurse_add_sub_populations(
+        parent_el,
+        gate_id,
+        gate_path,
+        gating_strategy,
+        gate_fj_id_lut,
+        comp_prefix,
+        ns_map,
+        sample_id=None
+):
     # first, add given gate to parent XML element inside its own Population element
     pop_el = etree.SubElement(parent_el, "Population")
     pop_el.set('name', gate_id)
@@ -850,7 +859,7 @@ def _recurse_add_sub_populations(parent_el, gate_id, gate_path, gating_strategy,
         gate_el.set('{%s}parent_id' % ns_map['gating'], "ID%s" % parent_fj_id)
 
     # Get the gate instance to determine the gate class
-    gate = gating_strategy.get_gate(gate_id, gate_path)
+    gate = gating_strategy.get_gate(gate_id, gate_path, sample_id=sample_id)
 
     if isinstance(gate, PolygonGate):
         _add_polygon_gate(gate_el, gate, fj_id, parent_fj_id, gating_strategy, comp_prefix, ns_map)
@@ -894,7 +903,7 @@ def _add_sample_node_to_wsp(parent_el, sample_name, sample_id, gating_strategy, 
         gate_fj_id_lut[(gate_id, tuple(gate_path))] = str(sample_id) + str(gate_fj_id)
         gate_fj_id += 1
 
-    root_gates = gating_strategy.get_root_gates()
+    root_gates = gating_strategy.get_root_gates(sample_id=sample_id)
 
     # need to find a matching compensation to add the correct comp prefix to parameter labels
     comp_ids = gating_strategy.comp_matrices.keys()
@@ -914,14 +923,15 @@ def _add_sample_node_to_wsp(parent_el, sample_name, sample_id, gating_strategy, 
             gating_strategy,
             gate_fj_id_lut,
             comp_prefix,
-            ns_map
+            ns_map,
+            sample_id=sample_id
         )
 
 
-def export_flowjo_wsp(group_gating_strategies, group_name, samples, file_handle):
+def export_flowjo_wsp(gating_strategy, group_name, samples, file_handle):
     """
     Exports a FlowJo 10 workspace file (.wsp) from the given GatingStrategy instance
-    :param group_gating_strategies: dictionary of Session sample group GatingStrategy instances
+    :param gating_strategy: a GatingStrategy instance
     :param group_name: text string label for sample group
     :param samples: list of Sample instances associated with the sample group
     :param file_handle: File handle for exported FlowJo workspace file
@@ -958,13 +968,10 @@ def export_flowjo_wsp(group_gating_strategies, group_name, samples, file_handle)
     groups_el = etree.SubElement(root, "Groups")
     sample_list_el = etree.SubElement(root, "SampleList")
 
-    template_strategy = group_gating_strategies['gating_strategy']
-    sample_strategies = group_gating_strategies['samples']
-
     # For now, we'll assume all the comps are in the template
     comp_prefix_counter = 0
     comp_prefix_lut = {}
-    for matrix_id, matrix in template_strategy.comp_matrices.items():
+    for matrix_id, matrix in gating_strategy.comp_matrices.items():
         if comp_prefix_counter == 0:
             comp_prefix = 'Comp-'
         else:
@@ -986,13 +993,13 @@ def export_flowjo_wsp(group_gating_strategies, group_name, samples, file_handle)
 
     _add_group_node_to_wsp(groups_el, group_name, sample_id_lut.values())
 
-    gate_ids = template_strategy.get_gate_ids()
+    gate_ids = gating_strategy.get_gate_ids()
     gates = []
     dim_xform_lut = {}  # keys are dim label, value is a set of xform refs
 
-    # Also assume the xforms for all samples are the sam
+    # Also assume the xforms for all samples are the same
     for g_id, g_path in gate_ids:
-        gate = template_strategy.get_gate(g_id, g_path)
+        gate = gating_strategy.get_gate(g_id, g_path)
         gates.append(gate)
 
         for dim in gate.dimensions:
@@ -1023,7 +1030,6 @@ def export_flowjo_wsp(group_gating_strategies, group_name, samples, file_handle)
     #     - SampleNode
     for sample in samples:
         sample_id = sample_id_lut[sample.original_filename]
-        sample_strategy = sample_strategies[sample.original_filename]
 
         sample_el = etree.SubElement(sample_list_el, "Sample")
 
@@ -1047,14 +1053,14 @@ def export_flowjo_wsp(group_gating_strategies, group_name, samples, file_handle)
         for dim, xform in dim_xform_lut.items():
             if xform is None:
                 continue
-            _add_transform_to_wsp(xforms_el, dim, sample_strategy.get_transform(xform), ns_map)
+            _add_transform_to_wsp(xforms_el, dim, gating_strategy.get_transform(xform), ns_map)
 
             # We also need to add comp-prefixed param transforms (excluding scatter and Time channels)
             if dim[:4] in ['FSC-', 'SSC-', 'Time']:
                 continue
 
             for comp_prefix in comp_prefix_lut.values():
-                _add_transform_to_wsp(xforms_el, comp_prefix + dim, sample_strategy.get_transform(xform), ns_map)
+                _add_transform_to_wsp(xforms_el, comp_prefix + dim, gating_strategy.get_transform(xform), ns_map)
 
         # Add Keywords sub-element using the Sample metadata
         keywords_el = etree.SubElement(sample_el, "Keywords")
@@ -1065,7 +1071,7 @@ def export_flowjo_wsp(group_gating_strategies, group_name, samples, file_handle)
             sample_el,
             sample.original_filename,
             sample_id,
-            sample_strategy,
+            gating_strategy,
             comp_prefix_lut,
             ns_map
         )
