@@ -403,6 +403,28 @@ class Workspace(object):
             )
         return copy.deepcopy(gating_result)
 
+    def get_analysis_report(self, group_name=None):
+        """
+        Retrieve the report for the analyzed samples as a pandas DataFrame.
+
+        :param group_name: optional group name, if specified only results
+            from samples in this group will be processed, otherwise results
+            from all analyzed samples will be returned
+        :return: pandas DataFrame
+        """
+        all_reports = []
+        group_s_ids = self.get_sample_ids(group_name)
+
+        for s_id in group_s_ids:
+            try:
+                result = self._results_lut[s_id]
+            except KeyError:
+                continue
+
+            all_reports.append(result.report)
+
+        return copy.deepcopy(pd.concat(all_reports))
+
     def _get_processed_events(self, sample_id):
         """
         Retrieve a pandas DataFrame containing processed events for specified sample.
