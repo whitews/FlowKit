@@ -345,10 +345,11 @@ class GatingStrategy(object):
 
         return gate_path_list
 
-    def get_root_gates(self):
+    def get_root_gates(self, sample_id=None):
         """
         Retrieve list of root-level gate instances.
 
+        :param sample_id: Sample ID string to retrieve custom gates if present. If None, template gates are returned
         :return: list of Gate instances
         """
         root = self._gate_tree.root
@@ -357,7 +358,7 @@ class GatingStrategy(object):
         root_gates = []
 
         for node in root_children:
-            root_gates.append(node.gate)
+            root_gates.append(node.get_gate(sample_id=sample_id))
 
         return root_gates
 
