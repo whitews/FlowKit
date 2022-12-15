@@ -160,10 +160,8 @@ class StringReprTestCase(unittest.TestCase):
         self.assertEqual(repr(gs), gs_string)
 
     def test_session_repr(self):
-        wsp_path = "data/8_color_data_set/8_color_ICS_simple.wsp"
-        session = fk.Session()
-        session.import_flowjo_workspace(wsp_path, ignore_missing_files=True)
+        session = fk.Session(fcs_samples=data1_sample)
 
-        session_string = "Session(3 samples [0 loaded], 2 sample groups)"
+        session_string = "Session(1 samples)"
 
         self.assertEqual(repr(session), session_string)
