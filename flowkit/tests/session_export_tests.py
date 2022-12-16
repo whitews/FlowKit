@@ -1,9 +1,11 @@
 """
 Session Export Tests
 """
+import copy
 import unittest
 from io import BytesIO
-from flowkit import Session
+from flowkit import Session, Workspace, gates
+from .session_tests import test_samples_8c_full_set
 
 
 class SessionExportTestCase(unittest.TestCase):
@@ -13,26 +15,26 @@ class SessionExportTestCase(unittest.TestCase):
         sample_group = 'my_group'
         sample_id = 'data_set_simple_line_100.fcs'
 
-        fks = Session(fcs_path)
-        fks.import_flowjo_workspace(wsp_path)
+        wsp = Workspace(wsp_path, fcs_samples=fcs_path)
+        gs = wsp.get_gating_strategy(sample_id)
+        session = Session(gating_strategy=gs, fcs_samples=fcs_path)
 
         with BytesIO() as fh_out:
-            fks.export_wsp(
+            session.export_wsp(
                 fh_out,
                 sample_group
             )
             fh_out.seek(0)
 
-            fks2 = Session(fcs_path)
-            fks2.import_flowjo_workspace(fh_out)
+            wsp2 = Workspace(fh_out, fcs_samples=fcs_path)
 
-        fks.analyze_samples(sample_group)
-        fks_results = fks.get_gating_results(sample_group, sample_id)
+        wsp.analyze_samples(sample_id=sample_id)
+        fks_results = wsp.get_gating_results(sample_id)
 
-        fks2.analyze_samples(sample_group)
-        fks2_results = fks2.get_gating_results(sample_group, sample_id)
+        wsp2.analyze_samples(sample_id=sample_id)
+        fks2_results = wsp2.get_gating_results(sample_id)
 
-        gate_refs = fks.get_gate_ids(sample_group)
+        gate_refs = wsp.get_gate_ids(sample_id=sample_id)
 
         self.assertEqual(len(gate_refs), 2)
 
@@ -45,3 +47,34 @@ class SessionExportTestCase(unittest.TestCase):
         self.assertEqual(fks2_rect1_count, 0)
         self.assertEqual(fks_poly1_count, 50)
         self.assertEqual(fks2_poly1_count, 50)
+
+    def test_export_wsp(self):
+        wsp_path = "data/8_color_data_set/8_color_ICS.wsp"
+        sample_grp = 'DEN'
+
+        # use a leaf gate to test if the new WSP session is created correctly
+        gate_name = 'TNFa+'
+        gate_path = ('root', 'Time', 'Singlets', 'aAmine-', 'CD3+', 'CD4+')
+
+        wsp = Workspace(wsp_path, fcs_samples=copy.deepcopy(test_samples_8c_full_set), ignore_missing_files=True)
+        sample_id = '101_DEN084Y5_15_E03_009_clean.fcs'
+        gs = wsp.get_gating_strategy(sample_id)
+
+        session = Session(gating_strategy=gs, fcs_samples=copy.deepcopy(test_samples_8c_full_set))
+
+        out_file = BytesIO()
+        session.export_wsp(out_file, sample_grp)
+        out_file.seek(0)
+
+        wsp_out = Workspace(out_file, fcs_samples=copy.deepcopy(test_samples_8c_full_set), ignore_missing_files=True)
+
+        self.assertIsInstance(wsp_out, Workspace)
+
+        wsp_gate = wsp.get_gate(sample_id, gate_name, gate_path)
+        wsp_out_gate = wsp_out.get_gate(sample_id, gate_name, gate_path)
+
+        self.assertIsInstance(wsp_gate, gates.RectangleGate)
+        self.assertIsInstance(wsp_out_gate, gates.RectangleGate)
+
+        self.assertEqual(wsp_gate.gate_name, gate_name)
+        self.assertEqual(wsp_out_gate.gate_name, gate_name)
