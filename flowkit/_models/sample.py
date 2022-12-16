@@ -375,10 +375,8 @@ class Sample(object):
         """
         Stores a set of sub-sampled indices for event data. Sub-sampled events
         can be accessed via the `get_events` method by setting the keyword
-        argument `subsample=True`.
-
-        Returns NumPy array if sub-sampling succeeds
-        Also updates self.subsample_indices
+        argument `subsample=True`. The sub-sampled indices are available via
+        the `subsample_indices` attribute.
 
         :param subsample_count: Number of events to use as a sub-sample. If the number of
             events in the Sample is less than the requested sub-sample count, then the
