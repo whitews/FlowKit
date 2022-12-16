@@ -25,10 +25,10 @@ def load_samples(fcs_samples):
     Returns a list of Sample instances from a variety of input types (fcs_samples), such as file or
         directory paths, a Sample instance, or lists of the previous types.
 
-    :param fcs_samples: str or list. If given a string, it can be a directory path or a file path.
-            If a directory, any .fcs files in the directory will be loaded. If a list, then it must
-            be a list of file paths or a list of Sample instances. Lists of mixed types are not
-            supported.
+    :param fcs_samples: Sample, str, or list. Allowed types: a Sample instance, list of Sample instances,
+            a directory or file path, or a list of directory or file paths. If a directory, any .fcs
+            files in the directory will be loaded. If a list, then it must be a list of file paths or a
+            list of Sample instances. Lists of mixed types are not supported.
     :return: list of Sample instances
     """
     sample_list = []
