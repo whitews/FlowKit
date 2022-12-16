@@ -207,8 +207,10 @@ class Workspace(object):
 
     def find_matching_gate_paths(self, sample_id, gate_name):
         """
-        Find all gate paths in the gating strategy matching the given gate name.
+        Find all gate paths in the gating strategy for the given Sample
+        matching the given gate name.
 
+        :param sample_id: a text string representing a Sample instance
         :param gate_name: text string of a gate name
         :return: list of gate paths (list of tuples)
         """
