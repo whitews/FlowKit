@@ -85,9 +85,12 @@ def gate_samples(sample_data, cache_events, verbose, use_mp=False):
 
         with mp.get_context(mp_context).Pool(processes=proc_count, maxtasksperchild=1) as pool:
             if verbose:
+                # flush the output here so the print statement doesn't get buried in the
+                # individual gate print output
                 print(
                     '#### Processing gates for %d samples (multiprocessing is enabled - %d cpus) ####'
-                    % (sample_count, proc_count)
+                    % (sample_count, proc_count),
+                    flush=True
                 )
             data = [(sd['gating_strategy'], sd['sample'], cache_events, verbose) for sd in sample_data]
 
@@ -100,7 +103,12 @@ def gate_samples(sample_data, cache_events, verbose, use_mp=False):
             all_results = [result.get() for result in async_results]
     else:
         if verbose:
-            print('#### Processing gates for %d samples (multiprocessing is disabled) ####' % sample_count)
+            # flush the output here so the print statement doesn't get buried in the
+            # individual gate print output
+            print(
+                '#### Processing gates for %d samples (multiprocessing is disabled) ####' % sample_count,
+                flush=True
+            )
 
         all_results = []
         for sd in sample_data:
