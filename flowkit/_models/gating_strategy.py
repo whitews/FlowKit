@@ -102,6 +102,20 @@ class GatingStrategy(object):
             GateNode(gate, parent_node)
             self._rebuild_dag()
 
+    def is_custom_gate(self, gate_name, gate_path=None, sample_id=None):
+        """
+        Determine if a custom gate exists for a sample ID.
+
+        :param gate_name: text string of a gate name
+        :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
+            Required if gate_name is ambiguous
+        :param sample_id: Sample ID string
+        :return: Boolean value for whether the sample ID has a custom gate
+        """
+        node = self._get_gate_node(gate_name, gate_path)
+
+        return node.is_custom_gate(sample_id)
+
     def get_gate(self, gate_name, gate_path=None, sample_id=None):
         """
         Retrieve a gate instance by its gate ID (gate name and optional gate_path).
@@ -809,7 +823,13 @@ class GatingStrategy(object):
                 continue
 
             if verbose:
-                print("%s: processing gate %s" % (sample_id, g_id))
+                is_custom_gate = self.is_custom_gate(g_id, g_path, sample_id)
+                if is_custom_gate:
+                    custom_gate_str = ' [custom]'
+                else:
+                    custom_gate_str = ''
+
+                print("%s: processing gate %s%s" % (sample_id, g_id, custom_gate_str))
 
             # look up parent results
             parent_results = None  # default to None
