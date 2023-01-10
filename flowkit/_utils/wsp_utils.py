@@ -280,7 +280,7 @@ def _convert_wsp_gate(wsp_gate, comp_matrix, xform_lut, ignore_transforms=False)
                 if xforms[i] is not None:
                     vertex[i] = xforms[i].apply(np.array([[float(coordinate)]]))[0][0]
 
-        gate = PolygonGate(wsp_gate.gate_name, new_dims, vertices)
+        gate = PolygonGate(wsp_gate.gate_name, new_dims, vertices, use_complement=wsp_gate.use_complement)
     elif isinstance(wsp_gate, GMLRectangleGate):
         gate = copy.deepcopy(wsp_gate)
         gate = gate.convert_to_parent_class()
@@ -330,11 +330,35 @@ def _recurse_wsp_sub_populations(sub_pop_el, gate_path, gating_ns, data_type_ns)
         gate_type = gate_child_el.tag.partition('}')[-1]
         gate_class = wsp_gate_constructor_lut[gate_type]
 
-        g = gate_class(
-            gate_child_el,
-            gating_ns,
-            data_type_ns
-        )
+        # Lookup 'eventsInside' attribute value, determines whether gate results
+        # should within the gate area or outside (i.e. the gate's complement).
+        # The value is a text string of an integer: '1' for events inside,
+        # '0' for events outside.
+        try:
+            events_inside_value = int(gate_child_el.attrib['eventsInside'])
+        except KeyError:
+            # if not found, default to events inside gate
+            events_inside_value = 1
+
+        if events_inside_value == 1:
+            use_complement = False
+        else:
+            use_complement = True
+
+        if gate_type in ['RectangleGate', 'PolygonGate', 'EllipsoidGate']:
+            # these take extra kwarg 'use_complement'
+            g = gate_class(
+                gate_child_el,
+                gating_ns,
+                data_type_ns,
+                use_complement=use_complement
+            )
+        else:
+            g = gate_class(
+                gate_child_el,
+                gating_ns,
+                data_type_ns
+            )
 
         # replace ID and parent ID with population names, but save the originals,
         # so we can re-create the correct hierarchy later.

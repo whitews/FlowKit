@@ -41,7 +41,8 @@ class WSPEllipsoidGate(Gate):
             self,
             gate_element,
             gating_namespace,
-            data_type_namespace
+            data_type_namespace,
+            use_complement=False
     ):
         gate_name, parent_gate_name, dimensions = xml_utils.parse_gate_element(
             gate_element,
@@ -59,6 +60,9 @@ class WSPEllipsoidGate(Gate):
         # a 'foci' element, that holds 2 'vertex' elements
         self.foci = self._parse_foci_elements(gate_element, gating_namespace, data_type_namespace)
         self.edge_vertices = self._parse_edge_elements(gate_element, gating_namespace, data_type_namespace)
+
+        # save use_complement arg for later conversion to PolygonGate
+        self.use_complement = use_complement
 
         super().__init__(
             gate_name,
@@ -238,7 +242,7 @@ class WSPEllipsoidGate(Gate):
 
             xy_rot_trans[:, i] *= xform_range
 
-        return PolygonGate(self.gate_name, self.dimensions, xy_rot_trans)
+        return PolygonGate(self.gate_name, self.dimensions, xy_rot_trans, use_complement=self.use_complement)
 
     def apply(self, df_events):
         """

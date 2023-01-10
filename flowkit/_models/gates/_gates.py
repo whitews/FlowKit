@@ -23,19 +23,22 @@ class RectangleGate(Gate):
     def __init__(
             self,
             gate_name,
-            dimensions
+            dimensions,
+            use_complement=False
     ):
         """
         Create a RectangleGate instance.
 
         :param gate_name: text string for the name of the gate
         :param dimensions: list of Dimension instances used to define the gate boundaries
+        :param use_complement: whether to use events inside or outside gate area, default is False (inside gate area)
         """
         super().__init__(
             gate_name,
             dimensions
         )
         self.gate_type = "RectangleGate"
+        self.use_complement = use_complement
 
     def __repr__(self):
         return (
@@ -64,6 +67,9 @@ class RectangleGate(Gate):
             if dim.max is not None:
                 results = np.bitwise_and(results, df_events[dim_id].values < dim.max)
 
+        if self.use_complement:
+            results = np.logical_not(results)
+
         return results
 
 
@@ -81,7 +87,8 @@ class PolygonGate(Gate):
             self,
             gate_name,
             dimensions,
-            vertices
+            vertices,
+            use_complement=False
     ):
         """
         Create a PolygonGate instance.
@@ -89,6 +96,7 @@ class PolygonGate(Gate):
         :param gate_name: text string for the name of the gate
         :param dimensions: list of Dimension instances
         :param vertices: list of 2-D coordinates used to define gate boundary
+        :param use_complement: whether to use events inside or outside gate area, default is False (inside gate area)
         """
         super().__init__(
             gate_name,
@@ -96,6 +104,7 @@ class PolygonGate(Gate):
         )
         self.vertices = vertices
         self.gate_type = "PolygonGate"
+        self.use_complement = use_complement
 
     def __repr__(self):
         return (
@@ -122,6 +131,9 @@ class PolygonGate(Gate):
             np.array(self.vertices, dtype=np.float64),
             df_events[dim_ids_ordered].values  # send a NumPy array and not a DataFrame
         )
+
+        if self.use_complement:
+            results = np.logical_not(results)
 
         return results
 

@@ -29,7 +29,8 @@ class GMLRectangleGate(gates.RectangleGate):
             self,
             gate_element,
             gating_namespace,
-            data_type_namespace
+            data_type_namespace,
+            use_complement=False
     ):
         gate_name, parent_gate_name, dimensions = xml_utils.parse_gate_element(
             gate_element,
@@ -37,10 +38,12 @@ class GMLRectangleGate(gates.RectangleGate):
             data_type_namespace
         )
         self.parent = parent_gate_name
+        self.use_complement = use_complement
 
         super().__init__(
             gate_name,
-            dimensions
+            dimensions,
+            use_complement=self.use_complement
         )
 
     def convert_to_parent_class(self):
@@ -49,7 +52,7 @@ class GMLRectangleGate(gates.RectangleGate):
 
         :return: RectangleGate
         """
-        return gates.RectangleGate(self.gate_name, self.dimensions)
+        return gates.RectangleGate(self.gate_name, self.dimensions, use_complement=self.use_complement)
 
 
 class GMLPolygonGate(gates.PolygonGate):
@@ -65,7 +68,8 @@ class GMLPolygonGate(gates.PolygonGate):
             self,
             gate_element,
             gating_namespace,
-            data_type_namespace
+            data_type_namespace,
+            use_complement=False
     ):
         gate_name, parent_gate_name, dimensions = xml_utils.parse_gate_element(
             gate_element,
@@ -85,10 +89,13 @@ class GMLPolygonGate(gates.PolygonGate):
             vert = xml_utils.parse_vertex_element(vert_el, gating_namespace, data_type_namespace)
             vertices.append(vert)
 
+        self.use_complement = use_complement
+
         super().__init__(
             gate_name,
             dimensions,
-            vertices
+            vertices,
+            use_complement=self.use_complement
         )
 
     def convert_to_parent_class(self):
@@ -97,7 +104,7 @@ class GMLPolygonGate(gates.PolygonGate):
 
         :return: PolygonGate
         """
-        return gates.PolygonGate(self.gate_name, self.dimensions, self.vertices)
+        return gates.PolygonGate(self.gate_name, self.dimensions, self.vertices, use_complement=self.use_complement)
 
 
 class GMLEllipsoidGate(gates.EllipsoidGate):
