@@ -373,15 +373,16 @@ class Sample(object):
             random_seed=1
     ):
         """
-        Returns a sub-sample of FCS raw events.
-
-        Returns NumPy array if sub-sampling succeeds
-        Also updates self.subsample_indices
+        Stores a set of sub-sampled indices for event data. Sub-sampled events
+        can be accessed via the `get_events` method by setting the keyword
+        argument `subsample=True`. The sub-sampled indices are available via
+        the `subsample_indices` attribute.
 
         :param subsample_count: Number of events to use as a sub-sample. If the number of
             events in the Sample is less than the requested sub-sample count, then the
             maximum number of available events is used for the sub-sample.
         :param random_seed: Random seed used for sub-sampling events
+        :return: None
         """
         # get raw event count as it might be less than original event count
         # due to filtered negative scatter events
@@ -1026,7 +1027,10 @@ class Sample(object):
 
                 ignore_keywords.extend([gain_keyword, scale_keyword, range_keyword])
         else:
-            # for 'raw', 'comp', or 'xform' the event values
+            # for 'raw', 'comp', or 'xform' cases, set data type to float
+            metadata_dict['datatype'] = 'F'
+
+            # And set proper values for channel metadata
             for _, channel_row in self.channels.iterrows():
                 chan_num = channel_row['channel_number']
 
@@ -1099,6 +1103,15 @@ class Sample(object):
                 "Exporting original events as CSV will not include the metadata (gain, timestep, etc.) "
                 "to properly interpret the exported event values."
             )
+        elif ext == '.fcs' and source == 'orig':
+            # Related to above: If exporting original events as an FCS file,
+            # verify the data type is float ('F'). FlowIO doesn't support
+            # creating non-float FCS files
+            data_type = self.metadata['datatype']
+            if data_type != 'F':
+                raise NotImplementedError(
+                    "Exporting original events is not supported for FCS files with data type %s." % data_type
+                )
 
         if directory is not None:
             output_path = os.path.join(directory, filename)
@@ -1130,7 +1143,6 @@ class Sample(object):
         events = self.get_events(source=source)
         events = events[idx, :]
 
-        # TODO: support exporting to HDF5 format, but as optional dependency/import
         if ext == '.csv':
             np.savetxt(
                 output_path,

@@ -100,18 +100,17 @@ class PlotTestCase(unittest.TestCase):
         self.assertIsInstance(grid, bk_Column)
 
     def test_plot_gates(self):
-        fks = fk.Session(copy.deepcopy(test_sample))
-        fks.add_sample_group('my_group', copy.deepcopy(test_gating_strategy))
-
-        group_name = 'my_group'
+        fks = fk.Session(
+            gating_strategy=copy.deepcopy(test_gating_strategy),
+            fcs_samples=copy.deepcopy(test_sample)
+        )
         sample_name = 'B07'
-        fks.assign_samples(sample_name, group_name)
-        gate_tuples = fks.get_gate_ids(group_name)
-        fks.analyze_samples(group_name, sample_id=sample_name)
+        gate_tuples = fks.get_gate_ids()
+        fks.analyze_samples(sample_id=sample_name)
 
         for gate_name, ancestors in gate_tuples:
             try:
-                gate = fks.get_gate(group_name, gate_name, sample_id=sample_name)
+                gate = fks.get_gate(gate_name, sample_id=sample_name)
             except fk.exceptions.QuadrantReferenceError:
                 # cannot plot single quadrants of a quadrant gate
                 continue
@@ -121,20 +120,19 @@ class PlotTestCase(unittest.TestCase):
                 continue
 
             try:
-                p = fks.plot_gate('my_group', sample_name, gate_name)
+                p = fks.plot_gate(sample_name, gate_name)
             except NotImplementedError:
                 continue
 
             self.assertIsInstance(p, bk_Figure)
 
     def test_plot_gated_scatter(self):
-        fks = fk.Session(copy.deepcopy(test_sample))
-        fks.add_sample_group('my_group', copy.deepcopy(test_gating_strategy))
-
-        group_name = 'my_group'
+        fks = fk.Session(
+            gating_strategy=copy.deepcopy(test_gating_strategy),
+            fcs_samples=copy.deepcopy(test_sample)
+        )
         sample_name = 'B07'
-        fks.assign_samples(sample_name, group_name)
-        fks.analyze_samples(group_name, sample_id=sample_name)
+        fks.analyze_samples(sample_id=sample_name)
 
         x_dim = fk.Dimension('FL2-H', compensation_ref='MySpill', transformation_ref='Logicle_10000_0.5_4.5_0')
         y_dim = fk.Dimension('FL3-H', compensation_ref='MySpill', transformation_ref='Logicle_10000_0.5_4.5_0')
@@ -143,9 +141,7 @@ class PlotTestCase(unittest.TestCase):
             sample_name,
             x_dim,
             y_dim,
-            group_name=group_name,
-            gate_name='ScaleRect1',
-            subsample=True
+            gate_name='ScaleRect1'
         )
 
         self.assertIsInstance(p, bk_Figure)

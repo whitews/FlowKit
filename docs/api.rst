@@ -11,6 +11,7 @@ Main Classes
    gating_strategy
    session
    gating_results
+   workspace
 
 Supporting Classes
 ------------------

@@ -37,3 +37,7 @@ wheels/
 .ipynb_checkpoints
 *.ipynb
 /docs/_build/*
+
+# R stuff
+.RData
+.Rhistory

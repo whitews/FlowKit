@@ -31,6 +31,14 @@ class Gate(ABC):
             if dim_id == dim.id:
                 return dim
 
+    def get_dimension_ids(self):
+        """
+        Retrieve all gate Dimension IDs in order
+
+        :return: list of Dimension ID strings
+        """
+        return [dim.id for dim in self.dimensions]
+
     @abstractmethod
     def apply(self, df_events):
         """

@@ -23,6 +23,7 @@ from .._models.gates._gml_gates import \
     GMLRectangleGate
 # noinspection PyProtectedMember
 from .._models.gates._wsp_gates import WSPEllipsoidGate
+from .._models.gating_strategy import GatingStrategy
 
 wsp_gate_constructor_lut = {
     'RectangleGate': GMLRectangleGate,
@@ -279,9 +280,10 @@ def _convert_wsp_gate(wsp_gate, comp_matrix, xform_lut, ignore_transforms=False)
                 if xforms[i] is not None:
                     vertex[i] = xforms[i].apply(np.array([[float(coordinate)]]))[0][0]
 
-        gate = PolygonGate(wsp_gate.gate_name, new_dims, vertices)
+        gate = PolygonGate(wsp_gate.gate_name, new_dims, vertices, use_complement=wsp_gate.use_complement)
     elif isinstance(wsp_gate, GMLRectangleGate):
         gate = copy.deepcopy(wsp_gate)
+        gate = gate.convert_to_parent_class()
         gate.dimensions = new_dims
     elif isinstance(wsp_gate, WSPEllipsoidGate):
         # FlowJo ellipse gates must be converted to approximate polygons.
@@ -299,7 +301,7 @@ def _convert_wsp_gate(wsp_gate, comp_matrix, xform_lut, ignore_transforms=False)
 
 
 def _recurse_wsp_sub_populations(sub_pop_el, gate_path, gating_ns, data_type_ns):
-    gates = []
+    gates = {}
     ns_map = sub_pop_el.nsmap
 
     if gate_path is None:
@@ -328,11 +330,35 @@ def _recurse_wsp_sub_populations(sub_pop_el, gate_path, gating_ns, data_type_ns)
         gate_type = gate_child_el.tag.partition('}')[-1]
         gate_class = wsp_gate_constructor_lut[gate_type]
 
-        g = gate_class(
-            gate_child_el,
-            gating_ns,
-            data_type_ns
-        )
+        # Lookup 'eventsInside' attribute value, determines whether gate results
+        # should within the gate area or outside (i.e. the gate's complement).
+        # The value is a text string of an integer: '1' for events inside,
+        # '0' for events outside.
+        try:
+            events_inside_value = int(gate_child_el.attrib['eventsInside'])
+        except KeyError:
+            # if not found, default to events inside gate
+            events_inside_value = 1
+
+        if events_inside_value == 1:
+            use_complement = False
+        else:
+            use_complement = True
+
+        if gate_type in ['RectangleGate', 'PolygonGate', 'EllipsoidGate']:
+            # these take extra kwarg 'use_complement'
+            g = gate_class(
+                gate_child_el,
+                gating_ns,
+                data_type_ns,
+                use_complement=use_complement
+            )
+        else:
+            g = gate_class(
+                gate_child_el,
+                gating_ns,
+                data_type_ns
+            )
 
         # replace ID and parent ID with population names, but save the originals,
         # so we can re-create the correct hierarchy later.
@@ -342,20 +368,22 @@ def _recurse_wsp_sub_populations(sub_pop_el, gate_path, gating_ns, data_type_ns)
         #       Likewise for parent_id
         g.gate_name = pop_name
         g.parent = parent_id
+        gate_id = copy.copy(gate_path)
+        gate_id.append(pop_name)
+        gate_id = tuple(gate_id)
 
-        gates.append(
-            {
-                'owning_group': owning_group,
-                'gate': g,
-                'gate_path': tuple(gate_path)  # converting to tuple!
-            }
-        )
+        # Including gate path for ease of access later, even though a bit redundant w/ gate_id
+        gates[gate_id] = {
+            'owning_group': owning_group,
+            'gate': g,
+            'gate_path': tuple(gate_path)  # converting to tuple!
+        }
 
         sub_pop_els = pop_el.findall('Subpopulations', ns_map)
         child_gate_path = copy.copy(gate_path)
         child_gate_path.append(pop_name)
         for el in sub_pop_els:
-            gates.extend(_recurse_wsp_sub_populations(el, child_gate_path, gating_ns, data_type_ns))
+            gates.update(_recurse_wsp_sub_populations(el, child_gate_path, gating_ns, data_type_ns))
 
     return gates
 
@@ -392,6 +420,10 @@ def _parse_wsp_groups(group_node_els, ns_map, gating_ns, data_type_ns):
                 data_type_ns
             )
 
+        # skip groups with no gates or samples
+        if len(group_gates) == 0 and len(group_samples) == 0:
+            continue
+
         wsp_groups[group_name] = {
             'gates': group_gates,
             'samples': group_samples
@@ -426,7 +458,7 @@ def _parse_wsp_samples(sample_els, ns_map, gating_ns, transform_ns, data_type_ns
         sample_root_sub_pop_el = sample_node_el.find('Subpopulations', ns_map)
 
         if sample_root_sub_pop_el is None:
-            sample_gates = []
+            sample_gates = {}
         else:
             sample_gates = _recurse_wsp_sub_populations(
                 sample_root_sub_pop_el,
@@ -441,26 +473,19 @@ def _parse_wsp_samples(sample_els, ns_map, gating_ns, transform_ns, data_type_ns
             'sample_name': sample_name,
             'sample_gates': sample_gates,
             'custom_gate_ids': set(),
-            'custom_gates': [],
             'transforms': sample_xform_lut,
             'keywords': sample_keywords_lut,
             'comp': sample_comp
         }
 
-        for sample_gate in sample_gates:
-            if sample_gate['owning_group'] == '':
+        for gate_id, sample_gate_dict in sample_gates.items():
+            if sample_gate_dict['owning_group'] == '':
                 # If the owning group is an empty string, it is a custom gate for that sample
                 # that is potentially used in another group. However, it appears that if a
                 # sample has a custom gate then that custom gate cannot be further customized.
                 # Since there is only a single custom gate per gate name per sample, then we
                 # can create a LUT of custom gates per sample
-                wsp_samples[sample_id]['custom_gate_ids'].add(sample_gate['gate'].gate_name)
-                wsp_samples[sample_id]['custom_gates'].append(
-                    {
-                        'gate': sample_gate['gate'],
-                        'gate_path': sample_gate['gate_path']
-                    }
-                )
+                wsp_samples[sample_id]['custom_gate_ids'].add(gate_id)
 
     return wsp_samples
 
@@ -469,10 +494,23 @@ def parse_wsp(workspace_file_or_path, ignore_transforms=False):
     """
     Converts a FlowJo 10 workspace file (.wsp) into a nested Python dictionary with the following structure:
 
-        wsp_dict[group][sample_name] = {
-            'gates': {gate_id: gate_instance, ...},
-            'transforms': transforms_list,
-            'compensation': matrix
+        wsp_dict = {
+            'groups': {
+                group_name: {
+                    'samples': sample list,
+                    'group_gates': list of common group gates (may not be the complete tree)
+                },
+                ...
+            }
+            'samples': {
+                sample_name: {
+                    'keywords': dict of FJ sample keywords,
+                    'compensation': matrix,
+                    'transforms': dict of transforms (key is parameter name),
+                    'custom_gate_ids': set of gate IDs,
+                    'gating_strategy': {gate_id: gate_instance, ...}
+                },
+                ...
         }
 
     :param workspace_file_or_path: A FlowJo .wsp file or file path
@@ -491,107 +529,119 @@ def parse_wsp(workspace_file_or_path, ignore_transforms=False):
     sample_list_el = root_xml.find('SampleList', ns_map)
     sample_els = sample_list_el.findall('Sample', ns_map)
 
-    # Find all group gates before looking at the custom sample gates.
-    # Custom sample gates are defined in the SampleList branch and
-    # are indicated by having an empty string for the owningGroup.
-    # Only 1 custom sample gate can exist per sample, regardless
-    # of sample group. So, if a group contains a gate with a name
-    # that matches a custom sample gate name, then the custom one
-    # overrides the group gate.
+    # FlowJo has 2 types of gates: shared group gates and custom sample gates.
+    # The odd thing is that even though a sample can belong to multiple groups,
+    # there is only one gate tree per sample. If you add a sample to 2 groups,
+    # then try to make a gate in one of the groups, the sample will have the
+    # same gate tree in the other group as well. So, it doesn't seem possible
+    # for a sample to have multiple gating strategies in the same workspace.
+    #
+    # The "SampleList" node contains the sample nodes, and those contain the
+    # full gate tree for each sample. We only need to parse the group nodes
+    # to determine which samples are assigned to which groups. Then, we can
+    # parse each sample's gate tree and create / assign the gates.
+    #
+    # Custom sample gates are identified by having an empty string for the
+    # owningGroup. For any gate ID (gate name & path), only 1 custom sample
+    # gate can exist per sample, regardless of sample group. It is also
+    # for a gate node to have no defined group template gate if all the
+    # samples in the group have a custom sample gate for that gate node.
+    #
+    # A few remaining complications:
+    #     - The 'All Samples' group: This is a special group containing all
+    #       samples. This is potentially problematic b/c multiple group gate
+    #       trees can exist among the samples here. It is also possible that
+    #       variations in gate trees can occur with custom sample gates, a
+    #       scenario that is even harder to detect. For these reasons, the
+    #       'All Samples' group is ignored for now.
+    #     - Multi-group samples: If a sample belongs to more than 1 group,
+    #       then it can have group gates from more than 1 group. This shows
+    #       up in its sample gate tree.
+    #     - Transformation LUTs: FlowJo stores gate boundary info in the
+    #       untransformed space. Transforms used by a sample are stored with
+    #       the sample node in the SampleList, and variations can occur for
+    #       the same dimension across different samples. This means that 2
+    #       samples can be in the same group and use the same gate, but can
+    #       have different transforms for a given gate dimension. Technically,
+    #       in the FJ GUI & docs, the sample transform LUT is tied to a
+    #       compensation matrix, but in the XML the sample transforms have no
+    #       explicit ties to the comp matrix.
+    #     - Incomplete group tree: The collection of group gates is not
+    #       guaranteed to have the complete gate tree. This occurs if all
+    #       samples have a custom gate for a particular gate tree node.
+    #
+    # TLDR: Because of all these complexities, we don't attempt to build a
+    #       group template gate tree. We simply return:
+    #       - list of groups along with the list of sample names that belong
+    #         to each group
+    #       - a sample dict where the value is that sample's GatingStrategy
+    #       - the group gates are included as a simple list containing the
+    #         collection of untransformed group gates (not sure how this will
+    #         be used in the future).
     wsp_groups = _parse_wsp_groups(group_node_els, ns_map, gating_ns, data_type_ns)
 
-    # Now parse the Sample elements in SampleList looking for custom sample gates
+    # Parse Sample elements in SampleList for each sample's gates
     wsp_samples = _parse_wsp_samples(sample_els, ns_map, gating_ns, transform_ns, data_type_ns)
 
-    # Now we can assemble the complete gating strategies but the gates
-    # need to be converted to the transformed space according to the
-    # correct specified transforms. This is because FlowJo gates are
-    # stored in the untransformed space.
-    wsp_dict = {}
+    # The group dicts have the sample members as sample IDs,
+    # convert them to sample names.
+    for group_dict in wsp_groups.values():
+        new_sample_list = [wsp_samples[i]['sample_name'] for i in group_dict['samples']]
+        group_dict['samples'] = new_sample_list
 
-    for group_id, group_dict in wsp_groups.items():
-        wsp_dict[group_id] = {}
+    # Since the sample gates have the complete gate tree, we will
+    # those to make a GatingStrategy for each sample. However, the
+    # gates need to be  converted to the transformed space according
+    # to the correct specified transforms. This is because FlowJo
+    # gates are stored in the untransformed space.
+    processed_samples = {}
 
-        for group_sample_id in group_dict['samples']:
-            sample_dict = wsp_samples[group_sample_id]
-            sample_name = sample_dict['sample_name']
+    for sample_id, sample_dict in wsp_samples.items():
+        # First, check the sample's sample_gates. If empty, then the
+        # sample has no gate hierarchy. We'll skip it.
+        if len(sample_dict['sample_gates']) == 0:
+            continue
 
-            # check the sample's sample_gates. If it is empty, then the
-            # sample belongs to a group, but it has no gate hierarchy.
-            if len(sample_dict['sample_gates']) == 0:
-                continue
+        sample_name = sample_dict['sample_name']
+        sample_gating_strategy = GatingStrategy()
 
-            group_sample_gate_names = []
-            group_sample_gates = []
+        # Add sample's comp matrix & transforms to GatingStrategy
+        if sample_dict['comp'] is not None:
+            sample_gating_strategy.add_comp_matrix(sample_dict['comp']['matrix'])
 
-            for group_gate in group_dict['gates']:
-                group_gate_name = group_gate['gate'].gate_name
+        for transform in sample_dict['transforms'].values():
+            sample_gating_strategy.add_transform(transform)
 
-                tmp_gate = copy.deepcopy(group_gate['gate'])
+        # Iterate over the sample's gates to add gates to the GatingStrategy
+        # NOTE: This relies on the ordered dictionary behavior
+        #       of Python 3.7+
+        for sample_gate_id, sample_gate_dict in sample_dict['sample_gates'].items():
+            sample_gate = sample_gate_dict['gate']
+            sample_gate_path = sample_gate_dict['gate_path']
 
-                if group_gate_name in sample_dict['custom_gate_ids']:
-                    group_gate_path = group_gate['gate_path']
-                    for sample_gate_dict in sample_dict['custom_gates']:
-                        # noinspection PyTypeChecker
-                        tmp_sample_gate = sample_gate_dict['gate']
-                        # noinspection PyTypeChecker
-                        tmp_sample_gate_path = sample_gate_dict['gate_path']
-                        # noinspection PyUnresolvedReferences
-                        if group_gate_path == tmp_sample_gate_path and tmp_sample_gate.gate_name == group_gate_name:
-                            # found a match, overwrite tmp_gate
-                            tmp_gate = tmp_sample_gate
+            # Convert sample gate and add to gating strategy
+            tmp_gate = _convert_wsp_gate(
+                sample_gate,
+                sample_dict['comp'],
+                sample_dict['transforms'],
+                ignore_transforms=ignore_transforms
+            )
+            sample_gating_strategy.add_gate(tmp_gate, sample_gate_path, sample_id=sample_name)
 
-                tmp_gate = _convert_wsp_gate(
-                    tmp_gate,
-                    sample_dict['comp'],
-                    sample_dict['transforms'],
-                    ignore_transforms=ignore_transforms
-                )
+        processed_sample_data = {
+            'keywords': sample_dict['keywords'],
+            'compensation': sample_dict['comp'],
+            'transforms': sample_dict['transforms'],
+            'custom_gate_ids': sample_dict['custom_gate_ids'],
+            'gating_strategy': sample_gating_strategy
+        }
 
-                group_sample_gate_names.append(group_gate_name)
-                group_sample_gates.append(
-                    {
-                        'gate': tmp_gate,
-                        'gate_path': group_gate['gate_path']
-                    }
-                )
+        processed_samples[sample_name] = processed_sample_data
 
-            # Now, we need to check if there were only custom sample gates
-            # and no group gates. In this case the above would never have
-            # found the custom sample gates, but we don't want to replicate
-            # them.
-            for sample_gate_dict in sample_dict['custom_gates']:
-                # noinspection PyTypeChecker
-                sample_gate = sample_gate_dict['gate']
-                # noinspection PyTypeChecker
-                sample_gate_path = sample_gate_dict['gate_path']
-
-                # noinspection PyUnresolvedReferences
-                if sample_gate.gate_name not in group_sample_gate_names:
-                    # noinspection PyTypeChecker
-                    tmp_gate = _convert_wsp_gate(
-                        sample_gate,
-                        sample_dict['comp'],
-                        sample_dict['transforms'],
-                        ignore_transforms=ignore_transforms
-                    )
-                    group_sample_gates.append(
-                        {
-                            'gate': tmp_gate,
-                            'gate_path': sample_gate_path
-                        }
-                    )
-
-            if sample_dict['comp'] is not None:
-                matrix = sample_dict['comp']['matrix']
-            else:
-                matrix = None
-
-            wsp_dict[group_id][sample_name] = {
-                'gates': group_sample_gates,
-                'transforms': list(sample_dict['transforms'].values()),
-                'compensation': matrix
-            }
+    wsp_dict = {
+        'groups': wsp_groups,
+        'samples': processed_samples
+    }
 
     return wsp_dict
 
@@ -798,7 +848,16 @@ def _add_group_node_to_wsp(parent_el, group_name, sample_id_list):
         sample_ref_el.set('sampleID', sample_id)
 
 
-def _recurse_add_sub_populations(parent_el, gate_id, gate_path, gating_strategy, gate_fj_id_lut, comp_prefix, ns_map):
+def _recurse_add_sub_populations(
+        parent_el,
+        gate_id,
+        gate_path,
+        gating_strategy,
+        gate_fj_id_lut,
+        comp_prefix,
+        ns_map,
+        sample_id=None
+):
     # first, add given gate to parent XML element inside its own Population element
     pop_el = etree.SubElement(parent_el, "Population")
     pop_el.set('name', gate_id)
@@ -824,7 +883,7 @@ def _recurse_add_sub_populations(parent_el, gate_id, gate_path, gating_strategy,
         gate_el.set('{%s}parent_id' % ns_map['gating'], "ID%s" % parent_fj_id)
 
     # Get the gate instance to determine the gate class
-    gate = gating_strategy.get_gate(gate_id, gate_path)
+    gate = gating_strategy.get_gate(gate_id, gate_path, sample_id=sample_id)
 
     if isinstance(gate, PolygonGate):
         _add_polygon_gate(gate_el, gate, fj_id, parent_fj_id, gating_strategy, comp_prefix, ns_map)
@@ -868,7 +927,7 @@ def _add_sample_node_to_wsp(parent_el, sample_name, sample_id, gating_strategy, 
         gate_fj_id_lut[(gate_id, tuple(gate_path))] = str(sample_id) + str(gate_fj_id)
         gate_fj_id += 1
 
-    root_gates = gating_strategy.get_root_gates()
+    root_gates = gating_strategy.get_root_gates(sample_id=sample_id)
 
     # need to find a matching compensation to add the correct comp prefix to parameter labels
     comp_ids = gating_strategy.comp_matrices.keys()
@@ -888,14 +947,15 @@ def _add_sample_node_to_wsp(parent_el, sample_name, sample_id, gating_strategy, 
             gating_strategy,
             gate_fj_id_lut,
             comp_prefix,
-            ns_map
+            ns_map,
+            sample_id=sample_id
         )
 
 
-def export_flowjo_wsp(group_gating_strategies, group_name, samples, file_handle):
+def export_flowjo_wsp(gating_strategy, group_name, samples, file_handle):
     """
     Exports a FlowJo 10 workspace file (.wsp) from the given GatingStrategy instance
-    :param group_gating_strategies: dictionary of Session sample group GatingStrategy instances
+    :param gating_strategy: a GatingStrategy instance
     :param group_name: text string label for sample group
     :param samples: list of Sample instances associated with the sample group
     :param file_handle: File handle for exported FlowJo workspace file
@@ -932,13 +992,10 @@ def export_flowjo_wsp(group_gating_strategies, group_name, samples, file_handle)
     groups_el = etree.SubElement(root, "Groups")
     sample_list_el = etree.SubElement(root, "SampleList")
 
-    template_strategy = group_gating_strategies['template']
-    sample_strategies = group_gating_strategies['samples']
-
     # For now, we'll assume all the comps are in the template
     comp_prefix_counter = 0
     comp_prefix_lut = {}
-    for matrix_id, matrix in template_strategy.comp_matrices.items():
+    for matrix_id, matrix in gating_strategy.comp_matrices.items():
         if comp_prefix_counter == 0:
             comp_prefix = 'Comp-'
         else:
@@ -960,13 +1017,13 @@ def export_flowjo_wsp(group_gating_strategies, group_name, samples, file_handle)
 
     _add_group_node_to_wsp(groups_el, group_name, sample_id_lut.values())
 
-    gate_ids = template_strategy.get_gate_ids()
+    gate_ids = gating_strategy.get_gate_ids()
     gates = []
     dim_xform_lut = {}  # keys are dim label, value is a set of xform refs
 
-    # Also assume the xforms for all samples are the sam
+    # Also assume the xforms for all samples are the same
     for g_id, g_path in gate_ids:
-        gate = template_strategy.get_gate(g_id, g_path)
+        gate = gating_strategy.get_gate(g_id, g_path)
         gates.append(gate)
 
         for dim in gate.dimensions:
@@ -997,7 +1054,6 @@ def export_flowjo_wsp(group_gating_strategies, group_name, samples, file_handle)
     #     - SampleNode
     for sample in samples:
         sample_id = sample_id_lut[sample.original_filename]
-        sample_strategy = sample_strategies[sample.original_filename]
 
         sample_el = etree.SubElement(sample_list_el, "Sample")
 
@@ -1021,14 +1077,14 @@ def export_flowjo_wsp(group_gating_strategies, group_name, samples, file_handle)
         for dim, xform in dim_xform_lut.items():
             if xform is None:
                 continue
-            _add_transform_to_wsp(xforms_el, dim, sample_strategy.get_transform(xform), ns_map)
+            _add_transform_to_wsp(xforms_el, dim, gating_strategy.get_transform(xform), ns_map)
 
             # We also need to add comp-prefixed param transforms (excluding scatter and Time channels)
             if dim[:4] in ['FSC-', 'SSC-', 'Time']:
                 continue
 
             for comp_prefix in comp_prefix_lut.values():
-                _add_transform_to_wsp(xforms_el, comp_prefix + dim, sample_strategy.get_transform(xform), ns_map)
+                _add_transform_to_wsp(xforms_el, comp_prefix + dim, gating_strategy.get_transform(xform), ns_map)
 
         # Add Keywords sub-element using the Sample metadata
         keywords_el = etree.SubElement(sample_el, "Keywords")
@@ -1039,7 +1095,7 @@ def export_flowjo_wsp(group_gating_strategies, group_name, samples, file_handle)
             sample_el,
             sample.original_filename,
             sample_id,
-            sample_strategy,
+            gating_strategy,
             comp_prefix_lut,
             ns_map
         )
