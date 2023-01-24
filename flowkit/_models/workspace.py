@@ -15,13 +15,14 @@ import warnings
 class Workspace(object):
     """
     A Workspace represents an imported FlowJo workspace (.wsp file).
+
     :param wsp_file_path: FlowJo WSP file as a file name/path, file object, or file-like object
     :param fcs_samples: str or list. If given a string, it can be a directory path or a file path.
-            If a directory, any .fcs files in the directory will be loaded. If a list, then it must
-            be a list of file paths or a list of Sample instances. Lists of mixed types are not
-            supported.
+        If a directory, any .fcs files in the directory will be loaded. If a list, then it must
+        be a list of file paths or a list of Sample instances. Lists of mixed types are not
+        supported.
     :param ignore_missing_files: Controls whether warning messages are issued for FCS files found in the
-            WSP file that were not loaded in the Workspace. Default is False, displaying warnings.
+        WSP file that were not loaded in the Workspace. Default is False, displaying warnings.
     """
     def __init__(self, wsp_file_path, fcs_samples=None, ignore_missing_files=False):
         # TODO: change argument name to "allow_missing_files"...better name for describing what happens
