@@ -43,7 +43,6 @@ FlowKit is a Python toolkit for flow cytometry analysis and visualization, with 
     * FlowJo tab-delimited text
     * NumPy array
     * GatingML 2.0 spectrumMatrix XML element
-  * Create a compensation matrix from a set of compensation bead files
 * Transformation
   * Logicle
   * Inverse hyperbolic sine (ArcSinh)
@@ -56,10 +55,10 @@ FlowKit is a Python toolkit for flow cytometry analysis and visualization, with 
   * Full support for the GatingML 2.0 specification
     * Import GatingML XML documents as gating strategies
     * Export gating strategies as a valid GatingML XML document
-  * Limited support for importing FlowJo 10 workspace files. Workspace files are currently limited to the following features:
+  * Support for importing FlowJo 10 workspace files. Workspace imports support the following features:
     * Linear, logarithmic, bi-exponential, and logicle transforms
     * Polygon, rectangle, ellipse, and quadrant gates
-    * Export a Session's sample group analysis as a FlowJo 10 workspace file
+    * Exporting a Session as a FlowJo 10 workspace file
   * Programmatically create gating strategies including polygon, rectangle, range, ellipsoid, quadrant, and boolean gates
   * Retrieve gating results as a Pandas DataFrame 
 * Visualization
@@ -80,7 +79,7 @@ via pip, and are listed below.
 
 Required Python dependencies:
 
-* [flowio](https://github.com/whitews/flowio) == 1.0.1
+* [flowio](https://github.com/whitews/flowio) == 1.1.0
 * [flowutils](https://github.com/whitews/flowutils) == 1.0.0
 * anytree >= 2.6
 * bokeh >= 2, <3.0
