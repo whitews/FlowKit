@@ -32,12 +32,24 @@ class Sample(object):
     performance. For compensation and transformation routines, all events are
     always processed.
 
-    Note:
+    Note on ignore_offset_error:
         Some FCS files incorrectly report the location of the last data byte
         as the last byte exclusive of the data section rather than the last
         byte inclusive of the data section. Technically, these are invalid
         FCS files but these are not corrupted data files. To attempt to read
         in these files, set the `ignore_offset_error` option to True.
+
+    Note on ignore_offset_discrepancy and use_header_offset:
+        The byte offset location for the DATA segment is defined in 2 places
+        in an FCS file: the HEADER and the TEXT segments. By default, FlowIO
+        uses the offset values found in the TEXT segment. If the HEADER values
+        differ from the TEXT values, a DataOffsetDiscrepancyError will be
+        raised. This option allows overriding this error to force the loading
+        of the FCS file. The related `use_header_offset` can be used to
+        force loading the file using the data offset locations found in the
+        HEADER section rather than the TEXT section. Setting `use_header_offset`
+        to True is equivalent to setting both options to True, meaning no
+        error will be raised for an offset discrepancy.
 
     :param fcs_path_or_data: FCS data, can be either:
 
@@ -65,6 +77,12 @@ class Sample(object):
 
     :param ignore_offset_error: option to ignore data offset error (see above note), default is False
 
+    :param ignore_offset_discrepancy: option to ignore discrepancy between the HEADER
+        and TEXT values for the DATA byte offset location, default is False
+
+    :param use_header_offsets: use the HEADER section for the data offset locations, default is False.
+        Setting this option to True also suppresses an error in cases of an offset discrepancy.
+
     :param cache_original_events: Original events are the unprocessed events as stored in the FCS binary,
         meaning they have not been scaled according to channel gain, corrected for proper lin/log display,
         or had the time channel scaled by the 'timestep' keyword value (if present). By default, these
@@ -82,6 +100,8 @@ class Sample(object):
             compensation=None,
             null_channel_list=None,
             ignore_offset_error=False,
+            ignore_offset_discrepancy=False,
+            use_header_offsets=False,
             cache_original_events=False,
             subsample=10000
     ):
@@ -93,17 +113,23 @@ class Sample(object):
             # if a string, we only handle file paths, so try creating a FlowData object
             flow_data = flowio.FlowData(
                 fcs_path_or_data,
-                ignore_offset_error=ignore_offset_error
+                ignore_offset_error=ignore_offset_error,
+                ignore_offset_discrepancy=ignore_offset_discrepancy,
+                use_header_offsets=use_header_offsets
             )
         elif isinstance(fcs_path_or_data, io.IOBase):
             flow_data = flowio.FlowData(
                 fcs_path_or_data,
-                ignore_offset_error=ignore_offset_error
+                ignore_offset_error=ignore_offset_error,
+                ignore_offset_discrepancy=ignore_offset_discrepancy,
+                use_header_offsets=use_header_offsets
             )
         elif isinstance(fcs_path_or_data, Path):
             flow_data = flowio.FlowData(
                 fcs_path_or_data.open('rb'),
-                ignore_offset_error=ignore_offset_error
+                ignore_offset_error=ignore_offset_error,
+                ignore_offset_discrepancy=ignore_offset_discrepancy,
+                use_header_offsets=use_header_offsets
             )
         elif isinstance(fcs_path_or_data, flowio.FlowData):
             flow_data = fcs_path_or_data
