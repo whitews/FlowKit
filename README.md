@@ -30,8 +30,6 @@ FlowKit is a Python toolkit for flow cytometry analysis and visualization, with 
 
 ## Features
 
-> **NOTE**: Version 0.6 added experimental support for exporting FlowJo 10 workspace files from a Session. Support is currently limited to exporting data from a single sample group. Please [submit an issue](https://github.com/whitews/FlowKit/issues/new/choose) if you find any bugs related to this feature.
-
 * Read / Write FCS Files
   * Read FCS files, supporting FCS versions 2.0, 3.0, and 3.1
   * Export FCS data as:
