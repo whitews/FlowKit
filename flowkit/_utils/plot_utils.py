@@ -41,7 +41,7 @@ def _generate_custom_colormap(colormap_sample_indices, base_colormap):
 
 
 cm_sample = [
-    0, 8, 16, 24, 32, 40, 48, 52, 60, 64, 72, 80, 92,
+    0, 4, 8, 12, 24, 36, 48, 60, 72, 80, 92,
     100, 108, 116, 124, 132,
     139, 147, 155, 159,
     163, 167, 171, 175, 179, 183, 187, 191, 195, 199, 215, 231, 239
@@ -105,11 +105,11 @@ def plot_channel(channel_events, label, subplot_ax, xform=None, flagged_events=N
 
 
 def _calculate_extent(data_1d, d_min=None, d_max=None, pad=0.0):
-    data_min = data_1d.min()
-    data_max = data_1d.max()
+    data_min = np.min(data_1d)
+    data_max = np.max(data_1d)
 
     # determine padding to keep min/max events off the edge
-    pad_d = max(abs(data_1d.min()), abs(data_1d.max())) * pad
+    pad_d = max(abs(data_min), abs(data_max)) * pad
 
     if d_min is None:
         d_min = data_min - pad_d
@@ -349,12 +349,42 @@ def plot_scatter(
         radius = 0.003 * x_max
 
     if color_density:
-        data, x_e, y_e = np.histogram2d(x, y, bins=[38, 38])
+        # bin size set to cover 2x2 radius (radius size is percent of view)
+        bin_count = int(1 / (2 * 0.003))
+
+        # But that's just the bins needed for the requested plot ranges.
+        # We need to extend those bins to the full data range
+        x_view_range = x_max - x_min
+        y_view_range = y_max - y_min
+
+        x_data_min = np.min(x)
+        x_data_max = np.max(x)
+        y_data_min = np.min(y)
+        y_data_max = np.max(y)
+        x_data_range = x_data_max - x_data_min
+        y_data_range = y_data_max - y_data_min
+
+        x_bin_multiplier = x_data_range / x_view_range
+        x_bin_count = int(x_bin_multiplier * bin_count)
+        y_bin_multiplier = y_data_range / y_view_range
+        y_bin_count = int(y_bin_multiplier * bin_count)
+
+        cd_x_min = x_data_min - (x_data_range / x_bin_count)
+        cd_x_max = x_data_max + (x_data_range / x_bin_count)
+        cd_y_min = y_data_min - (y_data_range / y_bin_count)
+        cd_y_max = y_data_max + (y_data_range / y_bin_count)
+
+        hist_data, x_edges, y_edges = np.histogram2d(
+            x,
+            y,
+            bins=[x_bin_count, y_bin_count],
+            range=[[cd_x_min, cd_x_max], [cd_y_min, cd_y_max]]
+        )
         z = interpn(
-            (0.5 * (x_e[1:] + x_e[:-1]), 0.5 * (y_e[1:] + y_e[:-1])),
-            data,
+            (0.5 * (x_edges[1:] + x_edges[:-1]), 0.5 * (y_edges[1:] + y_edges[:-1])),
+            hist_data,
             np.vstack([x, y]).T,
-            method="splinef2d",
+            method="linear",  # use linear not spline, spline tends to overshoot into negative values
             bounds_error=False
         )
         z[np.isnan(z)] = 0
