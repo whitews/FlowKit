@@ -14,6 +14,7 @@ import warnings
 sys.path.append(os.path.abspath('../..'))
 
 from flowkit import Sample, transforms
+from flowkit.exceptions import DataOffsetDiscrepancyError
 
 data1_fcs_path = 'data/gate_ref/data1.fcs'
 data1_sample = Sample(data1_fcs_path)
@@ -116,6 +117,14 @@ class SampleTestCase(unittest.TestCase):
     def test_load_from_unsupported_object(self):
         """Test Sample constructor raises ValueError loading an unsupported object"""
         self.assertRaises(ValueError, Sample, object())
+
+    def test_data_start_offset_discrepancy(self):
+        fcs_file = "data/noncompliant/data_start_offset_discrepancy_example.fcs"
+        self.assertRaises(DataOffsetDiscrepancyError, Sample, fcs_file)
+
+    def test_data_stop_offset_discrepancy(self):
+        fcs_file = "data/noncompliant/data_stop_offset_discrepancy_example.fcs"
+        self.assertRaises(DataOffsetDiscrepancyError, Sample, fcs_file)
 
     def test_comp_matrix_from_csv(self):
         sample = test_comp_sample
