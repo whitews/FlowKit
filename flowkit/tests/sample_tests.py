@@ -95,10 +95,45 @@ class SampleTestCase(unittest.TestCase):
 
         sample = Sample(
             npy_data,
+            sample_id='my_sample',
             channel_labels=channels
         )
 
         self.assertIsInstance(sample, Sample)
+
+    def test_load_numpy_array_no_id_raises(self):
+        npy_file_path = "data/test_comp_example.npy"
+        # noinspection SpellCheckingInspection
+        channels = [
+            'FSC-A', 'FSC-W', 'SSC-A',
+            'Ax488-A', 'PE-A', 'PE-TR-A',
+            'PerCP-Cy55-A', 'PE-Cy7-A', 'Ax647-A',
+            'Ax700-A', 'Ax750-A', 'PacBlu-A',
+            'Qdot525-A', 'PacOrange-A', 'Qdot605-A',
+            'Qdot655-A', 'Qdot705-A', 'Time'
+        ]
+
+        npy_data = np.fromfile(npy_file_path)
+
+        self.assertRaises(ValueError, Sample, npy_data, channel_labels=channels)
+
+    def test_load_dataframe_no_id_raises(self):
+        npy_file_path = "data/test_comp_example.npy"
+        # noinspection SpellCheckingInspection
+        channels = [
+            'FSC-A', 'FSC-W', 'SSC-A',
+            'Ax488-A', 'PE-A', 'PE-TR-A',
+            'PerCP-Cy55-A', 'PE-Cy7-A', 'Ax647-A',
+            'Ax700-A', 'Ax750-A', 'PacBlu-A',
+            'Qdot525-A', 'PacOrange-A', 'Qdot605-A',
+            'Qdot655-A', 'Qdot705-A', 'Time'
+        ]
+
+        npy_data = np.fromfile(npy_file_path)
+        npy_data = np.reshape(npy_data, (-1, len(channels)))
+        df_data = pd.DataFrame(npy_data, columns=channels)
+
+        self.assertRaises(ValueError, Sample, df_data)
 
     def test_load_from_pandas_multi_index(self):
         sample_orig = Sample("data/100715.fcs", cache_original_events=True)
@@ -107,7 +142,7 @@ class SampleTestCase(unittest.TestCase):
 
         df = sample_orig.as_dataframe(source='orig')
 
-        sample_new = Sample(df)
+        sample_new = Sample(df, sample_id='my_sample')
         pnn_new = sample_new.pnn_labels
         pns_new = sample_new.pns_labels
 

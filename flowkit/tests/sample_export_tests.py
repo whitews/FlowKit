@@ -130,7 +130,7 @@ class SampleExportTestCase(unittest.TestCase):
 
         exported_csv_file = "data/test_fcs_export.csv"
         exported_df = pd.read_csv(exported_csv_file)
-        exported_sample = Sample(exported_df)
+        exported_sample = Sample(exported_df, sample_id='exported_sample')
         os.unlink(exported_csv_file)
 
         self.assertIsInstance(exported_sample, Sample)
