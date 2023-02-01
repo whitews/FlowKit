@@ -1012,7 +1012,7 @@ def export_flowjo_wsp(gating_strategy, group_name, samples, file_handle):
     sample_id_lut = {}
     for sample in samples:
         # Store sample ID and increment
-        sample_id_lut[sample.original_filename] = str(curr_sample_id)
+        sample_id_lut[sample.id] = str(curr_sample_id)
         curr_sample_id += 1
 
     _add_group_node_to_wsp(groups_el, group_name, sample_id_lut.values())
@@ -1053,7 +1053,7 @@ def export_flowjo_wsp(gating_strategy, group_name, samples, file_handle):
     #     - Keywords
     #     - SampleNode
     for sample in samples:
-        sample_id = sample_id_lut[sample.original_filename]
+        sample_id = sample_id_lut[sample.id]
 
         sample_el = etree.SubElement(sample_list_el, "Sample")
 
@@ -1062,7 +1062,7 @@ def export_flowjo_wsp(gating_strategy, group_name, samples, file_handle):
         # path using the Sample's original filename, hoping that
         # FlowJo can re-connect the files using that name.
         data_set_el = etree.SubElement(sample_el, "DataSet")
-        data_set_el.set('uri', sample.original_filename)
+        data_set_el.set('uri', sample.id)
         data_set_el.set('sampleID', sample_id)
 
         # Transforms in FlowJo are organized differently than in GatingML
@@ -1093,7 +1093,7 @@ def export_flowjo_wsp(gating_strategy, group_name, samples, file_handle):
         # Finally, add the SampleNode where all the gates are defined
         _add_sample_node_to_wsp(
             sample_el,
-            sample.original_filename,
+            sample.id,
             sample_id,
             gating_strategy,
             comp_prefix_lut,
