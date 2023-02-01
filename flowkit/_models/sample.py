@@ -59,6 +59,11 @@ class Sample(object):
         - a NumPy array of FCS event data (must provide channel_labels)
         - a pandas DataFrame containing FCS event data (channel labels as column labels)
 
+    :param sample_id: A text string to use for the Sample's ID. If None, the ID will be
+        taken from the 'fil' keyword of the metadata. If the 'fil' keyword is not present,
+        the value will be the filename if given a file. For a NumPy array or Pandas
+        DataFrame, a text value is required.
+
     :param channel_labels: A list of strings or a list of tuples to use for the channel
         labels. Required if fcs_path_or_data is a NumPy array
 
@@ -88,6 +93,7 @@ class Sample(object):
         or had the time channel scaled by the 'timestep' keyword value (if present). By default, these
         events are not retained by the Sample class as they are typically not useful. To retrieve the
         original events, set this to True and call the get_events() method with source='orig'.
+
     :param subsample: The number of events to use for sub-sampling. The number of sub-sampled events
         can be changed after instantiation using the `subsample_events` method. The random seed can
         also be specified using that method. Sub-sampled events are used predominantly for speeding
@@ -96,6 +102,7 @@ class Sample(object):
     def __init__(
             self,
             fcs_path_or_data,
+            sample_id=None,
             channel_labels=None,
             compensation=None,
             null_channel_list=None,
@@ -134,6 +141,9 @@ class Sample(object):
         elif isinstance(fcs_path_or_data, flowio.FlowData):
             flow_data = fcs_path_or_data
         elif isinstance(fcs_path_or_data, np.ndarray):
+            if sample_id is None:
+                raise ValueError("'sample_id' is required for a NumPy array")
+
             tmp_file = TemporaryFile()
             flowio.create_fcs(
                 tmp_file,
@@ -143,6 +153,9 @@ class Sample(object):
 
             flow_data = flowio.FlowData(tmp_file)
         elif isinstance(fcs_path_or_data, pd.DataFrame):
+            if sample_id is None:
+                raise ValueError("'sample_id' is required for a Pandas DataFrame")
+
             tmp_file = TemporaryFile()
 
             # Handle MultiIndex columns since that is what the as_dataframe method creates.
@@ -310,6 +323,11 @@ class Sample(object):
                 self.original_filename = os.path.basename(fcs_path_or_data)
             else:
                 self.original_filename = None
+
+        if sample_id is None:
+            self.id = self.original_filename
+        else:
+            self.id = sample_id
 
         # finally, store initial sub-sampled event indices
         self.subsample_events(subsample)
