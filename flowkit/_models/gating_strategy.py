@@ -550,7 +550,7 @@ class GatingStrategy(object):
 
         # noinspection PyProtectedMember
         events = self._get_cached_preprocessed_events(
-            sample.original_filename,
+            sample.id,
             comp_ref,
             None,
             None
@@ -585,7 +585,7 @@ class GatingStrategy(object):
             # noinspection PyProtectedMember
             self._cache_preprocessed_events(
                 events,
-                sample.original_filename,
+                sample.id,
                 comp_ref,
                 None,
                 None
@@ -666,7 +666,7 @@ class GatingStrategy(object):
 
                 if cache_events:
                     cached_events = self._get_cached_preprocessed_events(
-                        sample.original_filename,
+                        sample.id,
                         comp_ref,
                         dim_xform[i],
                         dim_idx=dim
@@ -682,7 +682,7 @@ class GatingStrategy(object):
                     if cache_events:
                         self._cache_preprocessed_events(
                             xform_events,
-                            sample.original_filename,
+                            sample.id,
                             comp_ref,
                             dim_xform[i],
                             dim_idx=dim
@@ -743,7 +743,7 @@ class GatingStrategy(object):
                 q_event_count = q_result.sum()
 
                 final_results[q_id] = {
-                    'sample': sample.original_filename,
+                    'sample': sample.id,
                     'events': q_result,
                     'count': q_event_count,
                     'absolute_percent': (q_event_count / float(sample.event_count)) * 100.0,
@@ -760,7 +760,7 @@ class GatingStrategy(object):
                 relative_percent = (event_count / float(parent_count)) * 100.0
 
             final_results = {
-                'sample': sample.original_filename,
+                'sample': sample.id,
                 'events': results_and_parent,
                 'count': event_count,
                 'absolute_percent': (event_count / float(sample.event_count)) * 100.0,
@@ -782,7 +782,7 @@ class GatingStrategy(object):
         :param verbose: If True, print a line for each gate processed
         :return: GatingResults instance
         """
-        sample_id = sample.original_filename
+        sample_id = sample.id
         results = {}
 
         # The goal here is to avoid re-analyzing any gates.

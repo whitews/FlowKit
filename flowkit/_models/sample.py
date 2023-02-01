@@ -335,7 +335,7 @@ class Sample(object):
     def __repr__(self):
         return (
             f'{self.__class__.__name__}('
-            f'v{self.version}, {self.original_filename}, '
+            f'v{self.version}, {self.id}, '
             f'{len(self.pnn_labels)} channels, {self.event_count} events)'
         )
 
@@ -833,7 +833,7 @@ class Sample(object):
         y_min, y_max = plot_utils._calculate_extent(y, d_min=y_min, d_max=y_max, pad=0.02)
 
         fig, ax = plt.subplots(figsize=fig_size)
-        ax.set_title(self.original_filename)
+        ax.set_title(self.id)
 
         ax.set_xlim([x_min, x_max])
         ax.set_ylim([y_min, y_max])
@@ -929,7 +929,7 @@ class Sample(object):
             color_density=color_density
         )
 
-        p.title = Title(text=self.original_filename, align='center')
+        p.title = Title(text=self.id, align='center')
 
         return p
 
@@ -1031,7 +1031,7 @@ class Sample(object):
             bins=bins
         )
 
-        p.title = Title(text=self.original_filename, align='center')
+        p.title = Title(text=self.id, align='center')
 
         return p
 

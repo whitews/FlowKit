@@ -59,7 +59,7 @@ class Workspace(object):
         # load samples
         loaded_samples = sample_utils.load_samples(fcs_samples)
         for s in loaded_samples:
-            self._sample_lut[s.original_filename] = s
+            self._sample_lut[s.id] = s
 
         wsp_data = wsp_utils.parse_wsp(wsp_file_path)
 

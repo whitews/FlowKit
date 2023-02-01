@@ -66,10 +66,10 @@ class Session(object):
         """
         new_samples = sample_utils.load_samples(fcs_samples)
         for s in new_samples:
-            if s.original_filename in self.sample_lut:
-                warnings.warn("A sample with ID %s already exists...skipping" % s.original_filename)
+            if s.id in self.sample_lut:
+                warnings.warn("A sample with ID %s already exists...skipping" % s.id)
                 continue
-            self.sample_lut[s.original_filename] = s
+            self.sample_lut[s.id] = s
 
     def get_sample_ids(self):
         """
@@ -771,6 +771,6 @@ class Session(object):
             color_density=color_density
         )
 
-        p.title = Title(text=sample.original_filename, align='center')
+        p.title = Title(text=sample.id, align='center')
 
         return p
