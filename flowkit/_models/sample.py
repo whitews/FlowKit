@@ -871,6 +871,7 @@ class Sample(object):
             source='xform',
             subsample=True,
             color_density=True,
+            bin_width=4,
             x_min=None,
             x_max=None,
             y_min=None,
@@ -890,6 +891,9 @@ class Sample(object):
             sub-sampled events is much faster.
         :param color_density: Whether to color the events by density, similar
             to a heat map. Default is True.
+        :param bin_width: Bin size to use for the color density, in units of
+            event point size. Larger values produce smoother gradients.
+            Default is 4 for a 4x4 grid size.
         :param x_min: Lower bound of x-axis. If None, channel's min value will
             be used with some padding to keep events off the edge of the plot.
         :param x_max: Upper bound of x-axis. If None, channel's max value will
@@ -926,7 +930,8 @@ class Sample(object):
             x_max=x_max,
             y_min=y_min,
             y_max=y_max,
-            color_density=color_density
+            color_density=color_density,
+            bin_width=bin_width
         )
 
         p.title = Title(text=self.id, align='center')

@@ -422,7 +422,8 @@ class Session(object):
             x_max=None,
             y_min=None,
             y_max=None,
-            color_density=True
+            color_density=True,
+            bin_width=4
     ):
         """
         Returns an interactive plot for the specified gate. The type of plot is
@@ -448,6 +449,9 @@ class Session(object):
             be used with some padding to keep events off the edge of the plot.
         :param color_density: Whether to color the events by density, similar
             to a heat map. Default is True.
+        :param bin_width: Bin size to use for the color density, in units of
+            event point size. Larger values produce smoother gradients.
+            Default is 4 for a 4x4 grid size.
         :return: A Bokeh Figure object containing the interactive scatter plot.
         """
         if gate_path is None:
@@ -587,7 +591,8 @@ class Session(object):
                 x_max=x_max,
                 y_min=y_min,
                 y_max=y_max,
-                color_density=color_density
+                color_density=color_density,
+                bin_width=bin_width
             )
         elif gate_type == 'hist':
             p = plot_utils.plot_histogram(x, dim_ids[0])
@@ -669,6 +674,7 @@ class Session(object):
             subsample_count=10000,
             random_seed=1,
             color_density=True,
+            bin_width=4,
             x_min=None,
             x_max=None,
             y_min=None,
@@ -687,6 +693,9 @@ class Session(object):
         :param random_seed: Random seed used for sub-sampling events
         :param color_density: Whether to color the events by density, similar
             to a heat map. Default is True.
+        :param bin_width: Bin size to use for the color density, in units of
+            event point size. Larger values produce smoother gradients.
+            Default is 4 for a 4x4 grid size.
         :param x_min: Lower bound of x-axis. If None, channel's min value will
             be used with some padding to keep events off the edge of the plot.
         :param x_max: Upper bound of x-axis. If None, channel's max value will
@@ -768,7 +777,8 @@ class Session(object):
             x_max=x_max,
             y_min=y_min,
             y_max=y_max,
-            color_density=color_density
+            color_density=color_density,
+            bin_width=bin_width
         )
 
         p.title = Title(text=sample.id, align='center')
