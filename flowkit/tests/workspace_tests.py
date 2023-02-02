@@ -118,7 +118,7 @@ class WorkspaceTestCase(unittest.TestCase):
 
         wsp.analyze_samples(sample_id=sample_id)
 
-        df_gated_events = wsp.get_gated_events(
+        df_gated_events = wsp.get_gate_events(
             sample_id,
             gate_name
         )

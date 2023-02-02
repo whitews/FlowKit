@@ -474,7 +474,7 @@ class Workspace(object):
         gating_result = self.get_gating_results(sample_id)
         return gating_result.get_gate_membership(gate_name, gate_path=gate_path)
 
-    def get_gated_events(self, sample_id, gate_name=None, gate_path=None):
+    def get_gate_events(self, sample_id, gate_name=None, gate_path=None):
         """
         Retrieve gated events for a specific gate & sample as a pandas DataFrame.
         Gated events are processed according to the sample's compensation &
