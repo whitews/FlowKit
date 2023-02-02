@@ -316,7 +316,8 @@ def plot_scatter(
         x_max=None,
         y_min=None,
         y_max=None,
-        color_density=True
+        color_density=True,
+        bin_width=4
 ):
     """
     Creates a Bokeh scatter plot from the two 1-D data arrays.
@@ -334,6 +335,9 @@ def plot_scatter(
         be used with some padding to keep events off the edge of the plot.
     :param color_density: Whether to color the events by density, similar
         to a heat map. Default is True.
+    :param bin_width: Bin size to use for the color density, in units of
+        event point size. Larger values produce smoother gradients.
+        Default is 4 for a 4x4 grid size.
     :return: A Bokeh Figure object containing the interactive scatter plot.
     """
     if len(x) > 0:
@@ -349,8 +353,9 @@ def plot_scatter(
         radius = 0.003 * x_max
 
     if color_density:
-        # bin size set to cover 2x2 radius (radius size is percent of view)
-        bin_count = int(1 / (2 * 0.003))
+        # bin size set to cover NxN radius (radius size is percent of view)
+        # can be set by user via bin_width kwarg
+        bin_count = int(1 / (bin_width * 0.003))
 
         # But that's just the bins needed for the requested plot ranges.
         # We need to extend those bins to the full data range
