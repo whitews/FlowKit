@@ -56,8 +56,8 @@ class Sample(object):
         - a file path or file handle to an FCS file
         - a pathlib Path object
         - a FlowIO FlowData object
-        - a NumPy array of FCS event data (must provide channel_labels)
-        - a pandas DataFrame containing FCS event data (channel labels as column labels)
+        - a NumPy array of FCS event data (must provide sample_id & channel_labels)
+        - a pandas DataFrame containing FCS event data (channel labels as column labels, must provide sample_id)
 
     :param sample_id: A text string to use for the Sample's ID. If None, the ID will be
         taken from the 'fil' keyword of the metadata. If the 'fil' keyword is not present,
