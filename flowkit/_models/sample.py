@@ -2,6 +2,7 @@
 Sample class
 """
 
+from functools import total_ordering
 import copy
 import flowio
 import os
@@ -22,6 +23,7 @@ from .._models.transforms._matrix import Matrix
 from .._utils import plot_utils
 
 
+@total_ordering
 class Sample(object):
     """
     Represents a single FCS sample from an FCS file, NumPy array or pandas
@@ -338,6 +340,12 @@ class Sample(object):
             f'v{self.version}, {self.id}, '
             f'{len(self.pnn_labels)} channels, {self.event_count} events)'
         )
+
+    def __lt__(self, other):
+        return self.id < other.id
+
+    def __eq__(self, other):
+        return self.id == other.id
 
     def filter_negative_scatter(self, reapply_subsample=True):
         """
