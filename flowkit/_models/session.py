@@ -146,7 +146,7 @@ class Session(object):
 
         :return: list of Matrix instances
         """
-        return self.gating_strategy.comp_matrices.values()
+        return list(self.gating_strategy.comp_matrices.values())
 
     def get_comp_matrix(self, matrix_id):
         """
