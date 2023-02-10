@@ -13,7 +13,7 @@ line_color = "#1F77B4"
 line_color_contrast = "#73D587"
 line_width = 3
 fill_color = 'lime'
-fill_alpha = 0.08
+gate_fill_alpha = 0.08
 
 
 def _generate_custom_colormap(colormap_sample_indices, base_colormap):
@@ -133,7 +133,7 @@ def render_polygon(vertices):
         x='x',
         y='y',
         fill_color=fill_color,
-        fill_alpha=fill_alpha,
+        fill_alpha=gate_fill_alpha,
         line_width=line_width,
         line_color=line_color_contrast
     )
@@ -184,7 +184,7 @@ def render_ranges(dim_minimums, dim_maximums):
         right=right,
         bottom=bottom,
         top=top,
-        fill_alpha=fill_alpha,
+        fill_alpha=gate_fill_alpha,
         fill_color=fill_color
     )
     renderers.append(mid_box)
@@ -210,7 +210,7 @@ def render_rectangle(dim_minimums, dim_maximums):
         width=x_width,
         height=y_height,
         fill_color=fill_color,
-        fill_alpha=fill_alpha,
+        fill_alpha=gate_fill_alpha,
         line_width=line_width
     )
 
@@ -267,7 +267,7 @@ def render_ellipse(center_x, center_y, covariance_matrix, distance_square):
         line_width=line_width,
         line_color=line_color,
         fill_color=fill_color,
-        fill_alpha=fill_alpha
+        fill_alpha=gate_fill_alpha
     )
 
     return ellipse
@@ -317,7 +317,8 @@ def plot_scatter(
         y_min=None,
         y_max=None,
         color_density=True,
-        bin_width=4
+        bin_width=4,
+        highlight_indices=None
 ):
     """
     Creates a Bokeh scatter plot from the two 1-D data arrays.
@@ -338,6 +339,8 @@ def plot_scatter(
     :param bin_width: Bin size to use for the color density, in units of
         event point size. Larger values produce smoother gradients.
         Default is 4 for a 4x4 grid size.
+    :param highlight_indices: Boolean array of event indices to highlight
+        in color. Non-highlighted events will be light grey.
     :return: A Bokeh Figure object containing the interactive scatter plot.
     """
     if len(x) > 0:
@@ -398,13 +401,33 @@ def plot_scatter(
         # color display
         idx = z.argsort()
         x, y, z = x[idx], y[idx], z[idx]
+        if highlight_indices is not None:
+            # re-order the highlight indices to match
+            highlight_indices = highlight_indices[idx]
     else:
         z = np.zeros(len(x))
 
     colors_array = new_jet(colors.Normalize()(z))
-    z_colors = [
+    z_colors = np.array([
         "#%02x%02x%02x" % (int(c[0] * 255), int(c[1] * 255), int(c[2] * 255)) for c in colors_array
-    ]
+    ])
+
+    if highlight_indices is not None:
+        z_colors[~highlight_indices] = "#d3d3d3"
+        fill_alpha = np.zeros(len(z_colors))
+        fill_alpha[~highlight_indices] = 0.3
+        fill_alpha[highlight_indices] = 0.4
+
+        highlight_idx = np.flatnonzero(highlight_indices)
+        non_light_idx = np.flatnonzero(~highlight_indices)
+        final_idx = np.concatenate([non_light_idx, highlight_idx])
+
+        x = x[final_idx]
+        y = y[final_idx]
+        z_colors = z_colors[final_idx]
+        fill_alpha = fill_alpha[final_idx]
+    else:
+        fill_alpha = 0.4
 
     tools = "crosshair,hover,pan,zoom_in,zoom_out,box_zoom,undo,redo,reset,save,"
     p = figure(
@@ -422,7 +445,7 @@ def plot_scatter(
         radius=radius,
         radius_dimension=radius_dimension,
         fill_color=z_colors,
-        fill_alpha=0.4,
+        fill_alpha=fill_alpha,
         line_color=None
     )
 
