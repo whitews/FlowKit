@@ -104,6 +104,23 @@ class Session(object):
         """
         self.gating_strategy.add_gate(copy.deepcopy(gate), gate_path=gate_path, sample_id=sample_id)
 
+    def remove_gate(self, gate_name, gate_path=None, keep_children=False):
+        """
+        Remove a gate from the gate tree. Any descendant gates will also be removed
+        unless keep_children=True. In all cases, if a BooleanGate exists that references
+        the gate to remove, a GateTreeError will be thrown indicating the BooleanGate
+        must be removed prior to removing the gate.
+
+        :param gate_name: text string of a gate name
+        :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
+            Required if gate_name is ambiguous
+        :param keep_children: Whether to keep child gates. If True, the child gates will be
+            remapped to the removed gate's parent. Default is False, which will delete all
+            descendant gates.
+        :return: None
+        """
+        self.gating_strategy.remove_gate(gate_name, gate_path=gate_path, keep_children=keep_children)
+
     def add_transform(self, transform):
         """
         Add a Transform instance to use in the gating strategy.
@@ -333,7 +350,7 @@ class Session(object):
         """
         Retrieve analyzed gating results gates for a sample.
 
-        :param sample_id: a text string representing a loaded Sample instance
+        :param sample_id: a text string representing a Sample instance
         :return: GatingResults instance
         """
         try:
