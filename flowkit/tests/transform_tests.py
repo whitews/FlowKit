@@ -1,5 +1,5 @@
 """
-Unit tests for Transform sub-classes
+Unit tests for Transform subclasses
 """
 import unittest
 import numpy as np
