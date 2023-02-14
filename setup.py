@@ -24,10 +24,10 @@ reqs = [
     'networkx>=2.3',
     'numpy>=1.20',
     'pandas>=1.1',
-    'psutil>=5.8'
+    'psutil>=5.8',
     'scipy',
     'seaborn',
-    'statsmodels',
+    'statsmodels'
 ]
 
 setup(
