@@ -7,7 +7,7 @@ Thank you for taking the time to contribute!
 * [Filing a bug report](#filing-a-bug-report)
 * [Submitting a pull request](#submitting-a-pull-request)
 
-## I want to help!
+## I want to help
 
 If you want to get involved in the development of FlowKit, the best way 
 to start is to review the current documentation. Documentation includes
@@ -108,7 +108,7 @@ please write new tests with coverage for all new code.
 
 * Do not include any license information in your examples - our 
 repositories are BSD licensed
-* Do not try to do too much at once- submit one or two examples at a 
+* Do not try to do too much at once, submit one or two examples at a 
 time, and be receptive to feedback
 * Do not submit multiple variations of the same example, demonstrate 
 one thing concisely
