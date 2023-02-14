@@ -23,7 +23,6 @@ Supporting Classes
    dimension
    ratio_dimension
    quadrant_divider
-   vertex
 
 transforms Module
 -----------------
