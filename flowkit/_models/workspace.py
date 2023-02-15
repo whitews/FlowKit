@@ -168,7 +168,7 @@ class Workspace(object):
         Retrieve a Sample instance from the Workspace.
 
         :param sample_id: a text string representing the sample
-        :return: Sample instance
+        :return: a Sample instance
         """
         return self._sample_lut[sample_id]
 
@@ -298,6 +298,24 @@ class Workspace(object):
             comp_matrix = None
 
         return comp_matrix
+
+    def get_transform(self, sample_id, transform_id):
+        """
+        Retrieve a single transform for a sample using the transform ID. Transform
+        IDs in the Workspace class correspond to a channel label in the sample.
+
+        :param sample_id: a text string representing a Sample instance
+        :param transform_id: a text string representing a Transform instance
+        :return:
+        """
+        sample_dict = self._sample_data_lut[sample_id]
+
+        if sample_dict['transforms'] is not None:
+            xform = copy.deepcopy(sample_dict['transforms'][transform_id])
+        else:
+            xform = None
+
+        return xform
 
     def get_transforms(self, sample_id):
         """
