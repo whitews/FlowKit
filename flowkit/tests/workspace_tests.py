@@ -32,6 +32,21 @@ class WorkspaceTestCase(unittest.TestCase):
         self.assertEqual(group_stats.samples, 3)
         self.assertEqual(group_stats.loaded_samples, 0)
 
+    def test_workspace_summary_with_loaded_samples(self):
+        wsp_path = "data/8_color_data_set/8_color_ICS.wsp"
+        sample_grp = 'DEN'
+
+
+        wsp = Workspace(wsp_path, fcs_samples=test_samples_8c_full_set)
+        wsp_summary = wsp.summary()
+
+        self.assertIsInstance(wsp_summary, pd.DataFrame)
+
+        group_stats = wsp_summary.loc[sample_grp]
+        self.assertEqual(group_stats.max_gate_depth, 6)
+        self.assertEqual(group_stats.samples, 3)
+        self.assertEqual(group_stats.loaded_samples, 3)
+
     def test_get_comp_matrix_by_sample_id(self):
         wsp_path = "data/8_color_data_set/8_color_ICS_simple.wsp"
         sample_id = '101_DEN084Y5_15_E01_008_clean.fcs'
