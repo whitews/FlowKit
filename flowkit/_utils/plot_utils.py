@@ -377,6 +377,12 @@ def plot_scatter(
         y_bin_multiplier = y_data_range / y_view_range
         y_bin_count = int(y_bin_multiplier * bin_count)
 
+        # avoid bin count of zero
+        if x_bin_count <= 0:
+            x_bin_count = 1
+        if y_bin_count <= 0:
+            y_bin_count = 1
+
         cd_x_min = x_data_min - (x_data_range / x_bin_count)
         cd_x_max = x_data_max + (x_data_range / x_bin_count)
         cd_y_min = y_data_min - (y_data_range / y_bin_count)
