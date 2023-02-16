@@ -180,10 +180,6 @@ class GatingStrategy(object):
             descendant gates.
         :return: None
         """
-        # TODO: should the removed gates be returned to the user?
-        #    This could be helpful if they are trying to move the gate
-        #    in the tree or to keep track of what was removed.
-
         # Removing a gate nullifies any previous results, so clear cached events
         self.clear_cache()
 

@@ -313,11 +313,6 @@ class Sample(object):
         except KeyError:
             self.acquisition_date = None
 
-        # TODO: Should we create a separate Sample 'id' attribute?
-        #  Could be populated by default by the orig filename,
-        #  or if that is None, issue UserWarning to set the 'id'.
-        #  Having Sample 'id' would be useful for Samples created
-        #  from data arrays or if 2 FCS files had the same file name.
         try:
             self.original_filename = self.metadata['fil']
         except KeyError:

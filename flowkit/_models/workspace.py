@@ -27,8 +27,6 @@ class Workspace(object):
         WSP file that were not loaded in the Workspace. Default is False, displaying warnings.
     """
     def __init__(self, wsp_file_path, fcs_samples=None, ignore_missing_files=False):
-        # TODO: change argument name to "allow_missing_files"...better name for describing what happens
-
         # The sample LUT holds sample IDs (keys) only for loaded samples.
         # The values are the Sample instances
         self._sample_lut = {}
