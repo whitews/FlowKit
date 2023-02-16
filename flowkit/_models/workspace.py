@@ -23,8 +23,10 @@ class Workspace(object):
         be a list of file paths or a list of Sample instances. Lists of mixed types are not
         supported. Note that only FCS files matching the ones referenced in the .wsp file will
         be retained in the Workspace.
-    :param ignore_missing_files: Controls whether warning messages are issued for FCS files found in the
-        WSP file that were not loaded in the Workspace. Default is False, displaying warnings.
+    :param ignore_missing_files: Controls behavior for missing FCS files. If True, gate data for
+        missing FCS files (i.e. not in fcs_samples arg) will still be loaded. If False, warnings
+        are issued for FCS files found in the WSP file that were not loaded in the Workspace and
+        gate data for these missing files will not be retained. Default is False.
     """
     def __init__(self, wsp_file_path, fcs_samples=None, ignore_missing_files=False):
         # The sample LUT holds sample IDs (keys) only for loaded samples.
@@ -96,7 +98,7 @@ class Workspace(object):
 
         return (
             f'{self.__class__.__name__}('
-            f'{sample_count} samples, '
+            f'{sample_count} samples loaded, '
             f'{sample_group_count} sample groups)'
         )
 
