@@ -7,22 +7,36 @@ import numpy as np
 import os
 import pandas as pd
 import warnings
-from flowkit import Workspace, load_samples, Matrix, gates, transforms, extract_wsp_sample_data
+from flowkit import Workspace, Sample, load_samples, Matrix, gates, transforms, extract_wsp_sample_data
 # noinspection PyProtectedMember
 from flowkit._models.transforms._base_transform import Transform
 from flowkit.exceptions import GateReferenceError
 
 
 test_samples_8c_full_set = load_samples("data/8_color_data_set/fcs_files")
-
+wsp_8_color = Workspace(
+    "data/8_color_data_set/8_color_ICS.wsp",
+    fcs_samples=test_samples_8c_full_set
+)
+wsp_8_color_no_files = Workspace(
+    "data/8_color_data_set/8_color_ICS.wsp",
+    ignore_missing_files=True
+)
 
 class WorkspaceTestCase(unittest.TestCase):
+    def setUp(self):
+        """
+        Setup data for WorkspaceTestCase
+        :return: None
+        """
+        self.wsp_8_color = wsp_8_color
+        self.wsp_8_color_no_files = wsp_8_color_no_files
+
     """Tests for Workspace class"""
     def test_workspace_summary(self):
-        wsp_path = "data/8_color_data_set/8_color_ICS.wsp"
         sample_grp = 'DEN'
 
-        wsp = Workspace(wsp_path, ignore_missing_files=True)
+        wsp = self.wsp_8_color_no_files
         wsp_summary = wsp.summary()
 
         self.assertIsInstance(wsp_summary, pd.DataFrame)
@@ -33,12 +47,9 @@ class WorkspaceTestCase(unittest.TestCase):
         self.assertEqual(group_stats.loaded_samples, 0)
 
     def test_workspace_summary_with_loaded_samples(self):
-        wsp_path = "data/8_color_data_set/8_color_ICS.wsp"
-        sample_grp = 'DEN'
-
-
-        wsp = Workspace(wsp_path, fcs_samples=test_samples_8c_full_set)
+        wsp = self.wsp_8_color
         wsp_summary = wsp.summary()
+        sample_grp = 'DEN'
 
         self.assertIsInstance(wsp_summary, pd.DataFrame)
 
@@ -59,9 +70,7 @@ class WorkspaceTestCase(unittest.TestCase):
         self.assertListEqual(groups, groups_truth)
 
     def test_get_sample_ids(self):
-        wsp_path = "data/8_color_data_set/8_color_ICS.wsp"
-
-        wsp = Workspace(wsp_path, fcs_samples=test_samples_8c_full_set)
+        wsp = self.wsp_8_color
         loaded_sample_ids = wsp.get_sample_ids()
 
         ground_truth = [
@@ -96,6 +105,13 @@ class WorkspaceTestCase(unittest.TestCase):
 
         self.assertListEqual(loaded_sample_ids, loaded_ground_truth)
         self.assertListEqual(all_sample_ids, all_ground_truth)
+
+    def test_get_samples(self):
+        wsp = self.wsp_8_color
+        loaded_samples = wsp.get_samples()
+
+        self.assertEqual(len(loaded_samples), 3)
+        self.assertIsInstance(loaded_samples[0], Sample)
 
     def test_get_comp_matrix_by_sample_id(self):
         wsp_path = "data/8_color_data_set/8_color_ICS_simple.wsp"
