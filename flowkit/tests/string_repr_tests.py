@@ -165,3 +165,13 @@ class StringReprTestCase(unittest.TestCase):
         session_string = "Session(1 samples)"
 
         self.assertEqual(repr(session), session_string)
+
+    def test_workspace_repr(self):
+        wsp_path = "data/simple_line_example/simple_poly_and_rect.wsp"
+        fcs_path = "data/simple_line_example/data_set_simple_line_100.fcs"
+
+        wsp = fk.Workspace(wsp_path, fcs_samples=fcs_path)
+
+        wsp_string = "Workspace(1 samples loaded, 2 sample groups)"
+
+        self.assertEqual(repr(wsp), wsp_string)
