@@ -150,19 +150,36 @@ class Workspace(object):
 
         return df
 
-    def get_sample_ids(self, group_name=None):
+    def get_sample_ids(self, group_name=None, loaded_only=True):
         """
-        Retrieve the list of Sample IDs that have been loaded in the Workspace.
+        Retrieve the list of Sample IDs that in the Workspace, optionally
+        filtered by sample group and/or loaded status. Default is all loaded
+        samples.
 
         :param group_name: Filter returned sample IDs by a sample group. If None, all sample IDs are returned
+        :param loaded_only: Filter returned sample IDs for only loaded samples. If False, all the samples will
+            be returned, including any missing sample IDs referenced in the workspace. Default is True for
+            returning only loaded sample IDs.
         :return: list of Sample ID strings
         """
         if group_name is not None:
-            sample_ids = self._group_lut[group_name]['samples']
+            # group LUT contains all group sample IDs incl. missing ones
+            sample_ids = set(self._group_lut[group_name]['samples'])
         else:
-            sample_ids = list(self._sample_lut.keys())
+            # No group name specified so give user all sample IDs
+            # sample data LUT contains all sample IDs, incl. missing IDs
+            # referenced in the wsp (if ignore_missing_files was True)
+            sample_ids = set(self._sample_data_lut.keys())
 
-        return sample_ids
+        # check if only loaded samples were requested
+        if loaded_only:
+            # sample LUT contains all the loaded sample IDs
+            loaded_sample_ids = set(self._sample_lut.keys())
+
+            # cross-reference sample_ids with loaded_sample_ids
+            sample_ids = sample_ids.intersection(loaded_sample_ids)
+
+        return sorted(list(sample_ids))
 
     def get_sample(self, sample_id):
         """
