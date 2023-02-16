@@ -145,3 +145,52 @@ class PlotTestCase(unittest.TestCase):
         )
 
         self.assertIsInstance(p, bk_Figure)
+
+    def test_workspace_plot_gate(self):
+        wsp_path = "data/simple_line_example/simple_poly_and_rect.wsp"
+        simple_line_fcs_path = "data/simple_line_example/data_set_simple_line_100.fcs"
+        sample_id = 'data_set_simple_line_100.fcs'
+
+        wsp = fk.Workspace(wsp_path, fcs_samples=simple_line_fcs_path)
+        wsp.analyze_samples()
+
+        p = wsp.plot_gate(
+            sample_id,
+            gate_name='poly1'
+        )
+
+        self.assertIsInstance(p, bk_Figure)
+
+    def test_workspace_plot_scatter(self):
+        wsp_path = "data/simple_line_example/single_ellipse_51_events.wsp"
+        simple_line_fcs_path = "data/simple_line_example/data_set_simple_line_100.fcs"
+        sample_id = 'data_set_simple_line_100.fcs'
+
+        wsp = fk.Workspace(wsp_path, fcs_samples=simple_line_fcs_path)
+        wsp.analyze_samples()
+
+        p = wsp.plot_scatter(
+            sample_id,
+            'channel_A',
+            'channel_B',
+            gate_name='ellipse1'
+        )
+
+        self.assertIsInstance(p, bk_Figure)
+
+    def test_workspace_plot_scatter_no_events_raises(self):
+        wsp_path = "data/simple_line_example/simple_poly_and_rect.wsp"
+        simple_line_fcs_path = "data/simple_line_example/data_set_simple_line_100.fcs"
+        sample_id = 'data_set_simple_line_100.fcs'
+
+        wsp = fk.Workspace(wsp_path, fcs_samples=simple_line_fcs_path)
+        wsp.analyze_samples()
+
+        self.assertRaises(
+            fk.exceptions.FlowKitException,
+            wsp.plot_scatter,
+            sample_id,
+            'channel_A',
+            'channel_B',
+            gate_name='rect1'
+        )
