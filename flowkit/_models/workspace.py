@@ -19,9 +19,10 @@ class Workspace(object):
 
     :param wsp_file_path: FlowJo WSP file as a file name/path, file object, or file-like object
     :param fcs_samples: str or list. If given a string, it can be a directory path or a file path.
-        If a directory, any .fcs files in the directory will be loaded. If a list, then it must
+        If a directory, any .fcs files in the directory will be found. If a list, then it must
         be a list of file paths or a list of Sample instances. Lists of mixed types are not
-        supported.
+        supported. Note that only FCS files matching the ones referenced in the .wsp file will
+        be retained in the Workspace.
     :param ignore_missing_files: Controls whether warning messages are issued for FCS files found in the
         WSP file that were not loaded in the Workspace. Default is False, displaying warnings.
     """
@@ -57,10 +58,9 @@ class Workspace(object):
         # been analyzed.
         self._results_lut = {}
 
-        # load samples
-        loaded_samples = sample_utils.load_samples(fcs_samples)
-        for s in loaded_samples:
-            self._sample_lut[s.id] = s
+        # load samples we were given, we'll cross-reference against wsp below
+        tmp_sample_lut = {s.id: s for s in sample_utils.load_samples(fcs_samples)}
+        self._sample_lut = {}
 
         wsp_data = wsp_utils.parse_wsp(wsp_file_path)
 
@@ -69,8 +69,9 @@ class Workspace(object):
 
         # save sample data, including the GatingStrategy & Sample instance
         for sample_id, sample_dict in wsp_data['samples'].items():
-            if sample_id in self._sample_lut:
-                # add to sample data
+            if sample_id in tmp_sample_lut:
+                # retain sample and add to sample data
+                self._sample_lut[sample_id] = tmp_sample_lut[sample_id]
                 self._sample_data_lut[sample_id] = sample_dict
             else:
                 # we have gating info for a sample that wasn't loaded
