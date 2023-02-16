@@ -47,6 +47,17 @@ class WorkspaceTestCase(unittest.TestCase):
         self.assertEqual(group_stats.samples, 3)
         self.assertEqual(group_stats.loaded_samples, 3)
 
+    def test_get_sample_groups(self):
+        wsp_path = "data/simple_line_example/simple_poly_and_rect.wsp"
+        fcs_path = "data/simple_line_example/data_set_simple_line_100.fcs"
+
+        fks = Workspace(wsp_path, fcs_samples=fcs_path)
+
+        groups = fks.get_sample_groups()
+        groups_truth = ['All Samples', 'my_group']
+
+        self.assertListEqual(groups, groups_truth)
+
     def test_get_comp_matrix_by_sample_id(self):
         wsp_path = "data/8_color_data_set/8_color_ICS_simple.wsp"
         sample_id = '101_DEN084Y5_15_E01_008_clean.fcs'
@@ -282,17 +293,6 @@ class WorkspaceTestCase(unittest.TestCase):
 
         mean_pct_diff = 100. * np.mean(np.abs(test_y[1:] - y[1:]) / y[1:])
         self.assertLess(mean_pct_diff, 0.01)
-
-    def test_get_sample_groups(self):
-        wsp_path = "data/simple_line_example/simple_poly_and_rect.wsp"
-        fcs_path = "data/simple_line_example/data_set_simple_line_100.fcs"
-
-        fks = Workspace(wsp_path, fcs_samples=fcs_path)
-
-        groups = fks.get_sample_groups()
-        groups_truth = ['All Samples', 'my_group']
-
-        self.assertListEqual(groups, groups_truth)
 
     def test_parse_wsp_with_ellipse(self):
         wsp_path = "data/8_color_data_set/8_color_ICS_with_ellipse.wsp"
