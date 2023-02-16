@@ -9,7 +9,7 @@ from bokeh.models import Title
 from .._conf import debug
 from .._models import gates, dimension
 from .._utils import plot_utils, wsp_utils, sample_utils, gating_utils
-from ..exceptions import GateReferenceError
+from ..exceptions import FlowKitException, GateReferenceError
 import warnings
 
 
@@ -870,6 +870,11 @@ class Workspace(object):
         is_subsample[sample.subsample_indices] = True
 
         idx_to_plot = np.logical_and(is_gate_event, is_subsample)
+
+        # check if there are any events to plot
+        if idx_to_plot.sum() == 0:
+            raise FlowKitException("There are no events to plot for the specified options")
+
         x = x[idx_to_plot]
         y = y[idx_to_plot]
 
