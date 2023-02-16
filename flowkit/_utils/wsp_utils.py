@@ -501,7 +501,7 @@ def parse_wsp(workspace_file_or_path, ignore_transforms=False):
                     'group_gates': list of common group gates (may not be the complete tree)
                 },
                 ...
-            }
+            },
             'samples': {
                 sample_name: {
                     'keywords': dict of FJ sample keywords,
@@ -511,6 +511,7 @@ def parse_wsp(workspace_file_or_path, ignore_transforms=False):
                     'gating_strategy': {gate_id: gate_instance, ...}
                 },
                 ...
+            }
         }
 
     :param workspace_file_or_path: A FlowJo .wsp file or file path
