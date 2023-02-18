@@ -306,7 +306,7 @@ class Session(object):
             clear_cache method for additional information. Default is False.
         :param use_mp: Controls whether multiprocessing is used to gate samples (default is True).
             Multiprocessing can fail for large workloads (lots of samples & gates) due to running out of
-            memory. For those cases setting use_mp should be set to False (processing will take longer,
+            memory. If encountering memory errors, set use_mp to False (processing will take longer,
             but will use significantly less memory).
         :param verbose: if True, print a line for every gate processed (default is False)
         :return: None
