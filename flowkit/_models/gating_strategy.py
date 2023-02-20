@@ -388,24 +388,27 @@ class GatingStrategy(object):
 
         return node.parent.gate
 
-    def get_child_gates(self, gate_name, gate_path=None):
+    def get_child_gate_ids(self, gate_name, gate_path=None):
         """
         Retrieve list of child gate instances by their parent's gate ID.
 
         :param gate_name: text string of a gate name
         :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
             Required if gate_name is ambiguous
-        :return: list of Gate instances
-        :raises KeyError: if gate ID is not found in gating strategy
+        :return: list of Gate IDs (tuple of gate name plus gate path). Returns an empty
+            list if no child gates exist.
+        :raises GateReferenceError: if gate ID is not found in gating strategy or if gate
+            name is ambiguous
         """
         node = self._get_gate_node(gate_name, gate_path)
 
-        child_gates = []
+        child_gate_ids = []
 
         for n in node.children:
-            child_gates.append(n.gate)
+            ancestor_path = tuple((a.name for a in n.ancestors))
+            child_gate_ids.append((n.name, ancestor_path))
 
-        return child_gates
+        return child_gate_ids
 
     def get_gate_ids(self):
         """
