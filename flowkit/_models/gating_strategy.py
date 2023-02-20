@@ -58,7 +58,7 @@ class GatingStrategy(object):
         custom sample gates.
 
         :param gate: instance from a subclass of the Gate class
-        :param gate_path: complete tuple of gate IDs for unique set of gate ancestors
+        :param gate_path: complete ordered tuple of gate names for unique set of gate ancestors
         :param sample_id: text string for specifying given gate as a custom Sample gate
 
         :return: None
@@ -107,7 +107,7 @@ class GatingStrategy(object):
         Determine if a custom gate exists for a sample ID.
 
         :param gate_name: text string of a gate name
-        :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
+        :param gate_path: complete ordered tuple of gate names for unique set of gate ancestors.
             Required if gate_name is ambiguous
         :param sample_id: Sample ID string
         :return: Boolean value for whether the sample ID has a custom gate
@@ -123,7 +123,7 @@ class GatingStrategy(object):
         exists.
 
         :param gate_name: text string of a gate name
-        :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
+        :param gate_path: complete ordered tuple of gate names for unique set of gate ancestors.
             Required if gate_name is ambiguous
         :param sample_id: Sample ID string to lookup custom gate. If None or not found, template gate is returned
         :return: Subclass of a Gate object
@@ -173,7 +173,7 @@ class GatingStrategy(object):
         must be removed prior to removing the gate.
 
         :param gate_name: text string of a gate name
-        :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
+        :param gate_path: complete ordered tuple of gate names for unique set of gate ancestors.
             Required if gate_name is ambiguous
         :param keep_children: Whether to keep child gates. If True, the child gates will be
             remapped to the removed gate's parent. Default is False, which will delete all
@@ -372,28 +372,30 @@ class GatingStrategy(object):
 
         return root_gates
 
-    def get_parent_gate(self, gate_name, gate_path=None):
+    def get_parent_gate_id(self, gate_name, gate_path=None):
         """
-        Retrieve the parent Gate instance for the given gate ID.
+        Retrieve the parent Gate ID for the given gate ID.
 
         :param gate_name: text string of a gate name
-        :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
+        :param gate_path: complete ordered tuple of gate names for unique set of gate ancestors.
             Required if gate_name is ambiguous
-        :return: Subclassed Gate instance
+        :return: a gate ID (tuple of gate name and gate path)
         """
         node = self._get_gate_node(gate_name, gate_path)
 
         if node.parent.name == 'root':
             return None
 
-        return node.parent.gate
+        parent_gate_path = tuple((a.name for a in node.parent.ancestors))
+
+        return node.parent.name, parent_gate_path
 
     def get_child_gate_ids(self, gate_name, gate_path=None):
         """
         Retrieve list of child gate instances by their parent's gate ID.
 
         :param gate_name: text string of a gate name
-        :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
+        :param gate_path: complete ordered tuple of gate names for unique set of gate ancestors.
             Required if gate_name is ambiguous
         :return: list of Gate IDs (tuple of gate name plus gate path). Returns an empty
             list if no child gates exist.
