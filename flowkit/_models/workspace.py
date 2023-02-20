@@ -631,8 +631,11 @@ class Workspace(object):
             gate_type = 'hist'
         elif dim_count == 2:
             gate_type = 'scatter'
+        elif dim_count > 2:
+            raise NotImplementedError("Plotting of gates with >2 dimensions is not supported")
         else:
-            raise NotImplementedError("Plotting of gates with >2 dimensions is not yet supported")
+            # there are no dimensions
+            raise ValueError("Gate %s appears to not reference any dimensions" % gate_name)
 
         # Get Sample instance and apply requested subsampling
         sample_to_plot = self.get_sample(sample_id)
