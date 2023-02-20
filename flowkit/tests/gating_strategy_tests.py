@@ -68,9 +68,9 @@ class GatingStrategyTestCase(unittest.TestCase):
         gs = fk.GatingStrategy()
         gs.add_gate(poly1_gate, ('root',))
 
-        parent_gate = gs.get_parent_gate('Polygon1')
+        parent_gate_id = gs.get_parent_gate_id('Polygon1')
 
-        self.assertIsNone(parent_gate)
+        self.assertIsNone(parent_gate_id)
 
     def test_add_transform_non_transform_class(self):
         gs = fk.GatingStrategy()
@@ -123,7 +123,8 @@ class GatingStrategyTestCase(unittest.TestCase):
         gs.add_gate(rect_gate2, ('root', 'ScaleRect1'))
 
         result = gs.gate_sample(data1_sample)
-        parent_gate = gs.get_parent_gate(rect_gate2.gate_name)
+        parent_gate_name, parent_gate_path = gs.get_parent_gate_id(rect_gate2.gate_name)
+        parent_gate = gs.get_gate(parent_gate_name, parent_gate_path)
         parent_gate_count = result.get_gate_count(parent_gate.gate_name)
         gate_count = result.get_gate_count(rect_gate2.gate_name)
         gate_abs_pct = result.get_gate_absolute_percent(rect_gate2.gate_name)
