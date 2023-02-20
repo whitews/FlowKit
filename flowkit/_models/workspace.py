@@ -248,32 +248,13 @@ class Workspace(object):
         :param gate_name: text string of a gate name
         :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
             Required if gate.gate_name is ambiguous
-        :return: list of gate IDs (each gate ID is a gate name string & tuple of the gate path)
+        :return: list of Gate IDs (tuple of gate name plus gate path). Returns an empty
+            list if no child gates exist.
+        :raises GateReferenceError: if gate ID is not found in gating strategy or if gate
+            name is ambiguous
         """
-        # TODO: should this be a method in GS, this is nearly duplicated in both Workspace & Session
         gs = self._sample_data_lut[sample_id]['gating_strategy']
-
-        if gate_path is None:
-            # need to make sure the gate name isn't used more than once (ambiguous gate name)
-            gate_paths = gs.find_matching_gate_paths(gate_name)
-
-            if len(gate_paths) > 1:
-                raise GateReferenceError(
-                    "Multiple gates exist with gate name '%s'. Specify a gate_path to disambiguate." % gate_name
-                )
-
-            gate_path = gate_paths[0]
-
-        # tack on given gate_name to be the full path for any children
-        child_gate_path = list(gate_path)
-        child_gate_path.append(gate_name)
-        child_gate_path = tuple(child_gate_path)
-
-        child_gates = gs.get_child_gates(gate_name, gate_path)
-        child_gate_ids = []
-
-        for child_gate in child_gates:
-            child_gate_ids.append((child_gate.gate_name, child_gate_path))
+        child_gate_ids = gs.get_child_gate_ids(gate_name, gate_path)
 
         return child_gate_ids
 
