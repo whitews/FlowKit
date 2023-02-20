@@ -9,7 +9,7 @@ from .gatingml_tests import GatingMLTestCase
 from .gating_strategy_prog_gate_tests import GatingTestCase
 from .export_gml_tests import ExportGMLTestCase
 from .gating_strategy_tests import GatingStrategyTestCase
-from .gating_strategy_reused_gates import GatingStrategyReusedGatesTestCase
+from .gating_strategy_reused_gates_tests import GatingStrategyReusedGatesTestCase
 from .gating_strategy_remove_gates_tests import GatingStrategyRemoveGatesTestCase
 from .session_tests import SessionTestCase
 from .session_export_tests import SessionExportTestCase
