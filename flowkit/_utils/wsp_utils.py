@@ -894,17 +894,15 @@ def _recurse_add_sub_populations(
         raise NotImplementedError("Exporting %s gates is not yet implemented" % str(gate.__class__))
 
     # If there are child gates, create a new Sub-pop element and recurse
-    child_gates = gating_strategy.get_child_gates(gate_id, gate_path)
-    if len(child_gates) > 0:
+    child_gate_ids = gating_strategy.get_child_gate_ids(gate_id, gate_path)
+    if len(child_gate_ids) > 0:
         sub_pops_el = etree.SubElement(pop_el, "Subpopulations")
 
         # child gate path will be the parent's gate path plus the parent ID
-        child_gate_path = copy.deepcopy(gate_path)
-        child_gate_path = child_gate_path + (gate_id,)
-        for child_gate in child_gates:
+        for child_gate_name, child_gate_path in child_gate_ids:
             _recurse_add_sub_populations(
                 sub_pops_el,
-                child_gate.gate_name,
+                child_gate_name,
                 child_gate_path,
                 gating_strategy,
                 gate_fj_id_lut,
@@ -1019,13 +1017,11 @@ def export_flowjo_wsp(gating_strategy, group_name, samples, file_handle):
     _add_group_node_to_wsp(groups_el, group_name, sample_id_lut.values())
 
     gate_ids = gating_strategy.get_gate_ids()
-    gates = []
     dim_xform_lut = {}  # keys are dim label, value is a set of xform refs
 
     # Also assume the xforms for all samples are the same
     for g_id, g_path in gate_ids:
         gate = gating_strategy.get_gate(g_id, g_path)
-        gates.append(gate)
 
         for dim in gate.dimensions:
             if dim.id not in dim_xform_lut.keys():
