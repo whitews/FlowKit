@@ -220,7 +220,11 @@ class GatingStrategyRemoveGatesTestCase(unittest.TestCase):
             'CD107a-pos-range',
             dimensions=[dim_cd107a_pos]
         )
-        session.add_gate(dim_cd107a_pos_range, cd8_pos_q_gate_paths[0])
+        # this goes under the CD4N-CD8P Quadrant
+        cd8_pos_q_gate_path_full = list(cd8_pos_q_gate_paths[0])
+        cd8_pos_q_gate_path_full.append('CD4N-CD8P')
+        cd8_pos_q_gate_path_full = tuple(cd8_pos_q_gate_path_full)
+        session.add_gate(dim_cd107a_pos_range, cd8_pos_q_gate_path_full)
 
         dim_cd107a_pos_range2 = fk.gates.RectangleGate(
             'CD107a-pos-range',
