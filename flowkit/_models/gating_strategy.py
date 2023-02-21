@@ -71,6 +71,25 @@ class GatingStrategy(object):
         if not isinstance(gate_path, tuple):
             raise TypeError("gate_path must be a tuple not %s" % str(type(gate_path)))
 
+        # We need the parent gate (via its node) for 2 reasons:
+        #   1) To verify the parent exists when creating a new node
+        #   2) Verify the parent is NOT a QuadrantGate, as only
+        #      Quadrants of a QuadrantGate can be a parent.
+        parent_abs_gate_path = "/" + "/".join(gate_path)
+        try:
+            parent_node = self.resolver.get(self._gate_tree, parent_abs_gate_path)
+        except anytree.ResolverError:
+            # this should never happen unless someone messed with the gate tree
+            raise GateTreeError("Parent gate %s doesn't exist" % parent_abs_gate_path)
+
+        # If parent is root, then there is no parent gate
+        if parent_node.name != 'root':
+            if isinstance(parent_node.gate, fk_gates.QuadrantGate):
+                raise GateTreeError(
+                    "Parent gate %s is a QuadrantGate and cannot be used as a parent gate directly. "
+                    "Only an individual Quadrant can be used as a parent."
+                )
+
         # determine if gate already exists with name and path
         abs_gate_path = list(gate_path) + [gate.gate_name]
         abs_gate_path = "/" + "/".join(abs_gate_path)
@@ -91,14 +110,6 @@ class GatingStrategy(object):
                 node.add_custom_gate(sample_id, gate)
         else:
             # We need to create a new node in the tree.
-            # Get the parent Node so we can create it.
-            parent_abs_gate_path = "/" + "/".join(gate_path)
-            try:
-                parent_node = self.resolver.get(self._gate_tree, parent_abs_gate_path)
-            except anytree.ResolverError:
-                # this should never happen unless someone messed with the gate tree
-                raise GateTreeError("Parent gate %s doesn't exist" % parent_abs_gate_path)
-
             GateNode(gate, parent_node)
             self._rebuild_dag()
 
