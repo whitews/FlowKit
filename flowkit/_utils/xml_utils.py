@@ -772,13 +772,13 @@ def _add_gate_to_gml(root, gate, ns_map):
     return gate_ml
 
 
-def _add_gates_from_gate_dict(gating_strategy, gate_dict, ns_map, parent_ml):
+def _add_gates_from_gate_dict(gating_strategy, gate_dict, ns_map, parent_ml, sample_id=None):
     # the gate_dict will have keys 'name' and 'children'. top-level 'name' value is 'root'
     for child in gate_dict['children']:
         gate_id = child['name']
 
         try:
-            gate = gating_strategy.get_gate(gate_id)
+            gate = gating_strategy.get_gate(gate_id, sample_id=sample_id)
         except QuadrantReferenceError:
             # single quadrants will be handled in the owning quadrant gate
             gate = None
@@ -791,14 +791,18 @@ def _add_gates_from_gate_dict(gating_strategy, gate_dict, ns_map, parent_ml):
                 child_ml.set('{%s}parent_id' % ns_map['gating'], gate_dict['name'])
 
         if 'children' in child:  # and not isinstance(gate, QuadrantGate):
-            _add_gates_from_gate_dict(gating_strategy, child, ns_map, parent_ml)
+            _add_gates_from_gate_dict(gating_strategy, child, ns_map, parent_ml, sample_id=sample_id)
 
 
-def export_gatingml(gating_strategy, file_handle):
+def export_gatingml(gating_strategy, file_handle, sample_id=None):
     """
-    Exports a valid GatingML 2.0 document from given GatingStrategy instance
+    Exports a valid GatingML 2.0 document from given GatingStrategy instance.
+    Specify the sample ID to use that sample's custom gates in the exported
+    file, otherwise the template gates will be exported.
+
     :param gating_strategy: A GatingStrategy instance
     :param file_handle: File handle for exported GatingML 2.0 document
+    :param sample_id: an optional text string representing a Sample instance
     :return: None
     """
     ns_g = "http://www.isac-net.org/std/Gating-ML/v2.0/gating"
@@ -824,7 +828,7 @@ def export_gatingml(gating_strategy, file_handle):
     gate_dict = gating_strategy.get_gate_hierarchy('dict')
 
     # recursively convert all gates to GatingML
-    _add_gates_from_gate_dict(gating_strategy, gate_dict, ns_map, root)
+    _add_gates_from_gate_dict(gating_strategy, gate_dict, ns_map, root, sample_id=sample_id)
 
     et = etree.ElementTree(root)
 

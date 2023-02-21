@@ -242,15 +242,14 @@ class Session(object):
     def export_gml(self, file_handle, sample_id=None):
         """
         Export a GatingML 2.0 file for the gating strategy. Specify the sample ID to use
-        that sample's custom gates in the exported file.
+        that sample's custom gates in the exported file, otherwise the template gates
+        will be exported.
 
         :param file_handle: file handle for exporting data
         :param sample_id: an optional text string representing a Sample instance
         :return: None
         """
-        # TODO: export_gatingml function needs to be updated to handle sample_id in GS
-        #   or add export_gatingml as method to GS that takes an optional sample_id.
-        xml_utils.export_gatingml(self.gating_strategy, file_handle)
+        xml_utils.export_gatingml(self.gating_strategy, file_handle, sample_id=sample_id)
 
     def export_wsp(self, file_handle, group_name):
         """
@@ -262,7 +261,6 @@ class Session(object):
         """
         samples = self.sample_lut.values()
 
-        # TODO: export_flowjo_wsp needs to be updated to handle the new design
         wsp_utils.export_flowjo_wsp(self.gating_strategy, group_name, samples, file_handle)
 
     def get_sample(self, sample_id):
