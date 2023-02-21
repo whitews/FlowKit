@@ -192,6 +192,7 @@ class GatingStrategy(object):
         :return: None
         """
         # Removing a gate nullifies any previous results, so clear cached events
+        # TODO: should only clear cache on successful removal of a gate
         self.clear_cache()
 
         # First, get the gate node from anytree
@@ -202,27 +203,40 @@ class GatingStrategy(object):
 
         # single quadrants can't be removed, their "parent" QuadrantGate must be removed
         if isinstance(gate, fk_gates.Quadrant):
-            raise TypeError(
+            raise QuadrantReferenceError(
                 "Quadrant '%s' cannot be removed, remove the full QuadrantGate '%s' instead"
                 % (gate.id, gate_node.parent.name)
             )
 
-        node_tuple = tuple(n.name for n in gate_node.path)
+        # some special handling if given a QuadrantGate to remove
+        if isinstance(gate, fk_gates.QuadrantGate):
+            # need to collect the Quadrant references as these
+            # may be referenced in a BooleanGate. In that case,
+            # we won't find the BooleanGate in a normal successor
+            # check of the DAG. See comment about using networkx
+            # to find successors below in non-QuadrantGate case.
+            successor_node_tuples = []
+            for quadrant_child_node in gate_node.children:
+                quad_node_tuple = tuple(n.name for n in quadrant_child_node.path)
+                quad_successor_node_tuples = list(self._dag.successors(quad_node_tuple))
 
-        # Use networkx graph to get dependent gates instead of anytree,
-        # since the DAG keeps track of all dependencies (incl. bool gates),
-        # which also covers bool gate dependencies of the children.
-        # Networkx descendants works for DAGs & returns a set of node strings.
-        descendant_node_tuples = nx.descendants(self._dag, node_tuple)
+                successor_node_tuples.extend(quad_successor_node_tuples)
+        else:
+            # Use networkx graph to get dependent gates instead of anytree,
+            # since the DAG keeps track of all dependencies (incl. bool gates),
+            # which also covers bool gate dependencies of the children.
+            # Networkx descendants works for DAGs & returns a set of node strings.
+            node_tuple = tuple(n.name for n in gate_node.path)
+            successor_node_tuples = list(self._dag.successors(node_tuple))
 
-        # check descendant gates for a boolean gate,
+        # check successor gates for a boolean gate,
         # if present throw a GateTreeError
-        for d_tuple in descendant_node_tuples:
-            d_gate_node = self._get_gate_node(d_tuple[-1], gate_path=d_tuple[:-1])
-            d_gate = d_gate_node.gate
+        for s_tuple in successor_node_tuples:
+            s_gate_node = self._get_gate_node(s_tuple[-1], gate_path=s_tuple[:-1])
+            s_gate = s_gate_node.gate
 
-            if isinstance(d_gate, fk_gates.BooleanGate):
-                raise GateTreeError("BooleanGate %s references gate %s" % (d_gate.gate_name, gate_name))
+            if isinstance(s_gate, fk_gates.BooleanGate):
+                raise GateTreeError("BooleanGate %s references gate %s" % (s_gate.gate_name, gate_name))
 
         if keep_children:
             parent_node = gate_node.parent
