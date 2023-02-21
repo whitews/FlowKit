@@ -11,6 +11,7 @@ from .export_gml_tests import ExportGMLTestCase
 from .gating_strategy_tests import GatingStrategyTestCase
 from .gating_strategy_reused_gates_tests import GatingStrategyReusedGatesTestCase
 from .gating_strategy_remove_gates_tests import GatingStrategyRemoveGatesTestCase
+from .gating_strategy_custom_gates_tests import GatingStrategyCustomGatesTestCase
 from .session_tests import SessionTestCase
 from .session_export_tests import SessionExportTestCase
 from .workspace_tests import WorkspaceTestCase
