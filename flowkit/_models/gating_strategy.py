@@ -191,10 +191,6 @@ class GatingStrategy(object):
             descendant gates.
         :return: None
         """
-        # Removing a gate nullifies any previous results, so clear cached events
-        # TODO: should only clear cache on successful removal of a gate
-        self.clear_cache()
-
         # First, get the gate node from anytree
         # Note, this will raise an error on ambiguous gates so no need
         # to handle that case
@@ -237,6 +233,11 @@ class GatingStrategy(object):
 
             if isinstance(s_gate, fk_gates.BooleanGate):
                 raise GateTreeError("BooleanGate %s references gate %s" % (s_gate.gate_name, gate_name))
+
+        # At this point we're about to modify the tree and
+        # removing a gate nullifies any previous results,
+        # so clear cached events
+        self.clear_cache()
 
         if keep_children:
             parent_node = gate_node.parent
