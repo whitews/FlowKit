@@ -55,10 +55,9 @@ FlowKit is a Python toolkit for flow cytometry analysis and visualization, with 
   * Full support for the GatingML 2.0 specification
     * Import GatingML XML documents as gating strategies
     * Export gating strategies as a valid GatingML XML document
-  * Support for importing FlowJo 10 workspace files. Workspace imports support the following features:
+  * Import FlowJo 10 workspace files, supporting the following features:
     * Linear, logarithmic, bi-exponential, and logicle transforms
     * Polygon, rectangle, ellipse, and quadrant gates
-    * Exporting a Session as a FlowJo 10 workspace file
   * Programmatically create gating strategies including polygon, rectangle, range, ellipsoid, quadrant, and boolean gates
   * Retrieve gating results as a Pandas DataFrame 
 * Visualization
@@ -70,7 +69,7 @@ FlowKit is a Python toolkit for flow cytometry analysis and visualization, with 
 
 ## Requirements
 
-FlowKit supports Python version 3.7 or above. All dependencies are installable 
+FlowKit supports Python version 3.7 - 3.10. All dependencies are installable 
 via pip, and are listed below.
 
 > **NOTE**: FlowUtils uses C extensions for significant performance improvements. For most platforms and Python versions, pre-built binaries are available in PyPI (i.e. installable via `pip`). 
@@ -79,17 +78,17 @@ via pip, and are listed below.
 
 Required Python dependencies:
 
-* [flowio](https://github.com/whitews/flowio) == 1.1.0
+* [flowio](https://github.com/whitews/flowio) == 1.1.1
 * [flowutils](https://github.com/whitews/flowutils) == 1.0.0
 * anytree >= 2.6
-* bokeh >= 2, <3.0
-* lxml >= 4.4
-* matplotlib >= 3.1
+* bokeh >= 2.4, <3.0
+* lxml >= 4.7
+* matplotlib >= 3.5
 * networkx >= 2.3
 * numpy >= 1.20
-* pandas >= 1.1
+* pandas >= 1.2
 * psutils >= 5.8
-* scipy >= 1.3
+* scipy >= 1.6
 * seaborn >= 0.11, <0.12
 
 ## Installation
@@ -157,4 +156,5 @@ Want to get involved in the development of FlowKit?
 
 The following projects and publications have utilized FlowKit. If you have a package or publication where FlowKit was used, and you want it listed here, feel free to [submit an issue](https://github.com/whitews/FlowKit/issues/new/) letting me know.
 
+* Schuster, Jonas et al. “Combining real-time fluorescence spectroscopy and flow cytometry to reveal new insights in DOC and cell characterization of drinking water.” Frontiers in Environmental Chemistry (2022), [doi:10.3389/fenvc.2022.931067](https://www.frontiersin.org/articles/10.3389/fenvc.2022.931067/full)
 * Rendeiro, André F et al. "Profiling of immune dysfunction in COVID-19 patients allows early prediction of disease progression." Life science alliance vol. 4,2 e202000955. 24 Dec. 2020, [doi:10.26508/lsa.202000955](https://www.life-science-alliance.org/content/4/2/e202000955.full)
