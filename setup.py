@@ -16,18 +16,17 @@ with open("README.md", "r", encoding='utf-8') as fh:
 
 reqs = [
     'anytree>=2.6',
-    'bokeh>=2,<3',
+    'bokeh>=2.4,<3',
     'flowio==1.1.1',
     'flowutils>=1,<1.1',
-    'lxml>=4.4',
-    'matplotlib>=3.1',
+    'lxml>=4.7',
+    'matplotlib>=3.5',
     'networkx>=2.3',
     'numpy>=1.20',
-    'pandas>=1.1',
+    'pandas>=1.2,<2',
     'psutil>=5.8',
-    'scipy',
-    'seaborn',
-    'statsmodels'
+    'scipy>=1.6',
+    'seaborn>=0.11,<0.12'
 ]
 
 setup(
