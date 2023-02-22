@@ -220,7 +220,11 @@ class GatingStrategyRemoveGatesTestCase(unittest.TestCase):
             'CD107a-pos-range',
             dimensions=[dim_cd107a_pos]
         )
-        session.add_gate(dim_cd107a_pos_range, cd8_pos_q_gate_paths[0])
+        # this goes under the CD4N-CD8P Quadrant
+        cd8_pos_q_gate_path_full = list(cd8_pos_q_gate_paths[0])
+        cd8_pos_q_gate_path_full.append('CD4N-CD8P')
+        cd8_pos_q_gate_path_full = tuple(cd8_pos_q_gate_path_full)
+        session.add_gate(dim_cd107a_pos_range, cd8_pos_q_gate_path_full)
 
         dim_cd107a_pos_range2 = fk.gates.RectangleGate(
             'CD107a-pos-range',
@@ -234,7 +238,7 @@ class GatingStrategyRemoveGatesTestCase(unittest.TestCase):
         gs = copy.deepcopy(self.gating_strategy)
         gate_name_to_remove = 'CD4P-CD8N'
 
-        self.assertRaises(TypeError, gs.remove_gate, gate_name_to_remove)
+        self.assertRaises(fk.exceptions.QuadrantReferenceError, gs.remove_gate, gate_name_to_remove)
 
     def test_remove_gate_with_bool_dep_fails(self):
         gs = copy.deepcopy(self.gating_strategy)
@@ -249,3 +253,29 @@ class GatingStrategyRemoveGatesTestCase(unittest.TestCase):
         gs.remove_gate(gate_name_to_remove)
 
         self.assertRaises(fk.exceptions.GateReferenceError, gs.get_gate, gate_name_to_remove)
+
+    def test_remove_gate_keep_children(self):
+        # reminder of gate tree relevant to test:
+        # root
+        # ╰── Time-range
+        #     ╰── Singlets-poly
+        #         ╰── Live-poly
+        #             ╰── CD3-pos-range
+
+        gate_name_to_remove = 'Live-poly'
+
+        parent_gate_name = 'Singlets-poly'
+
+        # new child gate IDs will omit 'Live-poly'
+        ground_truth_new_child_gate_ids = [
+            (
+                'CD3-pos-range',
+                ('root', 'Time-range', 'Singlets-poly')
+            )
+        ]
+
+        gs = copy.deepcopy(self.gating_strategy)
+        gs.remove_gate(gate_name_to_remove, keep_children=True)
+        new_child_gate_ids = gs.get_child_gate_ids(parent_gate_name)
+
+        self.assertEqual(new_child_gate_ids, ground_truth_new_child_gate_ids)

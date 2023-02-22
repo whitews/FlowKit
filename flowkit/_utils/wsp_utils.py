@@ -501,7 +501,7 @@ def parse_wsp(workspace_file_or_path, ignore_transforms=False):
                     'group_gates': list of common group gates (may not be the complete tree)
                 },
                 ...
-            }
+            },
             'samples': {
                 sample_name: {
                     'keywords': dict of FJ sample keywords,
@@ -511,6 +511,7 @@ def parse_wsp(workspace_file_or_path, ignore_transforms=False):
                     'gating_strategy': {gate_id: gate_instance, ...}
                 },
                 ...
+            }
         }
 
     :param workspace_file_or_path: A FlowJo .wsp file or file path
@@ -893,17 +894,15 @@ def _recurse_add_sub_populations(
         raise NotImplementedError("Exporting %s gates is not yet implemented" % str(gate.__class__))
 
     # If there are child gates, create a new Sub-pop element and recurse
-    child_gates = gating_strategy.get_child_gates(gate_id, gate_path)
-    if len(child_gates) > 0:
+    child_gate_ids = gating_strategy.get_child_gate_ids(gate_id, gate_path)
+    if len(child_gate_ids) > 0:
         sub_pops_el = etree.SubElement(pop_el, "Subpopulations")
 
         # child gate path will be the parent's gate path plus the parent ID
-        child_gate_path = copy.deepcopy(gate_path)
-        child_gate_path = child_gate_path + (gate_id,)
-        for child_gate in child_gates:
+        for child_gate_name, child_gate_path in child_gate_ids:
             _recurse_add_sub_populations(
                 sub_pops_el,
-                child_gate.gate_name,
+                child_gate_name,
                 child_gate_path,
                 gating_strategy,
                 gate_fj_id_lut,
@@ -1012,19 +1011,17 @@ def export_flowjo_wsp(gating_strategy, group_name, samples, file_handle):
     sample_id_lut = {}
     for sample in samples:
         # Store sample ID and increment
-        sample_id_lut[sample.original_filename] = str(curr_sample_id)
+        sample_id_lut[sample.id] = str(curr_sample_id)
         curr_sample_id += 1
 
     _add_group_node_to_wsp(groups_el, group_name, sample_id_lut.values())
 
     gate_ids = gating_strategy.get_gate_ids()
-    gates = []
     dim_xform_lut = {}  # keys are dim label, value is a set of xform refs
 
     # Also assume the xforms for all samples are the same
     for g_id, g_path in gate_ids:
         gate = gating_strategy.get_gate(g_id, g_path)
-        gates.append(gate)
 
         for dim in gate.dimensions:
             if dim.id not in dim_xform_lut.keys():
@@ -1053,7 +1050,7 @@ def export_flowjo_wsp(gating_strategy, group_name, samples, file_handle):
     #     - Keywords
     #     - SampleNode
     for sample in samples:
-        sample_id = sample_id_lut[sample.original_filename]
+        sample_id = sample_id_lut[sample.id]
 
         sample_el = etree.SubElement(sample_list_el, "Sample")
 
@@ -1062,7 +1059,7 @@ def export_flowjo_wsp(gating_strategy, group_name, samples, file_handle):
         # path using the Sample's original filename, hoping that
         # FlowJo can re-connect the files using that name.
         data_set_el = etree.SubElement(sample_el, "DataSet")
-        data_set_el.set('uri', sample.original_filename)
+        data_set_el.set('uri', sample.id)
         data_set_el.set('sampleID', sample_id)
 
         # Transforms in FlowJo are organized differently than in GatingML
@@ -1093,7 +1090,7 @@ def export_flowjo_wsp(gating_strategy, group_name, samples, file_handle):
         # Finally, add the SampleNode where all the gates are defined
         _add_sample_node_to_wsp(
             sample_el,
-            sample.original_filename,
+            sample.id,
             sample_id,
             gating_strategy,
             comp_prefix_lut,

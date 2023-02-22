@@ -23,7 +23,6 @@ Supporting Classes
    dimension
    ratio_dimension
    quadrant_divider
-   vertex
 
 transforms Module
 -----------------
@@ -52,3 +51,16 @@ gates Module
    quadrant_gate
    quadrant
    rectangle_gate
+
+Other
+-----
+
+.. toctree::
+   :maxdepth: 2
+
+   functions
+
+.. toctree::
+   :maxdepth: 2
+
+   exceptions

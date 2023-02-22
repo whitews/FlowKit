@@ -58,7 +58,7 @@ class GatingStrategy(object):
         custom sample gates.
 
         :param gate: instance from a subclass of the Gate class
-        :param gate_path: complete tuple of gate IDs for unique set of gate ancestors
+        :param gate_path: complete ordered tuple of gate names for unique set of gate ancestors
         :param sample_id: text string for specifying given gate as a custom Sample gate
 
         :return: None
@@ -70,6 +70,25 @@ class GatingStrategy(object):
         # something that is simple to fix
         if not isinstance(gate_path, tuple):
             raise TypeError("gate_path must be a tuple not %s" % str(type(gate_path)))
+
+        # We need the parent gate (via its node) for 2 reasons:
+        #   1) To verify the parent exists when creating a new node
+        #   2) Verify the parent is NOT a QuadrantGate, as only
+        #      Quadrants of a QuadrantGate can be a parent.
+        parent_abs_gate_path = "/" + "/".join(gate_path)
+        try:
+            parent_node = self.resolver.get(self._gate_tree, parent_abs_gate_path)
+        except anytree.ResolverError:
+            # this should never happen unless someone messed with the gate tree
+            raise GateTreeError("Parent gate %s doesn't exist" % parent_abs_gate_path)
+
+        # If parent is root, then there is no parent gate
+        if parent_node.name != 'root':
+            if isinstance(parent_node.gate, fk_gates.QuadrantGate):
+                raise GateTreeError(
+                    "Parent gate %s is a QuadrantGate and cannot be used as a parent gate directly. "
+                    "Only an individual Quadrant can be used as a parent."
+                )
 
         # determine if gate already exists with name and path
         abs_gate_path = list(gate_path) + [gate.gate_name]
@@ -91,14 +110,6 @@ class GatingStrategy(object):
                 node.add_custom_gate(sample_id, gate)
         else:
             # We need to create a new node in the tree.
-            # Get the parent Node so we can create it.
-            parent_abs_gate_path = "/" + "/".join(gate_path)
-            try:
-                parent_node = self.resolver.get(self._gate_tree, parent_abs_gate_path)
-            except anytree.ResolverError:
-                # this should never happen unless someone messed with the gate tree
-                raise GateTreeError("Parent gate %s doesn't exist" % parent_abs_gate_path)
-
             GateNode(gate, parent_node)
             self._rebuild_dag()
 
@@ -107,7 +118,7 @@ class GatingStrategy(object):
         Determine if a custom gate exists for a sample ID.
 
         :param gate_name: text string of a gate name
-        :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
+        :param gate_path: complete ordered tuple of gate names for unique set of gate ancestors.
             Required if gate_name is ambiguous
         :param sample_id: Sample ID string
         :return: Boolean value for whether the sample ID has a custom gate
@@ -123,7 +134,7 @@ class GatingStrategy(object):
         exists.
 
         :param gate_name: text string of a gate name
-        :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
+        :param gate_path: complete ordered tuple of gate names for unique set of gate ancestors.
             Required if gate_name is ambiguous
         :param sample_id: Sample ID string to lookup custom gate. If None or not found, template gate is returned
         :return: Subclass of a Gate object
@@ -173,20 +184,13 @@ class GatingStrategy(object):
         must be removed prior to removing the gate.
 
         :param gate_name: text string of a gate name
-        :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
+        :param gate_path: complete ordered tuple of gate names for unique set of gate ancestors.
             Required if gate_name is ambiguous
         :param keep_children: Whether to keep child gates. If True, the child gates will be
             remapped to the removed gate's parent. Default is False, which will delete all
             descendant gates.
         :return: None
         """
-        # TODO: should the removed gates be returned to the user?
-        #    This could be helpful if they are trying to move the gate
-        #    in the tree or to keep track of what was removed.
-
-        # Removing a gate nullifies any previous results, so clear cached events
-        self.clear_cache()
-
         # First, get the gate node from anytree
         # Note, this will raise an error on ambiguous gates so no need
         # to handle that case
@@ -195,27 +199,45 @@ class GatingStrategy(object):
 
         # single quadrants can't be removed, their "parent" QuadrantGate must be removed
         if isinstance(gate, fk_gates.Quadrant):
-            raise TypeError(
+            raise QuadrantReferenceError(
                 "Quadrant '%s' cannot be removed, remove the full QuadrantGate '%s' instead"
                 % (gate.id, gate_node.parent.name)
             )
 
-        node_tuple = tuple(n.name for n in gate_node.path)
+        # some special handling if given a QuadrantGate to remove
+        if isinstance(gate, fk_gates.QuadrantGate):
+            # need to collect the Quadrant references as these
+            # may be referenced in a BooleanGate. In that case,
+            # we won't find the BooleanGate in a normal successor
+            # check of the DAG. See comment about using networkx
+            # to find successors below in non-QuadrantGate case.
+            successor_node_tuples = []
+            for quadrant_child_node in gate_node.children:
+                quad_node_tuple = tuple(n.name for n in quadrant_child_node.path)
+                quad_successor_node_tuples = list(self._dag.successors(quad_node_tuple))
 
-        # Use networkx graph to get dependent gates instead of anytree,
-        # since the DAG keeps track of all dependencies (incl. bool gates),
-        # which also covers bool gate dependencies of the children.
-        # Networkx descendants works for DAGs & returns a set of node strings.
-        descendant_node_tuples = nx.descendants(self._dag, node_tuple)
+                successor_node_tuples.extend(quad_successor_node_tuples)
+        else:
+            # Use networkx graph to get dependent gates instead of anytree,
+            # since the DAG keeps track of all dependencies (incl. bool gates),
+            # which also covers bool gate dependencies of the children.
+            # Networkx descendants works for DAGs & returns a set of node strings.
+            node_tuple = tuple(n.name for n in gate_node.path)
+            successor_node_tuples = list(self._dag.successors(node_tuple))
 
-        # check descendant gates for a boolean gate,
+        # check successor gates for a boolean gate,
         # if present throw a GateTreeError
-        for d_tuple in descendant_node_tuples:
-            d_gate_node = self._get_gate_node(d_tuple[-1], gate_path=d_tuple[:-1])
-            d_gate = d_gate_node.gate
+        for s_tuple in successor_node_tuples:
+            s_gate_node = self._get_gate_node(s_tuple[-1], gate_path=s_tuple[:-1])
+            s_gate = s_gate_node.gate
 
-            if isinstance(d_gate, fk_gates.BooleanGate):
-                raise GateTreeError("BooleanGate %s references gate %s" % (d_gate.gate_name, gate_name))
+            if isinstance(s_gate, fk_gates.BooleanGate):
+                raise GateTreeError("BooleanGate %s references gate %s" % (s_gate.gate_name, gate_name))
+
+        # At this point we're about to modify the tree and
+        # removing a gate nullifies any previous results,
+        # so clear cached events
+        self.clear_cache()
 
         if keep_children:
             parent_node = gate_node.parent
@@ -376,40 +398,45 @@ class GatingStrategy(object):
 
         return root_gates
 
-    def get_parent_gate(self, gate_name, gate_path=None):
+    def get_parent_gate_id(self, gate_name, gate_path=None):
         """
-        Retrieve the parent Gate instance for the given gate ID.
+        Retrieve the parent Gate ID for the given gate ID.
 
         :param gate_name: text string of a gate name
-        :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
+        :param gate_path: complete ordered tuple of gate names for unique set of gate ancestors.
             Required if gate_name is ambiguous
-        :return: Subclassed Gate instance
+        :return: a gate ID (tuple of gate name and gate path)
         """
         node = self._get_gate_node(gate_name, gate_path)
 
         if node.parent.name == 'root':
             return None
 
-        return node.parent.gate
+        parent_gate_path = tuple((a.name for a in node.parent.ancestors))
 
-    def get_child_gates(self, gate_name, gate_path=None):
+        return node.parent.name, parent_gate_path
+
+    def get_child_gate_ids(self, gate_name, gate_path=None):
         """
         Retrieve list of child gate instances by their parent's gate ID.
 
         :param gate_name: text string of a gate name
-        :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
+        :param gate_path: complete ordered tuple of gate names for unique set of gate ancestors.
             Required if gate_name is ambiguous
-        :return: list of Gate instances
-        :raises KeyError: if gate ID is not found in gating strategy
+        :return: list of Gate IDs (tuple of gate name plus gate path). Returns an empty
+            list if no child gates exist.
+        :raises GateReferenceError: if gate ID is not found in gating strategy or if gate
+            name is ambiguous
         """
         node = self._get_gate_node(gate_name, gate_path)
 
-        child_gates = []
+        child_gate_ids = []
 
         for n in node.children:
-            child_gates.append(n.gate)
+            ancestor_path = tuple((a.name for a in n.ancestors))
+            child_gate_ids.append((n.name, ancestor_path))
 
-        return child_gates
+        return child_gate_ids
 
     def get_gate_ids(self):
         """
@@ -550,7 +577,7 @@ class GatingStrategy(object):
 
         # noinspection PyProtectedMember
         events = self._get_cached_preprocessed_events(
-            sample.original_filename,
+            sample.id,
             comp_ref,
             None,
             None
@@ -585,7 +612,7 @@ class GatingStrategy(object):
             # noinspection PyProtectedMember
             self._cache_preprocessed_events(
                 events,
-                sample.original_filename,
+                sample.id,
                 comp_ref,
                 None,
                 None
@@ -666,7 +693,7 @@ class GatingStrategy(object):
 
                 if cache_events:
                     cached_events = self._get_cached_preprocessed_events(
-                        sample.original_filename,
+                        sample.id,
                         comp_ref,
                         dim_xform[i],
                         dim_idx=dim
@@ -682,7 +709,7 @@ class GatingStrategy(object):
                     if cache_events:
                         self._cache_preprocessed_events(
                             xform_events,
-                            sample.original_filename,
+                            sample.id,
                             comp_ref,
                             dim_xform[i],
                             dim_idx=dim
@@ -743,7 +770,7 @@ class GatingStrategy(object):
                 q_event_count = q_result.sum()
 
                 final_results[q_id] = {
-                    'sample': sample.original_filename,
+                    'sample': sample.id,
                     'events': q_result,
                     'count': q_event_count,
                     'absolute_percent': (q_event_count / float(sample.event_count)) * 100.0,
@@ -760,7 +787,7 @@ class GatingStrategy(object):
                 relative_percent = (event_count / float(parent_count)) * 100.0
 
             final_results = {
-                'sample': sample.original_filename,
+                'sample': sample.id,
                 'events': results_and_parent,
                 'count': event_count,
                 'absolute_percent': (event_count / float(sample.event_count)) * 100.0,
@@ -782,7 +809,7 @@ class GatingStrategy(object):
         :param verbose: If True, print a line for each gate processed
         :return: GatingResults instance
         """
-        sample_id = sample.original_filename
+        sample_id = sample.id
         results = {}
 
         # The goal here is to avoid re-analyzing any gates.

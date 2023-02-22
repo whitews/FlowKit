@@ -14,6 +14,7 @@ import warnings
 sys.path.append(os.path.abspath('../..'))
 
 from flowkit import Sample, transforms
+from flowkit.exceptions import DataOffsetDiscrepancyError
 
 data1_fcs_path = 'data/gate_ref/data1.fcs'
 data1_sample = Sample(data1_fcs_path)
@@ -94,10 +95,45 @@ class SampleTestCase(unittest.TestCase):
 
         sample = Sample(
             npy_data,
+            sample_id='my_sample',
             channel_labels=channels
         )
 
         self.assertIsInstance(sample, Sample)
+
+    def test_load_numpy_array_no_id_raises(self):
+        npy_file_path = "data/test_comp_example.npy"
+        # noinspection SpellCheckingInspection
+        channels = [
+            'FSC-A', 'FSC-W', 'SSC-A',
+            'Ax488-A', 'PE-A', 'PE-TR-A',
+            'PerCP-Cy55-A', 'PE-Cy7-A', 'Ax647-A',
+            'Ax700-A', 'Ax750-A', 'PacBlu-A',
+            'Qdot525-A', 'PacOrange-A', 'Qdot605-A',
+            'Qdot655-A', 'Qdot705-A', 'Time'
+        ]
+
+        npy_data = np.fromfile(npy_file_path)
+
+        self.assertRaises(ValueError, Sample, npy_data, channel_labels=channels)
+
+    def test_load_dataframe_no_id_raises(self):
+        npy_file_path = "data/test_comp_example.npy"
+        # noinspection SpellCheckingInspection
+        channels = [
+            'FSC-A', 'FSC-W', 'SSC-A',
+            'Ax488-A', 'PE-A', 'PE-TR-A',
+            'PerCP-Cy55-A', 'PE-Cy7-A', 'Ax647-A',
+            'Ax700-A', 'Ax750-A', 'PacBlu-A',
+            'Qdot525-A', 'PacOrange-A', 'Qdot605-A',
+            'Qdot655-A', 'Qdot705-A', 'Time'
+        ]
+
+        npy_data = np.fromfile(npy_file_path)
+        npy_data = np.reshape(npy_data, (-1, len(channels)))
+        df_data = pd.DataFrame(npy_data, columns=channels)
+
+        self.assertRaises(ValueError, Sample, df_data)
 
     def test_load_from_pandas_multi_index(self):
         sample_orig = Sample("data/100715.fcs", cache_original_events=True)
@@ -106,7 +142,7 @@ class SampleTestCase(unittest.TestCase):
 
         df = sample_orig.as_dataframe(source='orig')
 
-        sample_new = Sample(df)
+        sample_new = Sample(df, sample_id='my_sample')
         pnn_new = sample_new.pnn_labels
         pns_new = sample_new.pns_labels
 
@@ -116,6 +152,14 @@ class SampleTestCase(unittest.TestCase):
     def test_load_from_unsupported_object(self):
         """Test Sample constructor raises ValueError loading an unsupported object"""
         self.assertRaises(ValueError, Sample, object())
+
+    def test_data_start_offset_discrepancy(self):
+        fcs_file = "data/noncompliant/data_start_offset_discrepancy_example.fcs"
+        self.assertRaises(DataOffsetDiscrepancyError, Sample, fcs_file)
+
+    def test_data_stop_offset_discrepancy(self):
+        fcs_file = "data/noncompliant/data_stop_offset_discrepancy_example.fcs"
+        self.assertRaises(DataOffsetDiscrepancyError, Sample, fcs_file)
 
     def test_comp_matrix_from_csv(self):
         sample = test_comp_sample

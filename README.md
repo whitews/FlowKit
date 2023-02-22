@@ -8,7 +8,7 @@
 
 [![Build & test (master)](https://github.com/whitews/FlowKit/actions/workflows/tests_master.yml/badge.svg)](https://github.com/whitews/FlowKit/actions/workflows/tests_master.yml)
 [![Build & test (develop)](https://github.com/whitews/FlowKit/actions/workflows/tests_develop.yml/badge.svg)](https://github.com/whitews/FlowKit/actions/workflows/tests_develop.yml)
-[![Coverage](https://codecov.io/gh/whitews/FlowKit/branch/develop/graph/badge.svg)](https://codecov.io/gh/whitews/flowkit)
+[![codecov](https://codecov.io/gh/whitews/flowkit/branch/master/graph/badge.svg?token=joeOIVWmHi)](https://codecov.io/gh/whitews/flowkit)
 [![Documentation Status](https://readthedocs.org/projects/flowkit/badge/?version=latest)](https://flowkit.readthedocs.io/en/latest/?badge=latest)
 
 * [Overview](#overview)
@@ -30,8 +30,6 @@ FlowKit is a Python toolkit for flow cytometry analysis and visualization, with 
 
 ## Features
 
-> **NOTE**: Version 0.6 added experimental support for exporting FlowJo 10 workspace files from a Session. Support is currently limited to exporting data from a single sample group. Please [submit an issue](https://github.com/whitews/FlowKit/issues/new/choose) if you find any bugs related to this feature.
-
 * Read / Write FCS Files
   * Read FCS files, supporting FCS versions 2.0, 3.0, and 3.1
   * Export FCS data as:
@@ -45,7 +43,6 @@ FlowKit is a Python toolkit for flow cytometry analysis and visualization, with 
     * FlowJo tab-delimited text
     * NumPy array
     * GatingML 2.0 spectrumMatrix XML element
-  * Create a compensation matrix from a set of compensation bead files
 * Transformation
   * Logicle
   * Inverse hyperbolic sine (ArcSinh)
@@ -58,10 +55,9 @@ FlowKit is a Python toolkit for flow cytometry analysis and visualization, with 
   * Full support for the GatingML 2.0 specification
     * Import GatingML XML documents as gating strategies
     * Export gating strategies as a valid GatingML XML document
-  * Limited support for importing FlowJo 10 workspace files. Workspace files are currently limited to the following features:
+  * Import FlowJo 10 workspace files, supporting the following features:
     * Linear, logarithmic, bi-exponential, and logicle transforms
     * Polygon, rectangle, ellipse, and quadrant gates
-    * Export a Session's sample group analysis as a FlowJo 10 workspace file
   * Programmatically create gating strategies including polygon, rectangle, range, ellipsoid, quadrant, and boolean gates
   * Retrieve gating results as a Pandas DataFrame 
 * Visualization
@@ -73,7 +69,7 @@ FlowKit is a Python toolkit for flow cytometry analysis and visualization, with 
 
 ## Requirements
 
-FlowKit supports Python version 3.7 or above. All dependencies are installable 
+FlowKit supports Python version 3.7 - 3.10. All dependencies are installable 
 via pip, and are listed below.
 
 > **NOTE**: FlowUtils uses C extensions for significant performance improvements. For most platforms and Python versions, pre-built binaries are available in PyPI (i.e. installable via `pip`). 
@@ -82,17 +78,17 @@ via pip, and are listed below.
 
 Required Python dependencies:
 
-* [flowio](https://github.com/whitews/flowio) == 1.0.1
+* [flowio](https://github.com/whitews/flowio) == 1.1.1
 * [flowutils](https://github.com/whitews/flowutils) == 1.0.0
 * anytree >= 2.6
-* bokeh >= 2, <3.0
-* lxml >= 4.4
-* matplotlib >= 3.1
+* bokeh >= 2.4, <3.0
+* lxml >= 4.7
+* matplotlib >= 3.5
 * networkx >= 2.3
 * numpy >= 1.20
-* pandas >= 1.1
+* pandas >= 1.2
 * psutils >= 5.8
-* scipy >= 1.3
+* scipy >= 1.6
 * seaborn >= 0.11, <0.12
 
 ## Installation
@@ -135,13 +131,13 @@ The series of Jupyter notebook tutorials can be found in the `docs/notebooks` di
 * [Part 3 - GatingStrategy & GatingResults Classes](https://github.com/whitews/FlowKit/blob/master/docs/notebooks/flowkit-tutorial-part03-gating-strategy-and-gating-results-classes.ipynb)
 * [Part 4 - gates Module](https://github.com/whitews/FlowKit/blob/master/docs/notebooks/flowkit-tutorial-part04-gates-module.ipynb)
 * [Part 5 - Session Class](https://github.com/whitews/FlowKit/blob/master/docs/notebooks/flowkit-tutorial-part05-session-class.ipynb)
+* [Part 6 - Workspace Class](https://github.com/whitews/FlowKit/blob/master/docs/notebooks/flowkit-tutorial-part06-workspace-class.ipynb)
 
 ### Advanced Examples
 
 Below are more advanced and practical examples for using FlowKit. If you have an example you would like to submit for consideration in this list (preferably with data), please [submit an issue](https://github.com/whitews/FlowKit/issues/new/).
 
 * [Compare mean fluorescence intensity (MFI) in gated populations](https://github.com/whitews/FlowKit/blob/master/docs/notebooks/advanced/flowkit-session-compare-mfi-of-gated-events.ipynb)
-* [Customize gate for a single Sample in a Session sample group](https://github.com/whitews/FlowKit/blob/master/docs/notebooks/advanced/flowkit-session-create-custom-sample-gate.ipynb)
 * [Importing a FlowJo 10 WSP file & replicating analysis in FlowKit](https://github.com/whitews/FlowKit/blob/master/docs/notebooks/advanced/flowkit-session-replicate-flowjo-wsp.ipynb)
 * [Dimension reduction on gated populations](https://github.com/whitews/FlowKit/blob/master/docs/notebooks/advanced/dimension_reduction_on_gated_populations.ipynb)
 * [Comparison between Leiden & Louvain clustering](https://github.com/whitews/FlowKit/blob/master/docs/notebooks/advanced/clustering_comparison_leiden_vs_louvain.ipynb)
@@ -160,4 +156,5 @@ Want to get involved in the development of FlowKit?
 
 The following projects and publications have utilized FlowKit. If you have a package or publication where FlowKit was used, and you want it listed here, feel free to [submit an issue](https://github.com/whitews/FlowKit/issues/new/) letting me know.
 
+* Schuster, Jonas et al. “Combining real-time fluorescence spectroscopy and flow cytometry to reveal new insights in DOC and cell characterization of drinking water.” Frontiers in Environmental Chemistry (2022), [doi:10.3389/fenvc.2022.931067](https://www.frontiersin.org/articles/10.3389/fenvc.2022.931067/full)
 * Rendeiro, André F et al. "Profiling of immune dysfunction in COVID-19 patients allows early prediction of disease progression." Life science alliance vol. 4,2 e202000955. 24 Dec. 2020, [doi:10.26508/lsa.202000955](https://www.life-science-alliance.org/content/4/2/e202000955.full)

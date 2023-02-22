@@ -23,7 +23,7 @@ class PlotTestCase(unittest.TestCase):
           from plotting functions.
     """
 
-    def test_plot_sample_histogram(self):
+    def test_sample_plot_histogram(self):
         sample = copy.deepcopy(test_sample)
         xform_logicle = fk.transforms.LogicleTransform('logicle', param_t=10000, param_w=0.5, param_m=4.5, param_a=0)
         sample.apply_transform(xform_logicle)
@@ -53,7 +53,7 @@ class PlotTestCase(unittest.TestCase):
 
         self.assertIsInstance(fig, mpl_Figure)
 
-    def test_plot_sample_contour(self):
+    def test_sample_plot_contour(self):
         sample = copy.deepcopy(test_sample)
         xform_logicle = fk.transforms.LogicleTransform('logicle', param_t=10000, param_w=0.5, param_m=4.5, param_a=0)
         sample.apply_transform(xform_logicle)
@@ -68,7 +68,7 @@ class PlotTestCase(unittest.TestCase):
 
         self.assertIsInstance(p, mpl_Figure)
 
-    def test_plot_sample_scatter(self):
+    def test_sample_plot_scatter(self):
         sample = copy.deepcopy(test_sample)
         xform_logicle = fk.transforms.LogicleTransform('logicle', param_t=10000, param_w=0.5, param_m=4.5, param_a=0)
         sample.apply_transform(xform_logicle)
@@ -82,7 +82,7 @@ class PlotTestCase(unittest.TestCase):
 
         self.assertIsInstance(p, bk_Figure)
 
-    def test_plot_sample_scatter_matrix(self):
+    def test_sample_plot_scatter_matrix(self):
         sample = copy.deepcopy(test_sample)
 
         # reduce # of events for plotting performance
@@ -99,7 +99,7 @@ class PlotTestCase(unittest.TestCase):
 
         self.assertIsInstance(grid, bk_Column)
 
-    def test_plot_gates(self):
+    def test_session_plot_gate(self):
         fks = fk.Session(
             gating_strategy=copy.deepcopy(test_gating_strategy),
             fcs_samples=copy.deepcopy(test_sample)
@@ -126,7 +126,7 @@ class PlotTestCase(unittest.TestCase):
 
             self.assertIsInstance(p, bk_Figure)
 
-    def test_plot_gated_scatter(self):
+    def test_session_plot_scatter(self):
         fks = fk.Session(
             gating_strategy=copy.deepcopy(test_gating_strategy),
             fcs_samples=copy.deepcopy(test_sample)
@@ -145,3 +145,52 @@ class PlotTestCase(unittest.TestCase):
         )
 
         self.assertIsInstance(p, bk_Figure)
+
+    def test_workspace_plot_gate(self):
+        wsp_path = "data/simple_line_example/simple_poly_and_rect.wsp"
+        simple_line_fcs_path = "data/simple_line_example/data_set_simple_line_100.fcs"
+        sample_id = 'data_set_simple_line_100.fcs'
+
+        wsp = fk.Workspace(wsp_path, fcs_samples=simple_line_fcs_path)
+        wsp.analyze_samples()
+
+        p = wsp.plot_gate(
+            sample_id,
+            gate_name='poly1'
+        )
+
+        self.assertIsInstance(p, bk_Figure)
+
+    def test_workspace_plot_scatter(self):
+        wsp_path = "data/simple_line_example/single_ellipse_51_events.wsp"
+        simple_line_fcs_path = "data/simple_line_example/data_set_simple_line_100.fcs"
+        sample_id = 'data_set_simple_line_100.fcs'
+
+        wsp = fk.Workspace(wsp_path, fcs_samples=simple_line_fcs_path)
+        wsp.analyze_samples()
+
+        p = wsp.plot_scatter(
+            sample_id,
+            'channel_A',
+            'channel_B',
+            gate_name='ellipse1'
+        )
+
+        self.assertIsInstance(p, bk_Figure)
+
+    def test_workspace_plot_scatter_no_events_raises(self):
+        wsp_path = "data/simple_line_example/simple_poly_and_rect.wsp"
+        simple_line_fcs_path = "data/simple_line_example/data_set_simple_line_100.fcs"
+        sample_id = 'data_set_simple_line_100.fcs'
+
+        wsp = fk.Workspace(wsp_path, fcs_samples=simple_line_fcs_path)
+        wsp.analyze_samples()
+
+        self.assertRaises(
+            fk.exceptions.FlowKitException,
+            wsp.plot_scatter,
+            sample_id,
+            'channel_A',
+            'channel_B',
+            gate_name='rect1'
+        )

@@ -13,7 +13,7 @@ line_color = "#1F77B4"
 line_color_contrast = "#73D587"
 line_width = 3
 fill_color = 'lime'
-fill_alpha = 0.08
+gate_fill_alpha = 0.08
 
 
 def _generate_custom_colormap(colormap_sample_indices, base_colormap):
@@ -41,7 +41,7 @@ def _generate_custom_colormap(colormap_sample_indices, base_colormap):
 
 
 cm_sample = [
-    0, 8, 16, 24, 32, 40, 48, 52, 60, 64, 72, 80, 92,
+    0, 4, 8, 12, 24, 36, 48, 60, 72, 80, 92,
     100, 108, 116, 124, 132,
     139, 147, 155, 159,
     163, 167, 171, 175, 179, 183, 187, 191, 195, 199, 215, 231, 239
@@ -105,11 +105,11 @@ def plot_channel(channel_events, label, subplot_ax, xform=None, flagged_events=N
 
 
 def _calculate_extent(data_1d, d_min=None, d_max=None, pad=0.0):
-    data_min = data_1d.min()
-    data_max = data_1d.max()
+    data_min = np.min(data_1d)
+    data_max = np.max(data_1d)
 
     # determine padding to keep min/max events off the edge
-    pad_d = max(abs(data_1d.min()), abs(data_1d.max())) * pad
+    pad_d = max(abs(data_min), abs(data_max)) * pad
 
     if d_min is None:
         d_min = data_min - pad_d
@@ -133,7 +133,7 @@ def render_polygon(vertices):
         x='x',
         y='y',
         fill_color=fill_color,
-        fill_alpha=fill_alpha,
+        fill_alpha=gate_fill_alpha,
         line_width=line_width,
         line_color=line_color_contrast
     )
@@ -184,7 +184,7 @@ def render_ranges(dim_minimums, dim_maximums):
         right=right,
         bottom=bottom,
         top=top,
-        fill_alpha=fill_alpha,
+        fill_alpha=gate_fill_alpha,
         fill_color=fill_color
     )
     renderers.append(mid_box)
@@ -210,7 +210,7 @@ def render_rectangle(dim_minimums, dim_maximums):
         width=x_width,
         height=y_height,
         fill_color=fill_color,
-        fill_alpha=fill_alpha,
+        fill_alpha=gate_fill_alpha,
         line_width=line_width
     )
 
@@ -267,7 +267,7 @@ def render_ellipse(center_x, center_y, covariance_matrix, distance_square):
         line_width=line_width,
         line_color=line_color,
         fill_color=fill_color,
-        fill_alpha=fill_alpha
+        fill_alpha=gate_fill_alpha
     )
 
     return ellipse
@@ -316,7 +316,9 @@ def plot_scatter(
         x_max=None,
         y_min=None,
         y_max=None,
-        color_density=True
+        color_density=True,
+        bin_width=4,
+        highlight_indices=None
 ):
     """
     Creates a Bokeh scatter plot from the two 1-D data arrays.
@@ -334,6 +336,11 @@ def plot_scatter(
         be used with some padding to keep events off the edge of the plot.
     :param color_density: Whether to color the events by density, similar
         to a heat map. Default is True.
+    :param bin_width: Bin size to use for the color density, in units of
+        event point size. Larger values produce smoother gradients.
+        Default is 4 for a 4x4 grid size.
+    :param highlight_indices: Boolean array of event indices to highlight
+        in color. Non-highlighted events will be light grey.
     :return: A Bokeh Figure object containing the interactive scatter plot.
     """
     if len(x) > 0:
@@ -349,12 +356,49 @@ def plot_scatter(
         radius = 0.003 * x_max
 
     if color_density:
-        data, x_e, y_e = np.histogram2d(x, y, bins=[38, 38])
+        # bin size set to cover NxN radius (radius size is percent of view)
+        # can be set by user via bin_width kwarg
+        bin_count = int(1 / (bin_width * 0.003))
+
+        # But that's just the bins needed for the requested plot ranges.
+        # We need to extend those bins to the full data range
+        x_view_range = x_max - x_min
+        y_view_range = y_max - y_min
+
+        x_data_min = np.min(x)
+        x_data_max = np.max(x)
+        y_data_min = np.min(y)
+        y_data_max = np.max(y)
+        x_data_range = x_data_max - x_data_min
+        y_data_range = y_data_max - y_data_min
+
+        x_bin_multiplier = x_data_range / x_view_range
+        x_bin_count = int(x_bin_multiplier * bin_count)
+        y_bin_multiplier = y_data_range / y_view_range
+        y_bin_count = int(y_bin_multiplier * bin_count)
+
+        # avoid bin count of zero
+        if x_bin_count <= 0:
+            x_bin_count = 1
+        if y_bin_count <= 0:
+            y_bin_count = 1
+
+        cd_x_min = x_data_min - (x_data_range / x_bin_count)
+        cd_x_max = x_data_max + (x_data_range / x_bin_count)
+        cd_y_min = y_data_min - (y_data_range / y_bin_count)
+        cd_y_max = y_data_max + (y_data_range / y_bin_count)
+
+        hist_data, x_edges, y_edges = np.histogram2d(
+            x,
+            y,
+            bins=[x_bin_count, y_bin_count],
+            range=[[cd_x_min, cd_x_max], [cd_y_min, cd_y_max]]
+        )
         z = interpn(
-            (0.5 * (x_e[1:] + x_e[:-1]), 0.5 * (y_e[1:] + y_e[:-1])),
-            data,
+            (0.5 * (x_edges[1:] + x_edges[:-1]), 0.5 * (y_edges[1:] + y_edges[:-1])),
+            hist_data,
             np.vstack([x, y]).T,
-            method="splinef2d",
+            method="linear",  # use linear not spline, spline tends to overshoot into negative values
             bounds_error=False
         )
         z[np.isnan(z)] = 0
@@ -363,13 +407,33 @@ def plot_scatter(
         # color display
         idx = z.argsort()
         x, y, z = x[idx], y[idx], z[idx]
+        if highlight_indices is not None:
+            # re-order the highlight indices to match
+            highlight_indices = highlight_indices[idx]
     else:
         z = np.zeros(len(x))
 
     colors_array = new_jet(colors.Normalize()(z))
-    z_colors = [
+    z_colors = np.array([
         "#%02x%02x%02x" % (int(c[0] * 255), int(c[1] * 255), int(c[2] * 255)) for c in colors_array
-    ]
+    ])
+
+    if highlight_indices is not None:
+        z_colors[~highlight_indices] = "#d3d3d3"
+        fill_alpha = np.zeros(len(z_colors))
+        fill_alpha[~highlight_indices] = 0.3
+        fill_alpha[highlight_indices] = 0.4
+
+        highlight_idx = np.flatnonzero(highlight_indices)
+        non_light_idx = np.flatnonzero(~highlight_indices)
+        final_idx = np.concatenate([non_light_idx, highlight_idx])
+
+        x = x[final_idx]
+        y = y[final_idx]
+        z_colors = z_colors[final_idx]
+        fill_alpha = fill_alpha[final_idx]
+    else:
+        fill_alpha = 0.4
 
     tools = "crosshair,hover,pan,zoom_in,zoom_out,box_zoom,undo,redo,reset,save,"
     p = figure(
@@ -387,7 +451,7 @@ def plot_scatter(
         radius=radius,
         radius_dimension=radius_dimension,
         fill_color=z_colors,
-        fill_alpha=0.4,
+        fill_alpha=fill_alpha,
         line_color=None
     )
 

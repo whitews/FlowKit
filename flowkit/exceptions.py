@@ -3,6 +3,8 @@ flowkit.exceptions
 ~~~~~~~~~~~~~~~~~~
 This module contains the set of FlowKit exceptions.
 """
+# import FlowIO exceptions
+from flowio.exceptions import FCSParsingError, DataOffsetDiscrepancyError
 
 
 class FlowKitWarning(Warning):

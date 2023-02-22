@@ -20,7 +20,7 @@ fcs_file_paths = [
 ]
 test_samples_base_set = load_samples(fcs_file_paths)
 test_samples_8c_full_set = load_samples("data/8_color_data_set/fcs_files")
-test_samples_8c_full_set_dict = {s.original_filename: s for s in test_samples_8c_full_set}
+test_samples_8c_full_set_dict = {s.id: s for s in test_samples_8c_full_set}
 
 
 class SessionTestCase(unittest.TestCase):
@@ -62,7 +62,7 @@ class SessionTestCase(unittest.TestCase):
         fks.add_samples(data1_sample)
         fks.add_gate(poly1_gate, ('root',))
         fks.analyze_samples()
-        result = fks.get_gating_results(data1_sample.original_filename)
+        result = fks.get_gating_results(data1_sample.id)
 
         res_path = 'data/gate_ref/truth/Results_Polygon1.txt'
         truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
@@ -96,7 +96,7 @@ class SessionTestCase(unittest.TestCase):
         truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         fks.analyze_samples()
-        result = fks.get_gating_results(data1_sample.original_filename)
+        result = fks.get_gating_results(data1_sample.id)
 
         np.testing.assert_array_equal(truth, result.get_gate_membership('Polygon4'))
 
@@ -116,6 +116,6 @@ class SessionTestCase(unittest.TestCase):
         truth = pd.read_csv(res_path, header=None, dtype='bool').squeeze().values
 
         fks.analyze_samples()
-        result = fks.get_gating_results(data1_sample.original_filename)
+        result = fks.get_gating_results(data1_sample.id)
 
         np.testing.assert_array_equal(truth, result.get_gate_membership('ScaleRange1'))

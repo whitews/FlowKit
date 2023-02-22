@@ -2,6 +2,7 @@
 Sample class
 """
 
+from functools import total_ordering
 import copy
 import flowio
 import os
@@ -22,6 +23,7 @@ from .._models.transforms._matrix import Matrix
 from .._utils import plot_utils
 
 
+@total_ordering
 class Sample(object):
     """
     Represents a single FCS sample from an FCS file, NumPy array or pandas
@@ -32,20 +34,37 @@ class Sample(object):
     performance. For compensation and transformation routines, all events are
     always processed.
 
-    Note:
+    Note on ignore_offset_error:
         Some FCS files incorrectly report the location of the last data byte
         as the last byte exclusive of the data section rather than the last
         byte inclusive of the data section. Technically, these are invalid
         FCS files but these are not corrupted data files. To attempt to read
         in these files, set the `ignore_offset_error` option to True.
 
+    Note on ignore_offset_discrepancy and use_header_offset:
+        The byte offset location for the DATA segment is defined in 2 places
+        in an FCS file: the HEADER and the TEXT segments. By default, FlowIO
+        uses the offset values found in the TEXT segment. If the HEADER values
+        differ from the TEXT values, a DataOffsetDiscrepancyError will be
+        raised. This option allows overriding this error to force the loading
+        of the FCS file. The related `use_header_offset` can be used to
+        force loading the file using the data offset locations found in the
+        HEADER section rather than the TEXT section. Setting `use_header_offset`
+        to True is equivalent to setting both options to True, meaning no
+        error will be raised for an offset discrepancy.
+
     :param fcs_path_or_data: FCS data, can be either:
 
         - a file path or file handle to an FCS file
         - a pathlib Path object
         - a FlowIO FlowData object
-        - a NumPy array of FCS event data (must provide channel_labels)
-        - a pandas DataFrame containing FCS event data (channel labels as column labels)
+        - a NumPy array of FCS event data (must provide sample_id & channel_labels)
+        - a pandas DataFrame containing FCS event data (channel labels as column labels, must provide sample_id)
+
+    :param sample_id: A text string to use for the Sample's ID. If None, the ID will be
+        taken from the 'fil' keyword of the metadata. If the 'fil' keyword is not present,
+        the value will be the filename if given a file. For a NumPy array or Pandas
+        DataFrame, a text value is required.
 
     :param channel_labels: A list of strings or a list of tuples to use for the channel
         labels. Required if fcs_path_or_data is a NumPy array
@@ -65,11 +84,18 @@ class Sample(object):
 
     :param ignore_offset_error: option to ignore data offset error (see above note), default is False
 
+    :param ignore_offset_discrepancy: option to ignore discrepancy between the HEADER
+        and TEXT values for the DATA byte offset location, default is False
+
+    :param use_header_offsets: use the HEADER section for the data offset locations, default is False.
+        Setting this option to True also suppresses an error in cases of an offset discrepancy.
+
     :param cache_original_events: Original events are the unprocessed events as stored in the FCS binary,
         meaning they have not been scaled according to channel gain, corrected for proper lin/log display,
         or had the time channel scaled by the 'timestep' keyword value (if present). By default, these
         events are not retained by the Sample class as they are typically not useful. To retrieve the
         original events, set this to True and call the get_events() method with source='orig'.
+
     :param subsample: The number of events to use for sub-sampling. The number of sub-sampled events
         can be changed after instantiation using the `subsample_events` method. The random seed can
         also be specified using that method. Sub-sampled events are used predominantly for speeding
@@ -78,10 +104,13 @@ class Sample(object):
     def __init__(
             self,
             fcs_path_or_data,
+            sample_id=None,
             channel_labels=None,
             compensation=None,
             null_channel_list=None,
             ignore_offset_error=False,
+            ignore_offset_discrepancy=False,
+            use_header_offsets=False,
             cache_original_events=False,
             subsample=10000
     ):
@@ -93,21 +122,30 @@ class Sample(object):
             # if a string, we only handle file paths, so try creating a FlowData object
             flow_data = flowio.FlowData(
                 fcs_path_or_data,
-                ignore_offset_error=ignore_offset_error
+                ignore_offset_error=ignore_offset_error,
+                ignore_offset_discrepancy=ignore_offset_discrepancy,
+                use_header_offsets=use_header_offsets
             )
         elif isinstance(fcs_path_or_data, io.IOBase):
             flow_data = flowio.FlowData(
                 fcs_path_or_data,
-                ignore_offset_error=ignore_offset_error
+                ignore_offset_error=ignore_offset_error,
+                ignore_offset_discrepancy=ignore_offset_discrepancy,
+                use_header_offsets=use_header_offsets
             )
         elif isinstance(fcs_path_or_data, Path):
             flow_data = flowio.FlowData(
                 fcs_path_or_data.open('rb'),
-                ignore_offset_error=ignore_offset_error
+                ignore_offset_error=ignore_offset_error,
+                ignore_offset_discrepancy=ignore_offset_discrepancy,
+                use_header_offsets=use_header_offsets
             )
         elif isinstance(fcs_path_or_data, flowio.FlowData):
             flow_data = fcs_path_or_data
         elif isinstance(fcs_path_or_data, np.ndarray):
+            if sample_id is None:
+                raise ValueError("'sample_id' is required for a NumPy array")
+
             tmp_file = TemporaryFile()
             flowio.create_fcs(
                 tmp_file,
@@ -117,6 +155,9 @@ class Sample(object):
 
             flow_data = flowio.FlowData(tmp_file)
         elif isinstance(fcs_path_or_data, pd.DataFrame):
+            if sample_id is None:
+                raise ValueError("'sample_id' is required for a Pandas DataFrame")
+
             tmp_file = TemporaryFile()
 
             # Handle MultiIndex columns since that is what the as_dataframe method creates.
@@ -272,11 +313,6 @@ class Sample(object):
         except KeyError:
             self.acquisition_date = None
 
-        # TODO: Should we create a separate Sample 'id' attribute?
-        #  Could be populated by default by the orig filename,
-        #  or if that is None, issue UserWarning to set the 'id'.
-        #  Having Sample 'id' would be useful for Samples created
-        #  from data arrays or if 2 FCS files had the same file name.
         try:
             self.original_filename = self.metadata['fil']
         except KeyError:
@@ -285,15 +321,26 @@ class Sample(object):
             else:
                 self.original_filename = None
 
+        if sample_id is None:
+            self.id = self.original_filename
+        else:
+            self.id = sample_id
+
         # finally, store initial sub-sampled event indices
         self.subsample_events(subsample)
 
     def __repr__(self):
         return (
             f'{self.__class__.__name__}('
-            f'v{self.version}, {self.original_filename}, '
+            f'v{self.version}, {self.id}, '
             f'{len(self.pnn_labels)} channels, {self.event_count} events)'
         )
+
+    def __lt__(self, other):
+        return self.id < other.id
+
+    def __eq__(self, other):
+        return self.id == other.id
 
     def filter_negative_scatter(self, reapply_subsample=True):
         """
@@ -789,7 +836,7 @@ class Sample(object):
         y_min, y_max = plot_utils._calculate_extent(y, d_min=y_min, d_max=y_max, pad=0.02)
 
         fig, ax = plt.subplots(figsize=fig_size)
-        ax.set_title(self.original_filename)
+        ax.set_title(self.id)
 
         ax.set_xlim([x_min, x_max])
         ax.set_ylim([y_min, y_max])
@@ -827,6 +874,8 @@ class Sample(object):
             source='xform',
             subsample=True,
             color_density=True,
+            bin_width=4,
+            highlight_indices=None,
             x_min=None,
             x_max=None,
             y_min=None,
@@ -846,6 +895,11 @@ class Sample(object):
             sub-sampled events is much faster.
         :param color_density: Whether to color the events by density, similar
             to a heat map. Default is True.
+        :param bin_width: Bin size to use for the color density, in units of
+            event point size. Larger values produce smoother gradients.
+            Default is 4 for a 4x4 grid size.
+        :param highlight_indices: Boolean array of event indices to highlight
+            in color. Non-highlighted events will be light grey.
         :param x_min: Lower bound of x-axis. If None, channel's min value will
             be used with some padding to keep events off the edge of the plot.
         :param x_max: Upper bound of x-axis. If None, channel's max value will
@@ -861,6 +915,8 @@ class Sample(object):
 
         x = self.get_channel_events(x_index, source=source, subsample=subsample)
         y = self.get_channel_events(y_index, source=source, subsample=subsample)
+        if highlight_indices is not None and subsample:
+            highlight_indices = highlight_indices[self.subsample_indices]
 
         dim_ids = []
 
@@ -882,10 +938,12 @@ class Sample(object):
             x_max=x_max,
             y_min=y_min,
             y_max=y_max,
-            color_density=color_density
+            color_density=color_density,
+            bin_width=bin_width,
+            highlight_indices=highlight_indices
         )
 
-        p.title = Title(text=self.original_filename, align='center')
+        p.title = Title(text=self.id, align='center')
 
         return p
 
@@ -987,7 +1045,7 @@ class Sample(object):
             bins=bins
         )
 
-        p.title = Title(text=self.original_filename, align='center')
+        p.title = Title(text=self.id, align='center')
 
         return p
 

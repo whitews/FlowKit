@@ -123,7 +123,7 @@ class LinearGMLTransform(LinearTransform):
 
 class LogGMLTransform(LogTransform):
     """
-    This class parses an XML element from from a GatingML-2.0 document and creates an
+    This class parses an XML element from a GatingML-2.0 document and creates an
     instance compatible with the LogTransform (see LogTransform docs for more info).
 
     :param xform_element: log transform XML element from a GatingML-2.0 document

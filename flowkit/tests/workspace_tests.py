@@ -7,22 +7,36 @@ import numpy as np
 import os
 import pandas as pd
 import warnings
-from flowkit import Workspace, load_samples, Matrix, gates, transforms, extract_wsp_sample_data
+from flowkit import Workspace, Sample, load_samples, Matrix, gates, transforms, extract_wsp_sample_data
 # noinspection PyProtectedMember
 from flowkit._models.transforms._base_transform import Transform
 from flowkit.exceptions import GateReferenceError
 
 
 test_samples_8c_full_set = load_samples("data/8_color_data_set/fcs_files")
-
+wsp_8_color = Workspace(
+    "data/8_color_data_set/8_color_ICS.wsp",
+    fcs_samples=test_samples_8c_full_set
+)
+wsp_8_color_no_files = Workspace(
+    "data/8_color_data_set/8_color_ICS.wsp",
+    ignore_missing_files=True
+)
 
 class WorkspaceTestCase(unittest.TestCase):
+    def setUp(self):
+        """
+        Setup data for WorkspaceTestCase
+        :return: None
+        """
+        self.wsp_8_color = wsp_8_color
+        self.wsp_8_color_no_files = wsp_8_color_no_files
+
     """Tests for Workspace class"""
     def test_workspace_summary(self):
-        wsp_path = "data/8_color_data_set/8_color_ICS.wsp"
         sample_grp = 'DEN'
 
-        wsp = Workspace(wsp_path, ignore_missing_files=True)
+        wsp = self.wsp_8_color_no_files
         wsp_summary = wsp.summary()
 
         self.assertIsInstance(wsp_summary, pd.DataFrame)
@@ -31,6 +45,73 @@ class WorkspaceTestCase(unittest.TestCase):
         self.assertEqual(group_stats.max_gate_depth, 6)
         self.assertEqual(group_stats.samples, 3)
         self.assertEqual(group_stats.loaded_samples, 0)
+
+    def test_workspace_summary_with_loaded_samples(self):
+        wsp = self.wsp_8_color
+        wsp_summary = wsp.summary()
+        sample_grp = 'DEN'
+
+        self.assertIsInstance(wsp_summary, pd.DataFrame)
+
+        group_stats = wsp_summary.loc[sample_grp]
+        self.assertEqual(group_stats.max_gate_depth, 6)
+        self.assertEqual(group_stats.samples, 3)
+        self.assertEqual(group_stats.loaded_samples, 3)
+
+    def test_get_sample_groups(self):
+        wsp_path = "data/simple_line_example/simple_poly_and_rect.wsp"
+        fcs_path = "data/simple_line_example/data_set_simple_line_100.fcs"
+
+        wsp = Workspace(wsp_path, fcs_samples=fcs_path)
+
+        groups = wsp.get_sample_groups()
+        groups_truth = ['All Samples', 'my_group']
+
+        self.assertListEqual(groups, groups_truth)
+
+    def test_get_sample_ids(self):
+        wsp = self.wsp_8_color
+        loaded_sample_ids = wsp.get_sample_ids()
+
+        ground_truth = [
+            '101_DEN084Y5_15_E01_008_clean.fcs',
+            '101_DEN084Y5_15_E03_009_clean.fcs',
+            '101_DEN084Y5_15_E05_010_clean.fcs'
+        ]
+
+        self.assertListEqual(loaded_sample_ids, ground_truth)
+
+    def test_get_sample_ids_missing_sample(self):
+        wsp_path = "data/8_color_data_set/8_color_ICS.wsp"
+        fcs_set_missing_sample = test_samples_8c_full_set[:-1]
+
+        wsp = Workspace(
+            wsp_path,
+            fcs_samples=fcs_set_missing_sample,
+            ignore_missing_files=True  # need to ignore the missing sample
+        )
+        loaded_sample_ids = wsp.get_sample_ids()
+        all_sample_ids = wsp.get_sample_ids(loaded_only=False)
+
+        loaded_ground_truth = [
+            '101_DEN084Y5_15_E01_008_clean.fcs',
+            '101_DEN084Y5_15_E03_009_clean.fcs'
+        ]
+        all_ground_truth = [
+            '101_DEN084Y5_15_E01_008_clean.fcs',
+            '101_DEN084Y5_15_E03_009_clean.fcs',
+            '101_DEN084Y5_15_E05_010_clean.fcs'
+        ]
+
+        self.assertListEqual(loaded_sample_ids, loaded_ground_truth)
+        self.assertListEqual(all_sample_ids, all_ground_truth)
+
+    def test_get_samples(self):
+        wsp = self.wsp_8_color
+        loaded_samples = wsp.get_samples()
+
+        self.assertEqual(len(loaded_samples), 3)
+        self.assertIsInstance(loaded_samples[0], Sample)
 
     def test_get_comp_matrix_by_sample_id(self):
         wsp_path = "data/8_color_data_set/8_color_ICS_simple.wsp"
@@ -118,7 +199,7 @@ class WorkspaceTestCase(unittest.TestCase):
 
         wsp.analyze_samples(sample_id=sample_id)
 
-        df_gated_events = wsp.get_gated_events(
+        df_gated_events = wsp.get_gate_events(
             sample_id,
             gate_name
         )
@@ -150,18 +231,18 @@ class WorkspaceTestCase(unittest.TestCase):
         wsp_path = "data/simple_line_example/single_ellipse_51_events.wsp"
         fcs_path = "data/simple_line_example/data_set_simple_line_100.fcs"
 
-        fks = Workspace(wsp_path, fcs_samples=fcs_path)
+        wsp = Workspace(wsp_path, fcs_samples=fcs_path)
 
         self.assertIsInstance(
-            fks.get_gate(
+            wsp.get_gate(
                 sample_id='data_set_simple_line_100.fcs',
                 gate_name='ellipse1'
             ),
             gates.PolygonGate
         )
 
-        fks.analyze_samples(group_name='All Samples')
-        results = fks.get_gating_results(sample_id='data_set_simple_line_100.fcs')
+        wsp.analyze_samples(group_name='All Samples')
+        results = wsp.get_gating_results(sample_id='data_set_simple_line_100.fcs')
         gate_count = results.get_gate_count('ellipse1')
         self.assertEqual(gate_count, 51)
 
@@ -268,17 +349,6 @@ class WorkspaceTestCase(unittest.TestCase):
         mean_pct_diff = 100. * np.mean(np.abs(test_y[1:] - y[1:]) / y[1:])
         self.assertLess(mean_pct_diff, 0.01)
 
-    def test_get_sample_groups(self):
-        wsp_path = "data/simple_line_example/simple_poly_and_rect.wsp"
-        fcs_path = "data/simple_line_example/data_set_simple_line_100.fcs"
-
-        fks = Workspace(wsp_path, fcs_samples=fcs_path)
-
-        groups = fks.get_sample_groups()
-        groups_truth = ['All Samples', 'my_group']
-
-        self.assertListEqual(groups, groups_truth)
-
     def test_parse_wsp_with_ellipse(self):
         wsp_path = "data/8_color_data_set/8_color_ICS_with_ellipse.wsp"
         fcs_path = "data/8_color_data_set/fcs_files/101_DEN084Y5_15_E01_008_clean.fcs"
@@ -286,10 +356,10 @@ class WorkspaceTestCase(unittest.TestCase):
         gate_name = 'ellipse1'
         gate_path = ('root', 'Time', 'Singlets', 'aAmine-', 'CD3+')
 
-        fks = Workspace(wsp_path, fcs_samples=fcs_path, ignore_missing_files=True)
+        wsp = Workspace(wsp_path, fcs_samples=fcs_path, ignore_missing_files=True)
 
-        fks.analyze_samples(sample_id=sample_id)
-        gate_indices = fks.get_gate_membership(sample_id, gate_name, gate_path=gate_path)
+        wsp.analyze_samples(sample_id=sample_id)
+        gate_indices = wsp.get_gate_membership(sample_id, gate_name, gate_path=gate_path)
 
         self.assertIsInstance(gate_indices, np.ndarray)
         self.assertEqual(np.sum(gate_indices), 7023)
@@ -301,10 +371,10 @@ class WorkspaceTestCase(unittest.TestCase):
         gate_name = 'TNFa+'
         gate_path = ('root', 'Time', 'Singlets', 'aAmine-', 'CD3+', 'CD4+')
 
-        fks = Workspace(wsp_path, fcs_samples=fcs_path, ignore_missing_files=True)
+        wsp = Workspace(wsp_path, fcs_samples=fcs_path, ignore_missing_files=True)
 
-        fks.analyze_samples(sample_id=sample_id)
-        gate_indices = fks.get_gate_membership(sample_id, gate_name, gate_path=gate_path)
+        wsp.analyze_samples(sample_id=sample_id)
+        gate_indices = wsp.get_gate_membership(sample_id, gate_name, gate_path=gate_path)
 
         self.assertIsInstance(gate_indices, np.ndarray)
         self.assertEqual(np.sum(gate_indices), 21)
@@ -315,7 +385,7 @@ class WorkspaceTestCase(unittest.TestCase):
         gate_name = 'IFNg+'
 
         wsp = Workspace(wsp_path, ignore_missing_files=True)
-        sample_ids = wsp.get_sample_ids(group_name)
+        sample_ids = wsp.get_sample_ids(group_name, loaded_only=False)
 
         self.assertRaises(GateReferenceError, wsp.get_child_gate_ids, sample_ids[0], gate_name)
 
@@ -363,12 +433,11 @@ class WorkspaceTestCase(unittest.TestCase):
         )
 
         sample_ids = wsp.get_sample_ids(group_name=sample_grp)
-        # TODO: determine whether get_sample_ids should return loaded or all samples
 
         # there are technically 3 samples in the workspace 'DEN' group,
-        # but one sample has no gates. The Workspace class will still
-        # have the reference to all 3.
-        self.assertEqual(len(sample_ids), 3)
+        # but one sample has no gates. The Workspace class will only
+        # have references to 2 b/c we are not ignoring missing files.
+        self.assertEqual(len(sample_ids), 2)
 
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')

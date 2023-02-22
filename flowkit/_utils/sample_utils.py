@@ -62,4 +62,4 @@ def load_samples(fcs_samples):
         elif os.path.isfile(fcs_samples):
             sample_list = _get_samples_from_paths([fcs_samples])
 
-    return sample_list
+    return sorted(sample_list)

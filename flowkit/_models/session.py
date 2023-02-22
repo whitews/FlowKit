@@ -66,10 +66,10 @@ class Session(object):
         """
         new_samples = sample_utils.load_samples(fcs_samples)
         for s in new_samples:
-            if s.original_filename in self.sample_lut:
-                warnings.warn("A sample with ID %s already exists...skipping" % s.original_filename)
+            if s.id in self.sample_lut:
+                warnings.warn("A sample with ID %s already exists...skipping" % s.id)
                 continue
-            self.sample_lut[s.original_filename] = s
+            self.sample_lut[s.id] = s
 
     def get_sample_ids(self):
         """
@@ -103,6 +103,23 @@ class Session(object):
         :return: None
         """
         self.gating_strategy.add_gate(copy.deepcopy(gate), gate_path=gate_path, sample_id=sample_id)
+
+    def remove_gate(self, gate_name, gate_path=None, keep_children=False):
+        """
+        Remove a gate from the gate tree. Any descendant gates will also be removed
+        unless keep_children=True. In all cases, if a BooleanGate exists that references
+        the gate to remove, a GateTreeError will be thrown indicating the BooleanGate
+        must be removed prior to removing the gate.
+
+        :param gate_name: text string of a gate name
+        :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
+            Required if gate_name is ambiguous
+        :param keep_children: Whether to keep child gates. If True, the child gates will be
+            remapped to the removed gate's parent. Default is False, which will delete all
+            descendant gates.
+        :return: None
+        """
+        self.gating_strategy.remove_gate(gate_name, gate_path=gate_path, keep_children=keep_children)
 
     def add_transform(self, transform):
         """
@@ -146,7 +163,7 @@ class Session(object):
 
         :return: list of Matrix instances
         """
-        return self.gating_strategy.comp_matrices.values()
+        return list(self.gating_strategy.comp_matrices.values())
 
     def get_comp_matrix(self, matrix_id):
         """
@@ -174,31 +191,12 @@ class Session(object):
         :param gate_name: text string of a gate name
         :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
             Required if gate.gate_name is ambiguous
-        :return: list of gate IDs (each gate ID is a gate name string & tuple of the gate path)
+        :return: list of Gate IDs (tuple of gate name plus gate path). Returns an empty
+            list if no child gates exist.
+        :raises GateReferenceError: if gate ID is not found in gating strategy or if gate
+            name is ambiguous
         """
-        if gate_path is None:
-            # need to make sure the gate name isn't used more than once (ambiguous gate name)
-            gate_paths = self.gating_strategy.find_matching_gate_paths(gate_name)
-
-            if len(gate_paths) > 1:
-                raise GateReferenceError(
-                    "Multiple gates exist with gate name '%s'. Specify a gate_path to disambiguate." % gate_name
-                )
-
-            gate_path = gate_paths[0]
-
-        # tack on given gate_name to be the full path for any children
-        child_gate_path = list(gate_path)
-        child_gate_path.append(gate_name)
-        child_gate_path = tuple(child_gate_path)
-
-        child_gates = self.gating_strategy.get_child_gates(gate_name, gate_path)
-        child_gate_ids = []
-
-        for child_gate in child_gates:
-            child_gate_ids.append((child_gate.gate_name, child_gate_path))
-
-        return child_gate_ids
+        return self.gating_strategy.get_child_gate_ids(gate_name, gate_path)
 
     def get_gate(self, gate_name, gate_path=None, sample_id=None):
         """
@@ -244,15 +242,14 @@ class Session(object):
     def export_gml(self, file_handle, sample_id=None):
         """
         Export a GatingML 2.0 file for the gating strategy. Specify the sample ID to use
-        that sample's custom gates in the exported file.
+        that sample's custom gates in the exported file, otherwise the template gates
+        will be exported.
 
         :param file_handle: file handle for exporting data
         :param sample_id: an optional text string representing a Sample instance
         :return: None
         """
-        # TODO: export_gatingml function needs to be updated to handle sample_id in GS
-        #   or add export_gatingml as method to GS that takes an optional sample_id.
-        xml_utils.export_gatingml(self.gating_strategy, file_handle)
+        xml_utils.export_gatingml(self.gating_strategy, file_handle, sample_id=sample_id)
 
     def export_wsp(self, file_handle, group_name):
         """
@@ -264,7 +261,6 @@ class Session(object):
         """
         samples = self.sample_lut.values()
 
-        # TODO: export_flowjo_wsp needs to be updated to handle the new design
         wsp_utils.export_flowjo_wsp(self.gating_strategy, group_name, samples, file_handle)
 
     def get_sample(self, sample_id):
@@ -289,7 +285,7 @@ class Session(object):
             clear_cache method for additional information. Default is False.
         :param use_mp: Controls whether multiprocessing is used to gate samples (default is True).
             Multiprocessing can fail for large workloads (lots of samples & gates) due to running out of
-            memory. For those cases setting use_mp should be set to False (processing will take longer,
+            memory. If encountering memory errors, set use_mp to False (processing will take longer,
             but will use significantly less memory).
         :param verbose: if True, print a line for every gate processed (default is False)
         :return: None
@@ -333,7 +329,7 @@ class Session(object):
         """
         Retrieve analyzed gating results gates for a sample.
 
-        :param sample_id: a text string representing a loaded Sample instance
+        :param sample_id: a text string representing a Sample instance
         :return: GatingResults instance
         """
         try:
@@ -422,7 +418,8 @@ class Session(object):
             x_max=None,
             y_min=None,
             y_max=None,
-            color_density=True
+            color_density=True,
+            bin_width=4
     ):
         """
         Returns an interactive plot for the specified gate. The type of plot is
@@ -448,6 +445,9 @@ class Session(object):
             be used with some padding to keep events off the edge of the plot.
         :param color_density: Whether to color the events by density, similar
             to a heat map. Default is True.
+        :param bin_width: Bin size to use for the color density, in units of
+            event point size. Larger values produce smoother gradients.
+            Default is 4 for a 4x4 grid size.
         :return: A Bokeh Figure object containing the interactive scatter plot.
         """
         if gate_path is None:
@@ -501,8 +501,11 @@ class Session(object):
             gate_type = 'hist'
         elif dim_count == 2:
             gate_type = 'scatter'
+        elif dim_count > 2:
+            raise NotImplementedError("Plotting of gates with >2 dimensions is not supported")
         else:
-            raise NotImplementedError("Plotting of gates with >2 dimensions is not yet supported")
+            # there are no dimensions
+            raise ValueError("Gate %s appears to not reference any dimensions" % gate_name)
 
         # Get Sample instance and apply requested subsampling
         sample_to_plot = self.get_sample(sample_id)
@@ -587,7 +590,8 @@ class Session(object):
                 x_max=x_max,
                 y_min=y_min,
                 y_max=y_max,
-                color_density=color_density
+                color_density=color_density,
+                bin_width=bin_width
             )
         elif gate_type == 'hist':
             p = plot_utils.plot_histogram(x, dim_ids[0])
@@ -669,6 +673,7 @@ class Session(object):
             subsample_count=10000,
             random_seed=1,
             color_density=True,
+            bin_width=4,
             x_min=None,
             x_max=None,
             y_min=None,
@@ -687,6 +692,9 @@ class Session(object):
         :param random_seed: Random seed used for sub-sampling events
         :param color_density: Whether to color the events by density, similar
             to a heat map. Default is True.
+        :param bin_width: Bin size to use for the color density, in units of
+            event point size. Larger values produce smoother gradients.
+            Default is 4 for a 4x4 grid size.
         :param x_min: Lower bound of x-axis. If None, channel's min value will
             be used with some padding to keep events off the edge of the plot.
         :param x_max: Upper bound of x-axis. If None, channel's max value will
@@ -768,9 +776,10 @@ class Session(object):
             x_max=x_max,
             y_min=y_min,
             y_max=y_max,
-            color_density=color_density
+            color_density=color_density,
+            bin_width=bin_width
         )
 
-        p.title = Title(text=sample.original_filename, align='center')
+        p.title = Title(text=sample.id, align='center')
 
         return p
