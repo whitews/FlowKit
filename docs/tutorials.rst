@@ -24,3 +24,4 @@ Advanced Examples
     notebooks/advanced/dimension_reduction_on_gated_populations.ipynb
     notebooks/advanced/flowkit-session-compare-mfi-of-gated-events.ipynb
     notebooks/advanced/flowkit-session-replicate-flowjo-wsp.ipynb
+    notebooks/advanced/scanpy_creating_and_using_AnnData_objects.ipynb
