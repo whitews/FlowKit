@@ -589,7 +589,7 @@ class GatingStrategy(object):
         if comp_ref == 'FCS':
             meta = sample.get_metadata()
 
-            if 'spill' not in meta or 'spillover' not in meta:
+            if 'spill' not in meta and 'spillover' not in meta:
                 # GML 2.0 spec states if 'FCS' is specified but no spill is present, treat as uncompensated
                 events = sample.get_events(source='raw')
                 return events.copy()
@@ -601,7 +601,7 @@ class GatingStrategy(object):
 
             detectors = [sample.pnn_labels[i] for i in sample.fluoro_indices]
             fluorochromes = [sample.pns_labels[i] for i in sample.fluoro_indices]
-            matrix = Matrix('fcs', spill, detectors, fluorochromes, null_channels=sample.null_channels)
+            matrix = Matrix('tmp_spill', spill, detectors, fluorochromes, null_channels=sample.null_channels)
         else:
             # lookup specified comp-ref in gating strategy
             matrix = self.comp_matrices[comp_ref]

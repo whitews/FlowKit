@@ -4,6 +4,7 @@ Tests for GatingStrategy Class
 import unittest
 import numpy as np
 import flowkit as fk
+from .session_tests import test_samples_8c_full_set_dict
 
 
 data1_fcs_path = 'data/gate_ref/data1.fcs'
@@ -45,6 +46,9 @@ spill01_data = np.array(
     ]
 )
 comp_matrix_01 = fk.Matrix('MySpill', spill01_data, spill01_detectors, spill01_fluoros)
+
+sample_id_with_spill = '101_DEN084Y5_15_E01_008_clean.fcs'
+sample_with_spill = test_samples_8c_full_set_dict[sample_id_with_spill]
 
 
 class GatingStrategyTestCase(unittest.TestCase):
@@ -91,6 +95,27 @@ class GatingStrategyTestCase(unittest.TestCase):
         gs.add_comp_matrix(comp_matrix_01)
 
         self.assertRaises(KeyError, gs.add_comp_matrix, comp_matrix_01)
+
+    def test_fcs_defined_spill(self):
+        gs = fk.GatingStrategy()
+
+        asinh_xform = fk.transforms.AsinhTransform('asinh', param_t=262144, param_m=4.0, param_a=0.0)
+        gs.add_transform(asinh_xform)
+
+        dim_cd3 = fk.Dimension(
+            'CD3 APC-H7 FLR-A',
+            range_max=-0.4,
+            transformation_ref='asinh',
+            compensation_ref='FCS'
+        )
+
+        cd3_rect_gate = fk.gates.RectangleGate('cd3_low', dimensions=[dim_cd3])
+        gs.add_gate(cd3_rect_gate, gate_path=('root',))
+
+        gating_result = gs.gate_sample(sample_with_spill)
+        cd3_low_count = gating_result.get_gate_count('cd3_low')
+
+        self.assertEqual(cd3_low_count, 71)
 
     def test_get_max_depth(self):
         gml_path = 'data/gate_ref/gml/gml_all_gates.xml'

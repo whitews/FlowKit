@@ -32,9 +32,10 @@ class Matrix(object):
             fluorochromes=None,
             null_channels=None
     ):
-        if matrix_id == 'uncompensated' or matrix_id == 'fcs':
+        # Technically, the GML 2.0 spec states 'FCS' (note uppercase) is reserved, but we'll cover that case-insensitive
+        if matrix_id == 'uncompensated' or matrix_id.lower() == 'fcs':
             raise ValueError(
-                "Matrix IDs 'uncompensated' and 'fcs' are reserved compensation references " +
+                "Matrix IDs 'uncompensated' and 'FCS' are reserved compensation references " +
                 "used in Dimension instances to specify that channel data should either be " +
                 "uncompensated or compensated using the spill value from a Sample's metadata"
             )
