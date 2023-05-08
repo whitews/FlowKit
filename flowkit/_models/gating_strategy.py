@@ -601,7 +601,7 @@ class GatingStrategy(object):
 
             detectors = [sample.pnn_labels[i] for i in sample.fluoro_indices]
             fluorochromes = [sample.pns_labels[i] for i in sample.fluoro_indices]
-            matrix = Matrix('fcs_', spill, detectors, fluorochromes, null_channels=sample.null_channels)
+            matrix = Matrix('tmp_spill', spill, detectors, fluorochromes, null_channels=sample.null_channels)
         else:
             # lookup specified comp-ref in gating strategy
             matrix = self.comp_matrices[comp_ref]
