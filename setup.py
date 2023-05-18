@@ -17,7 +17,7 @@ with open("README.md", "r", encoding='utf-8') as fh:
 reqs = [
     'anytree>=2.6',
     'bokeh>=2.4,<3',
-    'flowio==1.1.1',
+    'flowio==1.2.1',
     'flowutils>=1,<1.1',
     'lxml>=4.7',
     'matplotlib>=3.5',

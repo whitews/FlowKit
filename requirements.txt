@@ -6,7 +6,7 @@ anytree>=2.6
 #     - 3.0 has new APIs, needs testing
 bokeh>=2.4,<3.0
 
-flowio==1.1.1
+flowio==1.2.1
 flowutils>=1,<1.1
 
 # lxml notes:
