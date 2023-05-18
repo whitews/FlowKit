@@ -13,7 +13,7 @@ import warnings
 
 sys.path.append(os.path.abspath('../..'))
 
-from flowkit import Sample, transforms
+from flowkit import Sample, transforms, read_multi_dataset_fcs
 from flowkit.exceptions import DataOffsetDiscrepancyError
 
 data1_fcs_path = 'data/gate_ref/data1.fcs'
@@ -404,3 +404,14 @@ class SampleTestCase(unittest.TestCase):
 
         # there are 384 events in the file, each should have a well location
         self.assertEqual(len(idx_sorted_locations), 0)
+
+    def test_load_multi_dataset_file(self):
+        sample_file_path = "data/multi_dataset_fcs/coulter.lmd"
+
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            samples = read_multi_dataset_fcs(sample_file_path, ignore_offset_error=True)
+
+        self.assertEqual(len(samples), 2)
+        self.assertIsInstance(samples[0], Sample)
+        self.assertIsInstance(samples[1], Sample)
