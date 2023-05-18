@@ -3,6 +3,7 @@ Utilities for meta & bulk Sample operations
 """
 import os
 from glob import glob
+import flowio
 from .. import Sample
 
 
@@ -63,3 +64,47 @@ def load_samples(fcs_samples):
             sample_list = _get_samples_from_paths([fcs_samples])
 
     return sorted(sample_list)
+
+
+def read_multi_dataset_fcs(
+        filename_or_handle,
+        ignore_offset_error=False,
+        ignore_offset_discrepancy=False,
+        use_header_offsets=False,
+        cache_original_events=False
+):
+    """
+    Utility function for reading all data sets in an FCS file containing multiple data sets.
+
+    :param filename_or_handle: a path string or a file handle for an FCS file
+    :param ignore_offset_error: option to ignore data offset error (see above note), default is False
+    :param ignore_offset_discrepancy: option to ignore discrepancy between the HEADER
+        and TEXT values for the DATA byte offset location, default is False
+    :param use_header_offsets: use the HEADER section for the data offset locations, default is False.
+        Setting this option to True also suppresses an error in cases of an offset discrepancy.
+    :param cache_original_events: Original events are the unprocessed events as stored in the FCS binary,
+        meaning they have not been scaled according to channel gain, corrected for proper lin/log display,
+        or had the time channel scaled by the 'timestep' keyword value (if present). By default, these
+        events are not retained by the Sample class as they are typically not useful. To retrieve the
+        original events, set this to True and call the get_events() method with source='orig'.
+    :param cache_original_events: Original events are the unprocessed events as stored in the FCS binary,
+        meaning they have not been scaled according to channel gain, corrected for proper lin/log display,
+        or had the time channel scaled by the 'timestep' keyword value (if present). By default, these
+        events are not retained by the Sample class as they are typically not useful. To retrieve the
+        original events, set this to True and call the get_events() method with source='orig'.
+    :return: list of Sample instances
+    """
+    flow_data_list = flowio.read_multiple_data_sets(
+        filename_or_handle,
+        ignore_offset_error=ignore_offset_error,
+        ignore_offset_discrepancy=ignore_offset_discrepancy,
+        use_header_offsets=use_header_offsets
+    )
+
+    samples = []
+
+    for fd in flow_data_list:
+        s = Sample(fd, cache_original_events=cache_original_events)
+        samples.append(s)
+
+    return samples
