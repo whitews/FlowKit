@@ -76,11 +76,11 @@ via pip, and are listed below.
 
 > **NOTE**: FlowUtils uses C extensions for significant performance improvements. For most platforms and Python versions, pre-built binaries are available in PyPI (i.e. installable via `pip`). 
 >
-> If a pre-built binary of FlowUtils is not available for your environment, the C extensions must be compiled using the source package. NumPy >=1.19 must be installed prior to compiling FlowUtils. If compiling using `gcc`, version 5 or later is required.
+> If a pre-built binary of FlowUtils is not available for your environment, the C extensions must be compiled using the source package. NumPy >=1.20 must be installed prior to compiling FlowUtils. If compiling using `gcc`, version 5 or later is required.
 
 Required Python dependencies:
 
-* [flowio](https://github.com/whitews/flowio) == 1.1.1
+* [flowio](https://github.com/whitews/flowio) == 1.2.1
 * [flowutils](https://github.com/whitews/flowutils) == 1.0.0
 * anytree >= 2.6
 * bokeh >= 2.4, <3.0
