@@ -31,7 +31,10 @@ class PlotTestCase(unittest.TestCase):
         p = sample.plot_histogram(
             'FL2-H',
             source='xform',
-            subsample=True
+            subsample=True,
+            data_min=0.2,
+            data_max=0.5,
+            x_range=(0, 1)
         )
 
         self.assertIsInstance(p, bk_Figure)

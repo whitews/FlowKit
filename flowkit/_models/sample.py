@@ -14,7 +14,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn
 from bokeh.layouts import gridplot
-from bokeh.models import Title
+from bokeh.models import Title, Range1d
 import warnings
 # noinspection PyProtectedMember
 from .._models.transforms import _transforms
@@ -1017,12 +1017,13 @@ class Sample(object):
             channel_label_or_number,
             source='xform',
             subsample=False,
-            bins=None
+            bins=None,
+            data_min=None,
+            data_max=None,
+            x_range=None
     ):
         """
-        Returns a histogram plot of the specified channel events, available
-        as raw, compensated, or transformed data. Plot also contains a curve
-        of the gaussian kernel density estimate.
+        Returns a histogram plot of the specified channel events
 
         :param channel_label_or_number:  A channel's PnN label or number to use
             for plotting the histogram
@@ -1033,11 +1034,21 @@ class Sample(object):
         :param bins: Number of bins to use for the histogram or a string compatible
             with the NumPy histogram function. If None, the number of bins is
             determined by the square root rule.
-        :return: Matplotlib figure of the histogram plot with KDE curve.
+        :param data_min: filter event data, removing events below specified value
+        :param data_max: filter event data, removing events above specified value
+        :param x_range: Tuple of lower & upper bounds of x-axis. Used for modifying
+            plot view, doesn't filter event data.
+        :return: Bokeh figure of the histogram plot.
         """
 
         channel_index = self.get_channel_index(channel_label_or_number)
         channel_data = self.get_channel_events(channel_index, source=source, subsample=subsample)
+
+        if data_min is not None:
+            channel_data = channel_data[channel_data >= data_min]
+
+        if data_max is not None:
+            channel_data = channel_data[channel_data <= data_max]
 
         p = plot_utils.plot_histogram(
             channel_data,
@@ -1046,6 +1057,11 @@ class Sample(object):
         )
 
         p.title = Title(text=self.id, align='center')
+
+        if x_range is not None:
+            x_range = Range1d(x_range[0], x_range[1])
+            p.x_range = x_range
+
 
         return p
 
