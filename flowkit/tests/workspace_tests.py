@@ -435,9 +435,8 @@ class WorkspaceTestCase(unittest.TestCase):
         sample_ids = wsp.get_sample_ids(group_name=sample_grp)
 
         # there are technically 3 samples in the workspace 'DEN' group,
-        # but one sample has no gates. The Workspace class will only
-        # have references to 2 b/c we are not ignoring missing files.
-        self.assertEqual(len(sample_ids), 2)
+        # but one sample has no gates.
+        self.assertEqual(len(sample_ids), 3)
 
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
