@@ -598,11 +598,6 @@ def parse_wsp(workspace_file_or_path, ignore_transforms=False):
     processed_samples = {}
 
     for sample_id, sample_dict in wsp_samples.items():
-        # First, check the sample's sample_gates. If empty, then the
-        # sample has no gate hierarchy. We'll skip it.
-        if len(sample_dict['sample_gates']) == 0:
-            continue
-
         sample_name = sample_dict['sample_name']
         sample_gating_strategy = GatingStrategy()
 
