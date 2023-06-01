@@ -119,3 +119,48 @@ class SessionTestCase(unittest.TestCase):
         result = fks.get_gating_results(data1_sample.id)
 
         np.testing.assert_array_equal(truth, result.get_gate_membership('ScaleRange1'))
+
+    def test_get_gate_hierarchy(self):
+        gml_path = 'data/gate_ref/gml/gml_parent_poly1_boolean_and2_gate.xml'
+        fcs_path = 'data/gate_ref/data1.fcs'
+
+        session = Session(gating_strategy=gml_path, fcs_samples=fcs_path)
+
+        hierarchy_ascii = session.get_gate_hierarchy()
+
+        hierarchy_truth = """root
+├── Range1
+├── Polygon1
+│   ╰── ParAnd2
+╰── Ellipse1"""
+
+        self.assertEqual(hierarchy_ascii, hierarchy_truth)
+
+    def test_get_sample_gates(self):
+        gml_path = 'data/gate_ref/gml/gml_parent_poly1_boolean_and2_gate.xml'
+        fcs_path = 'data/gate_ref/data1.fcs'
+        sample_id = 'B07'
+
+        session = Session(gating_strategy=gml_path, fcs_samples=fcs_path)
+
+        sample_gates = session.get_sample_gates(sample_id)
+        sample_gate_names = {g.gate_name for g in sample_gates}
+
+        truth_gate_names = {
+            'Range1', 'Polygon1', 'ParAnd2', 'Ellipse1'
+        }
+
+        self.assertSetEqual(sample_gate_names, truth_gate_names)
+
+    def test_get_child_gate_ids(self):
+        gml_path = 'data/gate_ref/gml/gml_parent_poly1_boolean_and2_gate.xml'
+        fcs_path = 'data/gate_ref/data1.fcs'
+        parent_gate_id = 'Polygon1'
+
+        session = Session(gating_strategy=gml_path, fcs_samples=fcs_path)
+
+        child_gate_ids = session.get_child_gate_ids(parent_gate_id)
+
+        truth_gate_ids = [('ParAnd2', ('root', 'Polygon1'))]
+
+        self.assertListEqual(child_gate_ids, truth_gate_ids)

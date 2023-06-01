@@ -695,6 +695,7 @@ class GatingMLTestCase(unittest.TestCase):
         self.assertIsInstance(gs_ascii, str)
         self.assertIsInstance(gs_json, str)
         self.assertIsInstance(gs_dict, dict)
+        self.assertRaises(ValueError, gs.get_gate_hierarchy, 'something')
 
     @staticmethod
     def test_all_gates():
