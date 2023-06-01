@@ -219,7 +219,7 @@ def _parse_wsp_keywords(keywords_el):
     return keywords_lut
 
 
-def _convert_wsp_gate(wsp_gate, comp_matrix, xform_lut, ignore_transforms=False):
+def _convert_wsp_gate(wsp_gate, comp_matrix, xform_lut):
     new_dims = []
     xforms = []
 
@@ -246,7 +246,7 @@ def _convert_wsp_gate(wsp_gate, comp_matrix, xform_lut, ignore_transforms=False)
         new_dim_min = None
         new_dim_max = None
 
-        if dim_id in xform_lut and not ignore_transforms:
+        if dim_id in xform_lut:
             xform = xform_lut[dim_id]
             xforms.append(xform)  # need these later for vertices, coordinates, etc.
             xform_id = xform.id
@@ -420,7 +420,7 @@ def _parse_wsp_groups(group_node_els, ns_map, gating_ns, data_type_ns):
                 data_type_ns
             )
 
-        # skip groups with no gates or samples
+        # skip groups with no gates AND no samples
         if len(group_gates) == 0 and len(group_samples) == 0:
             continue
 
@@ -490,7 +490,7 @@ def _parse_wsp_samples(sample_els, ns_map, gating_ns, transform_ns, data_type_ns
     return wsp_samples
 
 
-def parse_wsp(workspace_file_or_path, ignore_transforms=False):
+def parse_wsp(workspace_file_or_path):
     """
     Converts a FlowJo 10 workspace file (.wsp) into a nested Python dictionary with the following structure:
 
@@ -515,8 +515,6 @@ def parse_wsp(workspace_file_or_path, ignore_transforms=False):
         }
 
     :param workspace_file_or_path: A FlowJo .wsp file or file path
-    :param ignore_transforms: Some FlowJo 10 transforms are incompatible with FlowKit. This boolean argument
-        allows parsing workspace files with unsupported transforms without raising errors. Default is False.
     :return: dict
     """
     doc_type, root_xml, gating_ns, data_type_ns, transform_ns = _get_xml_type(workspace_file_or_path)
@@ -553,8 +551,7 @@ def parse_wsp(workspace_file_or_path, ignore_transforms=False):
     #       samples. This is potentially problematic b/c multiple group gate
     #       trees can exist among the samples here. It is also possible that
     #       variations in gate trees can occur with custom sample gates, a
-    #       scenario that is even harder to detect. For these reasons, the
-    #       'All Samples' group is ignored for now.
+    #       scenario that is even harder to detect.
     #     - Multi-group samples: If a sample belongs to more than 1 group,
     #       then it can have group gates from more than 1 group. This shows
     #       up in its sample gate tree.
@@ -619,8 +616,7 @@ def parse_wsp(workspace_file_or_path, ignore_transforms=False):
             tmp_gate = _convert_wsp_gate(
                 sample_gate,
                 sample_dict['comp'],
-                sample_dict['transforms'],
-                ignore_transforms=ignore_transforms
+                sample_dict['transforms']
             )
             sample_gating_strategy.add_gate(tmp_gate, sample_gate_path, sample_id=sample_name)
 
