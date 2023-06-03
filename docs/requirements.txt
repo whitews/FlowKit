@@ -1,3 +1,4 @@
 Sphinx>=3
 autoclasstoc
 nbsphinx
+sphinx_rtd_theme
