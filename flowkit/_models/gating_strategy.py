@@ -138,9 +138,8 @@ class GatingStrategy(object):
             Required if gate_name is ambiguous
         :param sample_id: Sample ID string to lookup custom gate. If None or not found, template gate is returned
         :return: Subclass of a Gate object
-        :raises
-            GateReferenceError: if gate ID is not found in gating strategy
-            QuadrantReferenceError: if gate ID references a single Quadrant (specify the QuadrantGate ID instead)
+        :raises GateReferenceError: if gate ID is not found in gating strategy
+        :raises QuadrantReferenceError: if gate ID references a single Quadrant (specify the QuadrantGate ID instead)
         """
         node = self._get_gate_node(gate_name, gate_path)
 

@@ -494,6 +494,8 @@ def parse_wsp(workspace_file_or_path):
     """
     Converts a FlowJo 10 workspace file (.wsp) into a nested Python dictionary with the following structure:
 
+    .. code-block:: text
+
         wsp_dict = {
             'groups': {
                 group_name: {
@@ -642,6 +644,8 @@ def extract_wsp_sample_data(workspace_file_or_path):
     """
     Parses a FlowJo 10 workspace file (.wsp) and extracts Sample metadata (keywords)
     into a Python dictionary with the following structure:
+
+    .. code-block:: text
 
         wsp_sample_dict[sample_name] = {
             'keywords': {gate_id: gate_instance, ...},
