@@ -166,7 +166,6 @@ def _parse_wsp_transforms(transforms_el, transform_ns, data_type_ns):
             param_length = find_attribute_value(xform_el, transform_ns, 'length')
             param_max_range = find_attribute_value(xform_el, transform_ns, 'maxRange')
             param_pos = find_attribute_value(xform_el, transform_ns, 'pos')
-            param_pos = round(float(param_pos), 2)
 
             if param_length != '256':
                 raise ValueError("FlowJo biex 'length' parameter value of %s is not supported." % param_length)
@@ -725,6 +724,13 @@ def _add_transform_to_wsp(parent_el, parameter_label, transform, ns_map):
         xform_el.set('{%s}A' % ns_map['transforms'], str(transform.param_a))
         xform_el.set('{%s}W' % ns_map['transforms'], str(transform.param_w))
         xform_el.set('{%s}M' % ns_map['transforms'], str(transform.param_m))
+    elif isinstance(transform, _wsp_transforms.WSPBiexTransform):
+        xform_el = etree.SubElement(parent_el, "{%s}biex" % ns_map['transforms'])
+        xform_el.set('{%s}length' % ns_map['transforms'], "256")
+        xform_el.set('{%s}maxRange' % ns_map['transforms'], str(transform.max_value))
+        xform_el.set('{%s}neg' % ns_map['transforms'], str(transform.negative))
+        xform_el.set('{%s}width' % ns_map['transforms'], str(transform.width))
+        xform_el.set('{%s}pos' % ns_map['transforms'], str(transform.positive))
     else:
         raise NotImplementedError("Transform type %s is not yet supported" % type(transform))
 
