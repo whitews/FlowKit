@@ -211,6 +211,8 @@ class WSPBiexTransform(Transform):
 
         self.negative = negative
         self.width = width
+        self.positive = positive
+        self.max_value = max_value
 
         x, y = generate_biex_lut(neg=self.negative, width_basis=self.width, pos=positive, max_value=max_value)
 
@@ -225,7 +227,7 @@ class WSPBiexTransform(Transform):
     def __repr__(self):
         return (
             f'{self.__class__.__name__}('
-            f'{self.id}, width: {self.width}, neg: {self.negative})'
+            f'{self.id}, width: {self.width}, neg: {self.negative}, pos: {self.positive}, top: {self.max_value})'
         )
 
     def apply(self, events):
