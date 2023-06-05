@@ -29,24 +29,60 @@ class SessionExportTestCase(unittest.TestCase):
             wsp2 = Workspace(fh_out, fcs_samples=fcs_path)
 
         wsp.analyze_samples(sample_id=sample_id)
-        fks_results = wsp.get_gating_results(sample_id)
+        wsp_results = wsp.get_gating_results(sample_id)
 
         wsp2.analyze_samples(sample_id=sample_id)
-        fks2_results = wsp2.get_gating_results(sample_id)
+        wsp2_results = wsp2.get_gating_results(sample_id)
 
         gate_refs = wsp.get_gate_ids(sample_id=sample_id)
 
         self.assertEqual(len(gate_refs), 2)
 
-        fks_rect1_count = fks_results.get_gate_count('rect1')
-        fks2_rect1_count = fks2_results.get_gate_count('rect1')
-        fks_poly1_count = fks_results.get_gate_count('poly1')
-        fks2_poly1_count = fks2_results.get_gate_count('poly1')
+        wsp_rect1_count = wsp_results.get_gate_count('rect1')
+        wsp2_rect1_count = wsp2_results.get_gate_count('rect1')
+        wsp_poly1_count = wsp_results.get_gate_count('poly1')
+        wsp2_poly1_count = wsp2_results.get_gate_count('poly1')
 
-        self.assertEqual(fks_rect1_count, 0)
-        self.assertEqual(fks2_rect1_count, 0)
-        self.assertEqual(fks_poly1_count, 50)
-        self.assertEqual(fks2_poly1_count, 50)
+        self.assertEqual(wsp_rect1_count, 0)
+        self.assertEqual(wsp2_rect1_count, 0)
+        self.assertEqual(wsp_poly1_count, 50)
+        self.assertEqual(wsp2_poly1_count, 50)
+
+    def test_wsp_export_diamond_biex(self):
+        wsp_path = "data/simple_diamond_example/test_data_diamond_biex_rect.wsp"
+        fcs_path = "data/simple_diamond_example/test_data_diamond_01.fcs"
+        sample_group = 'my_group'
+        sample_id = 'test_data_diamond_01.fcs'
+
+        wsp = Workspace(wsp_path, fcs_samples=fcs_path)
+        gs = wsp.get_gating_strategy(sample_id)
+        session = Session(gating_strategy=gs, fcs_samples=fcs_path)
+
+        with BytesIO() as fh_out:
+            session.export_wsp(
+                fh_out,
+                sample_group
+            )
+            fh_out.seek(0)
+
+            wsp2 = Workspace(fh_out, fcs_samples=fcs_path)
+
+        wsp.analyze_samples(sample_id=sample_id)
+        wsp_results = wsp.get_gating_results(sample_id)
+
+        wsp2.analyze_samples(sample_id=sample_id)
+        wsp2_results = wsp2.get_gating_results(sample_id)
+
+        gate_refs = wsp.get_gate_ids(sample_id=sample_id)
+
+        self.assertEqual(len(gate_refs), 1)
+
+        wsp_rect1_count = wsp_results.get_gate_count('upper_right')
+        wsp2_rect1_count = wsp2_results.get_gate_count('upper_right')
+
+        self.assertEqual(wsp_rect1_count, 50605)
+        self.assertEqual(wsp2_rect1_count, 50605)
+
 
     def test_export_wsp(self):
         wsp_path = "data/8_color_data_set/8_color_ICS.wsp"
