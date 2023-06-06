@@ -821,17 +821,28 @@ def _add_rectangle_gate(parent_el, gate, fj_gate_id, fj_parent_gate_id, gating_s
         fcs_dim_el.set("{%s}name" % ns_map['data-type'], dim_id)
 
         xform_ref = dim.transformation_ref
-
         if xform_ref is not None:
             xform = gating_strategy.get_transform(xform_ref)
-            dim_min = xform.inverse(np.array([[dim.min]]))[0, 0]
-            dim_max = xform.inverse(np.array([[dim.max]]))[0, 0]
         else:
-            dim_min = dim.min
-            dim_max = dim.max
+            xform = None
 
-        dim_el.set('{%s}min' % ns_map['gating'], str(dim_min))
-        dim_el.set('{%s}max' % ns_map['gating'], str(dim_max))
+        # check both min & max, could be an open-ended range gate
+        # only write to doc if present
+        if dim.min is not None:
+            if xform is not None:
+                dim_min = xform.inverse(np.array([[dim.min]]))[0, 0]
+            else:
+                dim_min = dim.min
+
+            dim_el.set('{%s}min' % ns_map['gating'], str(dim_min))
+
+        if dim.max is not None:
+            if xform is not None:
+                dim_max = xform.inverse(np.array([[dim.max]]))[0, 0]
+            else:
+                dim_max = dim.max
+
+            dim_el.set('{%s}max' % ns_map['gating'], str(dim_max))
 
 
 def _add_group_node_to_wsp(parent_el, group_name, sample_id_list):
