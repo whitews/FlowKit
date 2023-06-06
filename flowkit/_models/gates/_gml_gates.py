@@ -9,7 +9,7 @@ used to assemble the gate tree. They also each provide a
 public interaction in a GatingStrategy.
 """
 from .. import gates
-from ..._utils import xml_utils
+from ..._utils import xml_utils, xml_common
 
 
 class GMLRectangleGate(gates.RectangleGate):
@@ -148,7 +148,7 @@ class GMLEllipsoidGate(gates.EllipsoidGate):
             )
 
         for coord_el in coord_els:
-            value = xml_utils.find_attribute_value(coord_el, data_type_namespace, 'value')
+            value = xml_common.find_attribute_value(coord_el, data_type_namespace, 'value')
             if value is None:
                 raise ValueError(
                     'A coordinate must have only 1 value (line %d)' % coord_el.sourceline
@@ -178,7 +178,7 @@ class GMLEllipsoidGate(gates.EllipsoidGate):
 
             entry_values = []
             for entry_el in row_entry_els:
-                value = xml_utils.find_attribute_value(entry_el, data_type_namespace, 'value')
+                value = xml_common.find_attribute_value(entry_el, data_type_namespace, 'value')
                 entry_values.append(float(value))
 
             if len(entry_values) != len(coordinates):
@@ -195,7 +195,7 @@ class GMLEllipsoidGate(gates.EllipsoidGate):
             namespaces=gate_element.nsmap
         )
 
-        dist_square_value = xml_utils.find_attribute_value(distance_square_el, data_type_namespace, 'value')
+        dist_square_value = xml_common.find_attribute_value(distance_square_el, data_type_namespace, 'value')
         distance_square = float(dist_square_value)
 
         super().__init__(
@@ -261,7 +261,7 @@ class GMLQuadrantGate(gates.QuadrantGate):
         quadrants = []
 
         for quadrant_el in quadrant_els:
-            quad_id = xml_utils.find_attribute_value(quadrant_el, gating_namespace, 'id')
+            quad_id = xml_common.find_attribute_value(quadrant_el, gating_namespace, 'id')
 
             position_els = quadrant_el.findall(
                 '%s:position' % gating_namespace,
@@ -272,8 +272,8 @@ class GMLQuadrantGate(gates.QuadrantGate):
             divider_ranges = []
 
             for pos_el in position_els:
-                divider_ref = xml_utils.find_attribute_value(pos_el, gating_namespace, 'divider_ref')
-                location = xml_utils.find_attribute_value(pos_el, gating_namespace, 'location')
+                divider_ref = xml_common.find_attribute_value(pos_el, gating_namespace, 'divider_ref')
+                location = xml_common.find_attribute_value(pos_el, gating_namespace, 'location')
                 location = float(location)
                 q_min = None
                 q_max = None
@@ -384,13 +384,13 @@ class GMLBooleanGate(gates.BooleanGate):
         gate_refs = []
 
         for gate_ref_el in gate_ref_els:
-            gate_ref = xml_utils.find_attribute_value(gate_ref_el, gating_namespace, 'ref')
+            gate_ref = xml_common.find_attribute_value(gate_ref_el, gating_namespace, 'ref')
             if gate_ref is None:
                 raise ValueError(
                     "Boolean gate reference must specify a 'ref' attribute (line %d)" % gate_ref_el.sourceline
                 )
 
-            use_complement = xml_utils.find_attribute_value(gate_ref_el, gating_namespace, 'use-as-complement')
+            use_complement = xml_common.find_attribute_value(gate_ref_el, gating_namespace, 'use-as-complement')
             if use_complement is not None:
                 use_complement = use_complement == 'true'
             else:
