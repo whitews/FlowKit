@@ -10,7 +10,7 @@ from bokeh.models import Title
 from .._conf import debug
 from .._models.gating_strategy import GatingStrategy
 from .._models import gates, dimension
-from .._utils import plot_utils, xml_utils, wsp_utils, sample_utils, gating_utils
+from .._utils import plot_utils, xml_utils, gml_write, wsp_utils, sample_utils, gating_utils
 from ..exceptions import GateReferenceError
 import warnings
 
@@ -249,7 +249,7 @@ class Session(object):
         :param sample_id: an optional text string representing a Sample instance
         :return: None
         """
-        xml_utils.export_gatingml(self.gating_strategy, file_handle, sample_id=sample_id)
+        gml_write.export_gatingml(self.gating_strategy, file_handle, sample_id=sample_id)
 
     def export_wsp(self, file_handle, group_name):
         """

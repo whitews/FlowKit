@@ -10,7 +10,8 @@ from ._models.gating_strategy import GatingStrategy
 from ._models.session import Session
 from ._models.workspace import Workspace
 from ._models.dimension import Dimension, RatioDimension, QuadrantDivider
-from ._utils.xml_utils import parse_gating_xml, export_gatingml
+from ._utils.xml_utils import parse_gating_xml
+from ._utils.gml_write import export_gatingml
 from ._utils.wsp_utils import parse_wsp, extract_wsp_sample_data
 from ._utils.sample_utils import load_samples, read_multi_dataset_fcs
 from . import exceptions

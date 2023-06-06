@@ -1,5 +1,5 @@
 """
-Utility functions for parsing & exporting gating related XML documents
+Utility functions for parsing GatingML 2.0 documents
 """
 import numpy as np
 from lxml import etree
@@ -7,8 +7,7 @@ import networkx as nx
 from .._resources import gml_schema
 from .._models.dimension import Dimension, RatioDimension, QuadrantDivider
 from .._models.gating_strategy import GatingStrategy
-# noinspection PyProtectedMember
-from .._models.transforms import _transforms, _gml_transforms
+from .._models import transforms
 # noinspection PyProtectedMember
 from .._models.transforms._matrix import Matrix
 # noinspection PyProtectedMember
@@ -19,14 +18,7 @@ from .._models.gates._gml_gates import \
     GMLPolygonGate, \
     GMLRectangleGate
 # noinspection PyProtectedMember
-from .._models.gates._gates import \
-    BooleanGate, \
-    EllipsoidGate, \
-    QuadrantGate, \
-    PolygonGate, \
-    RectangleGate
-from ..exceptions import QuadrantReferenceError
-
+from .._models.gates._gates import BooleanGate, QuadrantGate
 
 # map GatingML gate keys to our GML gate classes
 gate_constructor_lut = {
@@ -196,88 +188,14 @@ def _construct_transforms(root_gml, transform_ns, data_type_ns):
     transformations = {}
 
     if transform_ns is not None:
-        # types of transforms include:
-        #   - ratio
-        #   - log10
-        #   - asinh
-        #   - hyperlog
-        #   - linear
-        #   - logicle
+        # GML uses a 'transformation' wrapper tag before we can tell what kind of xform it is
         xform_els = root_gml.findall(
             '%s:transformation' % transform_ns,
             namespaces=root_gml.nsmap
         )
 
         for xform_el in xform_els:
-            xform = None
-
-            # determine type of transformation
-            fratio_els = xform_el.findall(
-                '%s:fratio' % transform_ns,
-                namespaces=root_gml.nsmap
-            )
-
-            if len(fratio_els) > 0:
-                xform = _gml_transforms.RatioGMLTransform(
-                    xform_el,
-                    transform_ns,
-                    data_type_ns
-                )
-
-            flog_els = xform_el.findall(
-                '%s:flog' % transform_ns,
-                namespaces=root_gml.nsmap
-            )
-
-            if len(flog_els) > 0:
-                xform = _gml_transforms.LogGMLTransform(
-                    xform_el,
-                    transform_ns
-                )
-
-            fasinh_els = xform_el.findall(
-                '%s:fasinh' % transform_ns,
-                namespaces=root_gml.nsmap
-            )
-
-            if len(fasinh_els) > 0:
-                xform = _gml_transforms.AsinhGMLTransform(
-                    xform_el,
-                    transform_ns
-                )
-
-            hyperlog_els = xform_el.findall(
-                '%s:hyperlog' % transform_ns,
-                namespaces=root_gml.nsmap
-            )
-
-            if len(hyperlog_els) > 0:
-                xform = _gml_transforms.HyperlogGMLTransform(
-                    xform_el,
-                    transform_ns
-                )
-
-            flin_els = xform_el.findall(
-                '%s:flin' % transform_ns,
-                namespaces=root_gml.nsmap
-            )
-
-            if len(flin_els) > 0:
-                xform = _gml_transforms.LinearGMLTransform(
-                    xform_el,
-                    transform_ns
-                )
-
-            logicle_els = xform_el.findall(
-                '%s:logicle' % transform_ns,
-                namespaces=root_gml.nsmap
-            )
-
-            if len(logicle_els) > 0:
-                xform = _gml_transforms.LogicleGMLTransform(
-                    xform_el,
-                    transform_ns
-                )
+            xform = _parse_transformation_element(xform_el, transform_ns, data_type_ns)
 
             if xform is not None:
                 transformations[xform.id] = xform
@@ -596,240 +514,195 @@ def _parse_matrix_element(
     return Matrix(matrix_id, matrix, detectors, fluorochomes)
 
 
-def _add_matrix_to_gml(root, matrix, ns_map):
-    xform_ml = etree.SubElement(root, "{%s}spectrumMatrix" % ns_map['transforms'])
-    xform_ml.set('{%s}id' % ns_map['transforms'], matrix.id)
+def _parse_fratio_element(transform_id, fratio_element, transform_namespace, data_type_namespace):
+    # f ratio transform has 3 parameters: A, B, and C
+    # these are attributes of the 'fratio' element
+    param_a = find_attribute_value(fratio_element, transform_namespace, 'A')
+    param_b = find_attribute_value(fratio_element, transform_namespace, 'B')
+    param_c = find_attribute_value(fratio_element, transform_namespace, 'C')
 
-    fluoros_ml = etree.SubElement(xform_ml, "{%s}fluorochromes" % ns_map['transforms'])
+    if None in [param_a, param_b, param_c]:
+        raise ValueError(
+            "Ratio transform must provide an 'A', a 'B', and a 'C' "
+            "attribute (line %d)" % fratio_element.sourceline
+        )
 
-    for fluoro in matrix.fluorochomes:
-        fluoro_ml = etree.SubElement(fluoros_ml, '{%s}fcs-dimension' % ns_map['data-type'])
-        fluoro_ml.set('{%s}name' % ns_map['data-type'], fluoro)
+    # convert from string to float
+    param_a = float(param_a)
+    param_b = float(param_b)
+    param_c = float(param_c)
 
-    detectors_ml = etree.SubElement(xform_ml, "{%s}detectors" % ns_map['transforms'])
+    fcs_dim_els = fratio_element.findall(
+        '%s:fcs-dimension' % data_type_namespace,
+        namespaces=fratio_element.nsmap
+    )
 
-    for detector in matrix.detectors:
-        detector_ml = etree.SubElement(detectors_ml, '{%s}fcs-dimension' % ns_map['data-type'])
-        detector_ml.set('{%s}name' % ns_map['data-type'], detector)
+    dim_ids = []
 
-    for row in matrix.matrix:
-        row_ml = etree.SubElement(xform_ml, "{%s}spectrum" % ns_map['transforms'])
-        for val in row:
-            coefficient_ml = etree.SubElement(row_ml, "{%s}coefficient" % ns_map['transforms'])
-            coefficient_ml.set('{%s}value' % ns_map['transforms'], str(val))
+    for dim_el in fcs_dim_els:
+        dim_id = find_attribute_value(dim_el, data_type_namespace, 'name')
 
+        if dim_id is None:
+            raise ValueError(
+                'Dimension name not found (line %d)' % dim_el.sourceline
+            )
+        dim_ids.append(dim_id)
 
-def _add_transform_to_gml(root, transform, ns_map):
-    xform_ml = etree.SubElement(root, "{%s}transformation" % ns_map['transforms'])
-    xform_ml.set('{%s}id' % ns_map['transforms'], transform.id)
+    xform = transforms.RatioTransform(
+        transform_id, dim_ids, param_a, param_b, param_c
+    )
 
-    if isinstance(transform, _transforms.RatioTransform):
-        ratio_ml = etree.SubElement(xform_ml, "{%s}fratio" % ns_map['transforms'])
-        ratio_ml.set('{%s}A' % ns_map['transforms'], str(transform.param_a))
-        ratio_ml.set('{%s}B' % ns_map['transforms'], str(transform.param_b))
-        ratio_ml.set('{%s}C' % ns_map['transforms'], str(transform.param_c))
-
-        for dim in transform.dimensions:
-            fcs_dim_ml = etree.SubElement(ratio_ml, '{%s}fcs-dimension' % ns_map['data-type'])
-            fcs_dim_ml.set('{%s}name' % ns_map['data-type'], dim)
-    elif isinstance(transform, _transforms.LogTransform):
-        log_ml = etree.SubElement(xform_ml, "{%s}flog" % ns_map['transforms'])
-        log_ml.set('{%s}T' % ns_map['transforms'], str(transform.param_t))
-        log_ml.set('{%s}M' % ns_map['transforms'], str(transform.param_m))
-    elif isinstance(transform, _transforms.AsinhTransform):
-        asinh_ml = etree.SubElement(xform_ml, "{%s}fasinh" % ns_map['transforms'])
-        asinh_ml.set('{%s}T' % ns_map['transforms'], str(transform.param_t))
-        asinh_ml.set('{%s}M' % ns_map['transforms'], str(transform.param_m))
-        asinh_ml.set('{%s}A' % ns_map['transforms'], str(transform.param_a))
-    elif isinstance(transform, _transforms.LogicleTransform):
-        logicle_ml = etree.SubElement(xform_ml, "{%s}logicle" % ns_map['transforms'])
-        logicle_ml.set('{%s}T' % ns_map['transforms'], str(transform.param_t))
-        logicle_ml.set('{%s}W' % ns_map['transforms'], str(transform.param_w))
-        logicle_ml.set('{%s}M' % ns_map['transforms'], str(transform.param_m))
-        logicle_ml.set('{%s}A' % ns_map['transforms'], str(transform.param_a))
-    elif isinstance(transform, _transforms.HyperlogTransform):
-        hyperlog_ml = etree.SubElement(xform_ml, "{%s}hyperlog" % ns_map['transforms'])
-        hyperlog_ml.set('{%s}T' % ns_map['transforms'], str(transform.param_t))
-        hyperlog_ml.set('{%s}W' % ns_map['transforms'], str(transform.param_w))
-        hyperlog_ml.set('{%s}M' % ns_map['transforms'], str(transform.param_m))
-        hyperlog_ml.set('{%s}A' % ns_map['transforms'], str(transform.param_a))
-    elif isinstance(transform, _transforms.LinearTransform):
-        lin_ml = etree.SubElement(xform_ml, "{%s}flin" % ns_map['transforms'])
-        lin_ml.set('{%s}T' % ns_map['transforms'], str(transform.param_t))
-        lin_ml.set('{%s}A' % ns_map['transforms'], str(transform.param_a))
+    return xform
 
 
-def _add_gate_to_gml(root, gate, ns_map):
-    if isinstance(gate, RectangleGate):
-        gate_ml = etree.SubElement(root, "{%s}RectangleGate" % ns_map['gating'])
-    elif isinstance(gate, PolygonGate):
-        gate_ml = etree.SubElement(root, "{%s}PolygonGate" % ns_map['gating'])
+def _parse_flog_element(transform_id, flog_element, transform_namespace):
+    # f log transform has 2 parameters: T and M
+    # these are attributes of the 'flog' element
+    param_t = find_attribute_value(flog_element, transform_namespace, 'T')
+    param_m = find_attribute_value(flog_element, transform_namespace, 'M')
 
-        for v in gate.vertices:
-            vert_ml = etree.SubElement(gate_ml, '{%s}vertex' % ns_map['gating'])
-            for coord in v:
-                coord_ml = etree.SubElement(vert_ml, '{%s}coordinate' % ns_map['gating'])
-                coord_ml.set('{%s}value' % ns_map['data-type'], str(coord))
-    elif isinstance(gate, BooleanGate):
-        gate_ml = etree.SubElement(root, "{%s}BooleanGate" % ns_map['gating'])
+    if None in [param_t, param_m]:
+        raise ValueError(
+            "Log transform must provide an 'T' attribute (line %d)" % flog_element.sourceline
+        )
 
-        if gate.type == 'and':
-            bool_type_ml = etree.SubElement(gate_ml, '{%s}and' % ns_map['gating'])
-        elif gate.type == 'or':
-            bool_type_ml = etree.SubElement(gate_ml, '{%s}or' % ns_map['gating'])
-        elif gate.type == 'not':
-            bool_type_ml = etree.SubElement(gate_ml, '{%s}not' % ns_map['gating'])
-        else:
-            raise ValueError("Boolean gate type '%s' is not valid" % gate.type)
+    # convert string to float
+    param_t = float(param_t)
+    param_m = float(param_m)
 
-        for gate_ref in gate.gate_refs:
-            gate_ref_ml = etree.SubElement(bool_type_ml, '{%s}gateReference' % ns_map['gating'])
-            gate_ref_ml.set('{%s}ref' % ns_map['gating'], gate_ref['ref'])
-            if gate_ref['complement']:
-                gate_ref_ml.set('{%s}use-as-complement' % ns_map['gating'], "true")
+    xform = transforms.LogTransform(transform_id, param_t, param_m)
 
-    elif isinstance(gate, EllipsoidGate):
-        gate_ml = etree.SubElement(root, "{%s}EllipsoidGate" % ns_map['gating'])
-        mean_ml = etree.SubElement(gate_ml, '{%s}mean' % ns_map['gating'])
-        cov_ml = etree.SubElement(gate_ml, '{%s}covarianceMatrix' % ns_map['gating'])
-        dist_square_ml = etree.SubElement(gate_ml, '{%s}distanceSquare' % ns_map['gating'])
-        dist_square_ml.set('{%s}value' % ns_map['data-type'], str(gate.distance_square))
-
-        for c in gate.coordinates:
-            coord_ml = etree.SubElement(mean_ml, '{%s}coordinate' % ns_map['gating'])
-            coord_ml.set('{%s}value' % ns_map['data-type'], str(c))
-
-        for row in gate.covariance_matrix:
-            row_ml = etree.SubElement(cov_ml, '{%s}row' % ns_map['gating'])
-
-            for val in row:
-                entry_ml = etree.SubElement(row_ml, '{%s}entry' % ns_map['gating'])
-                entry_ml.set('{%s}value' % ns_map['data-type'], str(val))
-    elif isinstance(gate, QuadrantGate):
-        gate_ml = etree.SubElement(root, "{%s}QuadrantGate" % ns_map['gating'])
-
-        for q_id, quadrant in gate.quadrants.items():
-            quad_ml = etree.SubElement(gate_ml, '{%s}Quadrant' % ns_map['gating'])
-            quad_ml.set('{%s}id' % ns_map['gating'], q_id)
-
-            for div_ref in quadrant.divider_refs:
-                pos_ml = etree.SubElement(quad_ml, '{%s}position' % ns_map['gating'])
-                pos_ml.set('{%s}divider_ref' % ns_map['gating'], div_ref)
-
-                div_ranges = quadrant.get_divider_range(div_ref)
-                if div_ranges[0] is None:
-                    loc_coord = div_ranges[1] / 2.0
-                elif div_ranges[1] is None:
-                    loc_coord = div_ranges[0] * 2.0
-                else:
-                    loc_coord = np.mean(div_ranges)
-                
-                pos_ml.set('{%s}location' % ns_map['gating'], str(loc_coord))
-    else:
-        raise ValueError("Gate %s is not a valid GatingML 2.0 element" % gate.gate_name)
-
-    gate_ml.set('{%s}id' % ns_map['gating'], gate.gate_name)
-
-    for i, dim in enumerate(gate.dimensions):
-        dim_type = 'dim'
-
-        if isinstance(dim, QuadrantDivider):
-            dim_ml = etree.Element('{%s}divider' % ns_map['gating'])
-            dim_ml.set('{%s}id' % ns_map['gating'], dim.id)
-            dim_type = 'quad'
-        elif isinstance(dim, RatioDimension):
-            dim_ml = etree.Element('{%s}dimension' % ns_map['gating'])
-            dim_type = 'ratio'
-        else:
-            dim_ml = etree.Element('{%s}dimension' % ns_map['gating'])
-
-        gate_ml.insert(i, dim_ml)
-
-        if dim.compensation_ref is not None:
-            dim_ml.set('{%s}compensation-ref' % ns_map['gating'], dim.compensation_ref)
-        if dim.transformation_ref is not None:
-            dim_ml.set('{%s}transformation-ref' % ns_map['gating'], dim.transformation_ref)
-
-        if dim_type != 'quad':
-            if dim.min is not None:
-                dim_ml.set('{%s}min' % ns_map['gating'], str(dim.min))
-            if dim.max is not None:
-                dim_ml.set('{%s}max' % ns_map['gating'], str(dim.max))
-
-        if dim_type == 'ratio':
-            new_dim_el = etree.SubElement(dim_ml, '{%s}new-dimension' % ns_map['data-type'])
-            new_dim_el.set('{%s}transformation-ref' % ns_map['data-type'], dim.ratio_ref)
-        else:
-            fcs_dim_ml = etree.SubElement(dim_ml, '{%s}fcs-dimension' % ns_map['data-type'])
-            if dim_type == 'dim':
-                fcs_dim_ml.set('{%s}name' % ns_map['data-type'], dim.id)
-            elif dim_type == 'quad':
-                fcs_dim_ml.set('{%s}name' % ns_map['data-type'], dim.dimension_ref)
-                for val in dim.values:
-                    value_ml = etree.SubElement(dim_ml, '{%s}value' % ns_map['gating'])
-                    value_ml.text = str(val)
-
-    return gate_ml
+    return xform
 
 
-def _add_gates_from_gate_dict(gating_strategy, gate_dict, ns_map, parent_ml, sample_id=None):
-    # the gate_dict will have keys 'name' and 'children'. top-level 'name' value is 'root'
-    for child in gate_dict['children']:
-        gate_id = child['name']
+def _parse_fasinh_element(transform_id, fasinh_element, transform_namespace):
+    # f asinh transform has 3 parameters: T, M, and A
+    # these are attributes of the 'fasinh' element
+    param_t = find_attribute_value(fasinh_element, transform_namespace, 'T')
+    param_m = find_attribute_value(fasinh_element, transform_namespace, 'M')
+    param_a = find_attribute_value(fasinh_element, transform_namespace, 'A')
 
-        try:
-            gate = gating_strategy.get_gate(gate_id, sample_id=sample_id)
-        except QuadrantReferenceError:
-            # single quadrants will be handled in the owning quadrant gate
-            gate = None
+    if None in [param_t, param_m, param_a]:
+        raise ValueError(
+            "Asinh transform must provide 'T', 'M', and 'A' attributes (line %d)" % fasinh_element.sourceline
+        )
 
-        if gate is not None:
-            child_ml = _add_gate_to_gml(parent_ml, gate, ns_map)
+    # convert string to float
+    param_t = float(param_t)
+    param_m = float(param_m)
+    param_a = float(param_a)
 
-            if gate_dict['name'] != 'root':
-                # this is a recursion, add the parent reference
-                child_ml.set('{%s}parent_id' % ns_map['gating'], gate_dict['name'])
+    xform = transforms.AsinhTransform(transform_id, param_t, param_m, param_a)
 
-        if 'children' in child:  # and not isinstance(gate, QuadrantGate):
-            _add_gates_from_gate_dict(gating_strategy, child, ns_map, parent_ml, sample_id=sample_id)
+    return xform
 
 
-def export_gatingml(gating_strategy, file_handle, sample_id=None):
-    """
-    Exports a valid GatingML 2.0 document from given GatingStrategy instance.
-    Specify the sample ID to use that sample's custom gates in the exported
-    file, otherwise the template gates will be exported.
+def _parse_hyperlog_element(transform_id, hyperlog_element, transform_namespace):
+    # hyperlog transform has 4 parameters: T, W, M, and A
+    # these are attributes of the 'hyperlog' element
+    param_t = find_attribute_value(hyperlog_element, transform_namespace, 'T')
+    param_w = find_attribute_value(hyperlog_element, transform_namespace, 'W')
+    param_m = find_attribute_value(hyperlog_element, transform_namespace, 'M')
+    param_a = find_attribute_value(hyperlog_element, transform_namespace, 'A')
 
-    :param gating_strategy: A GatingStrategy instance
-    :param file_handle: File handle for exported GatingML 2.0 document
-    :param sample_id: an optional text string representing a Sample instance
-    :return: None
-    """
-    ns_g = "http://www.isac-net.org/std/Gating-ML/v2.0/gating"
-    ns_dt = "http://www.isac-net.org/std/Gating-ML/v2.0/datatypes"
-    ns_xform = "http://www.isac-net.org/std/Gating-ML/v2.0/transformations"
-    ns_map = {
-        'gating': ns_g,
-        'data-type': ns_dt,
-        'transforms': ns_xform
-    }
+    if None in [param_t, param_w, param_m, param_a]:
+        raise ValueError(
+            "Hyperlog transform must provide 'T', 'W', 'M', and 'A' "
+            "attributes (line %d)" % hyperlog_element.sourceline
+        )
 
-    root = etree.Element('{%s}Gating-ML' % ns_g, nsmap=ns_map)
+    # convert string to float
+    param_t = float(param_t)
+    param_w = float(param_w)
+    param_m = float(param_m)
+    param_a = float(param_a)
 
-    # process gating strategy transformations
-    for xform_id, xform in gating_strategy.transformations.items():
-        _add_transform_to_gml(root, xform, ns_map)
+    xform = transforms.HyperlogTransform(
+        transform_id, param_t, param_w, param_m, param_a
+    )
 
-    # process gating strategy compensation matrices
-    for matrix_id, matrix in gating_strategy.comp_matrices.items():
-        _add_matrix_to_gml(root, matrix, ns_map)
+    return xform
 
-    # get gate hierarchy as a dictionary
-    gate_dict = gating_strategy.get_gate_hierarchy('dict')
 
-    # recursively convert all gates to GatingML
-    _add_gates_from_gate_dict(gating_strategy, gate_dict, ns_map, root, sample_id=sample_id)
+def _parse_flin_element(transform_id, flin_element, transform_namespace):
+    # f linear transform has 2 parameters: T and A
+    # these are attributes of the 'flin' element
+    param_t = find_attribute_value(flin_element, transform_namespace, 'T')
+    param_a = find_attribute_value(flin_element, transform_namespace, 'A')
 
-    et = etree.ElementTree(root)
+    if None in [param_t, param_a]:
+        raise ValueError(
+            "Linear transform must provide 'T' and 'A' attributes (line %d)" % flin_element.sourceline
+        )
 
-    et.write(file_handle, encoding="utf-8", xml_declaration=True, pretty_print=True)
+    # convert string to float
+    param_t = float(param_t)
+    param_a = float(param_a)
+
+    xform = transforms.LinearTransform(transform_id, param_t, param_a)
+
+    return xform
+
+
+def _parse_logicle_element(transform_id, logicle_element, transform_namespace):
+    # logicle transform has 4 parameters: T, W, M, and A
+    # these are attributes of the 'logicle' element
+    param_t = find_attribute_value(logicle_element, transform_namespace, 'T')
+    param_w = find_attribute_value(logicle_element, transform_namespace, 'W')
+    param_m = find_attribute_value(logicle_element, transform_namespace, 'M')
+    param_a = find_attribute_value(logicle_element, transform_namespace, 'A')
+
+    if None in [param_t, param_w, param_m, param_a]:
+        raise ValueError(
+            "Logicle transform must provide 'T', 'W', 'M', and 'A' "
+            "attributes (line %d)" % logicle_element.sourceline
+        )
+
+    # convert string to float
+    param_t = float(param_t)
+    param_w = float(param_w)
+    param_m = float(param_m)
+    param_a = float(param_a)
+
+    xform = transforms.LogicleTransform(
+        transform_id, param_t, param_w, param_m, param_a
+    )
+
+    return xform
+
+
+def _parse_transformation_element(transformation_element, transform_namespace, data_type_namespace):
+    xform = None
+
+    # 'transformation' wrapper tag has the transform ID, so grab that & then parse
+    # the child tags. There should only be 1 child that will reveal the xform type.
+    xform_id = find_attribute_value(transformation_element, transform_namespace, 'id')
+    xform_child_els = transformation_element.getchildren()
+
+    # there should only ever be 1 child tag, but we'll loop
+    for xform_child_el in xform_child_els:
+        # Transform type tags include:
+        #   - fratio
+        #   - flog
+        #   - fasinh
+        #   - hyperlog
+        #   - flin
+        #   - logicle
+        xform_type = xform_child_el.tag.partition('}')[-1]
+
+        if xform_type == 'fratio':
+            xform = _parse_fratio_element(
+                xform_id, xform_child_el, transform_namespace, data_type_namespace
+            )
+        elif xform_type == 'flog':
+            xform = _parse_flog_element(xform_id, xform_child_el, transform_namespace)
+        elif xform_type == 'fasinh':
+            xform = _parse_fasinh_element(xform_id, xform_child_el, transform_namespace)
+        elif xform_type == 'hyperlog':
+            xform = _parse_hyperlog_element(xform_id, xform_child_el, transform_namespace)
+        elif xform_type == 'flin':
+            xform = _parse_flin_element(xform_id, xform_child_el, transform_namespace)
+        elif xform_type == 'logicle':
+            xform = _parse_logicle_element(xform_id, xform_child_el, transform_namespace)
+
+    return xform
