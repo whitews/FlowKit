@@ -7,7 +7,7 @@ import re
 import numpy as np
 from lxml import etree
 from flowio.fcs_keywords import FCS_STANDARD_KEYWORDS
-from .xml_utils import find_attribute_value, _get_xml_type
+from .xml_common import find_attribute_value, _get_xml_type
 from .._models.dimension import Dimension
 # noinspection PyProtectedMember
 from .._models.transforms._matrix import Matrix
