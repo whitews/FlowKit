@@ -550,10 +550,10 @@ class Session(object):
             # not doing sub-sample here, will do later with bool AND
             x = sample.get_channel_events(x_index, source='raw', subsample=False)
 
-        if y_comp_ref is not None and x_comp_ref != 'uncompensated':
+        if y_comp_ref is not None and y_comp_ref != 'uncompensated':
             # this is likely unnecessary as the x & y comp should be the same,
             # but requires more conditionals to cover
-            y_comp = self.gating_strategy.get_comp_matrix(x_dim.compensation_ref)
+            y_comp = self.gating_strategy.get_comp_matrix(y_dim.compensation_ref)
             comp_events = y_comp.apply(sample)
             y = comp_events[:, y_index]
         else:
