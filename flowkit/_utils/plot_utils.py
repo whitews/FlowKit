@@ -6,7 +6,9 @@ from scipy.interpolate import interpn
 import colorsys
 from matplotlib import cm, colors
 from bokeh.plotting import figure
-from bokeh.models import Ellipse, Patch, Span, BoxAnnotation, Rect, ColumnDataSource
+from bokeh.models import Ellipse, Patch, Span, BoxAnnotation, Rect, ColumnDataSource, Title
+from .._models import gates, dimension
+from .._models.gating_strategy import GatingStrategy
 
 
 line_color = "#1F77B4"
@@ -453,6 +455,250 @@ def plot_scatter(
         fill_color=z_colors,
         fill_alpha=fill_alpha,
         line_color=None
+    )
+
+    return p
+
+def plot_gate(
+        gate_id,
+        gating_strategy: GatingStrategy,
+        sample,
+        subsample_count=10000,
+        random_seed=1,
+        event_mask=None,
+        x_min=None,
+        x_max=None,
+        y_min=None,
+        y_max=None,
+        color_density=True,
+        bin_width=4
+):
+    """
+    Returns an interactive plot for the specified gate. The type of plot is
+    determined by the number of dimensions used to define the gate: single
+    dimension gates will be histograms, 2-D gates will be returned as a
+    scatter plot.
+
+    :param gate_id: tuple of gate name and gate path (also a tuple)
+    :param gating_strategy: GatingStrategy containing gate_id
+    :param sample: Sample instance to plot
+    :param subsample_count: Number of events to use as a sub-sample. If the number of
+        events in the Sample is less than the requested sub-sample count, then the
+        maximum number of available events is used for the sub-sample.
+    :param random_seed: Random seed used for sub-sampling events
+    :param event_mask: Boolean array of events to plot (i.e. parent gate event membership)
+    :param x_min: Lower bound of x-axis. If None, channel's min value will
+        be used with some padding to keep events off the edge of the plot.
+    :param x_max: Upper bound of x-axis. If None, channel's max value will
+        be used with some padding to keep events off the edge of the plot.
+    :param y_min: Lower bound of y-axis. If None, channel's min value will
+        be used with some padding to keep events off the edge of the plot.
+    :param y_max: Upper bound of y-axis. If None, channel's max value will
+        be used with some padding to keep events off the edge of the plot.
+    :param color_density: Whether to color the events by density, similar
+        to a heat map. Default is True.
+    :param bin_width: Bin size to use for the color density, in units of
+        event point size. Larger values produce smoother gradients.
+        Default is 4 for a 4x4 grid size.
+    :return: A Bokeh Figure object containing the interactive scatter plot.
+    """
+    (gate_name, gate_path) = gate_id
+    sample_id = sample.id
+    gate = gating_strategy.get_gate(gate_name, gate_path=gate_path, sample_id=sample_id)
+
+    # check for a boolean gate, there's no reasonable way to plot these
+    if isinstance(gate, gates.BooleanGate):
+        raise TypeError("Plotting Boolean gates is not allowed (gate %s)" % gate.gate_name)
+
+    dim_ids_ordered = []
+    dim_is_ratio = []
+    dim_comp_refs = []
+    dim_min = []
+    dim_max = []
+    for i, dim in enumerate(gate.dimensions):
+        if isinstance(dim, dimension.RatioDimension):
+            dim_ids_ordered.append(dim.ratio_ref)
+            tmp_dim_min = dim.min
+            tmp_dim_max = dim.max
+            is_ratio = True
+        elif isinstance(dim, dimension.QuadrantDivider):
+            dim_ids_ordered.append(dim.dimension_ref)
+            tmp_dim_min = None
+            tmp_dim_max = None
+            is_ratio = False
+        else:
+            dim_ids_ordered.append(dim.id)
+            tmp_dim_min = dim.min
+            tmp_dim_max = dim.max
+            is_ratio = False
+
+        dim_min.append(tmp_dim_min)
+        dim_max.append(tmp_dim_max)
+        dim_is_ratio.append(is_ratio)
+        dim_comp_refs.append(dim.compensation_ref)
+
+    # dim count determines if we need a histogram, scatter, or multi-scatter
+    dim_count = len(dim_ids_ordered)
+    if dim_count == 1:
+        gate_type = 'hist'
+    elif dim_count == 2:
+        gate_type = 'scatter'
+    elif dim_count > 2:
+        raise NotImplementedError("Plotting of gates with >2 dimensions is not supported")
+    else:
+        # there are no dimensions
+        raise ValueError("Gate %s appears to not reference any dimensions" % gate_name)
+
+    # Apply requested subsampling
+    sample.subsample_events(subsample_count=subsample_count, random_seed=random_seed)
+    # noinspection PyProtectedMember
+    events = gating_strategy._preprocess_sample_events(
+        sample,
+        gate
+    )
+
+    # Use event mask, if given
+    if event_mask is not None:
+        is_subsample = np.zeros(sample.event_count, dtype=bool)
+        is_subsample[sample.subsample_indices] = True
+        idx_to_plot = np.logical_and(event_mask, is_subsample)
+    else:
+        idx_to_plot = sample.subsample_indices
+
+    x = events.loc[idx_to_plot, dim_ids_ordered[0]].values
+
+    dim_ids = []
+
+    if dim_is_ratio[0]:
+        dim_ids.append(dim_ids_ordered[0])
+        x_pnn_label = None
+    else:
+        try:
+            x_index = sample.get_channel_index(dim_ids_ordered[0])
+        except ValueError:
+            # might be a label reference in the comp matrix
+            matrix = gating_strategy.get_comp_matrix(dim_comp_refs[0])
+            try:
+                matrix_dim_idx = matrix.fluorochomes.index(dim_ids_ordered[0])
+            except ValueError:
+                raise ValueError("%s not found in list of matrix fluorochromes" % dim_ids_ordered[0])
+            detector = matrix.detectors[matrix_dim_idx]
+            x_index = sample.get_channel_index(detector)
+
+        x_pnn_label = sample.pnn_labels[x_index]
+
+        if sample.pns_labels[x_index] != '':
+            dim_ids.append('%s (%s)' % (sample.pns_labels[x_index], x_pnn_label))
+        else:
+            dim_ids.append(sample.pnn_labels[x_index])
+
+    y_pnn_label = None
+
+    if dim_count > 1:
+        if dim_is_ratio[1]:
+            dim_ids.append(dim_ids_ordered[1])
+
+        else:
+            try:
+                y_index = sample.get_channel_index(dim_ids_ordered[1])
+            except ValueError:
+                # might be a label reference in the comp matrix
+                matrix = gating_strategy.get_comp_matrix(dim_comp_refs[1])
+                try:
+                    matrix_dim_idx = matrix.fluorochomes.index(dim_ids_ordered[1])
+                except ValueError:
+                    raise ValueError("%s not found in list of matrix fluorochromes" % dim_ids_ordered[1])
+                detector = matrix.detectors[matrix_dim_idx]
+                y_index = sample.get_channel_index(detector)
+
+            y_pnn_label = sample.pnn_labels[y_index]
+
+            if sample.pns_labels[y_index] != '':
+                dim_ids.append('%s (%s)' % (sample.pns_labels[y_index], y_pnn_label))
+            else:
+                dim_ids.append(sample.pnn_labels[y_index])
+
+    if gate_type == 'scatter':
+        y = events.loc[idx_to_plot, dim_ids_ordered[1]].values
+
+        p = plot_scatter(
+            x,
+            y,
+            dim_ids,
+            x_min=x_min,
+            x_max=x_max,
+            y_min=y_min,
+            y_max=y_max,
+            color_density=color_density,
+            bin_width=bin_width
+        )
+    elif gate_type == 'hist':
+        p = plot_histogram(x, dim_ids[0])
+    else:
+        raise NotImplementedError("Only histograms and scatter plots are supported in this version of FlowKit")
+
+    if isinstance(gate, gates.PolygonGate):
+        source, glyph = render_polygon(gate.vertices)
+        p.add_glyph(source, glyph)
+    elif isinstance(gate, gates.EllipsoidGate):
+        ellipse = render_ellipse(
+            gate.coordinates[0],
+            gate.coordinates[1],
+            gate.covariance_matrix,
+            gate.distance_square
+        )
+        p.add_glyph(ellipse)
+    elif isinstance(gate, gates.RectangleGate):
+        # rectangle gates in GatingML may not actually be rectangles, as the min/max for the dimensions
+        # are options. So, if any of the dim min/max values are missing it is essentially a set of ranges.
+
+        if None in dim_min or None in dim_max or dim_count == 1:
+            renderers = render_ranges(dim_min, dim_max)
+
+            p.renderers.extend(renderers)
+        else:
+            # a true rectangle
+            rect = render_rectangle(dim_min, dim_max)
+            p.add_glyph(rect)
+    elif isinstance(gate, gates.QuadrantGate):
+        x_locations = []
+        y_locations = []
+
+        for div in gate.dimensions:
+            if div.dimension_ref == x_pnn_label:
+                x_locations.extend(div.values)
+            elif div.dimension_ref == y_pnn_label and y_pnn_label is not None:
+                y_locations.extend(div.values)
+
+        renderers = render_dividers(x_locations, y_locations)
+        p.renderers.extend(renderers)
+    else:
+        raise NotImplementedError(
+            "Plotting of %s gates is not supported in this version of FlowKit" % gate.__class__
+        )
+
+    if gate_path is not None:
+        full_gate_path = gate_path[1:]  # omit 'root'
+        full_gate_path = full_gate_path + (gate_name,)
+        sub_title = ' > '.join(full_gate_path)
+
+        # truncate beginning of long gate paths
+        if len(sub_title) > 72:
+            sub_title = '...' + sub_title[-69:]
+        p.add_layout(
+            Title(text=sub_title, text_font_style="italic", text_font_size="1em", align='center'),
+            'above'
+        )
+    else:
+        p.add_layout(
+            Title(text=gate_name, text_font_style="italic", text_font_size="1em", align='center'),
+            'above'
+        )
+
+    plot_title = "%s" % sample_id
+    p.add_layout(
+        Title(text=plot_title, text_font_size="1.1em", align='center'),
+        'above'
     )
 
     return p
