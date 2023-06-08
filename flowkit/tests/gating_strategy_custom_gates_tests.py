@@ -23,7 +23,8 @@ class GatingStrategyCustomGatesTestCase(unittest.TestCase):
         """Test for whether a gate is a custom gate"""
         gs = copy.deepcopy(self.gs)
         sample_id = '101_DEN084Y5_15_E01_008_clean.fcs'
-        time_gate_name = 'TimeGate'
+        time_gate_name = 'TimeGate'  # we'll make a custom gate
+        cd3_gate_name = 'CD3-pos'  # has no custom gates
 
         time_gate = self.gs.get_gate(time_gate_name)
         time_gate_008 = copy.deepcopy(time_gate)
@@ -34,11 +35,13 @@ class GatingStrategyCustomGatesTestCase(unittest.TestCase):
 
         gs.add_gate(time_gate_008, ('root',), sample_id=sample_id)
 
-        not_custom_gate = gs.is_custom_gate(time_gate_name)
-        is_custom_gate = gs.is_custom_gate(time_gate_name, sample_id=sample_id)
+        not_custom_gate = gs.is_custom_gate('some_other_id', time_gate_name)
+        is_custom_gate = gs.is_custom_gate(sample_id, time_gate_name)
+        also_not_custom_gate = gs.is_custom_gate(sample_id, cd3_gate_name)
 
         self.assertTrue(is_custom_gate)
         self.assertFalse(not_custom_gate)
+        self.assertFalse(also_not_custom_gate)
 
     def test_get_custom_gate(self):
         """Test get_gate for a custom gate"""
