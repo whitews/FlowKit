@@ -275,6 +275,12 @@ class SampleTestCase(unittest.TestCase):
 
         self.assertRaises(AttributeError, sample.get_events, source='xform')
 
+    def test_get_events_invalid_source_raises(self):
+        sample = test_comp_sample_uncomp
+
+        # make up an invalid source type
+        self.assertRaises(ValueError, sample.get_events, source='major')
+
     @staticmethod
     def test_get_transformed_events_exclude_scatter():
         sample = copy.deepcopy(test_comp_sample)
