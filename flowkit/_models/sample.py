@@ -21,6 +21,7 @@ from .._models.transforms import _transforms
 # noinspection PyProtectedMember
 from .._models.transforms._matrix import Matrix
 from .._utils import plot_utils
+from ..exceptions import FlowKitException
 
 
 @total_ordering
@@ -904,8 +905,13 @@ class Sample(object):
         y = self.get_channel_events(y_index, source=source, subsample=subsample)
         if highlight_mask is not None and subsample:
             highlight_mask = highlight_mask[self.subsample_indices]
-        if event_mask is not None and subsample:
-            event_mask = event_mask[self.subsample_indices]
+        if event_mask is not None:
+            if subsample:
+               event_mask = event_mask[self.subsample_indices]
+
+            # Verify event_mask has events to show
+            if event_mask.sum() ==0:
+                raise FlowKitException("There are no events to plot for the specified options")
 
         dim_ids = []
 
