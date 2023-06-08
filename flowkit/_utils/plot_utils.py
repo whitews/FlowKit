@@ -320,7 +320,7 @@ def plot_scatter(
         y_max=None,
         color_density=True,
         bin_width=4,
-        highlight_indices=None
+        highlight_mask=None
 ):
     """
     Creates a Bokeh scatter plot from the two 1-D data arrays.
@@ -341,7 +341,7 @@ def plot_scatter(
     :param bin_width: Bin size to use for the color density, in units of
         event point size. Larger values produce smoother gradients.
         Default is 4 for a 4x4 grid size.
-    :param highlight_indices: Boolean array of event indices to highlight
+    :param highlight_mask: Boolean array of event indices to highlight
         in color. Non-highlighted events will be light grey.
     :return: A Bokeh Figure object containing the interactive scatter plot.
     """
@@ -409,9 +409,9 @@ def plot_scatter(
         # color display
         idx = z.argsort()
         x, y, z = x[idx], y[idx], z[idx]
-        if highlight_indices is not None:
+        if highlight_mask is not None:
             # re-order the highlight indices to match
-            highlight_indices = highlight_indices[idx]
+            highlight_mask = highlight_mask[idx]
     else:
         z = np.zeros(len(x))
 
@@ -420,14 +420,14 @@ def plot_scatter(
         "#%02x%02x%02x" % (int(c[0] * 255), int(c[1] * 255), int(c[2] * 255)) for c in colors_array
     ])
 
-    if highlight_indices is not None:
-        z_colors[~highlight_indices] = "#d3d3d3"
+    if highlight_mask is not None:
+        z_colors[~highlight_mask] = "#d3d3d3"
         fill_alpha = np.zeros(len(z_colors))
-        fill_alpha[~highlight_indices] = 0.3
-        fill_alpha[highlight_indices] = 0.4
+        fill_alpha[~highlight_mask] = 0.3
+        fill_alpha[highlight_mask] = 0.4
 
-        highlight_idx = np.flatnonzero(highlight_indices)
-        non_light_idx = np.flatnonzero(~highlight_indices)
+        highlight_idx = np.flatnonzero(highlight_mask)
+        non_light_idx = np.flatnonzero(~highlight_mask)
         final_idx = np.concatenate([non_light_idx, highlight_idx])
 
         x = x[final_idx]

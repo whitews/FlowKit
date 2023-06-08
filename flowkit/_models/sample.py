@@ -875,7 +875,7 @@ class Sample(object):
             subsample=True,
             color_density=True,
             bin_width=4,
-            highlight_indices=None,
+            highlight_mask=None,
             x_min=None,
             x_max=None,
             y_min=None,
@@ -898,7 +898,7 @@ class Sample(object):
         :param bin_width: Bin size to use for the color density, in units of
             event point size. Larger values produce smoother gradients.
             Default is 4 for a 4x4 grid size.
-        :param highlight_indices: Boolean array of event indices to highlight
+        :param highlight_mask: Boolean array of event indices to highlight
             in color. Non-highlighted events will be light grey.
         :param x_min: Lower bound of x-axis. If None, channel's min value will
             be used with some padding to keep events off the edge of the plot.
@@ -915,8 +915,8 @@ class Sample(object):
 
         x = self.get_channel_events(x_index, source=source, subsample=subsample)
         y = self.get_channel_events(y_index, source=source, subsample=subsample)
-        if highlight_indices is not None and subsample:
-            highlight_indices = highlight_indices[self.subsample_indices]
+        if highlight_mask is not None and subsample:
+            highlight_mask = highlight_mask[self.subsample_indices]
 
         dim_ids = []
 
@@ -940,7 +940,7 @@ class Sample(object):
             y_max=y_max,
             color_density=color_density,
             bin_width=bin_width,
-            highlight_indices=highlight_indices
+            highlight_mask=highlight_mask
         )
 
         p.title = Title(text=self.id, align='center')
