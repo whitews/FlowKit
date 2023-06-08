@@ -510,13 +510,11 @@ class Sample(object):
         """
         return self.metadata
 
-    def _get_orig_events(self, subsample=False):
+    def _get_orig_events(self):
         """
         Returns 'original' events, i.e. not pre-processed, compensated,
         or transformed.
 
-        :param subsample: Whether to return all events or just the sub-sampled
-            events. Default is False (all events)
         :return: NumPy array of original events
         """
         if self._orig_events is None:
@@ -525,31 +523,21 @@ class Sample(object):
                 "Sample instance with cache_original_events=True"
             )
 
-        if subsample:
-            return self._orig_events[self.subsample_indices]
-        else:
-            return self._orig_events
+        return self._orig_events
 
-    def _get_raw_events(self, subsample=False):
+    def _get_raw_events(self):
         """
         Returns 'raw' events that have been pre-processed to adjust for channel
         gain and lin/log display, but have not been compensated or transformed.
 
-        :param subsample: Whether to return all events or just the sub-sampled
-            events. Default is False (all events)
         :return: NumPy array of raw events
         """
-        if subsample:
-            return self._raw_events[self.subsample_indices]
-        else:
-            return self._raw_events
+        return self._raw_events
 
-    def _get_comp_events(self, subsample=False):
+    def _get_comp_events(self):
         """
         Returns compensated events, (not transformed)
 
-        :param subsample: Whether to return all events or just the sub-sampled
-            events. Default is False (all events)
         :return: NumPy array of compensated events or None if no compensation
             matrix has been applied.
         """
@@ -559,18 +547,13 @@ class Sample(object):
                 "Call a apply_compensation method prior to retrieving compensated events."
             )
 
-        if subsample:
-            return self._comp_events[self.subsample_indices]
-        else:
-            return self._comp_events
+        return self._comp_events
 
-    def _get_transformed_events(self, subsample=False):
+    def _get_transformed_events(self):
         """
         Returns transformed events. Note, if a compensation matrix has been
         applied then the events returned will be compensated and transformed.
 
-        :param subsample: Whether to return all events or just the sub-sampled
-            events. Default is False (all events)
         :return: NumPy array of transformed events or None if no transform
             has been applied.
         """
@@ -580,10 +563,7 @@ class Sample(object):
                 "Call a transform method prior to retrieving transformed events."
             )
 
-        if subsample:
-            return self._transformed_events[self.subsample_indices]
-        else:
-            return self._transformed_events
+        return self._transformed_events
 
     def get_events(self, source='xform', subsample=False):
         """
@@ -600,15 +580,18 @@ class Sample(object):
         :return: NumPy array of event data
         """
         if source == 'xform':
-            events = self._get_transformed_events(subsample=subsample)
+            events = self._get_transformed_events()
         elif source == 'comp':
-            events = self._get_comp_events(subsample=subsample)
+            events = self._get_comp_events()
         elif source == 'raw':
-            events = self._get_raw_events(subsample=subsample)
+            events = self._get_raw_events()
         elif source == 'orig':
-            events = self._get_orig_events(subsample=subsample)
+            events = self._get_orig_events()
         else:
             raise ValueError("source must be one of 'orig', 'raw', 'comp', or 'xform'")
+        
+        if subsample:
+            events = events[self.subsample_indices]
 
         return events
 
