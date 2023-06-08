@@ -607,6 +607,7 @@ class Workspace(object):
             x_label,
             y_label,
             gate_name=None,
+            gate_path=None,
             subsample_count=10000,
             random_seed=1,
             color_density=True,
@@ -623,6 +624,8 @@ class Workspace(object):
         :param x_label: channel label (PnN) to use for the x-axis data
         :param y_label: channel label (PnN) to use for the y-axis data
         :param gate_name: Gate name to filter events (only events within the given gate will be plotted)
+        :param gate_path: tuple of gate names for full set of gate ancestors.
+            Required if gate_name is ambiguous
         :param subsample_count: Number of events to use as a sub-sample. If the number of
             events in the Sample is less than the requested sub-sample count, then the
             maximum number of available events is used for the sub-sample.
@@ -671,7 +674,7 @@ class Workspace(object):
 
         if gate_name is not None:
             gate_results = self.get_gating_results(sample_id=sample_id)
-            is_gate_event = gate_results.get_gate_membership(gate_name)
+            is_gate_event = gate_results.get_gate_membership(gate_name, gate_path)
         else:
             is_gate_event = np.ones(sample.event_count, dtype=bool)
 

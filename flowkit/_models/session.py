@@ -10,7 +10,7 @@ from bokeh.models import Title
 from .._conf import debug
 from .._models.gating_strategy import GatingStrategy
 from .._utils import plot_utils, xml_utils, gml_write, wsp_utils, sample_utils, gating_utils
-from ..exceptions import GateReferenceError
+from ..exceptions import FlowKitException, GateReferenceError
 import warnings
 
 
@@ -494,6 +494,7 @@ class Session(object):
             x_dim,
             y_dim,
             gate_name=None,
+            gate_path=None,
             subsample_count=10000,
             random_seed=1,
             color_density=True,
@@ -510,6 +511,8 @@ class Session(object):
         :param x_dim:  Dimension instance to use for the x-axis data
         :param y_dim: Dimension instance to use for the y-axis data
         :param gate_name: Gate name to filter events (only events within the given gate will be plotted)
+        :param gate_path: tuple of gate names for full set of gate ancestors.
+            Required if gate_name is ambiguous
         :param subsample_count: Number of events to use as a sub-sample. If the number of
             events in the Sample is less than the requested sub-sample count, then the
             maximum number of available events is used for the sub-sample.
@@ -569,7 +572,7 @@ class Session(object):
 
         if gate_name is not None:
             gate_results = self.get_gating_results(sample_id=sample_id)
-            is_gate_event = gate_results.get_gate_membership(gate_name)
+            is_gate_event = gate_results.get_gate_membership(gate_name, gate_path)
         else:
             is_gate_event = np.ones(sample.event_count, dtype=bool)
 
@@ -577,6 +580,11 @@ class Session(object):
         is_subsample[sample.subsample_indices] = True
 
         idx_to_plot = np.logical_and(is_gate_event, is_subsample)
+
+        # check if there are any events to plot
+        if idx_to_plot.sum() == 0:
+            raise FlowKitException("There are no events to plot for the specified options")
+
         x = x[idx_to_plot]
         y = y[idx_to_plot]
 
