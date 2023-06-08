@@ -565,10 +565,10 @@ class Session(object):
 
         if x_xform_ref is not None:
             x_xform = self.gating_strategy.get_transform(x_xform_ref)
-            x = x_xform.apply(x.reshape(-1, 1))[:, 0]
+            x = x_xform.apply(x)
         if y_xform_ref is not None:
             y_xform = self.gating_strategy.get_transform(y_xform_ref)
-            y = y_xform.apply(y.reshape(-1, 1))[:, 0]
+            y = y_xform.apply(y)
 
         if gate_name is not None:
             gate_results = self.get_gating_results(sample_id=sample_id)
