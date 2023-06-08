@@ -858,6 +858,7 @@ class Sample(object):
             subsample=True,
             color_density=True,
             bin_width=4,
+            event_mask=None,
             highlight_mask=None,
             x_min=None,
             x_max=None,
@@ -881,6 +882,9 @@ class Sample(object):
         :param bin_width: Bin size to use for the color density, in units of
             event point size. Larger values produce smoother gradients.
             Default is 4 for a 4x4 grid size.
+        :param event_mask: Boolean array of events to plot. Takes precedence
+            over highlight_mask (i.e. events marked False in event_mask will
+            never be plotted).
         :param highlight_mask: Boolean array of event indices to highlight
             in color. Non-highlighted events will be light grey.
         :param x_min: Lower bound of x-axis. If None, channel's min value will
@@ -900,6 +904,8 @@ class Sample(object):
         y = self.get_channel_events(y_index, source=source, subsample=subsample)
         if highlight_mask is not None and subsample:
             highlight_mask = highlight_mask[self.subsample_indices]
+        if event_mask is not None and subsample:
+            event_mask = event_mask[self.subsample_indices]
 
         dim_ids = []
 
@@ -917,13 +923,14 @@ class Sample(object):
             x,
             y,
             dim_ids,
+            event_mask=event_mask,
+            highlight_mask=highlight_mask,
             x_min=x_min,
             x_max=x_max,
             y_min=y_min,
             y_max=y_max,
             color_density=color_density,
-            bin_width=bin_width,
-            highlight_mask=highlight_mask
+            bin_width=bin_width
         )
 
         p.title = Title(text=self.id, align='center')
@@ -935,6 +942,8 @@ class Sample(object):
             channel_labels_or_numbers=None,
             source='xform',
             subsample=True,
+            event_mask=None,
+            highlight_mask=None,
             color_density=False,
             plot_height=256,
             plot_width=256
@@ -951,6 +960,11 @@ class Sample(object):
         :param subsample: Whether to use all events for plotting or just the
             sub-sampled events. Default is True (sub-sampled events). Plotting
             sub-sampled events is much faster.
+        :param event_mask: Boolean array of events to plot. Takes precedence
+            over highlight_mask (i.e. events marked False in event_mask will
+            never be plotted).
+        :param highlight_mask: Boolean array of event indices to highlight
+            in color. Non-highlighted events will be light grey.
         :param color_density: Whether to color the events by density, similar
             to a heat map. Default is False.
         :param plot_height: Height of plot in pixels (screen units)
@@ -984,6 +998,8 @@ class Sample(object):
                     channel_y,
                     source=source,
                     subsample=subsample,
+                    event_mask=event_mask,
+                    highlight_mask=highlight_mask,
                     color_density=color_density
                 )
                 plot.height = plot_height
