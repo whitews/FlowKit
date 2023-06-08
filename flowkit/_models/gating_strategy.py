@@ -113,14 +113,14 @@ class GatingStrategy(object):
             GateNode(gate, parent_node)
             self._rebuild_dag()
 
-    def is_custom_gate(self, gate_name, gate_path=None, sample_id=None):
+    def is_custom_gate(self, sample_id, gate_name, gate_path=None):
         """
         Determine if a custom gate exists for a sample ID.
 
+        :param sample_id: Sample ID string
         :param gate_name: text string of a gate name
         :param gate_path: complete ordered tuple of gate names for unique set of gate ancestors.
             Required if gate_name is ambiguous
-        :param sample_id: Sample ID string
         :return: Boolean value for whether the sample ID has a custom gate
         """
         node = self._get_gate_node(gate_name, gate_path)
