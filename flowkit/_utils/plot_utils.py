@@ -314,13 +314,14 @@ def plot_scatter(
         x,
         y,
         dim_ids=None,
+        event_mask=None,
+        highlight_mask=None,
         x_min=None,
         x_max=None,
         y_min=None,
         y_max=None,
         color_density=True,
-        bin_width=4,
-        highlight_mask=None
+        bin_width=4
 ):
     """
     Creates a Bokeh scatter plot from the two 1-D data arrays.
@@ -328,6 +329,11 @@ def plot_scatter(
     :param x: 1-D array of data values for the x-axis
     :param y: 1-D array of data values for the y-axis
     :param dim_ids: Labels to use for the x-axis & y-axis, respectively
+    :param event_mask: Boolean array of events to plot. Takes precedence
+            over highlight_mask (i.e. events marked False in event_mask will
+            never be plotted).
+    :param highlight_mask: Boolean array of event indices to highlight
+        in color. Non-highlighted events will be light grey.
     :param x_min: Lower bound of x-axis. If None, channel's min value will
         be used with some padding to keep events off the edge of the plot.
     :param x_max: Upper bound of x-axis. If None, channel's max value will
@@ -341,10 +347,18 @@ def plot_scatter(
     :param bin_width: Bin size to use for the color density, in units of
         event point size. Larger values produce smoother gradients.
         Default is 4 for a 4x4 grid size.
-    :param highlight_mask: Boolean array of event indices to highlight
-        in color. Non-highlighted events will be light grey.
     :return: A Bokeh Figure object containing the interactive scatter plot.
     """
+    # before anything, check for event_mask
+    if event_mask is not None:
+        # filter x & y
+        x = x[event_mask]
+        y = y[event_mask]
+
+        # sync highlight_mask if given
+        if highlight_mask is not None:
+            highlight_mask = highlight_mask[event_mask]
+
     if len(x) > 0:
         x_min, x_max = _calculate_extent(x, d_min=x_min, d_max=x_max, pad=0.02)
     if len(y) > 0:
