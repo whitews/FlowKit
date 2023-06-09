@@ -640,7 +640,8 @@ def plot_gate(
         p = plot_scatter(
             x,
             y,
-            dim_ids,
+            x_label=dim_ids[0],
+            y_label=dim_ids[1],
             x_min=x_min,
             x_max=x_max,
             y_min=y_min,
