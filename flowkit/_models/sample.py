@@ -913,22 +913,21 @@ class Sample(object):
             if event_mask.sum() ==0:
                 raise FlowKitException("There are no events to plot for the specified options")
 
-        dim_ids = []
-
         if self.pns_labels[x_index] != '':
-            dim_ids.append('%s (%s)' % (self.pns_labels[x_index], self.pnn_labels[x_index]))
+            x_label = '%s (%s)' % (self.pns_labels[x_index], self.pnn_labels[x_index])
         else:
-            dim_ids.append(self.pnn_labels[x_index])
+            x_label = self.pnn_labels[x_index]
 
         if self.pns_labels[y_index] != '':
-            dim_ids.append('%s (%s)' % (self.pns_labels[y_index], self.pnn_labels[y_index]))
+            y_label = '%s (%s)' % (self.pns_labels[y_index], self.pnn_labels[y_index])
         else:
-            dim_ids.append(self.pnn_labels[y_index])
+            y_label = self.pnn_labels[y_index]
 
         p = plot_utils.plot_scatter(
             x,
             y,
-            dim_ids,
+            x_label=x_label,
+            y_label=y_label,
             event_mask=event_mask,
             highlight_mask=highlight_mask,
             x_min=x_min,

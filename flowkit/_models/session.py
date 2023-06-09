@@ -536,14 +536,21 @@ class Session(object):
         sample = self.get_sample(sample_id)
         sample.subsample_events(subsample_count=subsample_count, random_seed=random_seed)
 
+        # Factoring out this plot_scatter to common code shared by
+        # the Sample & Workspace class is tricky because GatingML
+        # technically allows mixed spill matrices for 2 channels
+        # in the same sample. Further, a simple difference of comp
+        # reference strings doesn't mean there are mixed matrices,
+        # as a scatter channel can have the value 'uncompensated'
+        # and a fluoro channel 'some_spill_id'.
+        x_comp_ref = x_dim.compensation_ref
+        y_comp_ref = y_dim.compensation_ref
+
+        x_xform_ref = x_dim.transformation_ref
+        y_xform_ref = y_dim.transformation_ref
+
         x_index = sample.get_channel_index(x_dim.id)
         y_index = sample.get_channel_index(y_dim.id)
-
-        x_comp_ref = x_dim.compensation_ref
-        x_xform_ref = x_dim.transformation_ref
-
-        y_comp_ref = y_dim.compensation_ref
-        y_xform_ref = y_dim.transformation_ref
 
         if x_comp_ref is not None and x_comp_ref != 'uncompensated':
             x_comp = self.gating_strategy.get_comp_matrix(x_dim.compensation_ref)
@@ -554,8 +561,8 @@ class Session(object):
             x = sample.get_channel_events(x_index, source='raw', subsample=False)
 
         if y_comp_ref is not None and y_comp_ref != 'uncompensated':
-            # this is likely unnecessary as the x & y comp should be the same,
-            # but requires more conditionals to cover
+            # this is likely unnecessary as the x & y comp should be the same
+            # for fluoro channels, but requires more conditionals to cover
             y_comp = self.gating_strategy.get_comp_matrix(y_dim.compensation_ref)
             comp_events = y_comp.apply(sample)
             y = comp_events[:, y_index]
@@ -588,22 +595,21 @@ class Session(object):
         x = x[idx_to_plot]
         y = y[idx_to_plot]
 
-        dim_ids = []
-
         if sample.pns_labels[x_index] != '':
-            dim_ids.append('%s (%s)' % (sample.pns_labels[x_index], sample.pnn_labels[x_index]))
+            x_label = '%s (%s)' % (sample.pns_labels[x_index], sample.pnn_labels[x_index])
         else:
-            dim_ids.append(sample.pnn_labels[x_index])
+            x_label = sample.pnn_labels[x_index]
 
         if sample.pns_labels[y_index] != '':
-            dim_ids.append('%s (%s)' % (sample.pns_labels[y_index], sample.pnn_labels[y_index]))
+            y_label = '%s (%s)' % (sample.pns_labels[y_index], sample.pnn_labels[y_index])
         else:
-            dim_ids.append(sample.pnn_labels[y_index])
+            y_label = sample.pnn_labels[y_index]
 
         p = plot_utils.plot_scatter(
             x,
             y,
-            dim_ids,
+            x_label=x_label,
+            y_label=y_label,
             x_min=x_min,
             x_max=x_max,
             y_min=y_min,

@@ -690,22 +690,21 @@ class Workspace(object):
         x = x[idx_to_plot]
         y = y[idx_to_plot]
 
-        dim_ids = []
-
         if sample.pns_labels[x_index] != '':
-            dim_ids.append('%s (%s)' % (sample.pns_labels[x_index], sample.pnn_labels[x_index]))
+            x_label = '%s (%s)' % (sample.pns_labels[x_index], sample.pnn_labels[x_index])
         else:
-            dim_ids.append(sample.pnn_labels[x_index])
+            x_label = sample.pnn_labels[x_index]
 
         if sample.pns_labels[y_index] != '':
-            dim_ids.append('%s (%s)' % (sample.pns_labels[y_index], sample.pnn_labels[y_index]))
+            y_label = '%s (%s)' % (sample.pns_labels[y_index], sample.pnn_labels[y_index])
         else:
-            dim_ids.append(sample.pnn_labels[y_index])
+            y_label = sample.pnn_labels[y_index]
 
         p = plot_utils.plot_scatter(
             x,
             y,
-            dim_ids,
+            x_label=x_label,
+            y_label=y_label,
             x_min=x_min,
             x_max=x_max,
             y_min=y_min,

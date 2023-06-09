@@ -313,7 +313,8 @@ def plot_histogram(x, x_label='x', bins=None):
 def plot_scatter(
         x,
         y,
-        dim_ids=None,
+        x_label=None,
+        y_label=None,
         event_mask=None,
         highlight_mask=None,
         x_min=None,
@@ -328,7 +329,8 @@ def plot_scatter(
 
     :param x: 1-D array of data values for the x-axis
     :param y: 1-D array of data values for the y-axis
-    :param dim_ids: Labels to use for the x-axis & y-axis, respectively
+    :param x_label: Label for the x-axis
+    :param y_label: Labelfor the y-axis
     :param event_mask: Boolean array of events to plot. Takes precedence
             over highlight_mask (i.e. events marked False in event_mask will
             never be plotted).
@@ -458,8 +460,8 @@ def plot_scatter(
         y_range=(y_min, y_max)
     )
 
-    p.xaxis.axis_label = dim_ids[0]
-    p.yaxis.axis_label = dim_ids[1]
+    p.xaxis.axis_label = x_label
+    p.yaxis.axis_label = y_label
 
     p.scatter(
         x,
