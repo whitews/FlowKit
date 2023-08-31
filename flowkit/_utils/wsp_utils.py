@@ -442,6 +442,12 @@ def _parse_wsp_samples(sample_els, ns_map, gating_ns, transform_ns, data_type_ns
         sample_name = sample_node_el.attrib['name']
         sample_id = sample_node_el.attrib['sampleID']
 
+        # Get the sample DataSet parameters, and form there get the URI from the FCS file
+        dataset_el = sample_el.find('DataSet', ns_map)
+        sample_uri = None
+        if 'uri' in dataset_el.attrib.keys():
+            sample_uri = dataset_el.attrib['uri']
+
         # It appears there is only a single set of xforms per sample, one for each channel.
         # And, the xforms have no IDs. We'll extract it and give it IDs based on ???
         sample_xform_lut = _parse_wsp_transforms(transforms_el, transform_ns, data_type_ns)
@@ -471,6 +477,7 @@ def _parse_wsp_samples(sample_els, ns_map, gating_ns, transform_ns, data_type_ns
         # including any custom gates (ones with empty string owning groups).
         wsp_samples[sample_id] = {
             'sample_name': sample_name,
+            'sample_uri': sample_uri,
             'sample_gates': sample_gates,
             'custom_gate_ids': set(),
             'transforms': sample_xform_lut,
@@ -604,6 +611,8 @@ def parse_wsp(workspace_file_or_path, ignore_transforms=False):
             continue
 
         sample_name = sample_dict['sample_name']
+        sample_uri = sample_dict['sample_uri']
+
         sample_gating_strategy = GatingStrategy()
 
         # Add sample's comp matrix & transforms to GatingStrategy
@@ -634,7 +643,8 @@ def parse_wsp(workspace_file_or_path, ignore_transforms=False):
             'compensation': sample_dict['comp'],
             'transforms': sample_dict['transforms'],
             'custom_gate_ids': sample_dict['custom_gate_ids'],
-            'gating_strategy': sample_gating_strategy
+            'gating_strategy': sample_gating_strategy,
+            'sample_uri': sample_uri
         }
 
         processed_samples[sample_name] = processed_sample_data
