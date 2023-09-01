@@ -90,6 +90,9 @@ class Workspace(object):
                 # Read in the sample files
                 sample_filedata = sample_utils.load_samples(path)[0]
 
+                # Update the ID of the loaded data (otherwise analysis breaks)
+                sample_filedata.id = sample_name
+
                 tmp_sample_lut[sample_name] = sample_filedata
 
         # save group sample membership, we'll filter by loaded samples next
