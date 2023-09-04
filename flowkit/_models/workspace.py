@@ -108,7 +108,7 @@ class Workspace(object):
 
                     tmp_sample_lut[sample_name] = sample_filedata
                     
-                except FileNotFoundError:
+                except Exception as e:
                     warnings.warn("Sample file not found at path: {}".format(path))
 
         # save group sample membership, we'll filter by loaded samples next
