@@ -9,6 +9,7 @@ import pandas as pd
 from bokeh.models import Title
 from urllib.parse import urlparse, unquote
 from urllib.request import url2pathname
+from pathlib import Path
 from .._conf import debug
 from .._models import gates, dimension
 from .._utils import plot_utils, wsp_utils, sample_utils, gating_utils
@@ -81,10 +82,13 @@ class Workspace(object):
                 
                 path = unquote(parsed.path)
                 
+                # if the path is relative, join it with the wsp file's directory
                 if os.path.isabs(path):
                     return path
                 else:
-                    return os.path.join(os.getcwd(), path)
+                    # The relative path is relative to the wsp file's directory, so prepend that.
+                    base_path = os.path.dirname(os.path.abspath(Path(wsp_file_path)))
+                    return os.path.join(base_path, path)
         
             if fcs_samples is not None:
                 warnings.warn("When `find_fcs_files_from_wsp` is True, `fcs_samples` will be ignored.")
