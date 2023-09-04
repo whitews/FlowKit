@@ -72,6 +72,20 @@ class Workspace(object):
 
         # find samples in wsp file. in wsp_data['samples'], each item is a dict which has a key `sample_uri`
         if find_fcs_files_from_wsp:
+            def uri_to_path(uri):
+                """Convert a URI to a file path, handling both relative and absolute paths."""
+                parsed = urlparse(uri)
+                
+                if parsed.scheme not in ('file', ''):
+                    raise ValueError("Unsupported URI scheme: {}".format(parsed.scheme))
+                
+                path = unquote(parsed.path)
+                
+                if os.path.isabs(path):
+                    return path
+                else:
+                    return os.path.join(os.getcwd(), path)
+        
             if fcs_samples is not None:
                 warnings.warn("When `find_fcs_files_from_wsp` is True, `fcs_samples` will be ignored.")
 
@@ -83,9 +97,7 @@ class Workspace(object):
                 sample_uri = sample_data['sample_uri']
 
                 # Convert the URI to a path
-                parsed = urlparse(sample_uri)
-                host = "{0}{0}{mnt}{0}".format(os.path.sep, mnt=parsed.netloc)
-                path = os.path.normpath(os.path.join(host, url2pathname(unquote(parsed.path))))
+                path = uri_to_path(sample_uri)
 
                 # Read in the sample files
                 sample_filedata = sample_utils.load_samples(path)[0]
