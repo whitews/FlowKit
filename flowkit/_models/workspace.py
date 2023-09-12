@@ -3,9 +3,13 @@ Workspace class
 """
 import gc
 import copy
+import os
 import numpy as np
 import pandas as pd
 from bokeh.models import Title
+from urllib.parse import urlparse, unquote
+from urllib.request import url2pathname
+from pathlib import Path
 from .._conf import debug
 from .._utils import plot_utils, wsp_utils, sample_utils, gating_utils
 from ..exceptions import FlowKitException, GateReferenceError
@@ -26,8 +30,10 @@ class Workspace(object):
         missing FCS files (i.e. not in fcs_samples arg) will still be loaded. If False, warnings
         are issued for FCS files found in the WSP file that were not loaded in the Workspace and
         gate data for these missing files will not be retained. Default is False.
+    :param find_fcs_files_from_wsp: Controls whether to search for FCS files based on `URI` params within the FlowJo
+        workspace file.
     """
-    def __init__(self, wsp_file_path, fcs_samples=None, ignore_missing_files=False):
+    def __init__(self, wsp_file_path, fcs_samples=None, ignore_missing_files=False, find_fcs_files_from_wsp=False):
         # The sample LUT holds sample IDs (keys) only for loaded samples.
         # The values are the Sample instances
         self._sample_lut = {}
@@ -56,12 +62,57 @@ class Workspace(object):
         # makes it easier to determine which samples have
         # been analyzed.
         self._results_lut = {}
-
+        
         # load samples we were given, we'll cross-reference against wsp below
         tmp_sample_lut = {s.id: s for s in sample_utils.load_samples(fcs_samples)}
         self._sample_lut = {}
 
+
         wsp_data = wsp_utils.parse_wsp(wsp_file_path)
+
+        # find samples in wsp file. in wsp_data['samples'], each item is a dict which has a key `sample_uri`
+        if find_fcs_files_from_wsp:
+            def uri_to_path(uri):
+                """Convert a URI to a file path, handling both relative and absolute paths."""
+                parsed = urlparse(uri)
+                
+                if parsed.scheme not in ('file', ''):
+                    raise ValueError("Unsupported URI scheme: {}".format(parsed.scheme))
+                
+                path = unquote(parsed.path)
+                
+                # if the path is relative, join it with the wsp file's directory
+                if os.path.isabs(path):
+                    return path
+                else:
+                    # The relative path is relative to the wsp file's directory, so prepend that.
+                    base_path = os.path.dirname(os.path.abspath(Path(wsp_file_path)))
+                    return os.path.join(base_path, path)
+        
+            if fcs_samples is not None:
+                warnings.warn("When `find_fcs_files_from_wsp` is True, `fcs_samples` will be ignored.")
+
+            tmp_sample_lut = {}
+    
+            for sample_name in wsp_data['samples']:
+                
+                sample_data = wsp_data['samples'][sample_name]
+                sample_uri = sample_data['sample_uri']
+
+                # Convert the URI to a path
+                path = uri_to_path(sample_uri)
+
+                # Read in the sample files
+                try:
+                    sample_filedata = sample_utils.load_samples(path)[0]
+
+                    # Update the ID of the loaded data (otherwise analysis breaks)
+                    sample_filedata.id = sample_name
+
+                    tmp_sample_lut[sample_name] = sample_filedata
+                    
+                except Exception as e:
+                    warnings.warn("Sample file not found at path: {}".format(path))
 
         # save group sample membership, we'll filter by loaded samples next
         group_lut = wsp_data['groups']
