@@ -8,7 +8,6 @@ import numpy as np
 import pandas as pd
 from bokeh.models import Title
 from urllib.parse import urlparse, unquote
-from pathlib import Path
 from .._conf import debug
 from .._utils import plot_utils, wsp_utils, sample_utils, gating_utils
 from ..exceptions import FlowKitException, GateReferenceError
@@ -85,7 +84,7 @@ class Workspace(object):
                     return parsed_path
                 else:
                     # The relative path is relative to the wsp file's directory, so prepend that.
-                    base_path = os.path.dirname(os.path.abspath(Path(wsp_file_path)))
+                    base_path = os.path.dirname(os.path.abspath(wsp_file_path))
                     return os.path.join(base_path, parsed_path)
         
             if fcs_samples is not None:
