@@ -78,15 +78,15 @@ class Workspace(object):
                 if parsed.scheme not in ('file', ''):
                     raise ValueError("Unsupported URI scheme: {}".format(parsed.scheme))
                 
-                path = unquote(parsed.path)
+                parsed_path = unquote(parsed.path)
                 
                 # if the path is relative, join it with the wsp file's directory
-                if os.path.isabs(path):
-                    return path
+                if os.path.isabs(parsed_path):
+                    return parsed_path
                 else:
                     # The relative path is relative to the wsp file's directory, so prepend that.
                     base_path = os.path.dirname(os.path.abspath(Path(wsp_file_path)))
-                    return os.path.join(base_path, path)
+                    return os.path.join(base_path, parsed_path)
         
             if fcs_samples is not None:
                 warnings.warn("When `find_fcs_files_from_wsp` is True, `fcs_samples` will be ignored.")
