@@ -8,7 +8,6 @@ import numpy as np
 import pandas as pd
 from bokeh.models import Title
 from urllib.parse import urlparse, unquote
-from urllib.request import url2pathname
 from pathlib import Path
 from .._conf import debug
 from .._utils import plot_utils, wsp_utils, sample_utils, gating_utils
