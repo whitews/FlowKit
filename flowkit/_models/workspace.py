@@ -7,7 +7,6 @@ import os
 import numpy as np
 import pandas as pd
 from bokeh.models import Title
-from urllib.parse import urlparse, unquote
 from .._conf import debug
 from .._utils import plot_utils, wsp_utils, sample_utils, gating_utils
 from ..exceptions import FlowKitException, GateReferenceError
@@ -70,37 +69,20 @@ class Workspace(object):
 
         # find samples in wsp file. in wsp_data['samples'], each item is a dict which has a key `sample_uri`
         if find_fcs_files_from_wsp:
-            def uri_to_path(uri):
-                """Convert a URI to a file path, handling both relative and absolute paths."""
-                parsed = urlparse(uri)
-                
-                if parsed.scheme not in ('file', ''):
-                    raise ValueError("Unsupported URI scheme: {}".format(parsed.scheme))
-                
-                parsed_path = unquote(parsed.path)
-                
-                # if the path is relative, join it with the wsp file's directory
-                if os.path.isabs(parsed_path):
-                    return parsed_path
-                else:
-                    # The relative path is relative to the wsp file's directory, so prepend that.
-                    base_path = os.path.dirname(os.path.abspath(wsp_file_path))
-                    return os.path.join(base_path, parsed_path)
-        
             if fcs_samples is not None:
                 warnings.warn("When `find_fcs_files_from_wsp` is True, `fcs_samples` will be ignored.")
 
             tmp_sample_lut = {}
     
             for sample_name in wsp_data['samples']:
-                
                 sample_data = wsp_data['samples'][sample_name]
                 sample_uri = sample_data['sample_uri']
 
                 # Convert the URI to a path
-                path = uri_to_path(sample_uri)
+                # noinspection PyProtectedMember
+                path = wsp_utils._uri_to_path(sample_uri, wsp_file_path)
 
-                # Test whether file exists at path and if not present,
+                # Test whether file exists at path and if not present
                 # warn user with message indicating the path.
                 if not os.path.exists(path):
                     warnings.warn("Sample file not found at path: {}".format(path))

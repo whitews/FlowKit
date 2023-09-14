@@ -3,8 +3,10 @@ Utility functions related to FlowJo Workspace files (.wsp)
 """
 import copy
 import datetime
+import os
 import re
 import numpy as np
+from urllib.parse import urlparse, unquote
 from lxml import etree
 from flowio.fcs_keywords import FCS_STANDARD_KEYWORDS
 from .xml_common import find_attribute_value, _get_xml_type
@@ -32,6 +34,24 @@ wsp_gate_constructor_lut = {
     'QuadrantGate': GMLQuadrantGate,
     'BooleanGate': GMLBooleanGate
 }
+
+
+def _uri_to_path(uri, wsp_file_path):
+    """Convert a URI to a file path, handling both relative and absolute paths."""
+    parsed = urlparse(uri)
+
+    if parsed.scheme not in ('file', ''):
+        raise ValueError("Unsupported URI scheme: {}".format(parsed.scheme))
+
+    parsed_path = unquote(parsed.path)
+
+    # if the path is relative, join it with the wsp file's directory
+    if os.path.isabs(parsed_path):
+        return parsed_path
+    else:
+        # The relative path is relative to the wsp file's directory, so prepend that.
+        base_path = os.path.dirname(os.path.abspath(wsp_file_path))
+        return os.path.join(base_path, parsed_path)
 
 
 def _parse_wsp_compensation(sample_el, transform_ns, data_type_ns):
