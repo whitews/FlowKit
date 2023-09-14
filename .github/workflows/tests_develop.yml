@@ -24,7 +24,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - run: pip install numpy==1.24.2
+      - run: pip install setuptools==58.2.0
       - run: pip install coverage
       - run: pip install -r requirements.txt
 
