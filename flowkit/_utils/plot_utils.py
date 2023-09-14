@@ -307,6 +307,11 @@ def plot_histogram(x, x_label='x', bins=None):
     p.xaxis.axis_label = x_label
     p.yaxis.axis_label = 'Event Count'
 
+    # set padding to match scatter plot
+    # scatter has 0.02, but we need to account for the bar width
+    # so doubling that looks about right
+    p.x_range.range_padding = 0.04
+
     return p
 
 
