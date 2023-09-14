@@ -998,18 +998,28 @@ class Sample(object):
                 if channel_x == 'Time':
                     continue
 
-                plot = self.plot_scatter(
-                    channel_x,
-                    channel_y,
-                    source=source,
-                    subsample=subsample,
-                    event_mask=event_mask,
-                    highlight_mask=highlight_mask,
-                    color_density=color_density
-                )
+                # check if we're at the diagonal,
+                # don't plot past to avoid duplicates
+                if channel_x == channel_y:
+                    # plot histogram instead of scatter plot
+                    plot = self.plot_histogram(
+                        channel_x, source=source, subsample=subsample
+                    )
+                else:
+                    plot = self.plot_scatter(
+                        channel_x,
+                        channel_y,
+                        source=source,
+                        subsample=subsample,
+                        event_mask=event_mask,
+                        highlight_mask=highlight_mask,
+                        color_density=color_density
+                    )
+
                 plot.height = plot_height
                 plot.width = plot_width
                 row.append(plot)
+
             plots.append(row)
 
         grid = gridplot(plots)
