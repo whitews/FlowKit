@@ -24,6 +24,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
+      - run: pip install --upgrade pip
       - run: pip install coverage
       - run: pip install -r requirements.txt
 
