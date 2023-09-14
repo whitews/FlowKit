@@ -279,9 +279,9 @@ class LogicleTransform(Transform):
 
     :param transform_id: A string identifying the transform
     :param param_t: parameter for the top of the linear scale (e.g. 262144)
+    :param param_w: parameter for the approximate number of decades in the linear region
     :param param_m: parameter for the number of decades the true logarithmic scale
         approaches at the high end of the scale
-    :param param_w: parameter for the approximate number of decades in the linear region
     :param param_a: parameter for the additional number of negative decades
     """
     def __init__(
