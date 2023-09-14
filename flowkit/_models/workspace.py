@@ -100,17 +100,19 @@ class Workspace(object):
                 # Convert the URI to a path
                 path = uri_to_path(sample_uri)
 
-                # Read in the sample files
-                try:
-                    sample_filedata = sample_utils.load_samples(path)[0]
-
-                    # Update the ID of the loaded data (otherwise analysis breaks)
-                    sample_filedata.id = sample_name
-
-                    tmp_sample_lut[sample_name] = sample_filedata
-                    
-                except Exception as e:
+                # Test whether file exists at path and if not present,
+                # warn user with message indicating the path.
+                if not os.path.exists(path):
                     warnings.warn("Sample file not found at path: {}".format(path))
+                    continue
+
+                # Read in the sample file
+                sample_filedata = sample_utils.load_samples(path)[0]
+
+                # Update the ID of the loaded data (otherwise analysis breaks)
+                sample_filedata.id = sample_name
+
+                tmp_sample_lut[sample_name] = sample_filedata
 
         # save group sample membership, we'll filter by loaded samples next
         group_lut = wsp_data['groups']
