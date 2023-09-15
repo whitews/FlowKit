@@ -24,7 +24,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - run: pip install setuptools==58.2.0
+      - run: pip install --upgrade pip setuptools wheel
       - run: pip install coverage
       - run: pip install -r requirements.txt
 
