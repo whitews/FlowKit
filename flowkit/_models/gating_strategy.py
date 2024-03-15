@@ -849,7 +849,7 @@ class GatingStrategy(object):
                 continue
 
             if verbose:
-                is_custom_gate = self.is_custom_gate(g_id, g_path, sample_id)
+                is_custom_gate = self.is_custom_gate(sample_id, g_id, g_path)
                 if is_custom_gate:
                     custom_gate_str = ' [custom]'
                 else:
