@@ -64,7 +64,6 @@ class Workspace(object):
         tmp_sample_lut = {s.id: s for s in sample_utils.load_samples(fcs_samples)}
         self._sample_lut = {}
 
-
         wsp_data = wsp_utils.parse_wsp(wsp_file_path)
 
         # find samples in wsp file. in wsp_data['samples'], each item is a dict which has a key `sample_uri`

@@ -907,10 +907,10 @@ class Sample(object):
             highlight_mask = highlight_mask[self.subsample_indices]
         if event_mask is not None:
             if subsample:
-               event_mask = event_mask[self.subsample_indices]
+                event_mask = event_mask[self.subsample_indices]
 
             # Verify event_mask has events to show
-            if event_mask.sum() ==0:
+            if event_mask.sum() == 0:
                 raise FlowKitException("There are no events to plot for the specified options")
 
         if self.pns_labels[x_index] != '':
@@ -1075,7 +1075,6 @@ class Sample(object):
         if x_range is not None:
             x_range = Range1d(x_range[0], x_range[1])
             p.x_range = x_range
-
 
         return p
 

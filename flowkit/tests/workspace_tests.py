@@ -23,6 +23,7 @@ wsp_8_color_no_files = Workspace(
     ignore_missing_files=True
 )
 
+
 class WorkspaceTestCase(unittest.TestCase):
     def setUp(self):
         """

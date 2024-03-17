@@ -480,6 +480,7 @@ def plot_scatter(
 
     return p
 
+
 def plot_gate(
         gate_id,
         gating_strategy: GatingStrategy,

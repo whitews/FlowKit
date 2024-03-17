@@ -83,7 +83,6 @@ class SessionExportTestCase(unittest.TestCase):
         self.assertEqual(wsp_rect1_count, 50605)
         self.assertEqual(wsp2_rect1_count, 50605)
 
-
     def test_export_wsp(self):
         wsp_path = "data/8_color_data_set/8_color_ICS.wsp"
         sample_grp = 'DEN'
