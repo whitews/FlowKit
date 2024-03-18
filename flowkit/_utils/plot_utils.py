@@ -51,6 +51,41 @@ cm_sample = [
 
 new_jet = _generate_custom_colormap(cm_sample, cm.get_cmap('jet'))
 
+custom_heat_palette = [
+    '#000020', '#000021', '#000022', '#000023', '#000024', '#000025', '#000026', '#000027',
+    '#000028', '#000029', '#00002a', '#00002b', '#00002c', '#00002d', '#00002e', '#00002f',
+    '#000030', '#000031', '#000032', '#000033', '#000034', '#000035', '#000036', '#000037',
+    '#000038', '#00003a', '#00003c', '#00003f', '#000042', '#000045', '#000048', '#00004b',
+    '#00004e', '#000151', '#000254', '#000357', '#00045a', '#00045d', '#000560', '#000662',
+    '#000964', '#000c66', '#000f68', '#00126a', '#00166d', '#001a6f', '#001e72', '#002274',
+    '#002677', '#002a79', '#002e7b', '#00327e', '#003680', '#003a83', '#003e85', '#004287',
+    '#00468a', '#004a8c', '#004e8e', '#005290', '#005692', '#005a94', '#005e96', '#006298',
+    '#006699', '#006a9a', '#006f9b', '#00749c', '#007a9d', '#00809e', '#00869f', '#008ca0',
+    '#0091a1', '#0096a2', '#009aa3', '#009ea4', '#00a2a5', '#00a6a6', '#00aaa5', '#00ada4',
+    '#00b0a2', '#00b2a0', '#00b49d', '#00b69a', '#00b797', '#00b894', '#00b991', '#00ba8e',
+    '#00bb8b', '#00bc88', '#00bd85', '#00be82', '#00bf7f', '#00c07c', '#00c179', '#00c276',
+    '#00c373', '#00c470', '#00c56d', '#00c56a', '#00c667', '#00c764', '#00c860', '#00c95b',
+    '#00ca55', '#00cb4e', '#00cb47', '#00cc40', '#00cd39', '#00ce32', '#00ce2b', '#00cf24',
+    '#02d01f', '#07d11a', '#0cd116', '#12d212', '#17d20e', '#1cd30a', '#22d406', '#27d402',
+    '#2dd500', '#34d500', '#3ad600', '#41d600', '#48d700', '#4ed700', '#55d800', '#5cd800',
+    '#62d900', '#68d900', '#6eda00', '#74da00', '#7ada00', '#7fdb00', '#85db00', '#8bdc00',
+    '#90dc00', '#95dc00', '#9add00', '#9edd00', '#a3dd00', '#a8de00', '#acde00', '#b1de00',
+    '#b4de00', '#b6df00', '#b8df00', '#badf00', '#bcdf00', '#bedf00', '#c0df00', '#c2df00',
+    '#c4df00', '#c5df00', '#c7e000', '#c9e000', '#cbe000', '#cce000', '#cee000', '#d0e000',
+    '#d2df00', '#d3de00', '#d5dd00', '#d7db00', '#d9da00', '#dbd900', '#dcd800', '#ded600',
+    '#dfd500', '#dfd300', '#dfd100', '#e0cf00', '#e0cd00', '#e0cc00', '#e0ca00', '#e1c800',
+    '#e1c600', '#e1c500', '#e1c300', '#e1c100', '#e1c000', '#e1be00', '#e1bc00', '#e1bb00',
+    '#e1b900', '#e1b700', '#e1b600', '#e1b400', '#e1b200', '#e1b100', '#e1af00', '#e1ae00',
+    '#e1ac00', '#e1aa00', '#e1a900', '#e1a700', '#e1a500', '#e1a400', '#e1a200', '#e1a000',
+    '#e19f00', '#e09d00', '#e09b00', '#e09900', '#e09800', '#e09600', '#e09400', '#e09300',
+    '#e09100', '#e08f00', '#e08e00', '#e08c00', '#e08a00', '#e08900', '#e08700', '#df8500',
+    '#df8400', '#df8200', '#df8000', '#df7f00', '#df7d00', '#df7b00', '#df7900', '#df7800',
+    '#de7600', '#de7400', '#dd7200', '#dc7000', '#dc6e00', '#db6c00', '#da6a00', '#da6800',
+    '#d76200', '#d45b00', '#d05300', '#cd4c00', '#ca4500', '#c63e00', '#c33700', '#c03000',
+    '#bc2a00', '#b72400', '#b31f00', '#ae1900', '#aa1300', '#a50e00', '#a10800', '#9d0200',
+    '#990200', '#950100', '#920100', '#8e0100', '#8b0000', '#870000', '#840000', '#800000'
+]
+
 
 def _get_false_bounds(bool_array):
     diff = np.diff(np.hstack((0, bool_array, 0)))
@@ -335,7 +370,7 @@ def plot_scatter(
     :param x: 1-D array of data values for the x-axis
     :param y: 1-D array of data values for the y-axis
     :param x_label: Label for the x-axis
-    :param y_label: Labelfor the y-axis
+    :param y_label: Label for the y-axis
     :param event_mask: Boolean array of events to plot. Takes precedence
             over highlight_mask (i.e. events marked False in event_mask will
             never be plotted).
@@ -433,13 +468,12 @@ def plot_scatter(
         if highlight_mask is not None:
             # re-order the highlight indices to match
             highlight_mask = highlight_mask[idx]
-    else:
-        z = np.zeros(len(x))
 
-    colors_array = new_jet(colors.Normalize()(z))
-    z_colors = np.array([
-        "#%02x%02x%02x" % (int(c[0] * 255), int(c[1] * 255), int(c[2] * 255)) for c in colors_array
-    ])
+        z_norm = (z - z.min()) / (z.max() - z.min())
+    else:
+        z_norm = np.zeros(len(x))
+
+    z_colors = np.array([custom_heat_palette[int(z * 255)] for z in z_norm])
 
     if highlight_mask is not None:
         z_colors[~highlight_mask] = "#d3d3d3"
