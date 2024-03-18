@@ -96,51 +96,6 @@ def _get_false_bounds(bool_array):
     return start[0], end[0]
 
 
-def plot_channel(channel_events, label, subplot_ax, xform=None, flagged_events=None):
-    """
-    Plots a single-channel of FCS event data with the x-axis as the event number (similar to having
-    time on the x-axis, but events are equally spaced). This function takes a Matplotlib Axes object
-    to enable embedding multiple channel plots within the same figure (created outside this function).
-
-    :param channel_events: 1-D NumPy array of event data
-    :param label: string to use as the plot title
-    :param subplot_ax: Matplotlib Axes instance used to render the plot
-    :param xform: an optional Transform instance used to transform the given event data. channel_events can
-        be given already pre-processed (compensated and/or transformed), in this case set xform to None.
-    :param flagged_events: optional Boolean array of "flagged" events, regions of flagged events will
-        be highlighted in red if flagged_events is given.
-    :return: None
-    """
-    if xform:
-        channel_events = xform.apply(channel_events)
-
-    bins = int(np.sqrt(channel_events.shape[0]))
-    event_range = range(0, channel_events.shape[0])
-
-    subplot_ax.set_title(label, fontsize=16)
-    subplot_ax.set_xlabel("Events", fontsize=14)
-
-    subplot_ax.hist2d(
-        event_range,
-        channel_events,
-        bins=[bins, 128],
-        cmap='rainbow',
-        cmin=1
-    )
-
-    if flagged_events is not None:
-        starts, ends = _get_false_bounds(flagged_events)
-
-        for i, s in enumerate(starts):
-            subplot_ax.axvspan(
-                event_range[s],
-                event_range[ends[i] - 1],
-                facecolor='pink',
-                alpha=0.3,
-                edgecolor='deeppink'
-            )
-
-
 def _calculate_extent(data_1d, d_min=None, d_max=None, pad=0.0):
     data_min = np.min(data_1d)
     data_max = np.max(data_1d)

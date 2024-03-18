@@ -630,7 +630,7 @@ class Sample(object):
         channel number, as defined in the FCS data (not the channel index), so
         the 1st channel's number is 1 (not 0).
 
-        :param label: PnN label of a channel
+        :param label: PnN channel label
         :return: Channel number (not index)
         """
         if label in self.pnn_labels:
@@ -728,7 +728,20 @@ class Sample(object):
         self._include_scatter_option = include_scatter
         self.transform = transform
 
-    def plot_channel(self, channel_label_or_number, source='xform', flag_events=False):
+    def plot_channel(
+            self,
+            channel_label_or_number,
+            source='xform',
+            subsample=True,
+            color_density=True,
+            bin_width=4,
+            event_mask=None,
+            highlight_mask=None,
+            x_min=None,
+            x_max=None,
+            y_min=None,
+            y_max=None
+    ):
         """
         Plot a 2-D histogram of the specified channel data with the x-axis as the event index.
         This is similar to plotting a channel vs Time, except the events are equally
@@ -737,28 +750,59 @@ class Sample(object):
         :param channel_label_or_number: A channel's PnN label or number
         :param source: 'raw', 'comp', 'xform' for whether the raw, compensated
             or transformed events are used for plotting
-        :param flag_events: whether to flag events using stored flagged_event indices.
-            Flagged event regions will be highlighted in red. Default is False.
-        :return: Matplotlib Figure instance
+        :param subsample: Whether to use all events for plotting or just the
+            sub-sampled events. Default is True (sub-sampled events). Plotting
+            sub-sampled events is much faster.
+        :param color_density: Whether to color the events by density, similar
+            to a heat map. Default is True.
+        :param bin_width: Bin size to use for the color density, in units of
+            event point size. Larger values produce smoother gradients.
+            Default is 4 for a 4x4 grid size.
+        :param event_mask: Boolean array of events to plot. Takes precedence
+            over highlight_mask (i.e. events marked False in event_mask will
+            never be plotted).
+        :param highlight_mask: Boolean array of event indices to highlight
+            in color. Non-highlighted events will be light grey.
+        :param x_min: Lower bound of x-axis. If None, channel's min value will
+            be used with some padding to keep events off the edge of the plot.
+        :param x_max: Upper bound of x-axis. If None, channel's max value will
+            be used with some padding to keep events off the edge of the plot.
+        :param y_min: Lower bound of y-axis. If None, channel's min value will
+            be used with some padding to keep events off the edge of the plot.
+        :param y_max: Upper bound of y-axis. If None, channel's max value will
+            be used with some padding to keep events off the edge of the plot.
+        :return: A Bokeh Figure object containing the interactive channel plot.
         """
         channel_index = self.get_channel_index(channel_label_or_number)
-        channel_data = self.get_channel_events(channel_index, source=source, subsample=False)
+        channel_data = self.get_channel_events(channel_index, source=source, subsample=subsample)
 
-        pnn_label = self.pnn_labels[channel_index]
-        pns_label = self.pns_labels[channel_index]
-
-        plot_title = " - ".join([pnn_label, pns_label]) if pns_label != '' else pnn_label
-
-        if flag_events and self.flagged_indices is not None:
-            flagged_events = np.zeros(self.event_count)
-            flagged_events[self.flagged_indices] = 1
+        if subsample:
+            x_idx = self.subsample_indices
         else:
-            flagged_events = None
+            x_idx = np.arange(self.event_count)
 
-        fig = plt.figure(figsize=(16, 4))
-        ax = fig.add_subplot(1, 1, 1)
+        if self.pns_labels[channel_index] != '':
+            channel_label = '%s (%s)' % (self.pns_labels[channel_index], self.pnn_labels[channel_index])
+        else:
+            channel_label = self.pnn_labels[channel_index]
 
-        plot_utils.plot_channel(channel_data, plot_title, ax, xform=None, flagged_events=flagged_events)
+        fig = plot_utils.plot_scatter(
+            x_idx,
+            channel_data,
+            x_label='Events',
+            y_label=channel_label,
+            color_density=color_density,
+            bin_width=bin_width,
+            event_mask=event_mask,
+            highlight_mask=highlight_mask,
+            x_min=x_min,
+            x_max=x_max,
+            y_min=y_min,
+            y_max=y_max
+        )
+
+        fig.aspect_ratio = 3
+        fig.width = 1000
 
         return fig
 
