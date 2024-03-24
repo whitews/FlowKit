@@ -11,8 +11,6 @@ import io
 from tempfile import TemporaryFile
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn
 from bokeh.layouts import gridplot
 from bokeh.models import Title, Range1d
 import warnings
@@ -812,14 +810,12 @@ class Sample(object):
             y_label_or_number,
             source='xform',
             subsample=True,
-            plot_contour=True,
             plot_events=False,
+            fill=False,
             x_min=None,
             x_max=None,
             y_min=None,
-            y_max=None,
-            fill=False,
-            fig_size=(8, 8)
+            y_max=None
     ):
         """
         Returns a contour plot of the specified channel events, available
@@ -835,7 +831,6 @@ class Sample(object):
             sub-sampled events. Default is True (sub-sampled events). Running
             with all events is not recommended, as the Kernel Density
             Estimation is computationally demanding.
-        :param plot_contour: Whether to display the contour lines. Default is True.
         :param plot_events: Whether to display the event data points in
             addition to the contours. Default is False.
         :param x_min: Lower bound of x-axis. If None, channel's min value will
@@ -848,9 +843,7 @@ class Sample(object):
             be used with some padding to keep events off the edge of the plot.
         :param fill: Whether to fill in color between contour lines. D default
             is False.
-        :param fig_size: Tuple of 2 values specifying the size of the returned
-            figure. Values are in Matplotlib size units.
-        :return: Matplotlib figure of the contour plot
+        :return: A Bokeh figure of the contour plot
         """
         x_index = self.get_channel_index(x_label_or_number)
         y_index = self.get_channel_index(y_label_or_number)
@@ -858,40 +851,28 @@ class Sample(object):
         x = self.get_channel_events(x_index, source=source, subsample=subsample)
         y = self.get_channel_events(y_index, source=source, subsample=subsample)
 
-        # noinspection PyProtectedMember
-        x_min, x_max = plot_utils._calculate_extent(x, d_min=x_min, d_max=x_max, pad=0.02)
-        # noinspection PyProtectedMember
-        y_min, y_max = plot_utils._calculate_extent(y, d_min=y_min, d_max=y_max, pad=0.02)
+        if self.pns_labels[x_index] != '':
+            x_label = '%s (%s)' % (self.pns_labels[x_index], self.pnn_labels[x_index])
+        else:
+            x_label = self.pnn_labels[x_index]
 
-        fig, ax = plt.subplots(figsize=fig_size)
-        ax.set_title(self.id)
+        if self.pns_labels[y_index] != '':
+            y_label = '%s (%s)' % (self.pns_labels[y_index], self.pnn_labels[y_index])
+        else:
+            y_label = self.pnn_labels[y_index]
 
-        ax.set_xlim([x_min, x_max])
-        ax.set_ylim([y_min, y_max])
-        ax.set_xlabel(self.pnn_labels[x_index])
-        ax.set_ylabel(self.pnn_labels[y_index])
-
-        if plot_events:
-            seaborn.scatterplot(
-                x=x,
-                y=y,
-                palette=plot_utils.new_jet,
-                legend=False,
-                s=6,
-                linewidth=0,
-                alpha=0.4
-            )
-
-        if plot_contour:
-            seaborn.kdeplot(
-                x=x,
-                y=y,
-                bw_method='scott',
-                cmap=plot_utils.new_jet,
-                linewidths=2 if not fill else None,
-                alpha=0.6,
-                fill=fill
-            )
+        fig = plot_utils.plot_contours(
+            x,
+            y,
+            x_label=x_label,
+            y_label=y_label,
+            x_min=x_min,
+            x_max=x_max,
+            y_min=y_min,
+            y_max=y_max,
+            plot_events=plot_events,
+            fill=fill
+        )
 
         return fig
 
@@ -1215,9 +1196,9 @@ class Sample(object):
              the "bad" events (neg scatter and/or flagged events). Default is False.
         :param subsample: Whether to export all events or just the sub-sampled events.
             Default is False (all events).
-        :param include_metadata: Whether to include all key/value pairs in self.metadata in the output
-            FCS file. Only valid for .fcs file extension. If False, only the minimum amount of
-            metadata will be included in the output FCS file. Default is False.
+        :param include_metadata: Whether to include all key/value pairs from the metadata attribute
+            in the output FCS file. Only valid for .fcs file extension. If False, only the minimum
+            amount of metadata will be included in the output FCS file. Default is False.
         :param directory: Directory path where the exported file will be saved. If None, the file
             will be saved in the current working directory.
         :return: None
