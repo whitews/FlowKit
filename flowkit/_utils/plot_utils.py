@@ -3,53 +3,20 @@ Utility functions related to plotting
 """
 import numpy as np
 from scipy.interpolate import interpn
-import colorsys
-from matplotlib import cm, colors
+import contourpy
 from bokeh.plotting import figure
 from bokeh.models import Ellipse, Patch, Span, BoxAnnotation, Rect, ColumnDataSource, Title
+from scipy.stats import gaussian_kde
 from .._models import gates, dimension
 from .._models.gating_strategy import GatingStrategy
 
 
-line_color = "#1F77B4"
-line_color_contrast = "#73D587"
-line_width = 3
-fill_color = 'lime'
-gate_fill_alpha = 0.08
+LINE_COLOR_DEFAULT = "#1F77B4"
+LINE_COLOR_CONTRAST = "#73D587"
+LINE_WIDTH_DEFAULT = 3
+FILL_COLOR_DEFAULT = 'lime'
+FILL_ALPHA_DEFAULT = 0.08
 
-
-def _generate_custom_colormap(colormap_sample_indices, base_colormap):
-    x = np.linspace(0, np.pi, base_colormap.N)
-    new_lum = (np.sin(x) * 0.75) + .25
-
-    new_color_list = []
-
-    for i in colormap_sample_indices:
-        (r, g, b, a) = base_colormap(i)
-        (h, s, v) = colorsys.rgb_to_hsv(r, g, b)
-
-        mod_v = (v * ((196 - abs(i - 196)) / 196) + new_lum[i]) / 2.
-
-        new_r, new_g, new_b = colorsys.hsv_to_rgb(h, 1., mod_v)
-        (_, new_l, _) = colorsys.rgb_to_hls(new_r, new_g, new_b)
-
-        new_color_list.append((new_r, new_g, new_b))
-
-    return colors.LinearSegmentedColormap.from_list(
-        'custom_' + base_colormap.name,
-        new_color_list,
-        256
-    )
-
-
-cm_sample = [
-    0, 4, 8, 12, 24, 36, 48, 60, 72, 80, 92,
-    100, 108, 116, 124, 132,
-    139, 147, 155, 159,
-    163, 167, 171, 175, 179, 183, 187, 191, 195, 199, 215, 231, 239
-]
-
-new_jet = _generate_custom_colormap(cm_sample, cm.get_cmap('jet'))
 
 custom_heat_palette = [
     '#000020', '#000021', '#000022', '#000023', '#000024', '#000025', '#000026', '#000027',
@@ -111,10 +78,71 @@ def _calculate_extent(data_1d, d_min=None, d_max=None, pad=0.0):
     return d_min, d_max
 
 
-def render_polygon(vertices):
+def _quantiles_to_levels(data, quantiles):
+    """Return data levels corresponding to quantile cuts of mass."""
+    # Make sure quantiles is a NumPy array
+    quantiles = np.array(quantiles)
+    values = np.ravel(data)
+    sorted_values = np.sort(values)[::-1]
+
+    normalized_values = np.cumsum(sorted_values) / values.sum()
+
+    idx = np.searchsorted(normalized_values, 1 - quantiles)
+    levels = np.take(sorted_values, idx, mode="clip")
+
+    return levels
+
+
+def _calculate_2d_gaussian_kde(x, y, bw_method='scott', grid_size=200, pad_factor=3):
+    """Calculate a 2D PDF from a Gaussian KDE"""
+    # First get the KDE, so we can get the calculated bandwidths
+    # for each dimension to use for padding the grid.
+    kernel = gaussian_kde([x, y], bw_method=bw_method)
+    bw_x, bw_y = np.sqrt(np.diag(kernel.covariance).squeeze())
+
+    min_x, max_x = x.min(), x.max()
+    min_y, max_y = y.min(), y.max()
+
+    # need to pad data edges for the grid calculation
+    grid_min_x = min_x - bw_x * pad_factor
+    grid_max_x = max_x + bw_x * pad_factor
+
+    grid_min_y = min_y - bw_y * pad_factor
+    grid_max_y = max_y + bw_y * pad_factor
+
+    # create meshgrid
+    meshgrid_x, meshgrid_y = np.meshgrid(
+        np.linspace(grid_min_x, grid_max_x, grid_size),
+        np.linspace(grid_min_y, grid_max_y, grid_size)
+    )
+    positions = np.vstack([meshgrid_x.flatten(), meshgrid_y.flatten()])
+
+    # this is the bottleneck step
+    estimated_pdf = np.reshape(kernel(positions).T, meshgrid_x.shape)
+
+    return meshgrid_x, meshgrid_y, estimated_pdf
+
+
+def _build_contour_generator(mesh_x, mesh_y, estimated_pdf):
+    c_gen = contourpy.contour_generator(x=mesh_x, y=mesh_y, z=estimated_pdf)
+
+    return c_gen
+
+
+def render_polygon(
+        vertices,
+        line_color=LINE_COLOR_CONTRAST,
+        line_width=LINE_WIDTH_DEFAULT,
+        fill_color=FILL_COLOR_DEFAULT,
+        fill_alpha=FILL_ALPHA_DEFAULT
+):
     """
     Renders a Bokeh polygon for plotting
     :param vertices: list of 2-D coordinates representing vertices of the polygon
+    :param line_color: Color for the polygon boundary (as RGB hex string or CSS color name)
+    :param line_width: Line width in pixels for the polygon boundary
+    :param fill_color: Color for the polygon interior (as RGB hex string or CSS color name)
+    :param fill_alpha: Opacity of the polygon as a float from 0 (transparent) to 1 (opaque)
     :return: tuple containing the Bokeh ColumnDataSource and polygon glyphs (as Patch object)
     """
     x_coords, y_coords = list(zip(*[v for v in vertices]))
@@ -125,9 +153,9 @@ def render_polygon(vertices):
         x='x',
         y='y',
         fill_color=fill_color,
-        fill_alpha=gate_fill_alpha,
+        fill_alpha=fill_alpha,
         line_width=line_width,
-        line_color=line_color_contrast
+        line_color=line_color
     )
 
     return source, poly
@@ -152,23 +180,23 @@ def render_ranges(dim_minimums, dim_maximums):
     if dim_minimums[0] is not None:
         left = dim_minimums[0]
         renderers.append(
-            Span(location=left, dimension='height', line_width=line_width, line_color=line_color)
+            Span(location=left, dimension='height', line_width=LINE_WIDTH_DEFAULT, line_color=LINE_COLOR_DEFAULT)
         )
     if dim_maximums[0] is not None:
         right = dim_maximums[0]
         renderers.append(
-            Span(location=right, dimension='height', line_width=line_width, line_color=line_color)
+            Span(location=right, dimension='height', line_width=LINE_WIDTH_DEFAULT, line_color=LINE_COLOR_DEFAULT)
         )
     if len(dim_minimums) > 1:
         if dim_minimums[1] is not None:
             bottom = dim_minimums[1]
             renderers.append(
-                Span(location=bottom, dimension='width', line_width=line_width, line_color=line_color)
+                Span(location=bottom, dimension='width', line_width=LINE_WIDTH_DEFAULT, line_color=LINE_COLOR_DEFAULT)
             )
         if dim_maximums[1] is not None:
             top = dim_maximums[1]
             renderers.append(
-                Span(location=top, dimension='width', line_width=line_width, line_color=line_color)
+                Span(location=top, dimension='width', line_width=LINE_WIDTH_DEFAULT, line_color=LINE_COLOR_DEFAULT)
             )
 
     mid_box = BoxAnnotation(
@@ -176,8 +204,8 @@ def render_ranges(dim_minimums, dim_maximums):
         right=right,
         bottom=bottom,
         top=top,
-        fill_alpha=gate_fill_alpha,
-        fill_color=fill_color
+        fill_alpha=FILL_ALPHA_DEFAULT,
+        fill_color=FILL_COLOR_DEFAULT
     )
     renderers.append(mid_box)
 
@@ -201,9 +229,9 @@ def render_rectangle(dim_minimums, dim_maximums):
         y=y_center,
         width=x_width,
         height=y_height,
-        fill_color=fill_color,
-        fill_alpha=gate_fill_alpha,
-        line_width=line_width
+        fill_color=FILL_COLOR_DEFAULT,
+        fill_alpha=FILL_ALPHA_DEFAULT,
+        line_width=LINE_WIDTH_DEFAULT
     )
 
     return rect
@@ -220,11 +248,11 @@ def render_dividers(x_locs, y_locs):
 
     for x_loc in x_locs:
         renderers.append(
-            Span(location=x_loc, dimension='height', line_width=line_width, line_color=line_color)
+            Span(location=x_loc, dimension='height', line_width=LINE_WIDTH_DEFAULT, line_color=LINE_COLOR_DEFAULT)
         )
     for y_loc in y_locs:
         renderers.append(
-            Span(location=y_loc, dimension='width', line_width=line_width, line_color=line_color)
+            Span(location=y_loc, dimension='width', line_width=LINE_WIDTH_DEFAULT, line_color=LINE_COLOR_DEFAULT)
         )
 
     return renderers
@@ -256,10 +284,10 @@ def render_ellipse(center_x, center_y, covariance_matrix, distance_square):
         width=width,
         height=height,
         angle=angle_rads,
-        line_width=line_width,
-        line_color=line_color,
-        fill_color=fill_color,
-        fill_alpha=gate_fill_alpha
+        line_width=LINE_WIDTH_DEFAULT,
+        line_color=LINE_COLOR_DEFAULT,
+        fill_color=FILL_COLOR_DEFAULT,
+        fill_alpha=FILL_ALPHA_DEFAULT
     )
 
     return ellipse
@@ -401,6 +429,7 @@ def plot_scatter(
         cd_y_min = y_data_min - (y_data_range / y_bin_count)
         cd_y_max = y_data_max + (y_data_range / y_bin_count)
 
+        # noinspection PyTypeChecker
         hist_data, x_edges, y_edges = np.histogram2d(
             x,
             y,
@@ -468,6 +497,105 @@ def plot_scatter(
     )
 
     return p
+
+
+def plot_contours(
+        x,
+        y,
+        x_label=None,
+        y_label=None,
+        x_min=None,
+        x_max=None,
+        y_min=None,
+        y_max=None,
+        plot_events=False,
+        fill=False
+):
+    """
+    Create a Bokeh plot of contours from the two 1-D data arrays.
+
+    :param x: 1-D array of data values for the x-axis
+    :param y: 1-D array of data values for the y-axis
+    :param x_label: Label for the x-axis
+    :param y_label: Label for the y-axis
+    :param x_min: Lower bound of x-axis. If None, channel's min value will
+        be used with some padding to keep events off the edge of the plot.
+    :param x_max: Upper bound of x-axis. If None, channel's max value will
+        be used with some padding to keep events off the edge of the plot.
+    :param y_min: Lower bound of y-axis. If None, channel's min value will
+        be used with some padding to keep events off the edge of the plot.
+    :param y_max: Upper bound of y-axis. If None, channel's max value will
+        be used with some padding to keep events off the edge of the plot.
+    :param plot_events: Whether to plot the events as a scatter plot in
+        addition to the contours.
+    :param fill: Whether to color fill contours by density, similar
+        to a heat map. Default is False.
+    :return: A Bokeh Figure object containing the interactive scatter plot.
+    """
+    # Calculate Gaussian KDE, using default bandwidth & grid size (maybe expose these later?)
+    mesh_x, mesh_y, est_pdf = _calculate_2d_gaussian_kde(x, y)
+
+    # Get contour generator from our PDF on our grid
+    c_gen = _build_contour_generator(mesh_x, mesh_y, est_pdf)
+
+    # Generate a modest set of quantiles to plot (not too many as it gets crowded easily).
+    # And, don't start at 0 (there's not really a contour there).
+    quantiles = list(np.linspace(0.04, 1, 9).round(2))
+
+    # Convert quantiles to corresponding levels in our PDF
+    levels = _quantiles_to_levels(est_pdf, quantiles)
+
+    # Unless user set them, set our axis bounds based on contour bounds
+    # instead of the data ranges b/c the contours can be wider.
+    if x_min is None:
+        x_min = mesh_x.min()
+    if x_max is None:
+        x_max = mesh_x.max()
+    if y_min is None:
+        y_min = mesh_y.min()
+    if y_max is None:
+        y_max = mesh_y.max()
+
+    # if we are plotting events, get the Bokeh figure from plot_scatter,
+    # else we'll make a new one
+    if plot_events:
+        fig = plot_scatter(
+            x, y,
+            x_label=x_label, y_label=y_label,
+            x_min=x_min, x_max=x_max,
+            y_min=y_min, y_max=y_max
+        )
+    else:
+        tools = "crosshair,hover,pan,zoom_in,zoom_out,box_zoom,undo,redo,reset,save,"
+        fig = figure(
+            tools=tools,
+            x_range=(x_min, x_max),
+            y_range=(y_min, y_max)
+        )
+
+        fig.xaxis.axis_label = x_label
+        fig.yaxis.axis_label = y_label
+
+    # Add the sets of contours as polygons to the figure
+    for i, level in enumerate(levels):
+        poly_lines = c_gen.lines(level)
+
+        if fill:
+            fill_color = custom_heat_palette[int(quantiles[i] * 255)]
+            fill_alpha = min(quantiles[i] * 2, 1)
+            line_color = None
+        else:
+            fill_color = None
+            fill_alpha = 0
+            line_color = LINE_COLOR_DEFAULT
+
+        for poly in poly_lines:
+            source, glyph = render_polygon(
+                poly, line_color=line_color, fill_color=fill_color, fill_alpha=fill_alpha
+            )
+            fig.add_glyph(source, glyph)
+
+    return fig
 
 
 def plot_gate(
