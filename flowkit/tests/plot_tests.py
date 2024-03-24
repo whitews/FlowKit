@@ -3,9 +3,8 @@ Unit tests for plotting functions
 """
 import copy
 import unittest
-from bokeh.plotting.figure import Figure as bk_Figure
-from bokeh.layouts import Column as bk_Column
-from matplotlib.pyplot import Figure as mpl_Figure
+from bokeh.plotting import figure as bk_Figure
+from bokeh.layouts import GridPlot as bk_GridPlot
 import flowkit as fk
 
 fcs_path = 'data/gate_ref/data1.fcs'
@@ -50,11 +49,10 @@ class PlotTestCase(unittest.TestCase):
 
         fig = sample.plot_channel(
             'FSC-H',
-            source='xform',
-            flag_events=True
+            source='xform'
         )
 
-        self.assertIsInstance(fig, mpl_Figure)
+        self.assertIsInstance(fig, bk_Figure)
 
     def test_sample_plot_contour(self):
         sample = copy.deepcopy(test_sample)
@@ -69,7 +67,7 @@ class PlotTestCase(unittest.TestCase):
             subsample=True
         )
 
-        self.assertIsInstance(p, mpl_Figure)
+        self.assertIsInstance(p, bk_Figure)
 
     def test_sample_plot_scatter(self):
         sample = copy.deepcopy(test_sample)
@@ -100,7 +98,7 @@ class PlotTestCase(unittest.TestCase):
             subsample=True
         )
 
-        self.assertIsInstance(grid, bk_Column)
+        self.assertIsInstance(grid, bk_GridPlot)
 
     def test_session_plot_gate(self):
         fks = fk.Session(
