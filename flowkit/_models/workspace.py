@@ -475,6 +475,10 @@ class Workspace(object):
             except KeyError:
                 continue
 
+            # avoid Pandas warning about concatenating empty DataFrame instances
+            if len(result.report) == 0:
+                continue
+
             all_reports.append(result.report)
 
         return copy.deepcopy(pd.concat(all_reports))

@@ -348,6 +348,10 @@ class Session(object):
         all_reports = []
 
         for s_id, result in self._results_lut.items():
+            # avoid Pandas warning about concatenating empty DataFrame instances
+            if len(result.report) == 0:
+                continue
+
             all_reports.append(result.report)
 
         return copy.deepcopy(pd.concat(all_reports))
