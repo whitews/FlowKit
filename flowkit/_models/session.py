@@ -354,7 +354,7 @@ class Session(object):
 
             all_reports.append(result.report)
 
-        return copy.deepcopy(pd.concat(all_reports))
+        return copy.deepcopy(pd.concat(all_reports, ignore_index=True))
 
     def get_gate_membership(self, sample_id, gate_name, gate_path=None):
         """

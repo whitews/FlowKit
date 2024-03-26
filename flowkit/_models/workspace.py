@@ -481,7 +481,7 @@ class Workspace(object):
 
             all_reports.append(result.report)
 
-        return copy.deepcopy(pd.concat(all_reports))
+        return copy.deepcopy(pd.concat(all_reports, ignore_index=True))
 
     def _get_processed_events(self, sample_id):
         """
