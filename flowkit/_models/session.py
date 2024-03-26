@@ -354,7 +354,10 @@ class Session(object):
 
             all_reports.append(result.report)
 
-        return copy.deepcopy(pd.concat(all_reports, ignore_index=True))
+        # Explicitly setting copy=True even though the default in case
+        # it ever changes. Used to do our own deep copy but Pandas was
+        # already doing this, so it was getting deep copied twice.
+        return pd.concat(all_reports, ignore_index=True, copy=True)
 
     def get_gate_membership(self, sample_id, gate_name, gate_path=None):
         """

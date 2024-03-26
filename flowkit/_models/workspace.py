@@ -481,7 +481,10 @@ class Workspace(object):
 
             all_reports.append(result.report)
 
-        return copy.deepcopy(pd.concat(all_reports, ignore_index=True))
+        # Explicitly setting copy=True even though the default in case
+        # it ever changes. Used to do our own deep copy but Pandas was
+        # already doing this, so it was getting deep copied twice.
+        return pd.concat(all_reports, ignore_index=True, copy=True)
 
     def _get_processed_events(self, sample_id):
         """
