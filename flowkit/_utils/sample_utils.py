@@ -4,7 +4,7 @@ Utilities for meta & bulk Sample operations
 import os
 from glob import glob
 import flowio
-from .. import Sample
+from .._models.sample import Sample
 
 
 def _get_samples_from_paths(sample_paths):
