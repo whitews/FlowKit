@@ -19,7 +19,7 @@ networkx>=3.1
 
 # numpy notes:
 #     - locked to flowutils b/c of np C API
-numpy>=1.22,<1.25
+numpy>=1.22,<2
 
 # pandas notes:
 #     - 1.2 drops support for python <3.7
@@ -27,5 +27,5 @@ pandas>=2.0
 psutil>=5.8
 
 # scipy notes:
-#     - 1.6 support python 3.7+
-scipy>=1.6
+#     - 1.8 support python 3.8+
+scipy>=1.8
