@@ -31,7 +31,7 @@ reqs = [
 setup(
     name='FlowKit',
     version=__version__,  # noqa PyTypeChecker
-    packages=['flowkit'],
+    packages=find_packages(where='src'),
     package_dir={'': 'src'},
     package_data={'': ['_resources/*.xsd']},
     include_package_data=True,
