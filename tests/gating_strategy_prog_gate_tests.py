@@ -3,12 +3,8 @@ Tests for programmatically adding gates to a GatingStrategy
 """
 import copy
 import unittest
-import sys
-import os
 import numpy as np
 import pandas as pd
-
-sys.path.append(os.path.abspath('../..'))
 
 import flowkit as fk
 

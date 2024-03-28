@@ -2,12 +2,8 @@
 Tests for custom gates in the GatingStrategy Class
 """
 import copy
-import os
-import sys
 import unittest
 import flowkit as fk
-
-sys.path.append(os.path.abspath('../..'))
 
 
 class GatingStrategyCustomGatesTestCase(unittest.TestCase):

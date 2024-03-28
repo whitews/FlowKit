@@ -3,12 +3,8 @@ Session Tests
 """
 import copy
 import unittest
-import sys
-import os
 import numpy as np
 import pandas as pd
-
-sys.path.append(os.path.abspath('../..'))
 
 from flowkit import Session, Sample, Matrix, Dimension, gates, transforms, load_samples
 from .gating_strategy_prog_gate_tests import data1_sample, poly1_gate, poly1_vertices, comp_matrix_01, asinh_xform1

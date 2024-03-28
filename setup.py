@@ -4,7 +4,7 @@ Setup script for the FlowKit package
 from setuptools import setup, find_packages
 
 # read in version string
-VERSION_FILE = 'flowkit/_version.py'
+VERSION_FILE = 'src/flowkit/_version.py'
 __version__ = None  # to avoid inspection warning and check if __version__ was loaded
 exec(open(VERSION_FILE).read())
 
@@ -31,7 +31,8 @@ reqs = [
 setup(
     name='FlowKit',
     version=__version__,  # noqa PyTypeChecker
-    packages=find_packages(exclude=["flowkit/tests/"]),
+    packages=['flowkit'],
+    package_dir={'': 'src'},
     package_data={'': ['_resources/*.xsd']},
     include_package_data=True,
     description='Flow Cytometry Toolkit',

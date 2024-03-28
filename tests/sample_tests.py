@@ -3,15 +3,11 @@ Unit tests for Sample class
 """
 import copy
 import unittest
-import sys
-import os
 from pathlib import Path
 import numpy as np
 import pandas as pd
 import flowio
 import warnings
-
-sys.path.append(os.path.abspath('../..'))
 
 from flowkit import Sample, transforms, read_multi_dataset_fcs
 from flowkit.exceptions import DataOffsetDiscrepancyError
