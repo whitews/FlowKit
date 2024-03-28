@@ -27,11 +27,11 @@ jobs:
         run: |
           pip install --upgrade pip setuptools wheel
           pip install coverage
-          pip install -r requirements.txt
+          pip install .
 
       - name: Run tests with coverage
         run: |
-          coverage run --source flowkit --omit="flowkit/tests/*" run_tests.py
+          coverage run --source flowkit run_tests.py
           coverage xml
 
       - name: Upload coverage to Codecov
