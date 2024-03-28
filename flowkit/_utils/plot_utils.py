@@ -486,7 +486,7 @@ def plot_scatter(
     p.xaxis.axis_label = x_label
     p.yaxis.axis_label = y_label
 
-    p.scatter(
+    p.circle(
         x,
         y,
         radius=radius,
