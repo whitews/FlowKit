@@ -270,10 +270,10 @@ def _convert_wsp_gate(wsp_gate, comp_matrix, xform_lut):
             xforms.append(xform)  # need these later for vertices, coordinates, etc.
             xform_id = xform.id
             if dim.min is not None:
-                new_dim_min = xform.apply(np.array([[float(dim.min)]]))
+                new_dim_min = xform.apply(np.array([[float(dim.min)]]))[0][0]
 
             if dim.max is not None:
-                new_dim_max = xform.apply(np.array([[float(dim.max)]]))
+                new_dim_max = xform.apply(np.array([[float(dim.max)]]))[0][0]
         else:
             xforms.append(None)
             if dim.min is not None:
