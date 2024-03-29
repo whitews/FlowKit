@@ -4,7 +4,7 @@ flowkit.exceptions
 This module contains the set of FlowKit exceptions.
 """
 # import FlowIO exceptions
-from flowio.exceptions import FCSParsingError, DataOffsetDiscrepancyError
+from flowio.exceptions import FCSParsingError, DataOffsetDiscrepancyError  # noqa
 
 
 class FlowKitWarning(Warning):
