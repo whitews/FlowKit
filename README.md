@@ -84,8 +84,8 @@ via pip, and are listed below.
 
 Required Python dependencies:
 
-* [flowio](https://github.com/whitews/flowio) == 1.2.1
-* [flowutils](https://github.com/whitews/flowutils) == 1.1.0
+* [flowio](https://github.com/whitews/flowio) >= 1.3.0
+* [flowutils](https://github.com/whitews/flowutils) >= 1.1.0
 * anytree >= 2.9
 * bokeh >= 3.1
 * contourpy >= 1.1.0

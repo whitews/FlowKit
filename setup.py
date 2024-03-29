@@ -18,7 +18,7 @@ reqs = [
     'anytree>=2.9',
     'bokeh>=3.1',
     'contourpy>=1.1.0',
-    'flowio==1.2.1',
+    'flowio>=1.3.0,<1.4',
     'flowutils>=1.1.0,<1.2',
     'lxml>=4.9',
     'networkx>=3.1',
