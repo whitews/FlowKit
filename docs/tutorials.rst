@@ -22,6 +22,6 @@ Advanced Examples
 
     notebooks/advanced/clustering_comparison_leiden_vs_louvain.ipynb
     notebooks/advanced/dimension_reduction_on_gated_populations.ipynb
-    notebooks/advanced/flowkit-session-compare-mfi-of-gated-events.ipynb
-    notebooks/advanced/flowkit-session-replicate-flowjo-wsp.ipynb
+    notebooks/advanced/compare-mfi-of-gated-events.ipynb
+    notebooks/advanced/replicate-flowjo-wsp.ipynb
     notebooks/advanced/scanpy_creating_and_using_AnnData_objects.ipynb
