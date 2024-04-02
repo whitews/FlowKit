@@ -1,3 +1,2 @@
 include LICENSE
 include flowkit/_resources/*.xsd
-prune flowkit/tests/

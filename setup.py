@@ -4,7 +4,7 @@ Setup script for the FlowKit package
 from setuptools import setup, find_packages
 
 # read in version string
-VERSION_FILE = 'flowkit/_version.py'
+VERSION_FILE = 'src/flowkit/_version.py'
 __version__ = None  # to avoid inspection warning and check if __version__ was loaded
 exec(open(VERSION_FILE).read())
 
@@ -15,24 +15,24 @@ with open("README.md", "r", encoding='utf-8') as fh:
     long_description = fh.read()
 
 reqs = [
-    'anytree>=2.6',
-    'bokeh>=2.4,<3',
-    'flowio==1.1.1',
-    'flowutils>=1,<1.1',
-    'lxml>=4.7',
-    'matplotlib>=3.5',
-    'networkx>=2.3',
-    'numpy>=1.20',
-    'pandas>=1.2,<2',
+    'anytree>=2.9',
+    'bokeh>=3.1',
+    'contourpy>=1.1.0',
+    'flowio>=1.3.0,<1.4',
+    'flowutils>=1.1.0,<1.2',
+    'lxml>=4.9',
+    'networkx>=3.1',
+    'numpy>=1.22,<2',
+    'pandas>=2.0',
     'psutil>=5.8',
-    'scipy>=1.6',
-    'seaborn>=0.11,<0.12'
+    'scipy>=1.8'
 ]
 
 setup(
     name='FlowKit',
-    version=__version__,
-    packages=find_packages(exclude=["flowkit/tests/"]),
+    version=__version__,  # noqa PyTypeChecker
+    packages=find_packages(where='src'),
+    package_dir={'': 'src'},
     package_data={'': ['_resources/*.xsd']},
     include_package_data=True,
     description='Flow Cytometry Toolkit',
@@ -44,9 +44,10 @@ setup(
     ext_modules=[],
     install_requires=reqs,
     classifiers=[
+        'Programming Language :: Python :: 3.12',
+        'Programming Language :: Python :: 3.11',
         'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.9',
-        'Programming Language :: Python :: 3.8',
-        'Programming Language :: Python :: 3.7'
+        'Programming Language :: Python :: 3.8'
     ]
 )

@@ -8,7 +8,6 @@ https://www.sphinx-doc.org/en/master/usage/configuration.html
 
 import os
 import sys
-from unittest.mock import MagicMock
 
 # -- Path setup --------------------------------------------------------------
 
@@ -21,23 +20,13 @@ on_rtd = os.environ.get('READTHEDOCS') == 'True'
 if on_rtd:
     sys.path.insert(0, os.path.abspath('..'))
 else:
-    sys.path.insert(0, os.path.abspath('../..'))
+    sys.path.insert(0, os.path.abspath('..'))
 
-
-class Mock(MagicMock):
-    @classmethod
-    def __getattr__(cls, name):
-        return MagicMock()
-
-
-# mock the C extension
-MOCK_MODULES = ['flowkit._utils_c']
-sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 # -- Project information -----------------------------------------------------
 
 project = 'FlowKit'
-copyright = '2020, Scott White'
+copyright = '2023, Scott White'
 author = 'Scott White'
 
 
@@ -76,7 +65,7 @@ templates_path = ['_templates']
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'notebooks/scratch']
 
 
 # -- Options for HTML output -------------------------------------------------
@@ -84,14 +73,14 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'alabaster'
+html_theme = 'sphinx_rtd_theme'
+html_logo = '_static/flowkit.png'
 
 html_theme_options = {
-    'logo': 'flowkit.png',
-    'github_user': 'whitews',
-    'github_repo': 'flowkit',
-    'github_banner': True
+    'logo_only': True
 }
+
+html_show_sourcelink = False
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

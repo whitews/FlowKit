@@ -8,10 +8,12 @@
 [![DOI](https://zenodo.org/badge/138655889.svg)](https://zenodo.org/badge/latestdoi/138655889)
 
 
-[![Build & test (master)](https://github.com/whitews/FlowKit/actions/workflows/tests_master.yml/badge.svg)](https://github.com/whitews/FlowKit/actions/workflows/tests_master.yml)
-[![Build & test (develop)](https://github.com/whitews/FlowKit/actions/workflows/tests_develop.yml/badge.svg)](https://github.com/whitews/FlowKit/actions/workflows/tests_develop.yml)
+[![Test (master)](https://github.com/whitews/FlowKit/actions/workflows/tests_master.yml/badge.svg)](https://github.com/whitews/FlowKit/actions/workflows/tests_master.yml)
+[![Test (develop)](https://github.com/whitews/FlowKit/actions/workflows/tests_develop.yml/badge.svg)](https://github.com/whitews/FlowKit/actions/workflows/tests_develop.yml)
 [![codecov](https://codecov.io/gh/whitews/flowkit/branch/master/graph/badge.svg?token=joeOIVWmHi)](https://codecov.io/gh/whitews/flowkit)
 [![Documentation Status](https://readthedocs.org/projects/flowkit/badge/?version=latest)](https://flowkit.readthedocs.io/en/latest/?badge=latest)
+![PyPI - Downloads](https://img.shields.io/pypi/dm/flowkit)
+
 
 * [Overview](#overview)
 * [Features](#features)
@@ -71,27 +73,28 @@ FlowKit is a Python toolkit for flow cytometry analysis and visualization, with 
 
 ## Requirements
 
-FlowKit supports Python version 3.7 - 3.10. All dependencies are installable 
+FlowKit supports Python version 3.8 - 3.12. All dependencies are installable 
 via pip, and are listed below.
 
-> **NOTE**: FlowUtils uses C extensions for significant performance improvements. For most platforms and Python versions, pre-built binaries are available in PyPI (i.e. installable via `pip`). 
->
-> If a pre-built binary of FlowUtils is not available for your environment, the C extensions must be compiled using the source package. NumPy >=1.19 must be installed prior to compiling FlowUtils. If compiling using `gcc`, version 5 or later is required.
+> **NOTE**: FlowUtils uses C extensions for significant performance 
+> improvements. For most platforms and Python versions, pre-built 
+> binaries of FlowUtils are available in PyPI (i.e. installable via 
+> `pip`). If a pre-built binary is not available for your environment, 
+> the C extensions must be compiled using the source package.
 
 Required Python dependencies:
 
-* [flowio](https://github.com/whitews/flowio) == 1.1.1
-* [flowutils](https://github.com/whitews/flowutils) == 1.0.0
-* anytree >= 2.6
-* bokeh >= 2.4, <3.0
-* lxml >= 4.7
-* matplotlib >= 3.5
-* networkx >= 2.3
-* numpy >= 1.20
-* pandas >= 1.2
+* [flowio](https://github.com/whitews/flowio) >= 1.3.0
+* [flowutils](https://github.com/whitews/flowutils) >= 1.1.0
+* anytree >= 2.9
+* bokeh >= 3.1
+* contourpy >= 1.1.0
+* lxml >= 4.9
+* networkx >= 3.1
+* numpy >= 1.22, <2
+* pandas >= 2.0
 * psutils >= 5.8
-* scipy >= 1.6
-* seaborn >= 0.11, <0.12
+* scipy >= 1.8
 
 ## Installation
 
@@ -139,8 +142,8 @@ The series of Jupyter notebook tutorials can be found in the `docs/notebooks` di
 
 Below are more advanced and practical examples for using FlowKit. If you have an example you would like to submit for consideration in this list (preferably with data), please [submit an issue](https://github.com/whitews/FlowKit/issues/new/).
 
-* [Compare mean fluorescence intensity (MFI) in gated populations](https://github.com/whitews/FlowKit/blob/master/docs/notebooks/advanced/flowkit-session-compare-mfi-of-gated-events.ipynb)
-* [Importing a FlowJo 10 WSP file & replicating analysis in FlowKit](https://github.com/whitews/FlowKit/blob/master/docs/notebooks/advanced/flowkit-session-replicate-flowjo-wsp.ipynb)
+* [Compare mean fluorescence intensity (MFI) in gated populations](https://github.com/whitews/FlowKit/blob/master/docs/notebooks/advanced/compare-mfi-of-gated-events.ipynb)
+* [Importing a FlowJo 10 WSP file & replicating analysis in FlowKit](https://github.com/whitews/FlowKit/blob/master/docs/notebooks/advanced/replicate-flowjo-wsp.ipynb)
 * [Dimension reduction on gated populations](https://github.com/whitews/FlowKit/blob/master/docs/notebooks/advanced/dimension_reduction_on_gated_populations.ipynb)
 * [Comparison between Leiden & Louvain clustering](https://github.com/whitews/FlowKit/blob/master/docs/notebooks/advanced/clustering_comparison_leiden_vs_louvain.ipynb)
 * [Saving Flow Analysis Data as AnnData objects for ScanPy](https://github.com/whitews/FlowKit/blob/master/docs/notebooks/advanced/scanpy_creating_and_using_AnnData_objects.ipynb)
@@ -159,5 +162,7 @@ Want to get involved in the development of FlowKit?
 
 The following projects and publications have utilized FlowKit. If you have a package or publication where FlowKit was used, and you want it listed here, feel free to [submit an issue](https://github.com/whitews/FlowKit/issues/new/) letting me know.
 
+* Mortelecque, Justine et al. "A selection and optimization strategy for single-domain antibodies targeting the PHF6 linear peptide within the Tau intrinsically disordered protein." Journal of Biological Chemistry (2024), [doi:10.1016/j.jbc.2024.107163](https://www.jbc.org/article/S0021-9258(24)01658-2/fulltext)
+* Schmidt, Florian et al. "In-depth analysis of human virus-specific CD8+ T cells delineates unique phenotypic signatures for T cell specificity prediction." Cell Reports vol. 42,10 (2023), [doi:10.1016/j.celrep.2023.113250](https://www.cell.com/cell-reports/fulltext/S2211-1247(23)01262-7)
 * Schuster, Jonas et al. “Combining real-time fluorescence spectroscopy and flow cytometry to reveal new insights in DOC and cell characterization of drinking water.” Frontiers in Environmental Chemistry (2022), [doi:10.3389/fenvc.2022.931067](https://www.frontiersin.org/articles/10.3389/fenvc.2022.931067/full)
 * Rendeiro, André F et al. "Profiling of immune dysfunction in COVID-19 patients allows early prediction of disease progression." Life science alliance vol. 4,2 e202000955. 24 Dec. 2020, [doi:10.26508/lsa.202000955](https://www.life-science-alliance.org/content/4/2/e202000955.full)

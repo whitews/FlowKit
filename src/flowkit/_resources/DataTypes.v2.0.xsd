@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+    xmlns:data-type="http://www.isac-net.org/std/Gating-ML/v2.0/datatypes"
+    xmlns:transforms="http://www.isac-net.org/std/Gating-ML/v2.0/transformations"
+    targetNamespace="http://www.isac-net.org/std/Gating-ML/v2.0/datatypes"
+    elementFormDefault="qualified" attributeFormDefault="qualified" version="2.0.121207">
+
+    <annotation>
+        <appinfo source="http://flowcyt.sourceforge.net/">Definition of data types reused in XML-based standards such as Gating-ML XML schema.</appinfo>
+        <documentation xml:lang="en" source="http://flowcyt.sourceforge.net/">
+            <author>
+                <name>Josef Spidlen</name>
+                <email>jspidlen@bccrc.ca</email>
+            </author>
+            <copyright>
+                Copyright (c) 2008-2014 ISAC (International Society for Advancement of
+                Cytometry). Free of charge distribution and read-only usage permited. Modification
+                and all other rights reserved. For all other uses please contact ISAC.
+            </copyright>
+        </documentation>
+    </annotation>
+
+    <simpleType name="UFloat64_Type">
+        <annotation>
+            <documentation xml:lang="en">Unsigned float64, i.e, a double (float64) that is greater or equal 0.</documentation>
+        </annotation>
+        <restriction base="double">
+            <minInclusive value="0.0" />
+        </restriction>
+    </simpleType>
+
+    <simpleType name="PFloat64_Type">
+        <annotation>
+            <documentation xml:lang="en">Positive float64, i.e., a double (float64) that is greater than 0.</documentation>
+        </annotation>
+        <restriction base="double">
+            <minExclusive value="0.0" />
+        </restriction>
+    </simpleType>
+
+    <simpleType name="Float64_Type">
+        <annotation>
+            <documentation xml:lang="en">Float64, i.e., a double (float64).</documentation>
+        </annotation>
+        <restriction base="double" />
+    </simpleType>
+    
+    <complexType name="NonEmptyName_Type">
+        <annotation>
+            <documentation xml:lang="en">A complex type with a non empty string attribute caled name. This type is used to reference FCS dimensions.</documentation>
+        </annotation>
+        <attribute name="name" use="required" type="data-type:NonEmptyString_Type" />
+    </complexType>
+
+    <simpleType name="NonEmptyString_Type">
+        <restriction base="string">
+            <minLength value="1" />
+        </restriction>
+    </simpleType>
+
+    <complexType name="ValueAttribute_Type">
+        <annotation>
+            <documentation>A single value attribute of the type double (float64).</documentation>
+        </annotation>
+        <attribute name="value" type="double" use="required" id="value" />
+    </complexType>
+
+
+    <complexType name="UValueAttribute_Type">
+        <annotation>
+            <documentation>A single value attribute of the type double (float64) that is >= 0.d</documentation>
+        </annotation>
+        <complexContent>
+            <restriction base="data-type:ValueAttribute_Type">
+                <attribute name="value" type="data-type:UFloat64_Type" use="required" />
+            </restriction>
+        </complexContent>
+    </complexType>
+
+    <group name="Dimensions_Group">
+        <annotation>
+            <documentation xml:lang="en">A dimension from the FCS file; this shall correspond to the value of the $PnN keyword in FCS files, or a newly created dimension.</documentation>
+        </annotation>
+        <choice>
+            <element name="fcs-dimension" type="data-type:NonEmptyName_Type" />
+            <element name="new-dimension" type="data-type:TransformationReference_Type" />
+        </choice>
+    </group>
+
+    <group name="FCSDimensions_Group">
+        <annotation>
+            <documentation xml:lang="en">A dimension from the FCS file; this shall correspond to the value of the $PnN keyword in FCS files.</documentation>
+        </annotation>
+        <sequence>
+            <element name="fcs-dimension" type="data-type:NonEmptyName_Type" />
+        </sequence>
+    </group>
+    
+
+    <complexType name="TransformationReference_Type">
+        <annotation>
+            <documentation xml:lang="en">A complex type with a non empty string attribute caled name. This type is used to reference FCS dimensions.</documentation>
+        </annotation>
+        <attribute name="transformation-ref" use="required" type="IDREF" />
+    </complexType>
+        
+    <group name="Custom_Group">
+        <annotation>
+            <documentation xml:lang="en">Currently, the choice is limited to the custom_info element.</documentation>
+        </annotation>
+        <choice>
+            <element name="custom_info" type="anyType" />
+        </choice>
+    </group>
+    
+</schema>

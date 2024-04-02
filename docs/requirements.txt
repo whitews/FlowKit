@@ -1,3 +1,4 @@
-Sphinx>=3
+Sphinx==6.2.1
 autoclasstoc
 nbsphinx
+sphinx_rtd_theme==1.2.1
