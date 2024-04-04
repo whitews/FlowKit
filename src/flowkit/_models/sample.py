@@ -76,10 +76,10 @@ class Sample(object):
         - pathlib Path object to a CSV or TSV file
         - string of CSV text
 
-    :param null_channel_list: List of PnN labels for channels that were collected
-        but do not contain useful data. Note, this should only be used if there were
-        truly no fluorochromes used targeting those detectors and the channels
-        do not contribute to compensation.
+    :param null_channel_list: List of PnN labels for acquired channels that do not contain
+        useful data. Note, this should only be used if no fluorochromes were used to target
+        those detectors. Null channels do not contribute to compensation and should not be
+        included in a compensation matrix for this sample.
 
     :param ignore_offset_error: option to ignore data offset error (see above note), default is False
 
@@ -183,7 +183,12 @@ class Sample(object):
         except KeyError:
             self.version = None
 
-        self.null_channels = null_channel_list
+        # Ensure null channels is a list for checking later
+        if null_channel_list is None:
+            self.null_channels = []
+        else:
+            self.null_channels = null_channel_list
+
         self.event_count = flow_data.event_count
 
         # make a temp channels dict, self.channels will be a DataFrame built from it
@@ -229,7 +234,11 @@ class Sample(object):
             else:
                 channel_lin_log.append((0.0, 0.0))
 
-            if channel_label.lower()[:4] not in ['fsc-', 'ssc-', 'time']:
+            # Determine fluoro vs scatter vs time channels
+            # Null channels are excluded from any category.
+            if channel_label in self.null_channels:
+                pass
+            elif channel_label.lower()[:4] not in ['fsc-', 'ssc-', 'time']:
                 self.fluoro_indices.append(n - 1)
             elif channel_label.lower()[:4] in ['fsc-', 'ssc-']:
                 self.scatter_indices.append(n - 1)
@@ -468,7 +477,9 @@ class Sample(object):
         Applies given compensation matrix to Sample events. If any
         transformation has been applied, it will be re-applied after
         compensation. Compensated events can be retrieved afterward
-        by calling `get_events` with `source='comp'`.
+        by calling `get_events` with `source='comp'`. Note, if the
+        sample specifies null channels then these must not be present
+        in the compensation matrix.
 
         :param compensation: Compensation matrix, which can be a:
 
@@ -485,17 +496,25 @@ class Sample(object):
         :return: None
         """
         if isinstance(compensation, Matrix):
-            self.compensation = compensation
-            self._comp_events = self.compensation.apply(self)
+            tmp_matrix = compensation
         elif compensation is not None:
             detectors = [self.pnn_labels[i] for i in self.fluoro_indices]
             fluorochromes = [self.pns_labels[i] for i in self.fluoro_indices]
-            self.compensation = Matrix(comp_id, compensation, detectors, fluorochromes)
-            self._comp_events = self.compensation.apply(self)
+            tmp_matrix = Matrix(comp_id, compensation, detectors, fluorochromes)
         else:
-            # compensation must be None so clear any matrix and comp events
-            self.compensation = None
+            # compensation must be None, we'll clear any stored comp events later
+            tmp_matrix = None
+
+        if tmp_matrix is not None:
+            # We don't check null channels b/c Matrix.apply will catch them.
+            # tmp_matrix ensures we don't store comp events or compensation
+            # unless apply succeeds.
+            self._comp_events = tmp_matrix.apply(self)
+            self.compensation = tmp_matrix
+        else:
+            # compensation given was None, clear any matrix and comp events
             self._comp_events = None
+            self.compensation = None
 
         # Re-apply transform if set
         if self.transform is not None:
@@ -711,11 +730,11 @@ class Sample(object):
     def apply_transform(self, transform, include_scatter=False):
         """
         Applies given transform to Sample events, and overwrites the `transform` attribute.
-        By default, only the fluorescent channels are transformed. For fully customized transformations
-        per channel, the `transform` can be specified as a dictionary mapping PnN labels to an instance
-        of the Transform subclass. If a dictionary of transforms is specified, the `include_scatter`
-        option is ignored and only the channels explicitly included in the transform dictionary will
-        be transformed.
+        By default, only the fluorescent channels are transformed (and excludes null channels).
+        For fully customized transformations per channel, the `transform` can be specified as a
+        dictionary mapping PnN labels to an instance of the Transform subclass. If a dictionary
+        of transforms is specified, the `include_scatter` option is ignored and only the channels
+        explicitly included in the transform dictionary will be transformed.
 
         :param transform: an instance of a Transform subclass or a dictionary where the keys correspond
             to the PnN labels and the value is an instance of a Transform subclass.
