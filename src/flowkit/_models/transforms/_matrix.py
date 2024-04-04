@@ -4,6 +4,7 @@ Matrix class
 import numpy as np
 import pandas as pd
 import flowutils
+from ...exceptions import FlowKitException
 
 
 class Matrix(object):
@@ -74,6 +75,12 @@ class Matrix(object):
         :param sample: Sample instance with matching set of detectors
         :return: NumPy array of compensated events
         """
+        # Check that sample fluoro channels match the
+        # matrix detectors
+        sample_fluoro_labels = [sample.pnn_labels[i] for i in sample.fluoro_indices]
+        if not set(self.detectors).issubset(sample_fluoro_labels):
+            raise FlowKitException("Detectors must be a subset of the Sample's fluorochomes")
+
         indices = [
             sample.get_channel_index(d) for d in self.detectors
         ]
@@ -92,6 +99,12 @@ class Matrix(object):
         :param sample: Sample instance with matching set of detectors
         :return: NumPy array of compensated events
         """
+        # Check that sample fluoro channels match the
+        # matrix detectors
+        sample_fluoro_labels = [sample.pnn_labels[i] for i in sample.fluoro_indices]
+        if not set(self.detectors).issubset(sample_fluoro_labels):
+            raise FlowKitException("Detectors must be a subset of the Sample's fluorochomes")
+
         indices = [
             sample.get_channel_index(d) for d in self.detectors
         ]
