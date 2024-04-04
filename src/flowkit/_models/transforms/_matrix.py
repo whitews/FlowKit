@@ -1,6 +1,7 @@
 """
 Matrix class
 """
+from copy import copy
 import numpy as np
 import pandas as pd
 import flowutils
@@ -40,6 +41,9 @@ class Matrix(object):
                 "used in Dimension instances to specify that channel data should either be " +
                 "uncompensated or compensated using the spill value from a Sample's metadata"
             )
+
+        # Copy detectors b/c it may be modified
+        detectors = copy(detectors)
 
         if isinstance(spill_data_or_file, np.ndarray):
             spill = spill_data_or_file
