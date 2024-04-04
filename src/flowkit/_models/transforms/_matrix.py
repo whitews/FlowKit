@@ -53,8 +53,16 @@ class Matrix(object):
 
         self.id = matrix_id
         self.matrix = spill
-        # TODO: Should we use a different name other than 'fluorochromes'? They are typically antibodies or markers.
+
+        # Remove any null channels from detector list
+        if null_channels is not None:
+            for nc in null_channels:
+                if nc in detectors:
+                    detectors.remove(nc)
+
         self.detectors = detectors
+
+        # TODO: Should we use a different name other than 'fluorochromes'? They are typically antibodies or markers.
         # Note: fluorochromes attribute is required for compatibility with GatingML exports,
         #       as the GatingML 2.0 requires both the set of detectors and fluorochromes.
         if fluorochromes is None:
