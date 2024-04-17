@@ -108,14 +108,13 @@ pip install flowkit
 
 ### From source
 
-Clone the repository and ensure `pip` is up-to-date. It is recommended to use `pip` to install requirements as relying on `setuptools` may result in incompatible dependency versions.
+Clone the repository and ensure `pip` is up-to-date.
 
 ```
 git clone https://github.com/whitews/flowkit
 cd flowkit
 pip install --upgrade pip
-pip install -r requirements.txt
-python setup.py install
+pip install .
 ```
 
 ## Documentation

@@ -1,9 +1,11 @@
 """
 Matrix class
 """
+from copy import copy
 import numpy as np
 import pandas as pd
 import flowutils
+from ...exceptions import FlowKitException
 
 
 class Matrix(object):
@@ -40,6 +42,9 @@ class Matrix(object):
                 "uncompensated or compensated using the spill value from a Sample's metadata"
             )
 
+        # Copy detectors b/c it may be modified
+        detectors = copy(detectors)
+
         if isinstance(spill_data_or_file, np.ndarray):
             spill = spill_data_or_file
         else:
@@ -52,8 +57,16 @@ class Matrix(object):
 
         self.id = matrix_id
         self.matrix = spill
-        # TODO: Should we use a different name other than 'fluorochromes'? They are typically antibodies or markers.
+
+        # Remove any null channels from detector list
+        if null_channels is not None:
+            for nc in null_channels:
+                if nc in detectors:
+                    detectors.remove(nc)
+
         self.detectors = detectors
+
+        # TODO: Should we use a different name other than 'fluorochromes'? They are typically antibodies or markers.
         # Note: fluorochromes attribute is required for compatibility with GatingML exports,
         #       as the GatingML 2.0 requires both the set of detectors and fluorochromes.
         if fluorochromes is None:
@@ -74,6 +87,12 @@ class Matrix(object):
         :param sample: Sample instance with matching set of detectors
         :return: NumPy array of compensated events
         """
+        # Check that sample fluoro channels match the
+        # matrix detectors
+        sample_fluoro_labels = [sample.pnn_labels[i] for i in sample.fluoro_indices]
+        if not set(self.detectors).issubset(sample_fluoro_labels):
+            raise FlowKitException("Detectors must be a subset of the Sample's fluorochomes")
+
         indices = [
             sample.get_channel_index(d) for d in self.detectors
         ]
@@ -92,6 +111,12 @@ class Matrix(object):
         :param sample: Sample instance with matching set of detectors
         :return: NumPy array of compensated events
         """
+        # Check that sample fluoro channels match the
+        # matrix detectors
+        sample_fluoro_labels = [sample.pnn_labels[i] for i in sample.fluoro_indices]
+        if not set(self.detectors).issubset(sample_fluoro_labels):
+            raise FlowKitException("Detectors must be a subset of the Sample's fluorochomes")
+
         indices = [
             sample.get_channel_index(d) for d in self.detectors
         ]

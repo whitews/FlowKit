@@ -62,6 +62,8 @@ fluorochromes_8c = [
     'CD4'
 ]
 
+csv_8c_comp_null_channel_file_path = 'data/8_color_data_set/den_comp_null_channel.csv'
+
 
 class MatrixTestCase(unittest.TestCase):
     """Tests related to compensation matrices and the Matrix class"""
@@ -117,3 +119,26 @@ class MatrixTestCase(unittest.TestCase):
         inv_data = matrix.inverse(sample)
 
         np.testing.assert_almost_equal(inv_data, data_raw, 10)
+
+    def test_null_channels(self):
+        # pretend FITC is a null channel
+        null_channels = ['TNFa FITC FLR-A']
+
+        comp_mat = fk.Matrix(
+            'my_spill',
+            csv_8c_comp_null_channel_file_path,
+            detectors_8c,
+            null_channels=null_channels
+        )
+
+        fcs_file_path = "data/8_color_data_set/fcs_files/101_DEN084Y5_15_E01_008_clean.fcs"
+
+        # test with a sample not using null channels and one using null channels
+        sample1 = fk.Sample(fcs_file_path, null_channel_list=None)
+        sample2 = fk.Sample(fcs_file_path, null_channel_list=null_channels)
+
+        comp_events1 = comp_mat.apply(sample1)
+        comp_events2 = comp_mat.apply(sample2)
+
+        self.assertIsInstance(comp_events1, np.ndarray)
+        self.assertIsInstance(comp_events2, np.ndarray)
