@@ -81,6 +81,10 @@ class LinearTransform(Transform):
 
     flin(x, T, A) = (x + A) / (T + A)
 
+    This transformation linearly maps values from the interval [−A, T]
+    to the interval [0, 1]. However, it is defined for all x ∈ R
+    including outside the [−A, T] interval.
+
     :param transform_id: A string identifying the transform
     :param param_t: parameter for the top of the linear scale (e.g. 262144)
     :param param_a: parameter for the offset, controls the bottom of the scale
@@ -133,6 +137,10 @@ class LogTransform(Transform):
     GatingML 2.0 specification:
 
     flog(x, T, M) = (1 / M) * log_10(x / T) + 1
+
+    This transformation provides a logarithmic display that maps scale values
+    from the (0, T] interval to the (−∞, 1] interval such that the data value
+    T is mapped to 1 and M decades of data are mapped onto the unit interval.
 
     :param transform_id: A string identifying the transform
     :param param_t: parameter for the top of the linear scale (e.g. 262144)
@@ -277,6 +285,12 @@ class LogicleTransform(Transform):
     Moore WA and Parks DR. Update for the logicle data scale including operational
     code implementations. Cytometry A., 2012:81A(4):273–277.
 
+    The Logicle scale is the inverse of a modified biexponential function. It
+    provides a Logicle display that maps scale values onto the [0, 1] interval
+    such that the data value param_t is mapped to 1, large data values are mapped
+    to locations similar to a logarithmic scale, and param_a decades of negative
+    data are brought on scale. See the GatingML 2.0 specification for more details.
+
     :param transform_id: A string identifying the transform
     :param param_t: parameter for the top of the linear scale (e.g. 262144)
     :param param_w: parameter for the approximate number of decades in the linear region
@@ -343,6 +357,13 @@ class AsinhTransform(Transform):
     """
     An implementation of the parametrized inverse hyperbolic sine function
     as defined in the GatingML 2.0 specification.
+
+    This transformation provides an inverse hyperbolic sine transformation
+    that maps a data value onto the interval [0,1] such that:
+        * The top of scale value (i.e, param_t) is mapped to 1.
+        * Large data values are mapped to locations similar to the logarithmic
+          scale.
+        * param_a decades of negative data are brought on scale.
 
     :param transform_id: A string identifying the transform
     :param param_t: parameter specifying the top of the scale, (e.g. 262144)
