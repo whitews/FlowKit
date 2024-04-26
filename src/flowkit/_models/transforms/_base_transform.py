@@ -9,14 +9,8 @@ from copy import copy
 class Transform(ABC):
     """
     Abstract base class for all transformation classes
-
-    :param transform_id: A string identifying the transform
     """
-    def __init__(
-            self,
-            transform_id
-    ):
-        self.id = transform_id
+    def __init__(self,):
         self.dimensions = []
 
     @abstractmethod
@@ -34,10 +28,6 @@ class Transform(ABC):
         if self.__class__ == other.__class__:
             this_attr = copy(self.__dict__)
             other_attr = copy(other.__dict__)
-
-            # ignore 'id' attribute
-            del this_attr['id']
-            del other_attr['id']
 
             # also ignore 'private' attributes
             this_delete = [k for k in this_attr.keys() if k.startswith('_')]

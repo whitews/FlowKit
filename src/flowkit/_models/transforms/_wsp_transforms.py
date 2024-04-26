@@ -122,17 +122,11 @@ class WSPLogTransform(Transform):
     """
     Logarithmic transform as implemented in FlowJo 10.
 
-    :param transform_id: A string identifying the transform
     :param offset: A positive number used to offset event data
     :param decades: A positive number of for the desired number of decades
     """
-    def __init__(
-        self,
-        transform_id,
-        offset,
-        decades
-    ):
-        Transform.__init__(self, transform_id)
+    def __init__(self, offset, decades):
+        Transform.__init__(self)
 
         self.offset = offset
         self.decades = decades
@@ -140,7 +134,7 @@ class WSPLogTransform(Transform):
     def __repr__(self):
         return (
             f'{self.__class__.__name__}('
-            f'{self.id}, offset: {self.offset}, decades: {self.decades})'
+            f'offset: {self.offset}, decades: {self.decades})'
         )
 
     def apply(self, events):
@@ -193,7 +187,6 @@ class WSPBiexTransform(Transform):
     adjusting the biexponential transform. It may be appropriate to adjust this value
     only if you use data that displays data with a data range greater than 5 decades.
 
-    :param transform_id: A string identifying the transform
     :param negative: Value for the FlowJo biex option 'negative' (float)
     :param width: Value for the FlowJo biex option 'width' (float)
     :param positive: Value for the FlowJo biex option 'positive' (float)
@@ -201,13 +194,12 @@ class WSPBiexTransform(Transform):
     """
     def __init__(
         self,
-        transform_id,
         negative=0,
         width=-10,
         positive=4.418540,
         max_value=262144.000029
     ):
-        Transform.__init__(self, transform_id)
+        Transform.__init__(self)
 
         self.negative = negative
         self.width = width
@@ -227,7 +219,7 @@ class WSPBiexTransform(Transform):
     def __repr__(self):
         return (
             f'{self.__class__.__name__}('
-            f'{self.id}, width: {self.width}, neg: {self.negative}, pos: {self.positive}, top: {self.max_value})'
+            f'width: {self.width}, neg: {self.negative}, pos: {self.positive}, top: {self.max_value})'
         )
 
     def apply(self, events):
