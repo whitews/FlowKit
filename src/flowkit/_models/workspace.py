@@ -349,19 +349,20 @@ class Workspace(object):
 
     def get_transforms(self, sample_id):
         """
-        Retrieve the list of transformations for a specific sample.
+        Retrieve a dictionary LUT of transformations for a specific sample.
+        Keys are the transform IDs and values are Transform instances.
 
         :param sample_id: a text string representing a Sample instance
-        :return: a list of Transform instances
+        :return: a dictionary LUT of transform IDs: Transform instances
         """
         sample_dict = self._sample_data_lut[sample_id]
 
         if sample_dict['transforms'] is not None:
-            xforms = copy.deepcopy(list(sample_dict['transforms'].values()))
+            xform_lut = copy.deepcopy(sample_dict['transforms'])
         else:
-            xforms = None
+            xform_lut = None
 
-        return xforms
+        return xform_lut
 
     def get_gate(self, sample_id, gate_name, gate_path=None):
         """
@@ -496,9 +497,7 @@ class Workspace(object):
         """
         sample = self.get_sample(sample_id)
         comp_matrix = self.get_comp_matrix(sample_id)
-        xforms = self.get_transforms(sample_id)
-
-        xform_lut = {xform.id: xform for xform in xforms if not xform.id.startswith('Comp')}
+        xform_lut = self.get_transforms(sample_id)
 
         # default is 'raw' events
         event_source = 'raw'
@@ -506,7 +505,8 @@ class Workspace(object):
         if comp_matrix is not None:
             sample.apply_compensation(comp_matrix)
             event_source = 'comp'
-        if xforms is not None:
+
+        if xform_lut is not None:
             sample.apply_transform(xform_lut)
             event_source = 'xform'
 
