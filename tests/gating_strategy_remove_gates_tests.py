@@ -45,15 +45,15 @@ class GatingStrategyRemoveGatesTestCase(unittest.TestCase):
 
         # define transforms we'll be using
         # linear transform for our time dimension
-        lin_xform = fk.transforms.LinearTransform('time-lin', param_t=69, param_a=0)
-        sc_lin_xform = fk.transforms.LinearTransform('scatter-lin', param_t=262144, param_a=0)
+        lin_xform = fk.transforms.LinearTransform(param_t=69, param_a=0)
+        sc_lin_xform = fk.transforms.LinearTransform(param_t=262144, param_a=0)
         flr_xform = fk.transforms.LogicleTransform(
-            'flr-logicle', param_t=262144, param_a=0, param_w=1, param_m=4.418539922
+            param_t=262144, param_a=0, param_w=1, param_m=4.418539922
         )
 
-        session.add_transform(lin_xform)
-        session.add_transform(sc_lin_xform)
-        session.add_transform(flr_xform)
+        session.add_transform('time-lin', lin_xform)
+        session.add_transform('scatter-lin', sc_lin_xform)
+        session.add_transform('flr-logicle', flr_xform)
 
         # time dimension with ranges
         time_dim = fk.Dimension('Time', transformation_ref='time-lin', range_min=0.1, range_max=0.9)

@@ -20,16 +20,14 @@ poly1_dim2 = fk.Dimension('FL3-H', compensation_ref='FCS')
 poly1_dims1 = [poly1_dim1, poly1_dim2]
 poly1_gate = fk.gates.PolygonGate('Polygon1', poly1_dims1, poly1_vertices)
 
-hyperlog_xform1 = fk.transforms.HyperlogTransform(
-    'Hyperlog_10000_1_4.5_0',
+hyperlog_xform_10000__1__4_5__0 = fk.transforms.HyperlogTransform(
     param_t=10000,
     param_w=1,
     param_m=4.5,
     param_a=0
 )
 
-logicle_xform1 = fk.transforms.LogicleTransform(
-    'Logicle_10000_0.5_4.5_0',
+logicle_xform_10000__0_5__4_5__0 = fk.transforms.LogicleTransform(
     param_t=10000,
     param_w=0.5,
     param_m=4.5,
@@ -82,9 +80,9 @@ class GatingStrategyTestCase(unittest.TestCase):
 
     def test_add_duplicate_transform_id(self):
         gs = fk.GatingStrategy()
-        gs.add_transform(logicle_xform1)
+        gs.add_transform('Logicle_10000_0.5_4.5_0', logicle_xform_10000__0_5__4_5__0)
 
-        self.assertRaises(KeyError, gs.add_transform, logicle_xform1)
+        self.assertRaises(KeyError, gs.add_transform, 'Logicle_10000_0.5_4.5_0', logicle_xform_10000__0_5__4_5__0)
 
     def test_add_matrix_non_matrix_class(self):
         gs = fk.GatingStrategy()
@@ -99,8 +97,8 @@ class GatingStrategyTestCase(unittest.TestCase):
     def test_fcs_defined_spill(self):
         gs = fk.GatingStrategy()
 
-        asinh_xform = fk.transforms.AsinhTransform('asinh', param_t=262144, param_m=4.0, param_a=0.0)
-        gs.add_transform(asinh_xform)
+        asinh_xform = fk.transforms.AsinhTransform(param_t=262144, param_m=4.0, param_a=0.0)
+        gs.add_transform('asinh', asinh_xform)
 
         dim_cd3 = fk.Dimension(
             'CD3 APC-H7 FLR-A',
@@ -129,8 +127,8 @@ class GatingStrategyTestCase(unittest.TestCase):
 
         gs.add_comp_matrix(comp_matrix_01)
 
-        gs.add_transform(logicle_xform1)
-        gs.add_transform(hyperlog_xform1)
+        gs.add_transform('Logicle_10000_0.5_4.5_0', logicle_xform_10000__0_5__4_5__0)
+        gs.add_transform('Hyperlog_10000_1_4.5_0', hyperlog_xform_10000__1__4_5__0)
 
         gs.add_gate(poly1_gate, ('root',))
 
@@ -168,8 +166,8 @@ class GatingStrategyTestCase(unittest.TestCase):
 
         gs.add_comp_matrix(comp_matrix_01)
 
-        gs.add_transform(logicle_xform1)
-        gs.add_transform(hyperlog_xform1)
+        gs.add_transform('Logicle_10000_0.5_4.5_0', logicle_xform_10000__0_5__4_5__0)
+        gs.add_transform('Hyperlog_10000_1_4.5_0', hyperlog_xform_10000__1__4_5__0)
 
         gs.add_gate(poly1_gate, ('root',))
 
@@ -209,8 +207,8 @@ class GatingStrategyTestCase(unittest.TestCase):
 
         gs.add_comp_matrix(comp_matrix_01)
 
-        gs.add_transform(logicle_xform1)
-        gs.add_transform(hyperlog_xform1)
+        gs.add_transform('Logicle_10000_0.5_4.5_0', logicle_xform_10000__0_5__4_5__0)
+        gs.add_transform('Hyperlog_10000_1_4.5_0', hyperlog_xform_10000__1__4_5__0)
 
         gs.add_gate(poly1_gate, ('root',))
 
