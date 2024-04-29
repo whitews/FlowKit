@@ -120,23 +120,23 @@ class Session(object):
         """
         self.gating_strategy.remove_gate(gate_name, gate_path=gate_path, keep_children=keep_children)
 
-    def add_transform(self, transform):
+    def add_transform(self, transform_id, transform):
         """
         Add a Transform instance to use in the gating strategy.
 
         :param transform: an instance of a Transform subclass
         :return: None
         """
-        self.gating_strategy.add_transform(copy.deepcopy(transform))
+        self.gating_strategy.add_transform(transform_id, copy.deepcopy(transform))
 
     def get_transforms(self):
         """
-        Retrieve the list of Transform instances stored in the gating strategy.
+        Retrieve a dictionary LUT of transformations stored in the GatingStrategy.
+        Keys are the transform IDs and values are Transform instances.
 
-        :return: list of Transform instances
+        :return: a dictionary LUT of transform IDs: Transform instances
         """
-
-        return list(self.gating_strategy.transformations.values())
+        return self.gating_strategy.transformations
 
     def get_transform(self, transform_id):
         """
