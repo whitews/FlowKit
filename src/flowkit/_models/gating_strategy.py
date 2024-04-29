@@ -262,7 +262,7 @@ class GatingStrategy(object):
         # Now, rebuild the DAG (easier than modifying it)
         self._rebuild_dag()
 
-    def add_transform(self, transform):
+    def add_transform(self, transform_id, transform):
         """
         Add a transform to the gating strategy, see `transforms` module. The transform ID must be unique in the
         gating strategy.
@@ -273,10 +273,10 @@ class GatingStrategy(object):
         if not isinstance(transform, Transform):
             raise TypeError("transform must be a sub-class of the Transform class")
 
-        if transform.id in self.transformations:
-            raise KeyError("Transform ID '%s' is already defined" % transform.id)
+        if transform_id in self.transformations:
+            raise KeyError("Transform ID '%s' is already defined" % transform_id)
 
-        self.transformations[transform.id] = transform
+        self.transformations[transform_id] = transform
 
     def get_transform(self, transform_id):
         """
