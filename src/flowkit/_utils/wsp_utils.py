@@ -152,7 +152,6 @@ def _parse_wsp_transforms(transforms_el, transform_ns, data_type_ns):
             min_range = find_attribute_value(xform_el, transform_ns, 'minRange')
             max_range = find_attribute_value(xform_el, transform_ns, 'maxRange')
             xforms_lut[param_name] = _transforms.LinearTransform(
-                param_name,
                 param_t=float(max_range),
                 param_a=float(min_range)
             )
@@ -160,7 +159,6 @@ def _parse_wsp_transforms(transforms_el, transform_ns, data_type_ns):
             offset = find_attribute_value(xform_el, transform_ns, 'offset')
             decades = find_attribute_value(xform_el, transform_ns, 'decades')
             xforms_lut[param_name] = _wsp_transforms.WSPLogTransform(
-                param_name,
                 offset=float(offset),
                 decades=float(decades)
             )
@@ -172,7 +170,6 @@ def _parse_wsp_transforms(transforms_el, transform_ns, data_type_ns):
             param_m = find_attribute_value(xform_el, transform_ns, 'M')
             param_a = find_attribute_value(xform_el, transform_ns, 'A')
             xforms_lut[param_name] = _transforms.LogicleTransform(
-                param_name,
                 param_t=float(param_t),
                 param_w=float(param_w),
                 param_m=float(param_m),
@@ -191,7 +188,6 @@ def _parse_wsp_transforms(transforms_el, transform_ns, data_type_ns):
                 raise ValueError("FlowJo biex 'length' parameter value of %s is not supported." % param_length)
 
             xforms_lut[param_name] = _wsp_transforms.WSPBiexTransform(
-                param_name,
                 negative=float(param_neg),
                 width=float(param_width),
                 positive=float(param_pos),
@@ -207,7 +203,6 @@ def _parse_wsp_transforms(transforms_el, transform_ns, data_type_ns):
             param_a = find_attribute_value(xform_el, transform_ns, 'A')
             param_m = find_attribute_value(xform_el, transform_ns, 'M')
             xforms_lut[param_name] = _transforms.AsinhTransform(
-                param_name,
                 param_t=float(param_t),
                 param_m=float(param_m),
                 param_a=float(param_a)
@@ -268,7 +263,7 @@ def _convert_wsp_gate(wsp_gate, comp_matrix, xform_lut):
         if dim_id in xform_lut:
             xform = xform_lut[dim_id]
             xforms.append(xform)  # need these later for vertices, coordinates, etc.
-            xform_id = xform.id
+            xform_id = dim_id  # use dim ID for xform ID
             if dim.min is not None:
                 new_dim_min = xform.apply(np.array([[float(dim.min)]]))[0][0]
 
@@ -632,8 +627,8 @@ def parse_wsp(workspace_file_or_path):
         if sample_dict['comp'] is not None:
             sample_gating_strategy.add_comp_matrix(sample_dict['comp']['matrix'])
 
-        for transform in sample_dict['transforms'].values():
-            sample_gating_strategy.add_transform(transform)
+        for transform_id, transform in sample_dict['transforms'].items():
+            sample_gating_strategy.add_transform(transform_id, transform)
 
         # Iterate over the sample's gates to add gates to the GatingStrategy
         # NOTE: This relies on the ordered dictionary behavior
