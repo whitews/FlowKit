@@ -709,7 +709,12 @@ class Sample(object):
             transformed_events = self._raw_events.copy()
 
         if isinstance(transform, dict):
-            for pnn_label, param_xform in transform.items():
+            for pnn_label in self.pnn_labels:
+                if pnn_label in transform:
+                    param_xform = transform[pnn_label]
+                else:
+                    # not all pnn labels may be present in transform dict
+                    continue
                 param_idx = self.get_channel_index(pnn_label)
 
                 transformed_events[:, param_idx] = param_xform.apply(
