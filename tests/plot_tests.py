@@ -24,7 +24,7 @@ class PlotTestCase(unittest.TestCase):
 
     def test_sample_plot_histogram(self):
         sample = copy.deepcopy(test_sample)
-        xform_logicle = fk.transforms.LogicleTransform('logicle', param_t=10000, param_w=0.5, param_m=4.5, param_a=0)
+        xform_logicle = fk.transforms.LogicleTransform(param_t=10000, param_w=0.5, param_m=4.5, param_a=0)
         sample.apply_transform(xform_logicle)
 
         p = sample.plot_histogram(
@@ -40,7 +40,7 @@ class PlotTestCase(unittest.TestCase):
 
     def test_sample_plot_channel(self):
         sample = copy.deepcopy(test_sample)
-        xform_logicle = fk.transforms.LogicleTransform('logicle', param_t=1024, param_w=0.5, param_m=4.5, param_a=0)
+        xform_logicle = fk.transforms.LogicleTransform(param_t=1024, param_w=0.5, param_m=4.5, param_a=0)
         sample.apply_transform(xform_logicle)
 
         flagged_events = list(range(1000))
@@ -56,7 +56,7 @@ class PlotTestCase(unittest.TestCase):
 
     def test_sample_plot_contour(self):
         sample = copy.deepcopy(test_sample)
-        xform_logicle = fk.transforms.LogicleTransform('logicle', param_t=10000, param_w=0.5, param_m=4.5, param_a=0)
+        xform_logicle = fk.transforms.LogicleTransform(param_t=10000, param_w=0.5, param_m=4.5, param_a=0)
         sample.apply_transform(xform_logicle)
 
         p = sample.plot_contour(
@@ -71,7 +71,7 @@ class PlotTestCase(unittest.TestCase):
 
     def test_sample_plot_scatter(self):
         sample = copy.deepcopy(test_sample)
-        xform_logicle = fk.transforms.LogicleTransform('logicle', param_t=10000, param_w=0.5, param_m=4.5, param_a=0)
+        xform_logicle = fk.transforms.LogicleTransform(param_t=10000, param_w=0.5, param_m=4.5, param_a=0)
         sample.apply_transform(xform_logicle)
 
         p = sample.plot_scatter(
@@ -89,7 +89,7 @@ class PlotTestCase(unittest.TestCase):
         # reduce # of events for plotting performance
         sample.subsample_events(500)
 
-        xform_logicle = fk.transforms.LogicleTransform('logicle', param_t=10000, param_w=0.5, param_m=4.5, param_a=0)
+        xform_logicle = fk.transforms.LogicleTransform(param_t=10000, param_w=0.5, param_m=4.5, param_a=0)
         sample.apply_transform(xform_logicle)
 
         grid = sample.plot_scatter_matrix(

@@ -16,9 +16,9 @@ data1_fcs_path = 'data/gate_ref/data1.fcs'
 data1_sample = Sample(data1_fcs_path)
 data1_sample_with_orig = Sample(data1_fcs_path, cache_original_events=True)
 
-xform_logicle = transforms.LogicleTransform('logicle', param_t=10000, param_w=0.5, param_m=4.5, param_a=0)
-xform_biex1 = transforms.WSPBiexTransform('neg0', width=-100.0, negative=0.0)
-xform_biex2 = transforms.WSPBiexTransform('neg1', width=-100.0, negative=1.0)
+xform_logicle = transforms.LogicleTransform(param_t=10000, param_w=0.5, param_m=4.5, param_a=0)
+xform_biex1 = transforms.WSPBiexTransform(width=-100.0, negative=0.0)
+xform_biex2 = transforms.WSPBiexTransform(width=-100.0, negative=1.0)
 
 fcs_file_path = "data/test_comp_example.fcs"
 comp_file_path = "data/comp_complete_example.csv"
