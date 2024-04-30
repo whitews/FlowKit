@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 
 from flowkit import Session, Sample, Matrix, Dimension, gates, transforms, load_samples
-from .gating_strategy_prog_gate_tests import data1_sample, poly1_gate, poly1_vertices, comp_matrix_01, asinh_xform1
+from .gating_strategy_prog_gate_tests import data1_sample, poly1_gate, poly1_vertices, comp_matrix_01, asinh_xform_10000_4_1
 
 fcs_file_paths = [
     "data/100715.fcs",
@@ -47,7 +47,7 @@ class SessionTestCase(unittest.TestCase):
 
     def test_get_transform(self):
         fks = Session()
-        fks.add_transform(asinh_xform1)
+        fks.add_transform('AsinH_10000_4_1', asinh_xform_10000_4_1)
         comp_mat = fks.get_transform('AsinH_10000_4_1')
 
         self.assertIsInstance(comp_mat, transforms.AsinhTransform)
@@ -100,7 +100,7 @@ class SessionTestCase(unittest.TestCase):
     def test_add_transform_asinh_range1_gate():
         fks = Session()
         fks.add_samples(data1_sample)
-        fks.add_transform(asinh_xform1)
+        fks.add_transform('AsinH_10000_4_1', asinh_xform_10000_4_1)
 
         dim1 = Dimension('FL1-H', 'uncompensated', 'AsinH_10000_4_1', range_min=0.37, range_max=0.63)
         dims = [dim1]

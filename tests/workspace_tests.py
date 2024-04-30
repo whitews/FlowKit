@@ -138,11 +138,11 @@ class WorkspaceTestCase(unittest.TestCase):
             ignore_missing_files=True
         )
 
-        xforms = wsp.get_transforms(sample_id)
+        xform_lut = wsp.get_transforms(sample_id)
 
-        self.assertEqual(len(xforms), 23)
-        for cm in xforms:
-            self.assertIsInstance(cm, Transform)
+        self.assertEqual(len(xform_lut), 23)
+        for xform in xform_lut.values():
+            self.assertIsInstance(xform, Transform)
 
     def test_get_child_gate_ids(self):
         wsp_path = "data/8_color_data_set/8_color_ICS.wsp"
@@ -343,7 +343,7 @@ class WorkspaceTestCase(unittest.TestCase):
         lut_file_path = os.path.join('data', 'flowjo_xforms', lut_file_name)
         y, x = np.loadtxt(lut_file_path, delimiter=',', usecols=(0, 1), skiprows=1, unpack=True)
 
-        biex_xform = transforms.WSPBiexTransform('biex', negative=neg, width=width)
+        biex_xform = transforms.WSPBiexTransform(negative=neg, width=width)
 
         test_y = biex_xform.apply(x)
 
