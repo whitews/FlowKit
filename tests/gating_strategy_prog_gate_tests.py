@@ -78,43 +78,37 @@ spill01_data = np.array(
 )
 comp_matrix_01 = fk.Matrix('MySpill', spill01_data, spill01_detectors, spill01_fluoros)
 
-asinh_xform1 = fk.transforms.AsinhTransform(
-    'AsinH_10000_4_1',
+asinh_xform_10000_4_1 = fk.transforms.AsinhTransform(
     param_t=10000,
     param_m=4,
     param_a=1
 )
 
-hyperlog_xform1 = fk.transforms.HyperlogTransform(
-    'Hyperlog_10000_1_4.5_0',
+hyperlog_xform_10000__1__4_5__0 = fk.transforms.HyperlogTransform(
     param_t=10000,
     param_w=1,
     param_m=4.5,
     param_a=0
 )
 
-linear_xform1 = fk.transforms.LinearTransform(
-    'Linear_10000_500',
+linear_xform_10000_500 = fk.transforms.LinearTransform(
     param_t=10000,
     param_a=500
 )
 
-logicle_xform1 = fk.transforms.LogicleTransform(
-    'Logicle_10000_0.5_4.5_0',
+logicle_xform_10000_0_5__4_5__0 = fk.transforms.LogicleTransform(
     param_t=10000,
     param_w=0.5,
     param_m=4.5,
     param_a=0
 )
-logicle_xform2 = fk.transforms.LogicleTransform(
-    'Logicle_10000_0.5_4_0.5',
+logicle_xform_10000__0_5__4__0_5 = fk.transforms.LogicleTransform(
     param_t=10000,
     param_w=0.5,
     param_m=4,
     param_a=0.5
 )
-logicle_xform3 = fk.transforms.LogicleTransform(
-    'Logicle_10000_1_4_0.5',
+logicle_xform_10000__1__4__0_5 = fk.transforms.LogicleTransform(
     param_t=10000,
     param_w=1,
     param_m=4,
@@ -392,14 +386,13 @@ class GatingTestCase(unittest.TestCase):
     def test_add_ratio_range1_gate():
         gs = fk.GatingStrategy()
 
-        rat_xform = fk.transforms.RatioTransform(
-            'FL2Rat1',
+        rat_xform_fl2h_fl2a = fk.transforms.RatioTransform(
             ['FL2-H', 'FL2-A'],
             param_a=1,
             param_b=0,
             param_c=-1
         )
-        gs.add_transform(rat_xform)
+        gs.add_transform('FL2Rat1', rat_xform_fl2h_fl2a)
 
         dim_rat1 = fk.RatioDimension(
             'FL2Rat1',
@@ -423,14 +416,13 @@ class GatingTestCase(unittest.TestCase):
     def test_add_ratio_range2_gate():
         gs = fk.GatingStrategy()
 
-        rat_xform = fk.transforms.RatioTransform(
-            'FL2Rat2',
+        rat_xform_fl2h_fl2a = fk.transforms.RatioTransform(
             ['FL2-H', 'FL2-A'],
             param_a=2.7,
             param_b=-100,
             param_c=-300
         )
-        gs.add_transform(rat_xform)
+        gs.add_transform('FL2Rat2', rat_xform_fl2h_fl2a)
 
         dim_rat2 = fk.RatioDimension(
             'FL2Rat2',
@@ -454,17 +446,16 @@ class GatingTestCase(unittest.TestCase):
     def test_add_log_ratio_range1_gate():
         gs = fk.GatingStrategy()
 
-        rat_xform = fk.transforms.RatioTransform(
-            'FL2Rat1',
+        rat_xform_fl2h_fl2a = fk.transforms.RatioTransform(
             ['FL2-H', 'FL2-A'],
             param_a=1,
             param_b=0,
             param_c=-1
         )
-        gs.add_transform(rat_xform)
+        gs.add_transform('FL2Rat1', rat_xform_fl2h_fl2a)
 
-        log_rat_xform = fk.transforms.LogTransform('MyRatLog', param_t=100, param_m=2)
-        gs.add_transform(log_rat_xform)
+        log_rat_xform = fk.transforms.LogTransform(param_t=100, param_m=2)
+        gs.add_transform('MyRatLog',log_rat_xform)
 
         dim_rat1 = fk.RatioDimension(
             'FL2Rat1',
@@ -813,7 +804,7 @@ class GatingTestCase(unittest.TestCase):
     def test_add_transform_asinh_range1_gate():
         gs = fk.GatingStrategy()
 
-        gs.add_transform(asinh_xform1)
+        gs.add_transform('AsinH_10000_4_1', asinh_xform_10000_4_1)
 
         dim1 = fk.Dimension('FL1-H', 'uncompensated', 'AsinH_10000_4_1', range_min=0.37, range_max=0.63)
         dims = [dim1]
@@ -832,7 +823,7 @@ class GatingTestCase(unittest.TestCase):
     def test_add_transform_hyperlog_range2_gate():
         gs = fk.GatingStrategy()
 
-        gs.add_transform(hyperlog_xform1)
+        gs.add_transform('Hyperlog_10000_1_4.5_0', hyperlog_xform_10000__1__4_5__0)
 
         dim1 = fk.Dimension('FL1-H', 'uncompensated', 'Hyperlog_10000_1_4.5_0', range_min=0.37, range_max=0.63)
         dims = [dim1]
@@ -851,7 +842,7 @@ class GatingTestCase(unittest.TestCase):
     def test_add_transform_linear_range3_gate():
         gs = fk.GatingStrategy()
 
-        gs.add_transform(linear_xform1)
+        gs.add_transform('Linear_10000_500', linear_xform_10000_500)
 
         dim1 = fk.Dimension('FL1-H', 'uncompensated', 'Linear_10000_500', range_min=0.049, range_max=0.055)
         dims = [dim1]
@@ -870,7 +861,7 @@ class GatingTestCase(unittest.TestCase):
     def test_add_transform_logicle_range4_gate():
         gs = fk.GatingStrategy()
 
-        gs.add_transform(logicle_xform1)
+        gs.add_transform('Logicle_10000_0.5_4.5_0', logicle_xform_10000_0_5__4_5__0)
 
         dim1 = fk.Dimension('FL1-H', 'uncompensated', 'Logicle_10000_0.5_4.5_0', range_min=0.37, range_max=0.63)
         dims = [dim1]
@@ -889,7 +880,7 @@ class GatingTestCase(unittest.TestCase):
     def test_add_transform_logicle_range5_gate():
         gs = fk.GatingStrategy()
 
-        gs.add_transform(logicle_xform3)
+        gs.add_transform('Logicle_10000_1_4_0.5', logicle_xform_10000__1__4__0_5)
 
         dim1 = fk.Dimension('FL1-H', 'uncompensated', 'Logicle_10000_1_4_0.5', range_min=0.37, range_max=0.63)
         dims = [dim1]
@@ -909,11 +900,10 @@ class GatingTestCase(unittest.TestCase):
         gs = fk.GatingStrategy()
 
         xform = fk.transforms.LogTransform(
-            'Logarithmic_10000_5',
             param_t=10000,
             param_m=5
         )
-        gs.add_transform(xform)
+        gs.add_transform('Logarithmic_10000_5', xform)
 
         dim1 = fk.Dimension('FL1-H', 'uncompensated', 'Logarithmic_10000_5', range_min=0.37, range_max=0.63)
         dims = [dim1]
@@ -934,7 +924,7 @@ class GatingTestCase(unittest.TestCase):
 
         gs.add_comp_matrix(comp_matrix_01)
 
-        gs.add_transform(asinh_xform1)
+        gs.add_transform('AsinH_10000_4_1', asinh_xform_10000_4_1)
 
         dim1 = fk.Dimension('FITC', 'MySpill', 'AsinH_10000_4_1', range_min=0.37, range_max=0.63)
         dims = [dim1]
@@ -955,7 +945,7 @@ class GatingTestCase(unittest.TestCase):
 
         gs.add_comp_matrix(comp_matrix_01)
 
-        gs.add_transform(hyperlog_xform1)
+        gs.add_transform('Hyperlog_10000_1_4.5_0', hyperlog_xform_10000__1__4_5__0)
 
         dim1 = fk.Dimension('FITC', 'MySpill', 'Hyperlog_10000_1_4.5_0', range_min=0.37, range_max=0.63)
         dims = [dim1]
@@ -976,7 +966,7 @@ class GatingTestCase(unittest.TestCase):
 
         gs.add_comp_matrix(comp_matrix_01)
 
-        gs.add_transform(linear_xform1)
+        gs.add_transform('Linear_10000_500', linear_xform_10000_500)
 
         dim1 = fk.Dimension('FITC', 'MySpill', 'Linear_10000_500', range_min=0.049, range_max=0.055)
         dims = [dim1]
@@ -997,7 +987,7 @@ class GatingTestCase(unittest.TestCase):
 
         gs.add_comp_matrix(comp_matrix_01)
 
-        gs.add_transform(logicle_xform1)
+        gs.add_transform('Logicle_10000_0.5_4.5_0', logicle_xform_10000_0_5__4_5__0)
 
         dim1 = fk.Dimension('FITC', 'MySpill', 'Logicle_10000_0.5_4.5_0', range_min=0.37, range_max=0.63)
         dims = [dim1]
@@ -1018,7 +1008,7 @@ class GatingTestCase(unittest.TestCase):
 
         gs.add_comp_matrix(comp_matrix_01)
 
-        gs.add_transform(logicle_xform3)
+        gs.add_transform('Logicle_10000_1_4_0.5', logicle_xform_10000__1__4__0_5)
 
         dim1 = fk.Dimension('FITC', 'MySpill', 'Logicle_10000_1_4_0.5', range_min=0.37, range_max=0.63)
         dims = [dim1]
@@ -1039,7 +1029,7 @@ class GatingTestCase(unittest.TestCase):
 
         gs.add_comp_matrix(comp_matrix_01)
 
-        gs.add_transform(asinh_xform1)
+        gs.add_transform('AsinH_10000_4_1', asinh_xform_10000_4_1)
 
         dim1 = fk.Dimension('PE', 'MySpill', 'AsinH_10000_4_1', range_min=0.09, range_max=0.36)
         dims = [dim1]
@@ -1060,7 +1050,7 @@ class GatingTestCase(unittest.TestCase):
 
         gs.add_comp_matrix(comp_matrix_01)
 
-        gs.add_transform(hyperlog_xform1)
+        gs.add_transform('Hyperlog_10000_1_4.5_0', hyperlog_xform_10000__1__4_5__0)
 
         dim1 = fk.Dimension('PE', 'MySpill', 'Hyperlog_10000_1_4.5_0', range_min=0.09, range_max=0.36)
         dims = [dim1]
@@ -1081,7 +1071,7 @@ class GatingTestCase(unittest.TestCase):
 
         gs.add_comp_matrix(comp_matrix_01)
 
-        gs.add_transform(logicle_xform3)
+        gs.add_transform('Logicle_10000_1_4_0.5', logicle_xform_10000__1__4__0_5)
 
         dim1 = fk.Dimension('PE', 'MySpill', 'Logicle_10000_1_4_0.5', range_min=0.09, range_max=0.36)
         dims = [dim1]
@@ -1102,7 +1092,7 @@ class GatingTestCase(unittest.TestCase):
 
         gs.add_comp_matrix(comp_matrix_01)
 
-        gs.add_transform(logicle_xform1)
+        gs.add_transform('Logicle_10000_0.5_4.5_0', logicle_xform_10000_0_5__4_5__0)
 
         dim1 = fk.Dimension('PE', 'MySpill', 'Logicle_10000_0.5_4.5_0', range_min=0.31, range_max=0.69)
         dim2 = fk.Dimension('PerCP', 'MySpill', 'Logicle_10000_0.5_4.5_0', range_min=0.27, range_max=0.73)
@@ -1192,8 +1182,8 @@ class GatingTestCase(unittest.TestCase):
 
         gs.add_comp_matrix(comp_matrix_01)
 
-        gs.add_transform(logicle_xform1)
-        gs.add_transform(hyperlog_xform1)
+        gs.add_transform('Logicle_10000_0.5_4.5_0', logicle_xform_10000_0_5__4_5__0)
+        gs.add_transform('Hyperlog_10000_1_4.5_0', hyperlog_xform_10000__1__4_5__0)
 
         gs.add_gate(poly1_gate, ('root',))
 
