@@ -161,7 +161,7 @@ class WSPBiexTransform(Transform):
     Information on the input parameters from the FlowJo docs:
 
     Adjusting width:
-    The value for w will determine the amount of channels to be  compressed into
+    The value for w will determine the amount of data to be compressed into
     linear space around zero. The space of linear does not change, but rather the
     number of channels or bins being compressed into the linear space.
 
