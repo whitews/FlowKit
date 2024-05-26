@@ -124,6 +124,7 @@ class Session(object):
         """
         Add a Transform instance to use in the gating strategy.
 
+        :param transform_id: A string identifying the transform
         :param transform: an instance of a Transform subclass
         :return: None
         """
