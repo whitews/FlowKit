@@ -267,6 +267,7 @@ class GatingStrategy(object):
         Add a transform to the gating strategy, see `transforms` module. The transform ID must be unique in the
         gating strategy.
 
+        :param transform_id: A string identifying the transform
         :param transform: instance from a subclass of the Transform class
         :return: None
         """
