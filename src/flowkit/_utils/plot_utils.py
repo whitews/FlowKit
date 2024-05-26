@@ -54,15 +54,6 @@ custom_heat_palette = [
 ]
 
 
-def _get_false_bounds(bool_array):
-    diff = np.diff(np.hstack((0, bool_array, 0)))
-
-    start = np.where(diff == 1)
-    end = np.where(diff == -1)
-
-    return start[0], end[0]
-
-
 def _calculate_extent(data_1d, d_min=None, d_max=None, pad=0.0):
     data_min = np.min(data_1d)
     data_max = np.max(data_1d)
