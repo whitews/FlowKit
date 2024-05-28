@@ -80,6 +80,31 @@ class Matrix(object):
             f'{self.id}, dims: {len(self.detectors)})'
         )
 
+    def __eq__(self, other):
+        """Tests where 2 matrices share the same attributes."""
+        if self.__class__ == other.__class__:
+            this_attr = copy(self.__dict__)
+            other_attr = copy(other.__dict__)
+
+            # ignore 'private' attributes
+            this_delete = [k for k in this_attr.keys() if k.startswith('_')]
+            other_delete = [k for k in other_attr.keys() if k.startswith('_')]
+            for k in this_delete:
+                del this_attr[k]
+            for k in other_delete:
+                del other_attr[k]
+
+            # pop matrix attribute, need to compare NumPy array differently
+            this_matrix = this_attr.pop('matrix')
+            other_matrix = other_attr.pop('matrix')
+
+            if not np.array_equal(this_matrix, other_matrix):
+                return False
+
+            return this_attr == other_attr
+        else:
+            return False
+
     def apply(self, sample):
         """
         Apply compensation matrix to given Sample instance.

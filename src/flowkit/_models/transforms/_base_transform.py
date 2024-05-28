@@ -24,7 +24,7 @@ class Transform(ABC):
         return
 
     def __eq__(self, other):
-        """Tests where 2 transforms share the same attributes, ignoring the 'id' attribute."""
+        """Tests where 2 transforms share the same attributes."""
         if self.__class__ == other.__class__:
             this_attr = copy(self.__dict__)
             other_attr = copy(other.__dict__)
