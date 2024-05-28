@@ -732,9 +732,9 @@ def _add_matrix_to_wsp(parent_el, prefix, matrix, ns_map):
         for i_col, param_label2 in enumerate(matrix.detectors):
             matrix_value = matrix_array[i_row, i_col]
 
-            coef_el = etree.SubElement(spillover_el, "{%s}coefficient" % ns_map['transforms'])
-            coef_el.set('{%s}parameter' % ns_map['data-type'], param_label2)
-            coef_el.set('{%s}value' % ns_map['transforms'], str(matrix_value))
+            coefficient_el = etree.SubElement(spillover_el, "{%s}coefficient" % ns_map['transforms'])
+            coefficient_el.set('{%s}parameter' % ns_map['data-type'], param_label2)
+            coefficient_el.set('{%s}value' % ns_map['transforms'], str(matrix_value))
 
 
 def _add_transform_to_wsp(parent_el, parameter_label, transform, ns_map):
