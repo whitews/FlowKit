@@ -1,6 +1,7 @@
 """
 Matrix class tests
 """
+import copy
 import unittest
 import numpy as np
 import pandas as pd
@@ -80,6 +81,30 @@ class MatrixTestCase(unittest.TestCase):
         )
 
         self.assertIsInstance(comp_mat, fk.Matrix)
+
+    def test_matrix_equals(self):
+        comp_mat = fk.Matrix(
+            'my_spill',
+            csv_8c_comp_file_path,
+            detectors_8c
+        )
+
+        comp_mat2 = copy.deepcopy(comp_mat)
+
+        self.assertEqual(comp_mat, comp_mat2)
+
+    def test_matrix_equals_fails(self):
+        comp_mat = fk.Matrix(
+            'my_spill',
+            csv_8c_comp_file_path,
+            detectors_8c
+        )
+
+        # copy & modify matrix array
+        comp_mat2 = copy.deepcopy(comp_mat)
+        comp_mat2.matrix[0, 1] = comp_mat2.matrix[0, 1] + 0.01
+
+        self.assertNotEqual(comp_mat, comp_mat2)
 
     def test_matrix_as_dataframe(self):
         comp_mat = fk.Matrix(
