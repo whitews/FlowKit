@@ -159,11 +159,11 @@ class Session(object):
 
     def get_comp_matrices(self):
         """
-        Retrieve the list of compensation Matrix instances stored in the gating strategy.
+        Retrieve a dictionary LUT of compensation Matrix instances stored in the gating strategy.
 
-        :return: list of Matrix instances
+        :return: a dictionary LUT of matrix IDs: Matrix instances
         """
-        return list(self.gating_strategy.comp_matrices.values())
+        return self.gating_strategy.comp_matrices
 
     def get_comp_matrix(self, matrix_id):
         """
