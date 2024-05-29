@@ -34,6 +34,12 @@ class StringReprTestCase(unittest.TestCase):
 
         self.assertEqual(repr(quad1_div1), quad_div_string)
 
+    def test_matrix_repr(self):
+        comp_mat = prog_test_data.comp_matrix_01
+        comp_mat_string = "Matrix(dims: 3)"
+
+        self.assertEqual(repr(comp_mat), comp_mat_string)
+
     def test_linear_transform_repr(self):
         xform = fk.transforms.LinearTransform(param_t=10000.0, param_a=0.0)
         xform_string = "LinearTransform(t: 10000.0, a: 0.0)"
@@ -135,7 +141,7 @@ class StringReprTestCase(unittest.TestCase):
     def test_gating_strategy_repr(self):
         gs = fk.GatingStrategy()
 
-        gs.add_comp_matrix(prog_test_data.comp_matrix_01)
+        gs.add_comp_matrix('MySpill', prog_test_data.comp_matrix_01)
 
         gs.add_transform('Logicle_10000_0.5_4.5_0', prog_test_data.logicle_xform_10000_0_5__4_5__0)
         gs.add_transform('Hyperlog_10000_1_4.5_0', prog_test_data.hyperlog_xform_10000__1__4_5__0)
