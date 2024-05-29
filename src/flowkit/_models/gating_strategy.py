@@ -288,22 +288,31 @@ class GatingStrategy(object):
         """
         return self.transformations[transform_id]
 
-    def add_comp_matrix(self, matrix):
+    def add_comp_matrix(self, matrix_id, matrix):
         """
         Add a compensation matrix to the gating strategy, see `transforms` module. The matrix ID must be unique in the
         gating strategy.
 
+        :param matrix_id: Text string used to identify the matrix (cannot be 'uncompensated' or 'fcs')
         :param matrix: an instance of the Matrix class
         :return: None
         """
+        # Technically, the GML 2.0 spec states 'FCS' (note uppercase) is reserved, but we'll cover that case-insensitive
+        if matrix_id == 'uncompensated' or matrix_id.lower() == 'fcs':
+            raise ValueError(
+                "Matrix IDs 'uncompensated' and 'FCS' are reserved compensation references " +
+                "used in Dimension instances to specify that channel data should either be " +
+                "uncompensated or compensated using the spill value from a Sample's metadata"
+            )
+
         # Only accept Matrix class instances as we need the ID
         if not isinstance(matrix, Matrix):
             raise TypeError("matrix must be an instance of the Matrix class")
 
-        if matrix.id in self.comp_matrices:
-            raise KeyError("Matrix ID '%s' is already defined" % matrix.id)
+        if matrix_id in self.comp_matrices:
+            raise KeyError("Matrix ID '%s' is already defined" % matrix_id)
 
-        self.comp_matrices[matrix.id] = matrix
+        self.comp_matrices[matrix_id] = matrix
 
     def get_comp_matrix(self, matrix_id):
         """
@@ -601,7 +610,7 @@ class GatingStrategy(object):
 
             detectors = [sample.pnn_labels[i] for i in sample.fluoro_indices]
             fluorochromes = [sample.pns_labels[i] for i in sample.fluoro_indices]
-            matrix = Matrix('tmp_spill', spill, detectors, fluorochromes, null_channels=sample.null_channels)
+            matrix = Matrix(spill, detectors, fluorochromes, null_channels=sample.null_channels)
         else:
             # lookup specified comp-ref in gating strategy
             matrix = self.comp_matrices[comp_ref]
