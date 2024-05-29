@@ -50,7 +50,7 @@ def parse_gating_xml(xml_file_or_path):
         raise ValueError("Gating file format is not supported.")
 
     for c_id, c in comp_matrices.items():
-        gating_strategy.add_comp_matrix(c)
+        gating_strategy.add_comp_matrix(c_id, c)
     for t_id, t in transformations.items():
         gating_strategy.add_transform(t_id, t)
 
@@ -176,13 +176,13 @@ def _construct_matrices(root_gml, transform_ns, data_type_ns):
         )
 
         for matrix_el in matrix_els:
-            matrix = _parse_matrix_element(
+            matrix_id, matrix = _parse_matrix_element(
                 matrix_el,
                 transform_ns,
                 data_type_ns
             )
 
-            comp_matrices[matrix.id] = matrix
+            comp_matrices[matrix_id] = matrix
 
     return comp_matrices
 
@@ -444,7 +444,7 @@ def _parse_matrix_element(
 
     matrix = np.array(matrix)
 
-    return Matrix(matrix_id, matrix, detectors, fluorochomes)
+    return matrix_id, Matrix(matrix, detectors, fluorochomes)
 
 
 def _parse_fratio_element(fratio_element, transform_namespace, data_type_namespace):
