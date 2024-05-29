@@ -472,7 +472,7 @@ class Sample(object):
 
         self.subsample_indices = shuffled_indices[:self._subsample_count]
 
-    def apply_compensation(self, compensation, comp_id='custom_spill'):
+    def apply_compensation(self, compensation):
         """
         Applies given compensation matrix to Sample events. If any
         transformation has been applied, it will be re-applied after
@@ -492,7 +492,6 @@ class Sample(object):
             If a string, both multi-line traditional CSV, and the single
             line FCS spill formats are supported. If a NumPy array, we
             assume the columns are in the same order as the channel labels.
-        :param comp_id: text ID for identifying compensation matrix (not used if compensation was a Matrix instance)
         :return: None
         """
         if isinstance(compensation, Matrix):
@@ -500,7 +499,7 @@ class Sample(object):
         elif compensation is not None:
             detectors = [self.pnn_labels[i] for i in self.fluoro_indices]
             fluorochromes = [self.pns_labels[i] for i in self.fluoro_indices]
-            tmp_matrix = Matrix(comp_id, compensation, detectors, fluorochromes)
+            tmp_matrix = Matrix(compensation, detectors, fluorochromes)
         else:
             # compensation must be None, we'll clear any stored comp events later
             tmp_matrix = None
