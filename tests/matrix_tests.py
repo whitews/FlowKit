@@ -69,13 +69,12 @@ csv_8c_comp_null_channel_file_path = 'data/8_color_data_set/den_comp_null_channe
 class MatrixTestCase(unittest.TestCase):
     """Tests related to compensation matrices and the Matrix class"""
     def test_matrix_from_fcs_spill(self):
-        comp_mat = fk.Matrix('my_spill', fcs_spill, fcs_spill_header)
+        comp_mat = fk.Matrix(fcs_spill, fcs_spill_header)
 
         self.assertIsInstance(comp_mat, fk.Matrix)
 
     def test_parse_csv_file(self):
         comp_mat = fk.Matrix(
-            'my_spill',
             csv_8c_comp_file_path,
             detectors_8c
         )
@@ -84,7 +83,6 @@ class MatrixTestCase(unittest.TestCase):
 
     def test_matrix_equals(self):
         comp_mat = fk.Matrix(
-            'my_spill',
             csv_8c_comp_file_path,
             detectors_8c
         )
@@ -95,7 +93,6 @@ class MatrixTestCase(unittest.TestCase):
 
     def test_matrix_equals_fails(self):
         comp_mat = fk.Matrix(
-            'my_spill',
             csv_8c_comp_file_path,
             detectors_8c
         )
@@ -108,7 +105,6 @@ class MatrixTestCase(unittest.TestCase):
 
     def test_matrix_as_dataframe(self):
         comp_mat = fk.Matrix(
-            'my_spill',
             csv_8c_comp_file_path,
             detectors_8c,
             fluorochromes=fluorochromes_8c
@@ -150,7 +146,6 @@ class MatrixTestCase(unittest.TestCase):
         null_channels = ['TNFa FITC FLR-A']
 
         comp_mat = fk.Matrix(
-            'my_spill',
             csv_8c_comp_null_channel_file_path,
             detectors_8c,
             null_channels=null_channels
