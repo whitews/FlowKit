@@ -16,9 +16,9 @@ from .._models.gates._gates import \
 from ..exceptions import QuadrantReferenceError
 
 
-def _add_matrix_to_gml(root, matrix, ns_map):
+def _add_matrix_to_gml(root, matrix_id, matrix, ns_map):
     xform_ml = etree.SubElement(root, "{%s}spectrumMatrix" % ns_map['transforms'])
-    xform_ml.set('{%s}id' % ns_map['transforms'], matrix.id)
+    xform_ml.set('{%s}id' % ns_map['transforms'], matrix_id)
 
     fluoros_ml = etree.SubElement(xform_ml, "{%s}fluorochromes" % ns_map['transforms'])
 
@@ -242,7 +242,7 @@ def export_gatingml(gating_strategy, file_handle, sample_id=None):
 
     # process gating strategy compensation matrices
     for matrix_id, matrix in gating_strategy.comp_matrices.items():
-        _add_matrix_to_gml(root, matrix, ns_map)
+        _add_matrix_to_gml(root, matrix_id, matrix, ns_map)
 
     # get gate hierarchy as a dictionary
     gate_dict = gating_strategy.get_gate_hierarchy('dict')

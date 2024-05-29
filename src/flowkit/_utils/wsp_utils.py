@@ -112,7 +112,6 @@ def _parse_wsp_compensation(sample_el, transform_ns, data_type_ns):
 
     matrix_array = np.array(matrix_array)
     matrix = Matrix(
-        matrix_name,
         matrix_array,
         detectors=detectors,
         fluorochromes=['' for _ in detectors]
@@ -625,7 +624,10 @@ def parse_wsp(workspace_file_or_path):
 
         # Add sample's comp matrix & transforms to GatingStrategy
         if sample_dict['comp'] is not None:
-            sample_gating_strategy.add_comp_matrix(sample_dict['comp']['matrix'])
+            sample_gating_strategy.add_comp_matrix(
+                sample_dict['comp']['matrix_name'],
+                sample_dict['comp']['matrix']
+            )
 
         for transform_id, transform in sample_dict['transforms'].items():
             sample_gating_strategy.add_transform(transform_id, transform)
@@ -705,11 +707,11 @@ def extract_wsp_sample_data(workspace_file_or_path):
     return wsp_samples
 
 
-def _add_matrix_to_wsp(parent_el, prefix, matrix, ns_map):
+def _add_matrix_to_wsp(parent_el, prefix, matrix_id, matrix, ns_map):
     matrix_el = etree.SubElement(parent_el, "{%s}spilloverMatrix" % ns_map['transforms'])
     matrix_el.set('spectral', "0")
     matrix_el.set('prefix', prefix)
-    matrix_el.set('name', matrix.id)
+    matrix_el.set('name', matrix_id)
     matrix_el.set('version', "FlowJo-10.7.1")
     # TODO: need to set id?
     matrix_el.set('suffix', "")
@@ -1039,7 +1041,7 @@ def export_flowjo_wsp(gating_strategy, group_name, samples, file_handle):
 
         comp_prefix_lut[matrix_id] = comp_prefix
 
-        _add_matrix_to_wsp(matrices_el, comp_prefix, matrix, ns_map)
+        _add_matrix_to_wsp(matrices_el, comp_prefix, matrix_id, matrix, ns_map)
 
         comp_prefix_counter += 1
 
