@@ -43,7 +43,7 @@ spill01_data = np.array(
         [0.09, 0.01, 1]
     ]
 )
-comp_matrix_01 = fk.Matrix('MySpill', spill01_data, spill01_detectors, spill01_fluoros)
+comp_matrix_01 = fk.Matrix(spill01_data, spill01_detectors, spill01_fluoros)
 
 sample_id_with_spill = '101_DEN084Y5_15_E01_008_clean.fcs'
 sample_with_spill = test_samples_8c_full_set_dict[sample_id_with_spill]
@@ -90,9 +90,9 @@ class GatingStrategyTestCase(unittest.TestCase):
 
     def test_add_duplicate_matrix_id(self):
         gs = fk.GatingStrategy()
-        gs.add_comp_matrix(comp_matrix_01)
+        gs.add_comp_matrix('MySpill', comp_matrix_01)
 
-        self.assertRaises(KeyError, gs.add_comp_matrix, comp_matrix_01)
+        self.assertRaises(KeyError, gs.add_comp_matrix, 'MySpill', comp_matrix_01)
 
     def test_fcs_defined_spill(self):
         gs = fk.GatingStrategy()
@@ -125,7 +125,7 @@ class GatingStrategyTestCase(unittest.TestCase):
     def test_absolute_percent(self):
         gs = fk.GatingStrategy()
 
-        gs.add_comp_matrix(comp_matrix_01)
+        gs.add_comp_matrix('MySpill', comp_matrix_01)
 
         gs.add_transform('Logicle_10000_0.5_4.5_0', logicle_xform_10000__0_5__4_5__0)
         gs.add_transform('Hyperlog_10000_1_4.5_0', hyperlog_xform_10000__1__4_5__0)
@@ -164,7 +164,7 @@ class GatingStrategyTestCase(unittest.TestCase):
     def test_clear_cache(self):
         gs = fk.GatingStrategy()
 
-        gs.add_comp_matrix(comp_matrix_01)
+        gs.add_comp_matrix('MySpill', comp_matrix_01)
 
         gs.add_transform('Logicle_10000_0.5_4.5_0', logicle_xform_10000__0_5__4_5__0)
         gs.add_transform('Hyperlog_10000_1_4.5_0', hyperlog_xform_10000__1__4_5__0)
@@ -205,7 +205,7 @@ class GatingStrategyTestCase(unittest.TestCase):
     def test_cache_preprocessed_events(self):
         gs = fk.GatingStrategy()
 
-        gs.add_comp_matrix(comp_matrix_01)
+        gs.add_comp_matrix('MySpill', comp_matrix_01)
 
         gs.add_transform('Logicle_10000_0.5_4.5_0', logicle_xform_10000__0_5__4_5__0)
         gs.add_transform('Hyperlog_10000_1_4.5_0', hyperlog_xform_10000__1__4_5__0)
