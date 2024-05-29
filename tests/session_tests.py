@@ -5,9 +5,14 @@ import copy
 import unittest
 import numpy as np
 import pandas as pd
+import warnings
 
-from flowkit import Session, Sample, Matrix, Dimension, gates, transforms, load_samples
-from .gating_strategy_prog_gate_tests import data1_sample, poly1_gate, poly1_vertices, comp_matrix_01, asinh_xform_10000_4_1
+from flowkit import (
+    Session, Sample, Matrix, Dimension, gates, transforms, load_samples, generate_transforms
+)
+from .gating_strategy_prog_gate_tests import (
+    data1_sample, poly1_gate, poly1_vertices, comp_matrix_01, asinh_xform_10000_4_1
+)
 
 fcs_file_paths = [
     "data/100715.fcs",
@@ -21,6 +26,10 @@ test_samples_8c_full_set_dict = {s.id: s for s in test_samples_8c_full_set}
 
 class SessionTestCase(unittest.TestCase):
     """Tests for Session class"""
+    def test_create_session_raises(self):
+        # verify non-valid args raise ValueError
+        self.assertRaises(ValueError, Session, {})
+
     def test_load_samples_from_list_of_paths(self):
         fks = Session(fcs_samples=fcs_file_paths)
 
@@ -37,20 +46,59 @@ class SessionTestCase(unittest.TestCase):
         self.assertEqual(len(fks.sample_lut.keys()), 3)
         self.assertIsInstance(fks.get_sample('100715.fcs'), Sample)
 
+    def test_add_samples_sample_already_exists(self):
+        samples = copy.deepcopy(test_samples_base_set)
+        fks = Session(fcs_samples=samples)
+
+        self.assertEqual(len(fks.get_sample_ids()), 3)
+
+        # add sample that was already added above
+        # ignore warning about already existing sample
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            fks.add_samples(samples[0])
+
+        # verify sample count didn't change
+        self.assertEqual(len(fks.get_sample_ids()), 3)
+
     def test_get_comp_matrix(self):
         fks = Session()
-        fks.add_samples(data1_sample)
         fks.add_comp_matrix(comp_matrix_01)
         comp_mat = fks.get_comp_matrix('MySpill')
 
         self.assertIsInstance(comp_mat, Matrix)
 
+    def test_get_comp_matrices(self):
+        fks = Session()
+        fks.add_comp_matrix(comp_matrix_01)
+        comp_matrix_02 = copy.deepcopy(comp_matrix_01)
+        comp_matrix_02.id = 'MySpill2'
+        fks.add_comp_matrix(comp_matrix_02)
+
+        matrix_lut = {'MySpill': comp_matrix_01, 'MySpill2': comp_matrix_02}
+
+        session_matrix_lut = fks.get_comp_matrices()
+
+        self.assertEqual(matrix_lut, session_matrix_lut)
+
     def test_get_transform(self):
         fks = Session()
         fks.add_transform('AsinH_10000_4_1', asinh_xform_10000_4_1)
-        comp_mat = fks.get_transform('AsinH_10000_4_1')
+        xform = fks.get_transform('AsinH_10000_4_1')
 
-        self.assertIsInstance(comp_mat, transforms.AsinhTransform)
+        self.assertIsInstance(xform, transforms.AsinhTransform)
+
+    def test_get_transforms(self):
+        xform_lut = generate_transforms(data1_sample)
+
+        session = Session()
+
+        for xform_id, xform in xform_lut.items():
+            session.add_transform(xform_id, xform)
+
+        session_xform_lut = session.get_transforms()
+
+        self.assertDictEqual(xform_lut, session_xform_lut)
 
     @staticmethod
     def test_add_poly1_gate():
@@ -160,3 +208,38 @@ class SessionTestCase(unittest.TestCase):
         truth_gate_ids = [('ParAnd2', ('root', 'Polygon1'))]
 
         self.assertListEqual(child_gate_ids, truth_gate_ids)
+
+    def test_get_analysis_report(self):
+        gml_path = 'data/gate_ref/gml/gml_parent_poly1_boolean_and2_gate.xml'
+        fcs_path = 'data/gate_ref/data1.fcs'
+
+        session = Session(gating_strategy=gml_path, fcs_samples=fcs_path)
+        session.analyze_samples()
+
+        session_report = session.get_analysis_report()
+
+        self.assertIsInstance(session_report, pd.DataFrame)
+        self.assertEqual(session_report.shape, (4, 10))
+
+    def test_get_gating_results_raises(self):
+        gml_path = 'data/gate_ref/gml/gml_parent_poly1_boolean_and2_gate.xml'
+        fcs_path = 'data/gate_ref/data1.fcs'
+        sample_id = 'B07'
+
+        session = Session(gating_strategy=gml_path, fcs_samples=fcs_path)
+
+        # purposely try to get results prior to calling analyze_samples()
+        self.assertRaises(KeyError, session.get_gating_results, sample_id)
+
+    def test_get_gate_events(self):
+        gml_path = 'data/gate_ref/gml/gml_parent_poly1_boolean_and2_gate.xml'
+        fcs_path = 'data/gate_ref/data1.fcs'
+        sample_id = 'B07'
+
+        session = Session(gating_strategy=gml_path, fcs_samples=fcs_path)
+        session.analyze_samples()
+
+        gate_events = session.get_gate_events(sample_id, gate_name='ParAnd2')
+
+        self.assertIsInstance(gate_events, pd.DataFrame)
+        self.assertEqual(len(gate_events), 12)
