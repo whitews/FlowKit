@@ -76,7 +76,7 @@ spill01_data = np.array(
         [0.09, 0.01, 1]
     ]
 )
-comp_matrix_01 = fk.Matrix('MySpill', spill01_data, spill01_detectors, spill01_fluoros)
+comp_matrix_01 = fk.Matrix(spill01_data, spill01_detectors, spill01_fluoros)
 
 asinh_xform_10000_4_1 = fk.transforms.AsinhTransform(
     param_t=10000,
@@ -724,7 +724,7 @@ class GatingTestCase(unittest.TestCase):
     def test_add_matrix_poly4_gate():
         gs = fk.GatingStrategy()
 
-        gs.add_comp_matrix(comp_matrix_01)
+        gs.add_comp_matrix('MySpill', comp_matrix_01)
 
         dim1 = fk.Dimension('PE', compensation_ref='MySpill')
         dim2 = fk.Dimension('PerCP', compensation_ref='MySpill')
@@ -744,7 +744,7 @@ class GatingTestCase(unittest.TestCase):
     def test_add_matrix_rect3_gate():
         gs = fk.GatingStrategy()
 
-        gs.add_comp_matrix(comp_matrix_01)
+        gs.add_comp_matrix('MySpill', comp_matrix_01)
 
         dim1 = fk.Dimension('FITC', compensation_ref='MySpill', range_min=5, range_max=70)
         dim2 = fk.Dimension('PE', compensation_ref='MySpill', range_min=9, range_max=208)
@@ -764,7 +764,7 @@ class GatingTestCase(unittest.TestCase):
     def test_add_matrix_rect4_gate():
         gs = fk.GatingStrategy()
 
-        gs.add_comp_matrix(comp_matrix_01)
+        gs.add_comp_matrix('MySpill', comp_matrix_01)
 
         dim1 = fk.Dimension('PerCP', compensation_ref='MySpill', range_min=7, range_max=90)
         dim2 = fk.Dimension('FSC-H', compensation_ref='uncompensated', range_min=10, range_max=133)
@@ -784,7 +784,7 @@ class GatingTestCase(unittest.TestCase):
     def test_add_matrix_rect5_gate():
         gs = fk.GatingStrategy()
 
-        gs.add_comp_matrix(comp_matrix_01)
+        gs.add_comp_matrix('MySpill', comp_matrix_01)
 
         dim1 = fk.Dimension('PerCP', compensation_ref='MySpill', range_min=7, range_max=90)
         dim2 = fk.Dimension('FSC-H', compensation_ref='uncompensated', range_min=10)
@@ -922,7 +922,7 @@ class GatingTestCase(unittest.TestCase):
     def test_add_matrix_transform_asinh_range1c_gate():
         gs = fk.GatingStrategy()
 
-        gs.add_comp_matrix(comp_matrix_01)
+        gs.add_comp_matrix('MySpill', comp_matrix_01)
 
         gs.add_transform('AsinH_10000_4_1', asinh_xform_10000_4_1)
 
@@ -943,7 +943,7 @@ class GatingTestCase(unittest.TestCase):
     def test_add_matrix_transform_hyperlog_range2c_gate():
         gs = fk.GatingStrategy()
 
-        gs.add_comp_matrix(comp_matrix_01)
+        gs.add_comp_matrix('MySpill', comp_matrix_01)
 
         gs.add_transform('Hyperlog_10000_1_4.5_0', hyperlog_xform_10000__1__4_5__0)
 
@@ -964,7 +964,7 @@ class GatingTestCase(unittest.TestCase):
     def test_add_matrix_transform_linear_range3c_gate():
         gs = fk.GatingStrategy()
 
-        gs.add_comp_matrix(comp_matrix_01)
+        gs.add_comp_matrix('MySpill', comp_matrix_01)
 
         gs.add_transform('Linear_10000_500', linear_xform_10000_500)
 
@@ -985,7 +985,7 @@ class GatingTestCase(unittest.TestCase):
     def test_add_matrix_transform_logicle_range4c_gate():
         gs = fk.GatingStrategy()
 
-        gs.add_comp_matrix(comp_matrix_01)
+        gs.add_comp_matrix('MySpill', comp_matrix_01)
 
         gs.add_transform('Logicle_10000_0.5_4.5_0', logicle_xform_10000_0_5__4_5__0)
 
@@ -1006,7 +1006,7 @@ class GatingTestCase(unittest.TestCase):
     def test_add_matrix_transform_logicle_range5c_gate():
         gs = fk.GatingStrategy()
 
-        gs.add_comp_matrix(comp_matrix_01)
+        gs.add_comp_matrix('MySpill', comp_matrix_01)
 
         gs.add_transform('Logicle_10000_1_4_0.5', logicle_xform_10000__1__4__0_5)
 
@@ -1027,7 +1027,7 @@ class GatingTestCase(unittest.TestCase):
     def test_add_matrix_transform_asinh_range6c_gate():
         gs = fk.GatingStrategy()
 
-        gs.add_comp_matrix(comp_matrix_01)
+        gs.add_comp_matrix('MySpill', comp_matrix_01)
 
         gs.add_transform('AsinH_10000_4_1', asinh_xform_10000_4_1)
 
@@ -1048,7 +1048,7 @@ class GatingTestCase(unittest.TestCase):
     def test_add_matrix_transform_hyperlog_range7c_gate():
         gs = fk.GatingStrategy()
 
-        gs.add_comp_matrix(comp_matrix_01)
+        gs.add_comp_matrix('MySpill', comp_matrix_01)
 
         gs.add_transform('Hyperlog_10000_1_4.5_0', hyperlog_xform_10000__1__4_5__0)
 
@@ -1069,7 +1069,7 @@ class GatingTestCase(unittest.TestCase):
     def test_add_matrix_transform_logicle_range8c_gate():
         gs = fk.GatingStrategy()
 
-        gs.add_comp_matrix(comp_matrix_01)
+        gs.add_comp_matrix('MySpill', comp_matrix_01)
 
         gs.add_transform('Logicle_10000_1_4_0.5', logicle_xform_10000__1__4__0_5)
 
@@ -1090,7 +1090,7 @@ class GatingTestCase(unittest.TestCase):
     def test_add_matrix_transform_logicle_rect1_gate():
         gs = fk.GatingStrategy()
 
-        gs.add_comp_matrix(comp_matrix_01)
+        gs.add_comp_matrix('MySpill', comp_matrix_01)
 
         gs.add_transform('Logicle_10000_0.5_4.5_0', logicle_xform_10000_0_5__4_5__0)
 
@@ -1180,7 +1180,7 @@ class GatingTestCase(unittest.TestCase):
     def test_add_parent_rect1_rect_par1_gate():
         gs = fk.GatingStrategy()
 
-        gs.add_comp_matrix(comp_matrix_01)
+        gs.add_comp_matrix('MySpill', comp_matrix_01)
 
         gs.add_transform('Logicle_10000_0.5_4.5_0', logicle_xform_10000_0_5__4_5__0)
         gs.add_transform('Hyperlog_10000_1_4.5_0', hyperlog_xform_10000__1__4_5__0)

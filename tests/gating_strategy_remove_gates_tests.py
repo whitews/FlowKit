@@ -37,11 +37,11 @@ class GatingStrategyRemoveGatesTestCase(unittest.TestCase):
         """
         sample_id = '101_DEN084Y5_15_E01_008_clean.fcs'
         sample = copy.deepcopy(test_samples_8c_full_set_dict[sample_id])
-        comp = fk.Matrix('spill', csv_8c_comp_file_path, detectors_8c)
+        comp = fk.Matrix(csv_8c_comp_file_path, detectors_8c)
 
         session = fk.Session()
         session.add_samples(sample)
-        session.add_comp_matrix(comp)
+        session.add_comp_matrix('spill', comp)
 
         # define transforms we'll be using
         # linear transform for our time dimension
