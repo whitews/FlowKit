@@ -148,14 +148,15 @@ class Session(object):
         """
         return self.gating_strategy.get_transform(transform_id)
 
-    def add_comp_matrix(self, matrix):
+    def add_comp_matrix(self, matrix_id, matrix):
         """
         Add a Matrix instance to use in the gating strategy.
 
+        :param matrix_id: A string identifying the matrix
         :param matrix: an instance of the Matrix class
         :return: None
         """
-        self.gating_strategy.add_comp_matrix(copy.deepcopy(matrix))
+        self.gating_strategy.add_comp_matrix(matrix_id, copy.deepcopy(matrix))
 
     def get_comp_matrices(self):
         """
