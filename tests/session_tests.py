@@ -63,17 +63,16 @@ class SessionTestCase(unittest.TestCase):
 
     def test_get_comp_matrix(self):
         fks = Session()
-        fks.add_comp_matrix(comp_matrix_01)
+        fks.add_comp_matrix('MySpill', comp_matrix_01)
         comp_mat = fks.get_comp_matrix('MySpill')
 
         self.assertIsInstance(comp_mat, Matrix)
 
     def test_get_comp_matrices(self):
         fks = Session()
-        fks.add_comp_matrix(comp_matrix_01)
+        fks.add_comp_matrix('MySpill', comp_matrix_01)
         comp_matrix_02 = copy.deepcopy(comp_matrix_01)
-        comp_matrix_02.id = 'MySpill2'
-        fks.add_comp_matrix(comp_matrix_02)
+        fks.add_comp_matrix('MySpill2', comp_matrix_02)
 
         matrix_lut = {'MySpill': comp_matrix_01, 'MySpill2': comp_matrix_02}
 
@@ -127,7 +126,7 @@ class SessionTestCase(unittest.TestCase):
         fks = Session()
         fks.add_samples(data1_sample)
 
-        fks.add_comp_matrix(comp_matrix_01)
+        fks.add_comp_matrix('MySpill', comp_matrix_01)
 
         dim1 = Dimension('PE', compensation_ref='MySpill')
         dim2 = Dimension('PerCP', compensation_ref='MySpill')
