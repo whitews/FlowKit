@@ -1,2 +1,4 @@
 include LICENSE
-include flowkit/_resources/*.xsd
+include src/flowkit/_resources/*.xsd
+include src/flowkit/py.typed
+include src/flowkit/**/*.pyi
