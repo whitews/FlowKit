@@ -1,0 +1,26 @@
+from typing import TYPE_CHECKING, Dict, Optional, Tuple, Union
+
+if TYPE_CHECKING:
+    import numpy as np
+    import pandas as pd
+
+class GatingResults(object):
+    def __init__(self, results_dict: Dict[str, str], sample_id: str): ...
+    @staticmethod
+    def _get_pd_result_dict(res_dict, gate_name) -> Dict[str, Optional[str]]: ...
+    def _process_results(self) -> None: ...
+    def _filter_gate_report(
+        self, gate_name: str, gate_path: Optional[Union[Tuple[str], str]] = None
+    ) -> pd.DataFrame: ...
+    def get_gate_membership(
+        self, gate_name: str, gate_path: Optional[Union[Tuple[str], str]] = None
+    ) -> np.ndarray[bool]: ...
+    def get_gate_count(
+        self, gate_name: str, gate_path: Optional[Union[Tuple[str], str]] = None
+    ) -> int: ...
+    def get_gate_absolute_percent(
+        self, gate_name: str, gate_path: Optional[Union[Tuple[str], str]] = None
+    ) -> float: ...
+    def get_gate_relative_percent(
+        self, gate_name: str, gate_path: Optional[Union[Tuple[str], str]] = None
+    ) -> float: ...
