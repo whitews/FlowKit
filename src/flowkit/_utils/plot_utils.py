@@ -718,7 +718,7 @@ def plot_gate(
             # might be a label reference in the comp matrix
             matrix = gating_strategy.get_comp_matrix(dim_comp_refs[0])
             try:
-                matrix_dim_idx = matrix.fluorochomes.index(dim_ids_ordered[0])
+                matrix_dim_idx = matrix.fluorochromes.index(dim_ids_ordered[0])
             except ValueError:
                 raise ValueError("%s not found in list of matrix fluorochromes" % dim_ids_ordered[0])
             detector = matrix.detectors[matrix_dim_idx]
@@ -744,7 +744,7 @@ def plot_gate(
                 # might be a label reference in the comp matrix
                 matrix = gating_strategy.get_comp_matrix(dim_comp_refs[1])
                 try:
-                    matrix_dim_idx = matrix.fluorochomes.index(dim_ids_ordered[1])
+                    matrix_dim_idx = matrix.fluorochromes.index(dim_ids_ordered[1])
                 except ValueError:
                     raise ValueError("%s not found in list of matrix fluorochromes" % dim_ids_ordered[1])
                 detector = matrix.detectors[matrix_dim_idx]

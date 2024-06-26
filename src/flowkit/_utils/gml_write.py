@@ -22,7 +22,7 @@ def _add_matrix_to_gml(root, matrix, ns_map):
 
     fluoros_ml = etree.SubElement(xform_ml, "{%s}fluorochromes" % ns_map['transforms'])
 
-    for fluoro in matrix.fluorochomes:
+    for fluoro in matrix.fluorochromes:
         fluoro_ml = etree.SubElement(fluoros_ml, '{%s}fcs-dimension' % ns_map['data-type'])
         fluoro_ml.set('{%s}name' % ns_map['data-type'], fluoro)
 

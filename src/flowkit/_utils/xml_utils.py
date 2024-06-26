@@ -376,7 +376,7 @@ def _parse_matrix_element(
     data_type_namespace
 ):
     matrix_id = find_attribute_value(matrix_element, xform_namespace, 'id')
-    fluorochomes = []
+    fluorochromes = []
     detectors = []
     matrix = []
 
@@ -397,7 +397,7 @@ def _parse_matrix_element(
             raise ValueError(
                 'Dimension name not found (line %d)' % dim_el.sourceline
             )
-        fluorochomes.append(label)
+        fluorochromes.append(label)
 
     detectors_el = matrix_element.find(
         '%s:detectors' % xform_namespace,
@@ -444,7 +444,7 @@ def _parse_matrix_element(
 
     matrix = np.array(matrix)
 
-    return Matrix(matrix_id, matrix, detectors, fluorochomes)
+    return Matrix(matrix_id, matrix, detectors, fluorochromes)
 
 
 def _parse_fratio_element(transform_id, fratio_element, transform_namespace, data_type_namespace):
