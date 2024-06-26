@@ -61,7 +61,7 @@ class Matrix(object):
         if fluorochromes is None:
             fluorochromes = ['' for _ in detectors]
 
-        self.fluorochomes = fluorochromes
+        self.fluorochromes = fluorochromes
 
     def __repr__(self):
         return f'{self.__class__.__name__}(dims: {len(self.detectors)})'
@@ -102,7 +102,7 @@ class Matrix(object):
         # matrix detectors
         sample_fluoro_labels = [sample.pnn_labels[i] for i in sample.fluoro_indices]
         if not set(self.detectors).issubset(sample_fluoro_labels):
-            raise FlowKitException("Detectors must be a subset of the Sample's fluorochomes")
+            raise FlowKitException("Detectors must be a subset of the Sample's fluorochromes")
 
         indices = [
             sample.get_channel_index(d) for d in self.detectors
@@ -126,7 +126,7 @@ class Matrix(object):
         # matrix detectors
         sample_fluoro_labels = [sample.pnn_labels[i] for i in sample.fluoro_indices]
         if not set(self.detectors).issubset(sample_fluoro_labels):
-            raise FlowKitException("Detectors must be a subset of the Sample's fluorochomes")
+            raise FlowKitException("Detectors must be a subset of the Sample's fluorochromes")
 
         indices = [
             sample.get_channel_index(d) for d in self.detectors
@@ -148,7 +148,7 @@ class Matrix(object):
         :return: pandas DataFrame
         """
         if fluoro_labels:
-            labels = self.fluorochomes
+            labels = self.fluorochromes
         else:
             labels = self.detectors
 

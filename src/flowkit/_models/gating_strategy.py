@@ -676,7 +676,7 @@ class GatingStrategy(object):
                     )
                 matrix = self.comp_matrices[dim.compensation_ref]
                 try:
-                    matrix_dim_idx = matrix.fluorochomes.index(dim_id)
+                    matrix_dim_idx = matrix.fluorochromes.index(dim_id)
                 except ValueError:
                     raise ValueError("%s not found in list of matrix fluorochromes" % dim_id)
                 detector = matrix.detectors[matrix_dim_idx]
