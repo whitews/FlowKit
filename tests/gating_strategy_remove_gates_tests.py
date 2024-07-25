@@ -3,9 +3,8 @@ Test for removing gates from a GatingStrategy
 """
 import unittest
 import copy
-from .session_tests import test_samples_8c_full_set_dict
-from .matrix_tests import csv_8c_comp_file_path, detectors_8c
 import flowkit as fk
+from tests.test_config import test_samples_8c_full_set_dict, csv_8c_comp_file_path, detectors_8c
 
 
 class GatingStrategyRemoveGatesTestCase(unittest.TestCase):

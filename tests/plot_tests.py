@@ -6,11 +6,7 @@ import unittest
 from bokeh.plotting import figure as bk_Figure
 from bokeh.layouts import GridPlot as bk_GridPlot
 import flowkit as fk
-
-fcs_path = 'data/gate_ref/data1.fcs'
-gml_path = 'data/gate_ref/gml/gml_all_gates.xml'
-test_sample = fk.Sample(fcs_path, subsample=2000)
-test_gating_strategy = fk.parse_gating_xml(gml_path)
+from tests.test_config import test_sample, test_gating_strategy
 
 
 class PlotTestCase(unittest.TestCase):

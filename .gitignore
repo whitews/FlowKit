@@ -9,6 +9,7 @@ scratch_data/
 *.wsp
 *.csv
 *.xlsx
+.vscode/
 
 ### macOS template
 # General

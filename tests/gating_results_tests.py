@@ -4,7 +4,7 @@ Tests for GatingResults class
 import copy
 import unittest
 from flowkit import Workspace
-from .session_tests import test_samples_8c_full_set
+from tests.test_config import test_samples_8c_full_set
 
 wsp_path = "data/8_color_data_set/reused_quad_gate_with_child.wsp"
 group_name = 'All Samples'

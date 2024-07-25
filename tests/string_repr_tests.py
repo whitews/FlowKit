@@ -3,10 +3,8 @@ Unit tests for string representations
 """
 import unittest
 import flowkit as fk
-from . import gating_strategy_prog_gate_tests as prog_test_data
+import tests.test_config as test_data
 
-data1_fcs_path = 'data/gate_ref/data1.fcs'
-data1_sample = fk.Sample(data1_fcs_path)
 
 
 class StringReprTestCase(unittest.TestCase):
@@ -85,28 +83,28 @@ class StringReprTestCase(unittest.TestCase):
         self.assertEqual(repr(sample), sample_string)
 
     def test_rect_gate_repr(self):
-        gate = prog_test_data.range1_gate
+        gate = test_data.range1_gate
 
         repr_string = "RectangleGate(Range1, dims: 1)"
 
         self.assertEqual(repr(gate), repr_string)
 
     def test_poly_gate_repr(self):
-        gate = prog_test_data.poly1_gate
+        gate = test_data.poly1_gate
 
         repr_string = "PolygonGate(Polygon1, vertices: 3)"
 
         self.assertEqual(repr(gate), repr_string)
 
     def test_ellipsoid_gate_repr(self):
-        gate = prog_test_data.ellipse1_gate
+        gate = test_data.ellipse1_gate
 
         repr_string = "EllipsoidGate(Ellipse1, coords: [12.99701, 16.22941])"
 
         self.assertEqual(repr(gate), repr_string)
 
     def test_quad_gate_repr(self):
-        gate = prog_test_data.quad1_gate
+        gate = test_data.quad1_gate
 
         repr_string = "QuadrantGate(Quadrant1, quadrants: 4)"
 
@@ -135,12 +133,12 @@ class StringReprTestCase(unittest.TestCase):
     def test_gating_strategy_repr(self):
         gs = fk.GatingStrategy()
 
-        gs.add_comp_matrix(prog_test_data.comp_matrix_01)
+        gs.add_comp_matrix(test_data.comp_matrix_01)
 
-        gs.add_transform(prog_test_data.logicle_xform1)
-        gs.add_transform(prog_test_data.hyperlog_xform1)
+        gs.add_transform(test_data.logicle_xform1)
+        gs.add_transform(test_data.hyperlog_xform1)
 
-        gs.add_gate(prog_test_data.poly1_gate, ('root',))
+        gs.add_gate(test_data.poly1_gate, ('root',))
 
         dim1 = fk.Dimension('PE', 'MySpill', 'Logicle_10000_0.5_4.5_0', range_min=0.31, range_max=0.69)
         dim2 = fk.Dimension('PerCP', 'MySpill', 'Logicle_10000_0.5_4.5_0', range_min=0.27, range_max=0.73)
@@ -160,7 +158,7 @@ class StringReprTestCase(unittest.TestCase):
         self.assertEqual(repr(gs), gs_string)
 
     def test_session_repr(self):
-        session = fk.Session(fcs_samples=data1_sample)
+        session = fk.Session(fcs_samples=test_data.data1_sample)
 
         session_string = "Session(1 samples)"
 

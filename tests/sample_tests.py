@@ -9,37 +9,13 @@ import pandas as pd
 import flowio
 import warnings
 
-from flowkit import Sample, transforms, read_multi_dataset_fcs
+from flowkit import Sample, read_multi_dataset_fcs
 from flowkit.exceptions import DataOffsetDiscrepancyError
+from tests.test_config import fcs_file_path, comp_file_path, fcs_2d_file_path, data1_fcs_path, data1_sample, \
+    data1_sample_with_orig, xform_logicle, fcs_index_sorted_path, xform_biex1, xform_biex2, test_comp_sample, \
+    test_comp_sample_uncomp
 
-data1_fcs_path = 'data/gate_ref/data1.fcs'
-data1_sample = Sample(data1_fcs_path)
-data1_sample_with_orig = Sample(data1_fcs_path, cache_original_events=True)
 
-xform_logicle = transforms.LogicleTransform('logicle', param_t=10000, param_w=0.5, param_m=4.5, param_a=0)
-xform_biex1 = transforms.WSPBiexTransform('neg0', width=-100.0, negative=0.0)
-xform_biex2 = transforms.WSPBiexTransform('neg1', width=-100.0, negative=1.0)
-
-fcs_file_path = "data/test_comp_example.fcs"
-comp_file_path = "data/comp_complete_example.csv"
-
-fcs_2d_file_path = "data/test_data_2d_01.fcs"
-
-fcs_index_sorted_path = "data/index_sorted/index_sorted_example.fcs"
-
-with warnings.catch_warnings():
-    warnings.simplefilter('ignore')
-    test_comp_sample = Sample(
-        fcs_path_or_data=fcs_file_path,
-        compensation=comp_file_path,
-        ignore_offset_error=True  # sample has off by 1 data offset
-    )
-
-    warnings.simplefilter('ignore')
-    test_comp_sample_uncomp = Sample(
-        fcs_path_or_data=fcs_file_path,
-        ignore_offset_error=True  # sample has off by 1 data offset
-    )
 
 
 class SampleTestCase(unittest.TestCase):

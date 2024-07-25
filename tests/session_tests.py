@@ -7,16 +7,8 @@ import numpy as np
 import pandas as pd
 
 from flowkit import Session, Sample, Matrix, Dimension, gates, transforms, load_samples
-from .gating_strategy_prog_gate_tests import data1_sample, poly1_gate, poly1_vertices, comp_matrix_01, asinh_xform1
+from tests.test_config import data1_sample, test_samples_base_set, fcs_file_paths, poly1_gate, poly1_vertices, comp_matrix_01, asinh_xform1
 
-fcs_file_paths = [
-    "data/100715.fcs",
-    "data/109567.fcs",
-    "data/113548.fcs"
-]
-test_samples_base_set = load_samples(fcs_file_paths)
-test_samples_8c_full_set = load_samples("data/8_color_data_set/fcs_files")
-test_samples_8c_full_set_dict = {s.id: s for s in test_samples_8c_full_set}
 
 
 class SessionTestCase(unittest.TestCase):

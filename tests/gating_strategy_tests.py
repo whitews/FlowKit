@@ -4,51 +4,8 @@ Tests for GatingStrategy Class
 import unittest
 import numpy as np
 import flowkit as fk
-from .session_tests import test_samples_8c_full_set_dict
+from tests.test_config import poly1_gate, logicle_xform1, hyperlog_xform1, comp_matrix_01, sample_with_spill, data1_sample
 
-
-data1_fcs_path = 'data/gate_ref/data1.fcs'
-data1_sample = fk.Sample(data1_fcs_path)
-
-poly1_vertices = [
-    [5, 5],
-    [500, 5],
-    [500, 500]
-]
-poly1_dim1 = fk.Dimension('FL2-H', compensation_ref='FCS')
-poly1_dim2 = fk.Dimension('FL3-H', compensation_ref='FCS')
-poly1_dims1 = [poly1_dim1, poly1_dim2]
-poly1_gate = fk.gates.PolygonGate('Polygon1', poly1_dims1, poly1_vertices)
-
-hyperlog_xform1 = fk.transforms.HyperlogTransform(
-    'Hyperlog_10000_1_4.5_0',
-    param_t=10000,
-    param_w=1,
-    param_m=4.5,
-    param_a=0
-)
-
-logicle_xform1 = fk.transforms.LogicleTransform(
-    'Logicle_10000_0.5_4.5_0',
-    param_t=10000,
-    param_w=0.5,
-    param_m=4.5,
-    param_a=0
-)
-
-spill01_fluoros = ['FITC', 'PE', 'PerCP']
-spill01_detectors = ['FL1-H', 'FL2-H', 'FL3-H']
-spill01_data = np.array(
-    [
-        [1, 0.02, 0.06],
-        [0.11, 1, 0.07],
-        [0.09, 0.01, 1]
-    ]
-)
-comp_matrix_01 = fk.Matrix('MySpill', spill01_data, spill01_detectors, spill01_fluoros)
-
-sample_id_with_spill = '101_DEN084Y5_15_E01_008_clean.fcs'
-sample_with_spill = test_samples_8c_full_set_dict[sample_id_with_spill]
 
 
 class GatingStrategyTestCase(unittest.TestCase):
