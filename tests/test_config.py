@@ -33,7 +33,23 @@ sample_with_spill = test_samples_8c_full_set_dict[sample_id_with_spill]
 
 test_gating_strategy = fk.parse_gating_xml(gml_path)
 
-# Coordinates
+with warnings.catch_warnings():
+    warnings.simplefilter('ignore')
+    test_comp_sample = fk.Sample(
+        fcs_path_or_data=fcs_file_path,
+        compensation=comp_file_path,
+        ignore_offset_error=True  # sample has off by 1 data offset
+    )
+
+    warnings.simplefilter('ignore')
+    test_comp_sample_uncomp = fk.Sample(
+        fcs_path_or_data=fcs_file_path,
+        ignore_offset_error=True  # sample has off by 1 data offset
+    )
+
+
+
+# Coordinates, Dimensions, Gates, and Quadrants
 
 ell1_coords = [12.99701, 16.22941]
 ell1_cov_mat = [[62.5, 37.5], [37.5, 62.5]]
@@ -47,6 +63,8 @@ poly1_vertices = [
 poly1_dim1 = fk.Dimension('FL2-H', compensation_ref='FCS')
 poly1_dim2 = fk.Dimension('FL3-H', compensation_ref='FCS')
 poly1_dims1 = [poly1_dim1, poly1_dim2]
+
+
 poly1_gate = fk.gates.PolygonGate('Polygon1', poly1_dims1, poly1_vertices)
 
 quad1_div1 = fk.QuadrantDivider('FL2', 'FL2-H', 'FCS', [12.14748])
@@ -92,7 +110,6 @@ ellipse1_dims = [ell1_dim1, ell1_dim2]
 
 
 ellipse1_gate = fk.gates.EllipsoidGate('Ellipse1', ellipse1_dims, ell1_coords, ell1_cov_mat, ell1_dist_square)
-
 
 
 
@@ -191,6 +208,7 @@ spill01_data = np.array(
 )
 comp_matrix_01 = fk.Matrix('MySpill', spill01_data, spill01_detectors, spill01_fluoros)
 
+# pnn, pns lists
 
 detectors_8c = [
     'TNFa FITC FLR-A',
@@ -212,20 +230,3 @@ fluorochromes_8c = [
     'CD107a',
     'CD4'
 ]
-
-
-
-with warnings.catch_warnings():
-    warnings.simplefilter('ignore')
-    test_comp_sample = fk.Sample(
-        fcs_path_or_data=fcs_file_path,
-        compensation=comp_file_path,
-        ignore_offset_error=True  # sample has off by 1 data offset
-    )
-
-    warnings.simplefilter('ignore')
-    test_comp_sample_uncomp = fk.Sample(
-        fcs_path_or_data=fcs_file_path,
-        ignore_offset_error=True  # sample has off by 1 data offset
-    )
-
