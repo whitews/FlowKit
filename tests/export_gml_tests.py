@@ -8,7 +8,7 @@ from io import BytesIO
 import numpy as np
 import pandas as pd
 
-from flowkit import Sample, Session
+from flowkit import Session
 from tests.test_config import data1_sample
 
 

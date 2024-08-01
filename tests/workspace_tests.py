@@ -7,7 +7,7 @@ import numpy as np
 import os
 import pandas as pd
 import warnings
-from flowkit import Workspace, Sample, load_samples, Matrix, gates, transforms, extract_wsp_sample_data
+from flowkit import Workspace, Sample, Matrix, gates, transforms, extract_wsp_sample_data
 # noinspection PyProtectedMember
 from flowkit._models.transforms._base_transform import Transform
 from flowkit.exceptions import GateReferenceError

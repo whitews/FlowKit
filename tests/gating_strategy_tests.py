@@ -2,11 +2,15 @@
 Tests for GatingStrategy Class
 """
 import unittest
-import numpy as np
 import flowkit as fk
-from tests.test_config import data1_sample, poly1_vertices, poly1_dims1, poly1_gate, hyperlog_xform_10000__1__4_5__0, logicle_xform_10000__0_5__4_5__0, spill01_fluoros, spill01_detectors, spill01_data, sample_with_spill, comp_matrix_01
-
-
+from tests.test_config import (
+    data1_sample,
+    poly1_gate,
+    hyperlog_xform_10000__1__4_5__0,
+    logicle_xform_10000__0_5__4_5__0,
+    sample_with_spill,
+    comp_matrix_01
+)
 
 
 class GatingStrategyTestCase(unittest.TestCase):

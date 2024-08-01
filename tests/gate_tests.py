@@ -3,7 +3,6 @@ Unit tests for base Gate class methods
 """
 
 import unittest
-import numpy as np
 
 from flowkit import Dimension
 from tests.test_config import poly1_gate

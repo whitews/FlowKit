@@ -1,3 +1,6 @@
+"""
+Configuration of test data
+"""
 import numpy as np
 import warnings
 import flowkit as fk

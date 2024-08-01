@@ -15,7 +15,6 @@ from flowkit import (
     Dimension,
     gates,
     transforms,
-    load_samples,
     generate_transforms,
 )
 from tests.test_config import (

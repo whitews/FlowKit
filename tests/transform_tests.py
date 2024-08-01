@@ -5,7 +5,7 @@ import unittest
 import numpy as np
 import warnings
 
-from flowkit import Sample, transforms, generate_transforms
+from flowkit import transforms, generate_transforms
 
 from tests.test_config import data1_sample, null_chan_sample, test_data_range1
 

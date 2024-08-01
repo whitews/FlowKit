@@ -1,10 +1,13 @@
+"""
+GatingML tests
+"""
 import unittest
 import glob
 import re
 import numpy as np
 import pandas as pd
 
-from flowkit import Sample, GatingStrategy, Session, parse_gating_xml
+from flowkit import GatingStrategy, Session, parse_gating_xml
 
 from tests.test_config import data1_sample
 
