@@ -5,7 +5,7 @@ import copy
 import unittest
 from io import BytesIO
 from flowkit import Session, Workspace, gates
-from .session_tests import test_samples_8c_full_set
+from tests.test_config import test_samples_8c_full_set
 
 
 class SessionExportTestCase(unittest.TestCase):
