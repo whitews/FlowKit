@@ -9,9 +9,7 @@ import numpy as np
 import pandas as pd
 
 from flowkit import Sample, Session
-
-data1_fcs_path = 'data/gate_ref/data1.fcs'
-data1_sample = Sample(data1_fcs_path)
+from tests.test_config import data1_sample
 
 
 class ExportGMLTestCase(unittest.TestCase):

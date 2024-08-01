@@ -7,14 +7,10 @@ import warnings
 
 from flowkit import Sample, transforms, generate_transforms
 
-data1_fcs_path = 'data/gate_ref/data1.fcs'
-data1_sample = Sample(data1_fcs_path)
+from tests.test_config import data1_sample, null_chan_sample, test_data_range1
+
+
 data1_raw_events = data1_sample.get_events(source='raw')
-
-# Sample with null channel
-null_chan_sample = Sample(data1_fcs_path, null_channel_list=['FL1-H'])
-
-test_data_range1 = np.linspace(0.0, 10.0, 101)
 
 
 class TransformsTestCase(unittest.TestCase):

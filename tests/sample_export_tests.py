@@ -5,7 +5,7 @@ import os
 import numpy as np
 import pandas as pd
 import unittest
-from .sample_tests import test_comp_sample, data1_fcs_path
+from tests.test_config import test_comp_sample, data1_fcs_path
 
 from flowkit import Sample
 

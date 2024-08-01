@@ -12,8 +12,9 @@ from flowkit import Workspace, Sample, load_samples, Matrix, gates, transforms, 
 from flowkit._models.transforms._base_transform import Transform
 from flowkit.exceptions import GateReferenceError
 
+from tests.test_config import test_samples_8c_full_set
 
-test_samples_8c_full_set = load_samples("data/8_color_data_set/fcs_files")
+
 wsp_8_color = Workspace(
     "data/8_color_data_set/8_color_ICS.wsp",
     fcs_samples=test_samples_8c_full_set
