@@ -371,6 +371,13 @@ class SampleTestCase(unittest.TestCase):
         self.assertEqual(chan_new, df_channels.loc[chan_idx].pnn)
         self.assertEqual(chan_pns_new, df_channels.loc[chan_idx].pns)
 
+    def test_rename_channel_raises(self):
+        sample = copy.deepcopy(data1_sample)
+        chan_orig = 'asdf'
+        chan_new = 'CD4-H'
+
+        self.assertRaises(ValueError, sample.rename_channel, chan_orig, chan_new)
+
     @staticmethod
     def test_fully_custom_transform():
         sample1 = Sample(fcs_path_or_data=data1_fcs_path)
