@@ -693,6 +693,33 @@ class Sample(object):
 
         return events
 
+    def rename_channel(self, current_label, new_label, new_pns_label=None):
+        """
+        Rename a channel label.
+
+        :param current_label: PnN label of a channel
+        :param new_label: new PnN label
+        :param new_pns_label: optional new PnS label
+        :return: None
+        """
+        try:
+            chan_idx = self.pnn_labels.index(current_label)
+        except ValueError:
+            raise ValueError("Label %s was not found in self.pnn_labels")
+
+        self.pnn_labels[chan_idx] = new_label
+
+        # Use same index for PnS label
+        if new_pns_label is not None:
+            self.pns_labels[chan_idx] = new_pns_label
+
+        # Update self.channels
+        self.channels['pnn'] = self.pnn_labels
+        self.channels['pns'] = self.pns_labels
+
+        # Update self._flowjo_pnn_labels
+        self._flowjo_pnn_labels[chan_idx] = new_label.replace('/', '_')
+
     def _transform(self, transform, include_scatter=False):
         if isinstance(transform, _transforms.RatioTransform):
             raise NotImplementedError(

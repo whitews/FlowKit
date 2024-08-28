@@ -347,6 +347,30 @@ class SampleTestCase(unittest.TestCase):
 
         self.assertListEqual(list(df.columns), new_cols)
 
+    def test_rename_channel(self):
+        sample = copy.deepcopy(data1_sample)
+        chan_orig = 'FL1-H'
+        chan_new = 'CD4-H'
+        chan_pns_new = 'FITC'
+
+        sample.rename_channel(chan_orig, chan_new, new_pns_label=chan_pns_new)
+
+        chan_num = sample.get_channel_number_by_label(chan_new)
+        self.assertEqual(chan_num, 3)
+
+        chan_idx = sample.get_channel_index(chan_new)
+        self.assertEqual(chan_idx, 2)
+
+        pnn_labels = sample.pnn_labels
+        pns_labels = sample.pns_labels
+
+        self.assertEqual(chan_new, pnn_labels[chan_idx])
+        self.assertEqual(chan_pns_new, pns_labels[chan_idx])
+
+        df_channels = sample.channels
+        self.assertEqual(chan_new, df_channels.loc[chan_idx].pnn)
+        self.assertEqual(chan_pns_new, df_channels.loc[chan_idx].pns)
+
     @staticmethod
     def test_fully_custom_transform():
         sample1 = Sample(fcs_path_or_data=data1_fcs_path)
