@@ -26,6 +26,7 @@ from .._models.gates._gml_gates import \
 # noinspection PyProtectedMember
 from .._models.gates._wsp_gates import WSPEllipsoidGate
 from .._models.gating_strategy import GatingStrategy
+from ..exceptions import QuadrantReferenceError
 
 wsp_gate_constructor_lut = {
     'RectangleGate': GMLRectangleGate,
@@ -930,7 +931,7 @@ def _recurse_add_sub_populations(
     elif isinstance(gate, RectangleGate):
         _add_rectangle_gate(gate_el, gate, fj_id, parent_fj_id, gating_strategy, comp_prefix, ns_map)
     else:
-        raise NotImplementedError("Exporting %s gates is not yet implemented" % str(gate.__class__))
+        raise NotImplementedError("Exporting %s gates is not yet implemented" % str(gate.__class__.__name__))
 
     # If there are child gates, create a new Sub-pop element and recurse
     child_gate_ids = gating_strategy.get_child_gate_ids(gate_id, gate_path)
@@ -1060,7 +1061,12 @@ def export_flowjo_wsp(gating_strategy, group_name, samples, file_handle):
 
     # Also assume the xforms for all samples are the same
     for g_id, g_path in gate_ids:
-        gate = gating_strategy.get_gate(g_id, g_path)
+        # need to avoid Quadrant instances of a QuadrantGate,
+        # they will get included w/ the QuadrantGate later.
+        try:
+            gate = gating_strategy.get_gate(g_id, g_path)
+        except QuadrantReferenceError:
+            continue
 
         for dim in gate.dimensions:
             if dim.id not in dim_xform_lut.keys():
