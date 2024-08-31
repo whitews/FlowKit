@@ -805,7 +805,7 @@ def plot_gate(
         p.renderers.extend(renderers)
     else:
         raise NotImplementedError(
-            "Plotting of %s gates is not supported in this version of FlowKit" % gate.__class__
+            "Plotting of %s gates is not supported in this version of FlowKit" % gate.__class__.__name__
         )
 
     if gate_path is not None:
