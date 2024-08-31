@@ -21,7 +21,6 @@ csv_8c_comp_null_channel_file_path = "data/8_color_data_set/den_comp_null_channe
 fcs_file_paths = ["data/100715.fcs", "data/109567.fcs", "data/113548.fcs"]
 
 # Samples
-
 data1_sample = fk.Sample(data1_fcs_path)
 data1_sample_with_orig = fk.Sample(data1_fcs_path, cache_original_events=True)
 null_chan_sample = fk.Sample(data1_fcs_path, null_channel_list=['FL1-H'])
@@ -30,8 +29,6 @@ test_samples_base_set = fk.load_samples(fcs_file_paths)
 test_samples_8c_full_set = fk.load_samples("data/8_color_data_set/fcs_files")
 test_samples_8c_full_set_dict = {s.id: s for s in test_samples_8c_full_set}
 sample_with_spill = test_samples_8c_full_set_dict[sample_id_with_spill]
-
-test_gating_strategy = fk.parse_gating_xml(gml_path)
 
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
@@ -50,18 +47,11 @@ with warnings.catch_warnings():
 # np objects
 test_data_range1 = np.linspace(0.0, 10.0, 101)
 
-
-# Coordinates, Dimensions, Gates, and Quadrants
-
-ell1_coords = [12.99701, 16.22941]
-ell1_cov_mat = [[62.5, 37.5], [37.5, 62.5]]
-ell1_dist_square = 1
-
+# Gates
 poly1_vertices = [[5, 5], [500, 5], [500, 500]]
 poly1_dim1 = fk.Dimension("FL2-H", compensation_ref="FCS")
 poly1_dim2 = fk.Dimension("FL3-H", compensation_ref="FCS")
 poly1_dims1 = [poly1_dim1, poly1_dim2]
-
 
 poly1_gate = fk.gates.PolygonGate("Polygon1", poly1_dims1, poly1_vertices)
 
@@ -107,14 +97,15 @@ ell1_dim1 = fk.Dimension("FL3-H", compensation_ref="uncompensated")
 ell1_dim2 = fk.Dimension("FL4-H", compensation_ref="uncompensated")
 ellipse1_dims = [ell1_dim1, ell1_dim2]
 
+ell1_coords = [12.99701, 16.22941]
+ell1_cov_mat = [[62.5, 37.5], [37.5, 62.5]]
+ell1_dist_square = 1
 
 ellipse1_gate = fk.gates.EllipsoidGate(
     "Ellipse1", ellipse1_dims, ell1_coords, ell1_cov_mat, ell1_dist_square
 )
 
-
 # Transforms
-
 asinh_xform_10000_4_1 = fk.transforms.AsinhTransform(
     param_t=10000,
     param_m=4,
@@ -159,9 +150,7 @@ logicle_xform_10000__1__4__0_5 = fk.transforms.LogicleTransform(
 
 xform_logicle = fk.transforms.LogicleTransform(param_t=10000, param_w=0.5, param_m=4.5, param_a=0)
 
-
 # Spillover and Matrix
-
 fcs_spill = (
     "13,B515-A,R780-A,R710-A,R660-A,V800-A,V655-A,V585-A,V450-A,G780-A,G710-A,G660-A,G610-A,G560-A,"
     "1,0,0,0.00008841570561316703,0.0002494559842740046,0.0006451591561972469,0.007198401782797728,0,0,"
@@ -224,3 +213,6 @@ detectors_8c = [
     "CD4 PE-Cy7 FLR-A",
 ]
 fluorochromes_8c = ["TNFa", "CD8", "IL2", "Aqua Amine", "IFNg", "CD3", "CD107a", "CD4"]
+
+# Gating Strategies
+test_gating_strategy = fk.parse_gating_xml(gml_path)
