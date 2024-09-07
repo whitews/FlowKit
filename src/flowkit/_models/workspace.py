@@ -487,26 +487,32 @@ class Workspace(object):
         # already doing this, so it was getting deep copied twice.
         return pd.concat(all_reports, ignore_index=True, copy=True)
 
-    def _get_processed_events(self, sample_id):
+    def _get_processed_events(self, sample_id, source=None):
         """
         Retrieve a pandas DataFrame containing processed events for specified sample.
         Compensation and transforms will be applied according to the WSP file.
 
         :param sample_id: a text string representing a Sample instance
+        :param source: Determines how events are processed. Values include 'raw', 'comp',
+            'xform', and None (default). If None, events are processed according to the
+            workspace compensation and/or transforms. If 'raw', no processing is applied.
+            If 'comp', only compensation is applied. If 'xform', then the available
+            transformations will be applied (post compensation, if comp matrix exists).
         :return: pandas DataFrame containing the processed sample events
         """
+        # get sample and accompanying comp & transform
         sample = self.get_sample(sample_id)
         comp_matrix = self.get_comp_matrix(sample_id)
         xform_lut = self.get_transforms(sample_id)
-
-        # default is 'raw' events
         event_source = 'raw'
 
-        if comp_matrix is not None:
+        # compensate if source is None, comp, or xform AND a comp matrix exists
+        if comp_matrix is not None and source in [None, 'comp', 'xform']:
             sample.apply_compensation(comp_matrix)
             event_source = 'comp'
 
-        if xform_lut is not None:
+        # transform if source is None or xform AND xforms exist
+        if xform_lut is not None and source in [None, 'xform']:
             sample.apply_transform(xform_lut)
             event_source = 'xform'
 
@@ -530,7 +536,7 @@ class Workspace(object):
         gating_result = self.get_gating_results(sample_id)
         return gating_result.get_gate_membership(gate_name, gate_path=gate_path)
 
-    def get_gate_events(self, sample_id, gate_name=None, gate_path=None):
+    def get_gate_events(self, sample_id, gate_name=None, gate_path=None, source=None):
         """
         Retrieve gated events for a specific gate & sample as a pandas DataFrame.
         Gated events are processed according to the sample's compensation &
@@ -540,10 +546,15 @@ class Workspace(object):
         :param gate_name: text string of a gate ID. If None, all Sample events will be returned (i.e. un-gated)
         :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
             Required if gate_name is ambiguous
+        :param source: Determines how events are processed. Values include 'raw', 'comp',
+            'xform', and None (default). If None, events are processed according to the
+            workspace compensation and/or transforms. If 'raw', no processing is applied.
+            If 'comp', only compensation is applied. If 'xform', then the available
+            transformations will be applied (post compensation, if comp matrix exists).
         :return: a pandas DataFrames with the gated events, compensated & transformed according
             to the group's compensation matrix and transforms
         """
-        df_events = self._get_processed_events(sample_id)
+        df_events = self._get_processed_events(sample_id, source=source)
 
         if gate_name is not None:
             gate_idx = self.get_gate_membership(sample_id, gate_name, gate_path)
@@ -552,6 +563,7 @@ class Workspace(object):
         # TODO: maybe make an optional kwarg to control column label format
         df_events.columns = [' '.join(col).strip() for col in df_events.columns]
 
+        # TODO: make inclusion of sample_id column a kwarg as well
         df_events.insert(0, 'sample_id', sample_id)
 
         return df_events

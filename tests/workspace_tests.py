@@ -188,7 +188,7 @@ class WorkspaceTestCase(unittest.TestCase):
         for gate_path in gate_paths:
             self.assertIn(gate_path, truth)
 
-    def test_get_gated_events(self):
+    def test_get_gate_events(self):
         wsp_path = "data/8_color_data_set/8_color_ICS_simple.wsp"
         sample_id = '101_DEN084Y5_15_E01_008_clean.fcs'
         gate_name = 'CD3+'
@@ -201,13 +201,58 @@ class WorkspaceTestCase(unittest.TestCase):
 
         wsp.analyze_samples(sample_id=sample_id)
 
-        df_gated_events = wsp.get_gate_events(
+        # get auto-processed
+        df_gate_events = wsp.get_gate_events(
             sample_id,
             gate_name
         )
 
-        self.assertIsInstance(df_gated_events, pd.DataFrame)
-        self.assertEqual(len(df_gated_events), 133670)
+        # get raw
+        df_gate_events_raw = wsp.get_gate_events(
+            sample_id,
+            gate_name,
+            source='row'
+        )
+
+        # get comp
+        df_gate_events_comp = wsp.get_gate_events(
+            sample_id,
+            gate_name,
+            source='comp'
+        )
+
+        evt_6_raw = [
+            165875.51562, 136158.00000, 79839.72656,
+            30412.32031, 29198.00000, 68261.58594,
+            146.88000, 68.34000, 145.08000, 126.48000,
+            61.38000, 1475.09998, 393.80002, 3631.10010,
+            1.28000
+        ]
+        evt_6_comp = [
+            165875.51562, 136158.00000, 79839.72656,
+            30412.32031, 29198.00000, 68261.58594,
+            145.23488, -3.66970, 145.08000, 126.48000,
+            47.19370, 1258.81096, 263.90823, 3468.27668,
+            1.28000
+        ]
+        evt_6_xform = [
+            0.63276, 0.51940, 0.30456, 0.11601, 0.11138,
+            0.26040, 0.25399, 0.22562, 0.25396, 0.25044,
+            0.23534, 0.41934, 0.27620, 0.54810, 0.03635
+        ]
+        chan_cols = [
+            'FSC-A', 'FSC-H', 'FSC-W', 'SSC-A', 'SSC-H', 'SSC-W',
+            'TNFa FITC FLR-A', 'CD8 PerCP-Cy55 FLR-A', 'IL2 BV421 FLR-A',
+            'Aqua Amine FLR-A', 'IFNg APC FLR-A', 'CD3 APC-H7 FLR-A',
+            'CD107a PE FLR-A', 'CD4 PE-Cy7 FLR-A', 'Time'
+        ]
+
+        self.assertIsInstance(df_gate_events, pd.DataFrame)
+        self.assertEqual(len(df_gate_events), 133670)
+
+        np.testing.assert_almost_equal(df_gate_events_raw[chan_cols].loc[6].values, evt_6_raw, 5)
+        np.testing.assert_almost_equal(df_gate_events_comp[chan_cols].loc[6].values, evt_6_comp, 5)
+        np.testing.assert_almost_equal(df_gate_events[chan_cols].loc[6].values, evt_6_xform, 5)
 
     def test_load_wsp_single_poly(self):
         wsp_path = "data/simple_line_example/simple_poly_and_rect.wsp"
