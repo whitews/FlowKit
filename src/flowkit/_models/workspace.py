@@ -237,6 +237,26 @@ class Workspace(object):
 
         return samples
 
+    def get_keywords(self, sample_id):
+        """
+        Retrieve a dictionary metadata keywords stored in the workspace
+        for a specific sample. Generally, these will be the same as the
+        metadata attribute in the Sample instance but can contain additional
+        keywords set by the user within FlowJo. Note the keys here will
+        have the '$' character prefix for FCS-defined keywords.
+
+        :param sample_id: a text string representing a Sample instance
+        :return: a dictionary of metadata stored in the FlowJo workspace
+        """
+        sample_dict = self._sample_data_lut[sample_id]
+
+        if sample_dict['keywords'] is not None:
+            keywords = copy.deepcopy(sample_dict['keywords'])
+        else:
+            keywords = None
+
+        return keywords
+
     def get_sample_groups(self):
         """
         Retrieve the list of sample group names defined in the Workspace.

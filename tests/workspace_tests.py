@@ -115,6 +115,20 @@ class WorkspaceTestCase(unittest.TestCase):
         self.assertEqual(len(loaded_samples), 3)
         self.assertIsInstance(loaded_samples[0], Sample)
 
+    def test_get_keywords_by_sample_id(self):
+        wsp_path = "data/8_color_data_set/8_color_ICS_simple.wsp"
+        sample_id = '101_DEN084Y5_15_E01_008_clean.fcs'
+
+        wsp = Workspace(
+            wsp_path,
+            fcs_samples=copy.deepcopy(test_samples_8c_full_set),
+            ignore_missing_files=True
+        )
+
+        keywords = wsp.get_keywords(sample_id)
+
+        self.assertIsInstance(keywords, dict)
+
     def test_get_comp_matrix_by_sample_id(self):
         wsp_path = "data/8_color_data_set/8_color_ICS_simple.wsp"
         sample_id = '101_DEN084Y5_15_E01_008_clean.fcs'
