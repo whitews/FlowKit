@@ -377,8 +377,18 @@ def plot_scatter(
 
     if len(x) > 0:
         x_min, x_max = _calculate_extent(x, d_min=x_min, d_max=x_max, pad=0.02)
+    else:
+        # empty array, set extents to 0 to avoid errors
+        x_min = x_max = 0
+
+        # turn off color density
+        color_density = False
+
     if len(y) > 0:
         y_min, y_max = _calculate_extent(y, d_min=y_min, d_max=y_max, pad=0.02)
+    else:
+        # empty array, set extents to 0 to avoid errors
+        y_min = y_max = 0
 
     if y_max > x_max:
         radius_dimension = 'y'
@@ -444,7 +454,11 @@ def plot_scatter(
             # re-order the highlight indices to match
             highlight_mask = highlight_mask[idx]
 
-        z_norm = (z - z.min()) / (z.max() - z.min())
+        # check if z max - z min is 0 (e.g. a single data point)
+        if z.max() - z.min() == 0:
+            z_norm = np.zeros(len(x))
+        else:
+            z_norm = (z - z.min()) / (z.max() - z.min())
     else:
         z_norm = np.zeros(len(x))
 
@@ -477,15 +491,16 @@ def plot_scatter(
     p.xaxis.axis_label = x_label
     p.yaxis.axis_label = y_label
 
-    p.circle(
-        x,
-        y,
-        radius=radius,
-        radius_dimension=radius_dimension,
-        fill_color=z_colors,
-        fill_alpha=fill_alpha,
-        line_color=None
-    )
+    if len(x) > 0:
+        p.circle(
+            x,
+            y,
+            radius=radius,
+            radius_dimension=radius_dimension,
+            fill_color=z_colors,
+            fill_alpha=fill_alpha,
+            line_color=None
+        )
 
     return p
 

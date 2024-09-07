@@ -3,6 +3,9 @@ Unit tests for plotting functions
 """
 import copy
 import unittest
+
+import bokeh.models
+import numpy as np
 from bokeh.plotting import figure as bk_Figure
 from bokeh.layouts import GridPlot as bk_GridPlot
 import flowkit as fk
@@ -21,6 +24,32 @@ class PlotTestCase(unittest.TestCase):
           pixel-level, this TestCase only tests that plots are returned
           from plotting functions.
     """
+    def test_plot_scatter_zero_points(self):
+        # from issue #197
+        arr = np.array([], float)
+        # noinspection PyProtectedMember
+        p = fk._utils.plot_utils.plot_scatter(arr, arr)
+
+        self.assertIsInstance(p, bk_Figure)
+
+    def test_plot_scatter_one_point(self):
+        # from issue #197
+        arr = np.array([1., ], float)
+        # noinspection PyProtectedMember
+        p = fk._utils.plot_utils.plot_scatter(arr, arr)
+
+        self.assertIsInstance(p, bk_Figure)
+
+    def test_plot_scatter_two_points_with_extents(self):
+        # from issue #197
+        # noinspection PyProtectedMember
+        p = fk._utils.plot_utils.plot_scatter(
+            np.array([0.44592386, 0.52033713]),
+            np.array([0.6131338, 0.60149982]),
+            x_min=0, x_max=.997, y_min=0, y_max=.991
+        )
+
+        self.assertIsInstance(p, bk_Figure)
 
     def test_sample_plot_histogram(self):
         sample = copy.deepcopy(test_sample)
