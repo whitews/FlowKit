@@ -1,31 +1,39 @@
 # anytree notes:
-#     - 2.9 drops 3.6, adds 3.11
-anytree>=2.9
+#     - 2.12 supports python 3.7 - 3.12
+anytree>=2.12
 
 # bokeh notes:
-#     - 3.1 supports python 3.8+
-bokeh>=3.1
+#     - 3.4 supports python 3.9 - 2.12
+bokeh>=3.4
 
-contourpy>=1.1.0
+# contourpy notes:
+#     - 1.2.0 drops python 3.8, supports 3.9 - 3.12
+contourpy>=1.2.0
 
 flowio>=1.3.0,<1.4
 flowutils>=1.1.0,<1.2
 
 # lxml notes:
-#     - 4.9+ supports python 3.7 - 3.11
-lxml>=4.9
+#     - 5.1+ supports python 3.6 - 3.12 (drops python 2)
+lxml>=5.1
 
-networkx>=3.1
+# networkx notes:
+#     - 3.2 drops python 3.8, supports 3.9 - 3.12
+networkx>=3.2
 
 # numpy notes:
 #     - locked to flowutils b/c of np C API
 numpy>=1.22,<2
 
 # pandas notes:
-#     - 1.2 drops support for python <3.7
-pandas>=2.0
-psutil>=5.8
+#     - 2.1 drops support for python 3.8
+pandas>=2.1
+
+# psutil notes:
+#     - bumping to 5.9 in prep for future python 3.13 support in 6.0.1+
+psutil>=5.9
 
 # scipy notes:
-#     - 1.8 support python 3.8+
-scipy>=1.8
+#     - 1.11 drops support python 3.8, supports 3.9 - 3.12
+#     - 1.11.0 was yanked from PyPI
+scipy>=1.11.1
