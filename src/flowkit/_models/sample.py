@@ -582,7 +582,7 @@ class Sample(object):
 
         return self._transformed_events
 
-    def get_events(self, source='xform', subsample=False):
+    def get_events(self, source='xform', subsample=False, event_mask=None):
         """
         Returns a NumPy array of event data.
 
@@ -592,8 +592,10 @@ class Sample(object):
         :param source: 'orig', 'raw', 'comp', 'xform' for whether the original (no gain applied),
             raw (orig + gain), compensated (raw + comp), or transformed (comp + xform) events will
             be returned
-        :param subsample: Whether to return all events or just the sub-sampled
+        :param subsample: Whether to return all events or just the subsampled
             events. Default is False (all events)
+        :param event_mask: Filter Sample events by a given Boolean array (events marked
+            True will be returned). Can be combined with the subsample option.
         :return: NumPy array of event data
         """
         if source == 'xform':
@@ -610,9 +612,23 @@ class Sample(object):
         if subsample:
             events = events[self.subsample_indices]
 
+            # if event mask is given, subsample it too
+            if event_mask is not None:
+                event_mask = event_mask[self.subsample_indices]
+
+        if event_mask is not None:
+            events = events[event_mask]
+
         return events
 
-    def as_dataframe(self, source='xform', subsample=False, col_order=None, col_names=None):
+    def as_dataframe(
+            self,
+            source='xform',
+            subsample=False,
+            event_mask=None,
+            col_order=None,
+            col_names=None
+    ):
         """
         Returns a pandas DataFrame of event data.
 
@@ -621,13 +637,15 @@ class Sample(object):
             be returned
         :param subsample: Whether to return all events or just the sub-sampled
             events. Default is False (all events)
+        :param event_mask: Filter Sample events by a given Boolean array (events marked
+            True will be returned). Can be combined with the subsample option.
         :param col_order: list of PnN labels. Determines the order of columns
             in the output DataFrame. If None, the column order will match the FCS file.
         :param col_names: list of new column labels. If None (default), the DataFrame
             columns will be a MultiIndex of the PnN / PnS labels.
         :return: pandas DataFrame of event data
         """
-        events = self.get_events(source=source, subsample=subsample)
+        events = self.get_events(source=source, subsample=subsample, event_mask=event_mask)
 
         multi_cols = pd.MultiIndex.from_arrays([self.pnn_labels, self.pns_labels], names=['pnn', 'pns'])
         events_df = pd.DataFrame(data=events, columns=multi_cols)
@@ -674,7 +692,7 @@ class Sample(object):
 
         return index
 
-    def get_channel_events(self, channel_index, source='xform', subsample=False):
+    def get_channel_events(self, channel_index, source='xform', subsample=False, event_mask=None):
         """
         Returns a NumPy array of event data for the specified channel index.
 
@@ -686,9 +704,11 @@ class Sample(object):
             or transformed events will be returned
         :param subsample: Whether to return all events or just the sub-sampled
             events. Default is False (all events)
+        :param event_mask: Filter Sample events by a given Boolean array (events marked
+            True will be returned). Can be combined with the subsample option.
         :return: NumPy array of event data for the specified channel index
         """
-        events = self.get_events(source=source, subsample=subsample)
+        events = self.get_events(source=source, subsample=subsample, event_mask=event_mask)
         events = events[:, channel_index]
 
         return events

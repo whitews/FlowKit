@@ -271,6 +271,19 @@ class SampleTestCase(unittest.TestCase):
 
         self.assertRaises(AttributeError, sample.get_events, source='xform')
 
+    def test_get_events_using_event_mast(self):
+        sample = Sample(data1_fcs_path, subsample=500)
+
+        # create event mask selecting all odd events
+        event_mask = np.zeros(sample.event_count, dtype=bool)
+        event_mask[1::2] = True
+
+        events = sample.get_events(source='raw', event_mask=event_mask)
+        events_sub = sample.get_events(source='raw', subsample=True, event_mask=event_mask)
+
+        self.assertEqual(events.shape[0], 6683)
+        self.assertEqual(events_sub.shape[0], 233)
+
     def test_get_events_invalid_source_raises(self):
         sample = test_comp_sample_uncomp
 
