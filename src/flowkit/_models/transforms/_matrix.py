@@ -35,6 +35,8 @@ class Matrix(object):
         # Copy detectors b/c it may be modified
         detectors = copy(detectors)
 
+        # TODO: accept the same CSV w/ headers that is exported & take Pandas DataFrame
+
         if isinstance(spill_data_or_file, np.ndarray):
             spill = spill_data_or_file
         else:
