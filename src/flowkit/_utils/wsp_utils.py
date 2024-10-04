@@ -16,7 +16,7 @@ from .._models.transforms._matrix import Matrix
 # noinspection PyProtectedMember
 from .._models.transforms import _transforms, _wsp_transforms
 # noinspection PyProtectedMember
-from .._models.gates._gates import PolygonGate, RectangleGate
+from .._models.gates._gates import PolygonGate, RectangleGate, BooleanGate
 # noinspection PyProtectedMember
 from .._models.gates._gml_gates import \
     GMLBooleanGate, \
@@ -232,6 +232,109 @@ def _parse_wsp_keywords(keywords_el):
 
     return keywords_lut
 
+def _parse_population_node(pop_el, parent_id, gating_ns, data_type_ns):
+    """
+    Given a Population node, return a gate instance
+
+    :param pop_el: Population element
+    :param parent_id: parent gate ID as list
+    :param gating_ns: GatingML gating namespace
+    :param data_type_ns: GatingML data type namespace
+    :return: gate instance
+    """
+    ns_map = pop_el.nsmap
+    pop_name = pop_el.attrib['name']
+    gate_el = pop_el.find('Gate', ns_map)
+
+    gate_child_els = gate_el.getchildren()
+
+    if len(gate_child_els) != 1:
+        raise ValueError("Gate element must have only 1 child element")
+
+    gate_child_el = gate_child_els[0]
+
+    # determine gate type
+    # TODO: this string parsing seems fragile, may need to be shored up
+    gate_type = gate_child_el.tag.partition('}')[-1]
+    gate_class = wsp_gate_constructor_lut[gate_type]
+
+    # Lookup 'eventsInside' attribute value, determines whether gate results
+    # should within the gate area or outside (i.e. the gate's complement).
+    # The value is a text string of an integer: '1' for events inside,
+    # '0' for events outside.
+    try:
+        events_inside_value = int(gate_child_el.attrib['eventsInside'])
+    except KeyError:
+        # if not found, default to events inside gate
+        events_inside_value = 1
+
+    if events_inside_value == 1:
+        use_complement = False
+    else:
+        use_complement = True
+
+    if gate_type in ['RectangleGate', 'PolygonGate', 'EllipsoidGate']:
+        # these take extra kwarg 'use_complement'
+        g = gate_class(
+            gate_child_el,
+            gating_ns,
+            data_type_ns,
+            use_complement=use_complement
+        )
+    else:
+        g = gate_class(
+            gate_child_el,
+            gating_ns,
+            data_type_ns
+        )
+
+    # FlowJo gates don't store gate names quite the same as GatingML.
+    # Tag the 'gate_name' & 'parent' attributes so we can re-create
+    # the correct hierarchy later.
+    g.gate_name = pop_name
+    g.parent = parent_id
+
+    return g
+
+def _parse_boolean_node(bool_el, bool_gate_type, parent_id):
+    """
+    Given a Boolean node, return a gate instance
+
+    :param bool_el: Boolean node element (AndNode, OrNode, NotNode)
+    :param bool_gate_type: Boolean type: 'and', 'or', or 'not'
+    :param parent_id: parent gate ID as list
+    :return: gate instance
+    """
+    gate_name = bool_el.attrib['name']
+    deps_el = bool_el.find('Dependents')
+
+    # There should be one 'Dependents' node.
+    # Within there may be one or more 'Dependent' nodes
+    dep_els = deps_el.findall('Dependent')
+
+    # create gate ref dicts needed for BooleanGate constructor
+    gate_refs = []
+    for dep_el in dep_els:
+        # each gate ref is a dict containing:
+        #  'ref': reference gate name
+        #  'path': tuple of reference gate path
+        #  'complement': Boolean value for whether to use gate complement
+        dep_name = dep_el.attrib['name']
+
+        # dependent name is a string w/ '/' separators
+        # but doesn't have FlowKit's 'root' base, so we need to add it
+        ref_gate_id = dep_name.split('/')
+        ref_gate_id.insert(0, 'root')
+        gate_ref = {
+            'ref': ref_gate_id[-1],
+            'path': tuple(ref_gate_id[:-1]),
+            'complement': False  # FlowJo doesn't seem to have this option
+        }
+        gate_refs.append(gate_ref)
+
+    g = BooleanGate(gate_name, bool_gate_type, gate_refs)
+
+    return g
 
 def _convert_wsp_gate(wsp_gate, comp_matrix, xform_lut):
     new_dims = []
@@ -306,6 +409,9 @@ def _convert_wsp_gate(wsp_gate, comp_matrix, xform_lut):
         # ellipses to polygons internally when processing gates.
         gate = wsp_gate.convert_to_polygon_gate(xforms)
         gate.dimensions = new_dims
+    elif isinstance(wsp_gate, BooleanGate):
+        # no need to convert BooleanGate instances
+        gate = wsp_gate
     else:
         raise NotImplemented(
             "%s gates for FlowJo workspaces are not currently supported." % type(wsp_gate).__name__
@@ -322,68 +428,27 @@ def _recurse_wsp_sub_populations(sub_pop_el, gate_path, gating_ns, data_type_ns)
         # here we'll create the gate path as a list b/c we will append to it for recursion
         # however, when it is finally stored in the list of gate dicts we will convert to tuple
         gate_path = ['root']
-        parent_id = None
+        parent_gate_name = None
     else:
-        parent_id = gate_path[-1]
+        parent_gate_name = gate_path[-1]
 
+    # regular gate (rectangle, polygon, etc.) are within 'Population' nodes
     pop_els = sub_pop_el.findall('Population', ns_map)
+
+    # Boolean gates are not in 'Population' nodes & have their own dedicated
+    # node. And each type has a different tag so we need to find them separately.
+    boolean_node_lut = {}
+    boolean_node_lut['and'] = sub_pop_el.findall('AndNode', ns_map)
+    boolean_node_lut['or'] =  sub_pop_el.findall('OrNode', ns_map)
+    boolean_node_lut['not'] = sub_pop_el.findall('NotNode', ns_map)
+
+    # recurse over 'Population' nodes
     for pop_el in pop_els:
-        pop_name = pop_el.attrib['name']
+        g = _parse_population_node(pop_el, parent_gate_name, gating_ns, data_type_ns)
         owning_group = pop_el.attrib['owningGroup']
-        gate_el = pop_el.find('Gate', ns_map)
 
-        gate_child_els = gate_el.getchildren()
-
-        if len(gate_child_els) != 1:
-            raise ValueError("Gate element must have only 1 child element")
-
-        gate_child_el = gate_child_els[0]
-
-        # determine gate type
-        # TODO: this string parsing seems fragile, may need to be shored up
-        gate_type = gate_child_el.tag.partition('}')[-1]
-        gate_class = wsp_gate_constructor_lut[gate_type]
-
-        # Lookup 'eventsInside' attribute value, determines whether gate results
-        # should within the gate area or outside (i.e. the gate's complement).
-        # The value is a text string of an integer: '1' for events inside,
-        # '0' for events outside.
-        try:
-            events_inside_value = int(gate_child_el.attrib['eventsInside'])
-        except KeyError:
-            # if not found, default to events inside gate
-            events_inside_value = 1
-
-        if events_inside_value == 1:
-            use_complement = False
-        else:
-            use_complement = True
-
-        if gate_type in ['RectangleGate', 'PolygonGate', 'EllipsoidGate']:
-            # these take extra kwarg 'use_complement'
-            g = gate_class(
-                gate_child_el,
-                gating_ns,
-                data_type_ns,
-                use_complement=use_complement
-            )
-        else:
-            g = gate_class(
-                gate_child_el,
-                gating_ns,
-                data_type_ns
-            )
-
-        # replace ID and parent ID with population names, but save the originals,
-        # so we can re-create the correct hierarchy later.
-        # NOTE: Some wsp files have the ID as an attribute of the GatingML-style sub-element,
-        #       though it isn't always the case. However, it seems the ID is reliably included
-        #       in the parent "Gate" element, saved here in the 'gate_el' variable.
-        #       Likewise for parent_id
-        g.gate_name = pop_name
-        g.parent = parent_id
         gate_id = copy.copy(gate_path)
-        gate_id.append(pop_name)
+        gate_id.append(g.gate_name)
         gate_id = tuple(gate_id)
 
         # Including gate path for ease of access later, even though a bit redundant w/ gate_id
@@ -394,10 +459,32 @@ def _recurse_wsp_sub_populations(sub_pop_el, gate_path, gating_ns, data_type_ns)
         }
 
         sub_pop_els = pop_el.findall('Subpopulations', ns_map)
-        child_gate_path = copy.copy(gate_path)
-        child_gate_path.append(pop_name)
+
         for el in sub_pop_els:
-            gates.update(_recurse_wsp_sub_populations(el, child_gate_path, gating_ns, data_type_ns))
+            gates.update(_recurse_wsp_sub_populations(el, list(gate_id), gating_ns, data_type_ns))
+
+    # and now recurse over the various Boolean nodes
+    for bool_type, bool_type_nodes in boolean_node_lut.items():
+        for bool_el in bool_type_nodes:
+            g = _parse_boolean_node(bool_el, bool_type, parent_gate_name)
+            owning_group = bool_el.attrib['owningGroup']
+
+            gate_id = copy.copy(gate_path)
+            gate_id.append(g.gate_name)
+            gate_id = tuple(gate_id)
+
+            # Including gate path for ease of access later, even though a bit redundant w/ gate_id
+            gates[gate_id] = {
+                'owning_group': owning_group,
+                'gate': g,
+                'gate_path': tuple(gate_path)  # converting to tuple!
+            }
+
+            # Like Population nodes, the Boolean nodes can contain sub-pops
+            sub_pop_els = bool_el.findall('Subpopulations', ns_map)
+
+            for el in sub_pop_els:
+                gates.update(_recurse_wsp_sub_populations(el, list(gate_id), gating_ns, data_type_ns))
 
     return gates
 

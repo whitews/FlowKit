@@ -10,6 +10,7 @@ import warnings
 from flowkit import Workspace, Sample, Matrix, gates, transforms, extract_wsp_sample_data
 # noinspection PyProtectedMember
 from flowkit._models.transforms._base_transform import Transform
+from flowkit._models.gating_results import GatingResults
 from flowkit.exceptions import GateReferenceError
 
 from tests.test_config import test_samples_8c_full_set
@@ -424,6 +425,55 @@ class WorkspaceTestCase(unittest.TestCase):
 
         self.assertIsInstance(gate_indices, np.ndarray)
         self.assertEqual(np.sum(gate_indices), 7023)
+
+    def test_parse_wsp_with_boolean_gates(self):
+        wsp_path = "data/8_color_data_set/8_color_ICS_boolean_gate_testing.wsp"
+        fcs_path = "data/8_color_data_set/fcs_files/101_DEN084Y5_15_E01_008_clean.fcs"
+        sample_id = '101_DEN084Y5_15_E01_008_clean.fcs'
+
+        # Boolean AND gate in CD4+ branch
+        gate_name_01 = 'CD107a+ & IFNg+'
+        gate_path_01 = ('root', 'Time', 'Singlets', 'aAmine-', 'CD3+', 'CD4+')
+
+        # Boolean OR gate in CD4+ branch
+        gate_name_02 = 'CD107a+ or IFNg+'
+        gate_path_02 = ('root', 'Time', 'Singlets', 'aAmine-', 'CD3+', 'CD4+')
+
+        # Boolean NOT gate in CD4+ branch
+        gate_name_03 = 'IL2+-'
+        gate_path_03 = ('root', 'Time', 'Singlets', 'aAmine-', 'CD3+', 'CD4+')
+
+        # Boolean NOT gate in CD4+ branch
+        gate_name_04 = 'TNFa+-'
+        gate_path_04 = ('root', 'Time', 'Singlets', 'aAmine-', 'CD3+', 'CD4+')
+
+        # Boolean NOT gate in CD8+ branch
+        gate_name_05 = 'TNFa+-'
+        gate_path_05 = ('root', 'Time', 'Singlets', 'aAmine-', 'CD3+', 'CD8+')
+
+        # Child of a Boolean gate in CD8+ branch
+        gate_name_06 = 'CD107a+'
+        gate_path_06 = ('root', 'Time', 'Singlets', 'aAmine-', 'CD3+', 'CD8+', 'TNFa+-')
+
+        wsp = Workspace(wsp_path, fcs_samples=fcs_path, ignore_missing_files=True)
+
+        wsp.analyze_samples(sample_id=sample_id)
+        gating_results = wsp.get_gating_results(sample_id)
+
+        gate_count_01 = gating_results.get_gate_count(gate_name_01, gate_path_01)
+        gate_count_02 = gating_results.get_gate_count(gate_name_02, gate_path_02)
+        gate_count_03 = gating_results.get_gate_count(gate_name_03, gate_path_03)
+        gate_count_04 = gating_results.get_gate_count(gate_name_04, gate_path_04)
+        gate_count_05 = gating_results.get_gate_count(gate_name_05, gate_path_05)
+        gate_count_06 = gating_results.get_gate_count(gate_name_06, gate_path_06)
+
+        self.assertIsInstance(gating_results, GatingResults)
+        self.assertEqual(gate_count_01, 0)
+        self.assertEqual(gate_count_02, 72)
+        self.assertEqual(gate_count_03, 82478)
+        self.assertEqual(gate_count_04, 82463)
+        self.assertEqual(gate_count_05, 47157)
+        self.assertEqual(gate_count_06, 70)
 
     def test_get_ambiguous_gate_objects(self):
         wsp_path = "data/8_color_data_set/8_color_ICS.wsp"
