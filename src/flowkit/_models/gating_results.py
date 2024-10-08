@@ -71,7 +71,7 @@ class GatingResults(object):
                 'relative_percent'
             ]
         )
-        df['level'] = df.gate_path.map(len)
+        df['level'] = df.gate_path.map(lambda x: len(x) - 1)
 
         self.report = df.sort_values(['sample', 'level', 'gate_name'])
 
