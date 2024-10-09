@@ -27,10 +27,16 @@ class Workspace(object):
         missing FCS files (i.e. not in fcs_samples arg) will still be loaded. If False, warnings
         are issued for FCS files found in the WSP file that were not loaded in the Workspace and
         gate data for these missing files will not be retained. Default is False.
-    :param find_fcs_files_from_wsp: Controls whether to search for FCS files based on `URI` params within the FlowJo
-        workspace file.
+    :param find_fcs_files_from_wsp: Controls whether to search for FCS files based on `URI` params
+        within the FlowJo workspace file.
     """
-    def __init__(self, wsp_file_path, fcs_samples=None, ignore_missing_files=False, find_fcs_files_from_wsp=False):
+    def __init__(
+            self,
+            wsp_file_path,
+            fcs_samples=None,
+            ignore_missing_files=False,
+            find_fcs_files_from_wsp=False
+    ):
         # The sample LUT holds sample IDs (keys) only for loaded samples.
         # The values are the Sample instances
         self._sample_lut = {}
