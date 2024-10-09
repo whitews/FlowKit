@@ -175,6 +175,36 @@ class GatingStrategy(object):
 
         self._dag = nx.DiGraph(dag_edges)
 
+    def _get_successor_node_paths(self, gate_node):
+        gate = gate_node.gate
+
+        # use a set of tuples since a Boolean gate (AND / OR) can
+        # reference >1 gate, the Boolean gate would get referenced
+        # twice. We don't need duplicates.
+        successor_node_tuples = set()
+
+        # some special handling if given a QuadrantGate to remove
+        if isinstance(gate, fk_gates.QuadrantGate):
+            # need to collect the Quadrant references as these
+            # may be referenced in a BooleanGate. In that case,
+            # we won't find the BooleanGate in a normal successor
+            # check of the DAG. See comment about using networkx
+            # to find successors below in non-QuadrantGate case.
+            for quadrant_child_node in gate_node.children:
+                quad_node_tuple = tuple(n.name for n in quadrant_child_node.path)
+                quad_successor_node_tuples = set(self._dag.successors(quad_node_tuple))
+
+                successor_node_tuples.update(quad_successor_node_tuples)
+        else:
+            # Use networkx graph to get dependent gates instead of anytree,
+            # since the DAG keeps track of all dependencies (incl. bool gates),
+            # which also covers bool gate dependencies of the children.
+            # Networkx descendants works for DAGs & returns a set of node strings.
+            node_tuple = tuple(n.name for n in gate_node.path)
+            successor_node_tuples = set(self._dag.successors(node_tuple))
+
+        return successor_node_tuples
+
     def remove_gate(self, gate_name, gate_path=None, keep_children=False):
         """
         Remove a gate from the gating strategy. Any descendant gates will also be removed
@@ -203,26 +233,7 @@ class GatingStrategy(object):
                 % (gate.id, gate_node.parent.name)
             )
 
-        # some special handling if given a QuadrantGate to remove
-        if isinstance(gate, fk_gates.QuadrantGate):
-            # need to collect the Quadrant references as these
-            # may be referenced in a BooleanGate. In that case,
-            # we won't find the BooleanGate in a normal successor
-            # check of the DAG. See comment about using networkx
-            # to find successors below in non-QuadrantGate case.
-            successor_node_tuples = []
-            for quadrant_child_node in gate_node.children:
-                quad_node_tuple = tuple(n.name for n in quadrant_child_node.path)
-                quad_successor_node_tuples = list(self._dag.successors(quad_node_tuple))
-
-                successor_node_tuples.extend(quad_successor_node_tuples)
-        else:
-            # Use networkx graph to get dependent gates instead of anytree,
-            # since the DAG keeps track of all dependencies (incl. bool gates),
-            # which also covers bool gate dependencies of the children.
-            # Networkx descendants works for DAGs & returns a set of node strings.
-            node_tuple = tuple(n.name for n in gate_node.path)
-            successor_node_tuples = list(self._dag.successors(node_tuple))
+        successor_node_tuples = self._get_successor_node_paths(gate_node)
 
         # check successor gates for a boolean gate,
         # if present throw a GateTreeError
@@ -244,7 +255,7 @@ class GatingStrategy(object):
             # quadrant gates need to be handled differently from other gates
             if isinstance(gate, fk_gates.QuadrantGate):
                 # The immediate children will be quadrants, but they will get deleted.
-                # We do need to check if the quadrants have children and  set their
+                # We do need to check if the quadrants have children and set their
                 # parent to the quadrant gate parent.
                 child_nodes = []
                 for quad in gate_node.children:
