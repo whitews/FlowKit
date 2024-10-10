@@ -40,7 +40,7 @@ class GatingStrategyTestCase(unittest.TestCase):
 
     def test_add_transform_non_transform_class(self):
         gs = fk.GatingStrategy()
-        self.assertRaises(TypeError, gs.add_transform, "not a transform class")
+        self.assertRaises(TypeError, gs.add_transform, transform_id="not a transform class", transform=dict())
 
     def test_add_duplicate_transform_id(self):
         gs = fk.GatingStrategy()
@@ -50,7 +50,7 @@ class GatingStrategyTestCase(unittest.TestCase):
 
     def test_add_matrix_non_matrix_class(self):
         gs = fk.GatingStrategy()
-        self.assertRaises(TypeError, gs.add_comp_matrix, "not a matrix class")
+        self.assertRaises(TypeError, gs.add_comp_matrix, matrix_id="not a matrix class", matrix=dict())
 
     def test_add_duplicate_matrix_id(self):
         gs = fk.GatingStrategy()
