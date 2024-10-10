@@ -103,6 +103,20 @@ class Session(object):
         """
         self.gating_strategy.add_gate(copy.deepcopy(gate), gate_path=gate_path, sample_id=sample_id)
 
+    def rename_gate(self, gate_name, new_gate_name, gate_path=None):
+        """
+        Rename a gate in the gating strategy. Any descendant gates will also be removed
+        unless keep_children=True. In all cases, if a BooleanGate exists that references
+        the gate to remove, a GateTreeError will be thrown indicating the BooleanGate
+        must be removed prior to removing the gate.
+
+        :param gate_name: text string of existing gate name
+        :param gate_path: complete ordered tuple of gate names for unique set of gate ancestors.
+            Required if gate_name is ambiguous
+        :return: None
+        """
+        self.gating_strategy.rename_gate(gate_name, new_gate_name, gate_path=gate_path)
+
     def remove_gate(self, gate_name, gate_path=None, keep_children=False):
         """
         Remove a gate from the gate tree. Any descendant gates will also be removed
