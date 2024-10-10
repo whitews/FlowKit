@@ -5,6 +5,8 @@ Test for removing gates from a GatingStrategy
 import unittest
 import copy
 import flowkit as fk
+# noinspection PyProtectedMember
+from flowkit._models.gating_results import GatingResults
 
 from tests.test_config import (
     test_samples_8c_full_set_dict,
@@ -65,13 +67,13 @@ class GatingStrategyRemoveGatesTestCase(unittest.TestCase):
             "Time", transformation_ref="time-lin", range_min=0.1, range_max=0.9
         )
 
-        # scatter dims
-        dim_ssc_w = fk.Dimension("SSC-W", transformation_ref="scatter-lin")
-        dim_ssc_h = fk.Dimension("SSC-H", transformation_ref="scatter-lin")
+        # scatter dims (not all are used, commented out the unused ones)
+        # dim_ssc_w = fk.Dimension("SSC-W", transformation_ref="scatter-lin")
+        # dim_ssc_h = fk.Dimension("SSC-H", transformation_ref="scatter-lin")
         dim_ssc_a = fk.Dimension("SSC-A", transformation_ref="scatter-lin")
         dim_fsc_w = fk.Dimension("FSC-W", transformation_ref="scatter-lin")
         dim_fsc_h = fk.Dimension("FSC-H", transformation_ref="scatter-lin")
-        dim_fsc_a = fk.Dimension("FSC-A", transformation_ref="scatter-lin")
+        # dim_fsc_a = fk.Dimension("FSC-A", transformation_ref="scatter-lin")
 
         # fluoro_dims
         dim_amine_a = fk.Dimension(
@@ -262,7 +264,11 @@ class GatingStrategyRemoveGatesTestCase(unittest.TestCase):
         session.add_gate(dim_cd107a_pos_range2, gate_path_cd4_or_cd8_pos)
 
         self.gating_strategy = session.gating_strategy
+        self.sample = sample
 
+    #
+    # Remove gate tests
+    #
     def test_remove_quadrant_fails(self):
         gs = copy.deepcopy(self.gating_strategy)
         gate_name_to_remove = "CD4P-CD8N"
@@ -314,3 +320,72 @@ class GatingStrategyRemoveGatesTestCase(unittest.TestCase):
         new_child_gate_ids = gs.get_child_gate_ids(parent_gate_name)
 
         self.assertEqual(new_child_gate_ids, ground_truth_new_child_gate_ids)
+
+    #
+    # Rename gate tests
+    #
+    def test_rename_gate_with_bool_dep(self):
+        gs = copy.deepcopy(self.gating_strategy)
+        gate_name_to_rename = "CD3-pos-range"
+        new_gate_name = "CD3+"
+
+        gs.rename_gate(gate_name_to_rename, new_gate_name=new_gate_name)
+
+        # verify new gate name exists by using it to get its parent
+        parent_id = gs.get_parent_gate_id('CD3+')
+        parent_id_truth = ('Live-poly', ('root', 'Time-range', 'Singlets-poly'))
+
+        self.assertEqual(parent_id, parent_id_truth)
+
+        # verify we can use the new tree to analyze a sample
+        res = gs.gate_sample(self.sample)
+
+        self.assertIsInstance(res, GatingResults)
+
+    def test_rename_gate_with_direct_bool_dep(self):
+        gs = copy.deepcopy(self.gating_strategy)
+
+        # CD4-CD8-dbl-pos-bool directly referenced the CD4 pos gate
+        gate_name_to_rename = "CD4-pos-poly"
+        new_gate_name = "CD4+"
+
+        gs.rename_gate(gate_name_to_rename, new_gate_name=new_gate_name)
+
+        # verify new gate name exists by using it to get its parent
+        parent_id = gs.get_parent_gate_id('CD4+')
+        parent_id_truth = ('CD3-pos-range', ('root', 'Time-range', 'Singlets-poly', 'Live-poly'))
+
+        self.assertEqual(parent_id, parent_id_truth)
+
+        # verify we can use the new tree to analyze a sample
+        res = gs.gate_sample(self.sample)
+
+        self.assertIsInstance(res, GatingResults)
+
+    def test_rename_gate_with_custom_gate(self):
+        gs = copy.deepcopy(self.gating_strategy)
+
+        # make custom CD4 pos gate
+        gate_name_to_rename = "CD4-pos-poly"
+        gate_path = ('root', 'Time-range', 'Singlets-poly', 'Live-poly', 'CD3-pos-range')
+        new_poly_vertices = [[0.26, 0.37], [0.67, 0.6], [0.67, 0.8], [0.26, 0.8]]
+        cd4_gate_copy = copy.deepcopy(gs.get_gate(gate_name_to_rename))
+        cd4_gate_copy.vertices = new_poly_vertices
+
+        # add to gating strategy as custom gate for sample ID
+        sample_id = self.sample.id
+        gs.add_gate(cd4_gate_copy, gate_path, sample_id=sample_id)
+
+        new_gate_name = "CD4+"
+        gs.rename_gate(gate_name_to_rename, new_gate_name=new_gate_name)
+
+        # verify new gate name exists by using it to get its parent
+        parent_id = gs.get_parent_gate_id('CD4+')
+        parent_id_truth = ('CD3-pos-range', ('root', 'Time-range', 'Singlets-poly', 'Live-poly'))
+
+        self.assertEqual(parent_id, parent_id_truth)
+
+        # verify we can access the custom gate for the sample
+        cd4_gate_custom = gs.get_gate(new_gate_name, sample_id=sample_id)
+        self.assertEqual(cd4_gate_custom.gate_name, new_gate_name)
+        self.assertEqual(cd4_gate_custom.vertices, new_poly_vertices)
