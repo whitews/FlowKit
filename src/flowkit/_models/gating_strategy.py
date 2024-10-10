@@ -205,6 +205,80 @@ class GatingStrategy(object):
 
         return successor_node_tuples
 
+    def rename_gate(self, gate_name, new_gate_name, gate_path=None):
+        """
+        Rename a gate in the gating strategy. Any descendant gates will also be removed
+        unless keep_children=True. In all cases, if a BooleanGate exists that references
+        the gate to remove, a GateTreeError will be thrown indicating the BooleanGate
+        must be removed prior to removing the gate.
+
+        :param gate_name: text string of existing gate name
+        :param gate_path: complete ordered tuple of gate names for unique set of gate ancestors.
+            Required if gate_name is ambiguous
+        :return: None
+        """
+        # First, get the gate node from anytree
+        # Note, this will raise an error on ambiguous gates so no need
+        # to handle that case
+        gate_node = self._get_gate_node(gate_name, gate_path=gate_path)
+        gate = gate_node.gate
+        orig_full_gate_path = tuple(n.name for n in gate_node.path)
+
+        # check successors for any Boolean gates that reference the renamed gate
+        # Note, these needs to be retrieved before modifying the gate name
+        successor_node_tuples = self._get_successor_node_paths(gate_node)
+
+        # At this point we're about to modify the tree and
+        # renaming a gate nullifies any previous results,
+        # so clear cached events
+        self.clear_cache()
+
+        # Need to change the gate node name & the gate's gate_name attribute
+        gate_node.name = new_gate_name
+        gate.gate_name = new_gate_name
+        new_full_gate_path = tuple(n.name for n in gate_node.path)
+
+        # check for custom gates, need to change those too
+        for custom_gate in gate_node.custom_gates.values():
+            custom_gate.gate_name = new_gate_name
+
+        # Check successor gates for a Boolean gate.
+        # If present, it references the renamed gate & that reference needs updating
+        for s_tuple in successor_node_tuples:
+            s_gate_node = self._get_gate_node(s_tuple[-1], gate_path=s_tuple[:-1])
+            s_gate = s_gate_node.gate
+
+            if isinstance(s_gate, fk_gates.BooleanGate):
+                bool_gate_refs = s_gate.gate_refs
+                for bool_gate_ref in bool_gate_refs:
+                    # Determine whether the modified gate name's path is
+                    # referenced within the Boolean gate's reference gate.
+                    # This is tricky b/c tuples don't have a built-in
+                    # function like a set's 'issubset' & converting to
+                    # sets won't work b/c we want a matching sequence where
+                    # repeat values can exist.
+                    # The most straight-forward case: the reference is the
+                    # modified gate.
+                    bool_gate_ref_full_path = bool_gate_ref['path'] + tuple((bool_gate_ref['ref'],))
+                    if bool_gate_ref_full_path == orig_full_gate_path:
+                        # just need to change the 'ref' key value
+                        bool_gate_ref['ref'] = new_gate_name
+                    elif len(bool_gate_ref_full_path) >= len(orig_full_gate_path):
+                        # The reference may contain the path of the original gate
+                        #
+                        bgr_path_prefix = bool_gate_ref['path'][:len(orig_full_gate_path)]
+                        bgr_path_postfix = bool_gate_ref['path'][len(orig_full_gate_path):]
+                        if bgr_path_prefix == orig_full_gate_path:
+                            # need to update the Boolean ref 'path' value with
+                            # this the new path
+                            bool_gate_ref['path'] = new_full_gate_path + bgr_path_postfix
+
+                    # Any other case, the reference gate path is longer than the modified gate,
+                    # so not affected by the change.
+
+        # rebuild DAG
+        self._rebuild_dag()
+
     def remove_gate(self, gate_name, gate_path=None, keep_children=False):
         """
         Remove a gate from the gating strategy. Any descendant gates will also be removed
