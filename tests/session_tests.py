@@ -17,6 +17,7 @@ from flowkit import (
     transforms,
     generate_transforms,
 )
+from flowkit.exceptions import GateTreeError
 from tests.test_config import (
     fcs_file_paths,
     test_samples_base_set,
@@ -247,3 +248,50 @@ class SessionTestCase(unittest.TestCase):
 
         self.assertIsInstance(gate_events, pd.DataFrame)
         self.assertEqual(len(gate_events), 12)
+
+    def test_rename_gate(self):
+        gml_path = "data/gate_ref/gml/gml_parent_poly1_boolean_and2_gate.xml"
+        fcs_path = "data/gate_ref/data1.fcs"
+        sample_id = "B07"
+
+        session = Session(gating_strategy=gml_path, fcs_samples=fcs_path)
+
+        # rename Boolean gate 'ParAnd2'
+        gate_to_rename = 'ParAnd2'
+        new_gate_name = 'BoolAnd2'
+
+        session.rename_gate(gate_to_rename, new_gate_name)
+
+        # verify they are now absent from the gate tree
+        sample_gates = session.get_sample_gates(sample_id)
+        sample_gate_names = {g.gate_name for g in sample_gates}
+
+        truth_gate_names = {"Range1", "Polygon1", "BoolAnd2", "Ellipse1"}
+
+        self.assertSetEqual(sample_gate_names, truth_gate_names)
+
+    def test_remove_gate(self):
+        gml_path = "data/gate_ref/gml/gml_parent_poly1_boolean_and2_gate.xml"
+        fcs_path = "data/gate_ref/data1.fcs"
+        sample_id = "B07"
+
+        session = Session(gating_strategy=gml_path, fcs_samples=fcs_path)
+
+        # try to remove 'Polygon1' gate
+        # will fail b/c of Boolean gate 'ParAnd2' references it
+        gate_to_remove = 'Polygon1'
+        self.assertRaises(GateTreeError, session.remove_gate, gate_to_remove)
+
+        # so remove Boolean gate 'ParAnd2' first
+        session.remove_gate('ParAnd2')
+
+        # and then remove 'Polygon1'
+        session.remove_gate(gate_to_remove)
+
+        # verify they are now absent from the gate tree
+        sample_gates = session.get_sample_gates(sample_id)
+        sample_gate_names = {g.gate_name for g in sample_gates}
+
+        truth_gate_names = {"Range1", "Ellipse1"}
+
+        self.assertSetEqual(sample_gate_names, truth_gate_names)
