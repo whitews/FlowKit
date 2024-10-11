@@ -296,13 +296,12 @@ def _parse_population_node(pop_el, parent_id, gating_ns, data_type_ns):
 
     return g
 
-def _parse_boolean_node(bool_el, bool_gate_type, parent_id):
+def _parse_boolean_node(bool_el, bool_gate_type):
     """
     Given a Boolean node, return a gate instance
 
     :param bool_el: Boolean node element (AndNode, OrNode, NotNode)
     :param bool_gate_type: Boolean type: 'and', 'or', or 'not'
-    :param parent_id: parent gate ID as list
     :return: gate instance
     """
     gate_name = bool_el.attrib['name']
@@ -466,7 +465,7 @@ def _recurse_wsp_sub_populations(sub_pop_el, gate_path, gating_ns, data_type_ns)
     # and now recurse over the various Boolean nodes
     for bool_type, bool_type_nodes in boolean_node_lut.items():
         for bool_el in bool_type_nodes:
-            g = _parse_boolean_node(bool_el, bool_type, parent_gate_name)
+            g = _parse_boolean_node(bool_el, bool_type)
             owning_group = bool_el.attrib['owningGroup']
 
             gate_id = copy.copy(gate_path)
