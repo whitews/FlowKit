@@ -29,7 +29,7 @@ class Sample(object):
     DataFrame.
 
     For Sample plot methods, pay attention to the defaults for the subsample
-    arguments, as most will use the sub-sampled events by default for better
+    arguments, as most will use the subsampled events by default for better
     performance. For compensation and transformation routines, all events are
     always processed.
 
@@ -95,9 +95,9 @@ class Sample(object):
         events are not retained by the Sample class as they are typically not useful. To retrieve the
         original events, set this to True and call the get_events() method with source='orig'.
 
-    :param subsample: The number of events to use for sub-sampling. The number of sub-sampled events
+    :param subsample: The number of events to use for subsampling. The number of subsampled events
         can be changed after instantiation using the `subsample_events` method. The random seed can
-        also be specified using that method. Sub-sampled events are used predominantly for speeding
+        also be specified using that method. Subsampled events are used predominantly for speeding
         up plotting methods.
     """
     def __init__(
@@ -334,7 +334,7 @@ class Sample(object):
         else:
             self.id = sample_id
 
-        # finally, store initial sub-sampled event indices
+        # finally, store initial subsampled event indices
         self.subsample_events(subsample)
 
     def __repr__(self):
@@ -391,7 +391,7 @@ class Sample(object):
         # metadata keywords with values that list the well location (row & column)
         # for each event. The keywords have the format "index sorting locations_1"
         # and the value is a string of semicolon delimited coordinates that
-        # are comma delimited.
+        # are comma-delimited.
         #
         # We'll start by checking for the existence of any keywords
         # starting with the string "index sorting locations"
@@ -428,15 +428,15 @@ class Sample(object):
             random_seed=1
     ):
         """
-        Stores a set of sub-sampled indices for event data. Sub-sampled events
+        Stores a set of subsampled indices for event data. Subsampled events
         can be accessed via the `get_events` method by setting the keyword
-        argument `subsample=True`. The sub-sampled indices are available via
+        argument `subsample=True`. The subsampled indices are available via
         the `subsample_indices` attribute.
 
-        :param subsample_count: Number of events to use as a sub-sample. If the number of
-            events in the Sample is less than the requested sub-sample count, then the
-            maximum number of available events is used for the sub-sample.
-        :param random_seed: Random seed used for sub-sampling events
+        :param subsample_count: Number of events to use as a subsample. If the number of
+            events in the Sample is less than the requested subsample count, then the
+            maximum number of available events is used for the subsample.
+        :param random_seed: Random seed used for subsampling events
         :return: None
         """
         # get raw event count as it might be less than original event count
@@ -461,7 +461,7 @@ class Sample(object):
 
         if (raw_event_count - bad_count) < subsample_count:
             # if total event count is less than requested subsample count,
-            # sub-sample will be all events (minus negative scatter if filter is True)
+            # subsample will be all events (minus negative scatter if filter is True)
             self._subsample_count = self.event_count - bad_count
         else:
             self._subsample_count = subsample_count
@@ -635,7 +635,7 @@ class Sample(object):
         :param source: 'orig', 'raw', 'comp', 'xform' for whether the original (no gain applied),
             raw (orig + gain), compensated (raw + comp), or transformed (comp + xform) events will
             be returned
-        :param subsample: Whether to return all events or just the sub-sampled
+        :param subsample: Whether to return all events or just the subsampled
             events. Default is False (all events)
         :param event_mask: Filter Sample events by a given Boolean array (events marked
             True will be returned). Can be combined with the subsample option.
@@ -702,7 +702,7 @@ class Sample(object):
         :param channel_index: channel index for which data is returned
         :param source: 'raw', 'comp', 'xform' for whether the raw, compensated
             or transformed events will be returned
-        :param subsample: Whether to return all events or just the sub-sampled
+        :param subsample: Whether to return all events or just the subsampled
             events. Default is False (all events)
         :param event_mask: Filter Sample events by a given Boolean array (events marked
             True will be returned). Can be combined with the subsample option.
@@ -819,8 +819,8 @@ class Sample(object):
         :param source: 'raw', 'comp', 'xform' for whether the raw, compensated
             or transformed events are used for plotting
         :param subsample: Whether to use all events for plotting or just the
-            sub-sampled events. Default is True (sub-sampled events). Plotting
-            sub-sampled events is much faster.
+            subsampled events. Default is True (subsampled events). Plotting
+            subsampled events is much faster.
         :param color_density: Whether to color the events by density, similar
             to a heat map. Default is True.
         :param bin_width: Bin size to use for the color density, in units of
@@ -898,7 +898,7 @@ class Sample(object):
         :param source: 'raw', 'comp', 'xform' for whether the raw, compensated
             or transformed events are used for plotting
         :param subsample: Whether to use all events for plotting or just the
-            sub-sampled events. Default is True (sub-sampled events). Running
+            subsampled events. Default is True (subsampled events). Running
             with all events is not recommended, as the Kernel Density
             Estimation is computationally demanding.
         :param plot_events: Whether to display the event data points in
@@ -971,8 +971,8 @@ class Sample(object):
         :param source: 'raw', 'comp', 'xform' for whether the raw, compensated
             or transformed events are used for plotting
         :param subsample: Whether to use all events for plotting or just the
-            sub-sampled events. Default is True (sub-sampled events). Plotting
-            sub-sampled events is much faster.
+            subsampled events. Default is True (subsampled events). Plotting
+            subsampled events is much faster.
         :param color_density: Whether to color the events by density, similar
             to a heat map. Default is True.
         :param bin_width: Bin size to use for the color density, in units of
@@ -1058,8 +1058,8 @@ class Sample(object):
         :param source: 'raw', 'comp', 'xform' for whether the raw, compensated
             or transformed events are used for plotting
         :param subsample: Whether to use all events for plotting or just the
-            sub-sampled events. Default is True (sub-sampled events). Plotting
-            sub-sampled events is much faster.
+            subsampled events. Default is True (subsampled events). Plotting
+            subsampled events is much faster.
         :param event_mask: Boolean array of events to plot. Takes precedence
             over highlight_mask (i.e. events marked False in event_mask will
             never be plotted).
@@ -1139,7 +1139,7 @@ class Sample(object):
         :param source: 'raw', 'comp', 'xform' for whether the raw, compensated
             or transformed events are used for plotting
         :param subsample: Whether to use all events for plotting or just the
-            sub-sampled events. Default is False (all events).
+            subsampled events. Default is False (all events).
         :param bins: Number of bins to use for the histogram or a string compatible
             with the NumPy histogram function. If None, the number of bins is
             determined by the square root rule.
@@ -1264,7 +1264,7 @@ class Sample(object):
         :param exclude_flagged: Whether to exclude flagged events. Default is False.
         :param exclude_normal: Whether to exclude "normal" events. This is useful for retrieving all
              the "bad" events (neg scatter and/or flagged events). Default is False.
-        :param subsample: Whether to export all events or just the sub-sampled events.
+        :param subsample: Whether to export all events or just the subsampled events.
             Default is False (all events).
         :param include_metadata: Whether to include all key/value pairs from the metadata attribute
             in the output FCS file. Only valid for .fcs file extension. If False, only the minimum
