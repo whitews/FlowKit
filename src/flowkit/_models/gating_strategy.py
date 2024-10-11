@@ -382,7 +382,8 @@ class GatingStrategy(object):
         :param matrix: an instance of the Matrix class
         :return: None
         """
-        # Technically, the GML 2.0 spec states 'FCS' (note uppercase) is reserved, but we'll cover that case-insensitive
+        # Technically, the GML 2.0 spec states 'FCS' (note uppercase) is reserved,
+        # but we'll cover that case-insensitive
         if matrix_id == 'uncompensated' or matrix_id.lower() == 'fcs':
             raise ValueError(
                 "Matrix IDs 'uncompensated' and 'FCS' are reserved compensation references " +

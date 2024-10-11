@@ -58,6 +58,13 @@ class GatingStrategyTestCase(unittest.TestCase):
 
         self.assertRaises(KeyError, gs.add_comp_matrix, 'MySpill', comp_matrix_01)
 
+    def test_add_invalid_matrix_id(self):
+        gs = fk.GatingStrategy()
+
+        # Both 'uncompensated' and 'FCS' are reserved matrix IDs in GatingML 2.0
+        self.assertRaises(ValueError, gs.add_comp_matrix, 'uncompensated', comp_matrix_01)
+        self.assertRaises(ValueError, gs.add_comp_matrix, 'FCS', comp_matrix_01)
+
     def test_fcs_defined_spill(self):
         gs = fk.GatingStrategy()
 
