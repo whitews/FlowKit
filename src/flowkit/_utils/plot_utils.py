@@ -627,10 +627,10 @@ def plot_gate(
     :param gate_id: tuple of gate name and gate path (also a tuple)
     :param gating_strategy: GatingStrategy containing gate_id
     :param sample: Sample instance to plot
-    :param subsample_count: Number of events to use as a sub-sample. If the number of
-        events in the Sample is less than the requested sub-sample count, then the
-        maximum number of available events is used for the sub-sample.
-    :param random_seed: Random seed used for sub-sampling events
+    :param subsample_count: Number of events to use as a subsample. If the number of
+        events in the Sample is less than the requested subsample count, then the
+        maximum number of available events is used for the subsample.
+    :param random_seed: Random seed used for subsampling events
     :param event_mask: Boolean array of events to plot (i.e. parent gate event membership)
     :param x_min: Lower bound of x-axis. If None, channel's min value will
         be used with some padding to keep events off the edge of the plot.
