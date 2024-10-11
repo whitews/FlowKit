@@ -111,6 +111,7 @@ class Session(object):
         must be removed prior to removing the gate.
 
         :param gate_name: text string of existing gate name
+        :param gate_name: text string for new gate name
         :param gate_path: complete ordered tuple of gate names for unique set of gate ancestors.
             Required if gate_name is ambiguous
         :return: None
