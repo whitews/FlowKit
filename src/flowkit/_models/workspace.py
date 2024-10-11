@@ -618,10 +618,10 @@ class Workspace(object):
         :param gate_name: Gate name to filter events (only events within the given gate will be plotted)
         :param gate_path: tuple of gate names for full set of gate ancestors.
             Required if gate_name is ambiguous
-        :param subsample_count: Number of events to use as a sub-sample. If the number of
-            events in the Sample is less than the requested sub-sample count, then the
-            maximum number of available events is used for the sub-sample.
-        :param random_seed: Random seed used for sub-sampling events
+        :param subsample_count: Number of events to use as a subsample. If the number of
+            events in the Sample is less than the requested subsample count, then the
+            maximum number of available events is used for the subsample.
+        :param random_seed: Random seed used for subsampling events
         :param x_min: Lower bound of x-axis. If None, channel's min value will
             be used with some padding to keep events off the edge of the plot.
         :param x_max: Upper bound of x-axis. If None, channel's max value will
@@ -703,10 +703,10 @@ class Workspace(object):
         :param gate_name: Gate name to filter events (only events within the given gate will be plotted)
         :param gate_path: tuple of gate names for full set of gate ancestors.
             Required if gate_name is ambiguous
-        :param subsample_count: Number of events to use as a sub-sample. If the number of
-            events in the Sample is less than the requested sub-sample count, then the
-            maximum number of available events is used for the sub-sample.
-        :param random_seed: Random seed used for sub-sampling events
+        :param subsample_count: Number of events to use as a subsample. If the number of
+            events in the Sample is less than the requested subsample count, then the
+            maximum number of available events is used for the subsample.
+        :param random_seed: Random seed used for subsampling events
         :param color_density: Whether to color the events by density, similar
             to a heat map. Default is True.
         :param bin_width: Bin size to use for the color density, in units of
@@ -740,7 +740,7 @@ class Workspace(object):
             x = comp_events[:, x_index]
             y = comp_events[:, y_index]
         else:
-            # not doing sub-sample here, will do later with bool AND
+            # not doing subsample here, will do later with bool AND
             x = sample.get_channel_events(x_index, source='raw', subsample=False)
             y = sample.get_channel_events(y_index, source='raw', subsample=False)
 
