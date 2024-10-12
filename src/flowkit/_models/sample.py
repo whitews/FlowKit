@@ -627,7 +627,8 @@ class Sample(object):
             subsample=False,
             event_mask=None,
             col_order=None,
-            col_names=None
+            col_names=None,
+            col_multi_index=True
     ):
         """
         Returns a pandas DataFrame of event data.
@@ -643,12 +644,19 @@ class Sample(object):
             in the output DataFrame. If None, the column order will match the FCS file.
         :param col_names: list of new column labels. If None (default), the DataFrame
             columns will be a MultiIndex of the PnN / PnS labels.
+        :param col_multi_index: Controls whether the column labels are multi-index. If
+            False, only the PnN labels will be used for a simple column index. Default
+            is True.
         :return: pandas DataFrame of event data
         """
         events = self.get_events(source=source, subsample=subsample, event_mask=event_mask)
 
-        multi_cols = pd.MultiIndex.from_arrays([self.pnn_labels, self.pns_labels], names=['pnn', 'pns'])
-        events_df = pd.DataFrame(data=events, columns=multi_cols)
+        if col_multi_index:
+            col_index = pd.MultiIndex.from_arrays([self.pnn_labels, self.pns_labels], names=['pnn', 'pns'])
+        else:
+            col_index = self.pnn_labels
+
+        events_df = pd.DataFrame(data=events, columns=col_index)
 
         if col_order is not None:
             events_df = events_df[col_order]

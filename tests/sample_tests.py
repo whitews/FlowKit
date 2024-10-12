@@ -340,6 +340,17 @@ class SampleTestCase(unittest.TestCase):
         self.assertIsInstance(df, pd.DataFrame)
         np.testing.assert_equal(df.values, data1_sample_with_orig.get_events(source='orig'))
 
+    def test_get_events_as_data_frame_col_index(self):
+        # verifies 'col_multi_index' option works as expected
+        # by default the col index will be MultiIndex
+        df_multi = data1_sample.as_dataframe(source='raw')
+
+        # turn off multi-index for simple column index
+        df_simple = data1_sample.as_dataframe(source='raw', col_multi_index=False)
+
+        self.assertIsInstance(df_multi.columns, pd.MultiIndex)
+        self.assertIsInstance(df_simple.columns, pd.Index)
+
     def test_get_events_as_data_frame_column_order(self):
         orig_col_order = ['FSC-H', 'SSC-H', 'FL1-H', 'FL2-H', 'FL3-H', 'FL2-A', 'FL4-H', 'Time']
         new_col_order = ['FSC-H', 'SSC-H', 'FL1-H', 'FL2-H', 'FL2-A', 'FL3-H', 'FL4-H', 'Time']
