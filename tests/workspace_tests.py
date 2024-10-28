@@ -11,7 +11,7 @@ from flowkit import Workspace, Sample, Matrix, gates, transforms, extract_wsp_sa
 # noinspection PyProtectedMember
 from flowkit._models.transforms._base_transform import Transform
 from flowkit._models.gating_results import GatingResults
-from flowkit.exceptions import GateReferenceError
+from flowkit.exceptions import GateReferenceError, GateTreeError
 
 from tests.test_config import test_samples_8c_full_set
 
@@ -425,6 +425,18 @@ class WorkspaceTestCase(unittest.TestCase):
 
         self.assertIsInstance(gate_indices, np.ndarray)
         self.assertEqual(np.sum(gate_indices), 7023)
+
+    def test_parse_wsp_with_invalid_gate_name(self):
+        wsp_path = "data/8_color_data_set/8_color_ICS_dot_gate_name.wsp"
+
+        self.assertRaisesRegex(
+            GateTreeError,
+            r"Gate name '\.' is incompatible with FlowKit\. " 
+            r"Gate was found in path: \/root\/Time\/Singlets\/aAmine-\/CD3\+\/CD4\+",
+            Workspace,
+            wsp_path,
+            ignore_missing_files=True
+        )
 
     def test_parse_wsp_with_boolean_gates(self):
         wsp_path = "data/8_color_data_set/8_color_ICS_boolean_gate_testing.wsp"

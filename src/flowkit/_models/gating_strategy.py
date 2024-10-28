@@ -71,11 +71,21 @@ class GatingStrategy(object):
         if not isinstance(gate_path, tuple):
             raise TypeError("gate_path must be a tuple not %s" % str(type(gate_path)))
 
+        # make string representation of parent path, used for anytree Resolver later
+        parent_abs_gate_path = "/" + "/".join(gate_path)
+
+        # Verify gate name is not "." or ".." as these are incompatible w/ the
+        # current version of anytree (see open issue https://github.com/c0fec0de/anytree/issues/269)
+        if gate.gate_name in ['.', '..']:
+            raise GateTreeError(
+                "Gate name '%s' is incompatible with FlowKit. Gate was found in path: %s" %
+                (gate.gate_name, parent_abs_gate_path)
+            )
+
         # We need the parent gate (via its node) for 2 reasons:
         #   1) To verify the parent exists when creating a new node
         #   2) Verify the parent is NOT a QuadrantGate, as only
         #      Quadrants of a QuadrantGate can be a parent.
-        parent_abs_gate_path = "/" + "/".join(gate_path)
         try:
             parent_node = self.resolver.get(self._gate_tree, parent_abs_gate_path)
         except anytree.ResolverError:
