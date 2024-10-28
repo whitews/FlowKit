@@ -118,7 +118,7 @@ class Session(object):
         """
         self.gating_strategy.rename_gate(gate_name, new_gate_name, gate_path=gate_path)
 
-    def remove_gate(self, gate_name, gate_path=None, keep_children=False):
+    def remove_gate(self, gate_name, gate_path=None, sample_id=None, keep_children=False):
         """
         Remove a gate from the gate tree. Any descendant gates will also be removed
         unless keep_children=True. In all cases, if a BooleanGate exists that references
@@ -128,12 +128,16 @@ class Session(object):
         :param gate_name: text string of a gate name
         :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
             Required if gate_name is ambiguous
+        :param sample_id: text string for Sample ID to remove only its custom Sample gate and
+            retain the template gate (and other custom gates if they exist).
         :param keep_children: Whether to keep child gates. If True, the child gates will be
             remapped to the removed gate's parent. Default is False, which will delete all
             descendant gates.
         :return: None
         """
-        self.gating_strategy.remove_gate(gate_name, gate_path=gate_path, keep_children=keep_children)
+        self.gating_strategy.remove_gate(
+            gate_name, gate_path=gate_path, sample_id=sample_id, keep_children=keep_children
+        )
 
     def add_transform(self, transform_id, transform):
         """
