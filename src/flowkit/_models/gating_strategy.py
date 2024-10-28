@@ -290,25 +290,16 @@ class GatingStrategy(object):
         # rebuild DAG
         self._rebuild_dag()
 
-    def remove_gate(self, gate_name, gate_path=None, keep_children=False):
+    def _remove_template_gate(self, gate_node, keep_children=False):
         """
-        Remove a gate from the gating strategy. Any descendant gates will also be removed
-        unless keep_children=True. In all cases, if a BooleanGate exists that references
-        the gate to remove, a GateTreeError will be thrown indicating the BooleanGate
-        must be removed prior to removing the gate.
+        Handles case for removing template gate from gate tree.
 
-        :param gate_name: text string of a gate name
-        :param gate_path: complete ordered tuple of gate names for unique set of gate ancestors.
-            Required if gate_name is ambiguous
+        :param gate_node: GateNode to remove
         :param keep_children: Whether to keep child gates. If True, the child gates will be
             remapped to the removed gate's parent. Default is False, which will delete all
             descendant gates.
         :return: None
         """
-        # First, get the gate node from anytree
-        # Note, this will raise an error on ambiguous gates so no need
-        # to handle that case
-        gate_node = self._get_gate_node(gate_name, gate_path=gate_path)
         gate = gate_node.gate
 
         # single quadrants can't be removed, their "parent" QuadrantGate must be removed
@@ -327,7 +318,7 @@ class GatingStrategy(object):
             s_gate = s_gate_node.gate
 
             if isinstance(s_gate, fk_gates.BooleanGate):
-                raise GateTreeError("BooleanGate %s references gate %s" % (s_gate.gate_name, gate_name))
+                raise GateTreeError("BooleanGate %s references gate %s" % (s_gate.gate_name, gate.gate_name))
 
         # At this point we're about to modify the tree and
         # removing a gate nullifies any previous results,
@@ -357,6 +348,37 @@ class GatingStrategy(object):
 
         # Now, rebuild the DAG (easier than modifying it)
         self._rebuild_dag()
+
+    def remove_gate(self, gate_name, gate_path=None, sample_id=None, keep_children=False):
+        """
+        Remove a gate from the gating strategy. Any descendant gates will also be removed
+        unless keep_children=True. In all cases, if a BooleanGate exists that references
+        the gate to remove, a GateTreeError will be thrown indicating the BooleanGate
+        must be removed prior to removing the gate.
+
+        :param gate_name: text string of a gate name
+        :param gate_path: complete ordered tuple of gate names for unique set of gate ancestors.
+            Required if gate_name is ambiguous
+        :param sample_id: text string for Sample ID to remove only its custom Sample gate and
+            retain the template gate (and other custom gates if they exist).
+        :param keep_children: Whether to keep child gates. If True, the child gates will be
+            remapped to the removed gate's parent. Default is False, which will delete all
+            descendant gates.
+        :return: None
+        """
+        # First, get the gate node from anytree
+        # Note, this will raise an error on ambiguous gates so no need
+        # to handle that case
+        gate_node = self._get_gate_node(gate_name, gate_path=gate_path)
+
+        # determine whether user requested to remove the template gate or a custom Sample gate
+        if sample_id is None:
+            # Remove template gate, which removes the entire node from the tree
+            self._remove_template_gate(gate_node, keep_children=keep_children)
+        else:
+            # Remove custom sample gate, which is simpler.
+            # Stay silent if key doesn't exist.
+            gate_node.remove_custom_gate(sample_id)
 
     def add_transform(self, transform_id, transform):
         """
@@ -566,7 +588,7 @@ class GatingStrategy(object):
     def get_gate_hierarchy(self, output='ascii', **kwargs):
         """
         Retrieve the hierarchy of gates in the gating strategy in several formats, including text,
-        dictionary, or JSON. If output == 'json', extra keyword arguments are passed to json.dumps
+        dictionary, or JSON. If output == 'json', extra keyword arguments are passed to 'json.dumps'
 
         :param output: Determines format of hierarchy returned, either 'ascii',
             'dict', or 'JSON' (default is 'ascii')

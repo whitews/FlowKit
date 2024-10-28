@@ -298,6 +298,37 @@ class GatingStrategyRemoveGatesTestCase(unittest.TestCase):
             fk.exceptions.GateReferenceError, gs.get_gate, gate_name_to_remove
         )
 
+    def test_remove_custom_gate(self):
+        gs = copy.deepcopy(self.gating_strategy)
+
+        # make custom CD4 pos gate
+        custom_gate_name = "CD4-pos-poly"
+        gate_path = ('root', 'Time-range', 'Singlets-poly', 'Live-poly', 'CD3-pos-range')
+        new_poly_vertices = [[0.26, 0.37], [0.67, 0.6], [0.67, 0.8], [0.26, 0.8]]
+        cd4_gate_copy = copy.deepcopy(gs.get_gate(custom_gate_name))
+        cd4_gate_copy.vertices = new_poly_vertices
+
+        # add to gating strategy as custom gate for sample ID
+        sample_id = self.sample.id
+        gs.add_gate(cd4_gate_copy, gate_path, sample_id=sample_id)
+
+        # verify custom gate exists & vertices match
+        is_cd4_gate_custom = gs.is_custom_gate(sample_id, custom_gate_name)
+        self.assertTrue(is_cd4_gate_custom)
+        custom_gate_stored = gs.get_gate(custom_gate_name, sample_id=sample_id)
+        self.assertEqual(custom_gate_stored.vertices, new_poly_vertices)
+
+        # Remove just the custom gate
+        gs.remove_gate(custom_gate_name, gate_path, sample_id=sample_id)
+
+        # verify we can no longer access the custom gate for the sample
+        is_cd4_gate_custom = gs.is_custom_gate(sample_id, custom_gate_name)
+        self.assertFalse(is_cd4_gate_custom)
+
+        # Finally, verify the template gate still exists
+        template_gate = gs.get_gate(custom_gate_name)
+        self.assertIsInstance(template_gate, fk.gates.PolygonGate)
+
     def test_remove_gate_keep_children(self):
         # reminder of gate tree relevant to test:
         # root
