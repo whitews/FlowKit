@@ -61,7 +61,7 @@ FlowKit is a Python toolkit for flow cytometry analysis and visualization, with 
     * Export gating strategies as a valid GatingML XML document
   * Import FlowJo 10 workspace files, supporting the following features:
     * Linear, logarithmic, bi-exponential, and logicle transforms
-    * Polygon, rectangle, ellipse, and quadrant gates
+    * Polygon, rectangle, ellipse, quadrant and Boolean gates
   * Programmatically create gating strategies including polygon, rectangle, range, ellipsoid, quadrant, and boolean gates
   * Retrieve gating results as a Pandas DataFrame 
 * Visualization
@@ -73,7 +73,7 @@ FlowKit is a Python toolkit for flow cytometry analysis and visualization, with 
 
 ## Requirements
 
-FlowKit supports Python version 3.8 - 3.12. All dependencies are installable 
+FlowKit supports Python version 3.9 - 3.12. All dependencies are installable 
 via pip, and are listed below.
 
 > **NOTE**: FlowUtils uses C extensions for significant performance 
