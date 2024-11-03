@@ -61,7 +61,7 @@ FlowKit is a Python toolkit for flow cytometry analysis and visualization, with 
     * Export gating strategies as a valid GatingML XML document
   * Import FlowJo 10 workspace files, supporting the following features:
     * Linear, logarithmic, bi-exponential, and logicle transforms
-    * Polygon, rectangle, ellipse, and quadrant gates
+    * Polygon, rectangle, ellipse, quadrant and Boolean gates
   * Programmatically create gating strategies including polygon, rectangle, range, ellipsoid, quadrant, and boolean gates
   * Retrieve gating results as a Pandas DataFrame 
 * Visualization
@@ -73,7 +73,7 @@ FlowKit is a Python toolkit for flow cytometry analysis and visualization, with 
 
 ## Requirements
 
-FlowKit supports Python version 3.8 - 3.12. All dependencies are installable 
+FlowKit supports Python version 3.9 - 3.12. All dependencies are installable 
 via pip, and are listed below.
 
 > **NOTE**: FlowUtils uses C extensions for significant performance 
@@ -86,15 +86,15 @@ Required Python dependencies:
 
 * [flowio](https://github.com/whitews/flowio) >= 1.3.0
 * [flowutils](https://github.com/whitews/flowutils) >= 1.1.0
-* anytree >= 2.9
-* bokeh >= 3.1
-* contourpy >= 1.1.0
-* lxml >= 4.9
-* networkx >= 3.1
+* anytree >= 2.12
+* bokeh >= 3.4
+* contourpy >= 1.2.0
+* lxml >= 5.1
+* networkx >= 3.2
 * numpy >= 1.22, <2
-* pandas >= 2.0
-* psutils >= 5.8
-* scipy >= 1.8
+* pandas >= 2.1
+* psutils >= 5.9
+* scipy >= 1.11.1
 
 ## Installation
 
@@ -161,6 +161,8 @@ Want to get involved in the development of FlowKit?
 
 The following projects and publications have utilized FlowKit. If you have a package or publication where FlowKit was used, and you want it listed here, feel free to [submit an issue](https://github.com/whitews/FlowKit/issues/new/) letting me know.
 
+* Ishii, Hiroto et al. "Establishing a method for the cryopreservation of viable peripheral blood mononuclear cells in the International Space Station." npj Microgravity vol. 10, Article number: 84 (2024), [doi:10.1038/s41526-024-00423-2](https://doi.org/10.1038/s41526-024-00423-2)
+* Dyikanov, Daniiar et al. "Comprehensive peripheral blood immunoprofiling reveals five immunotypes with immunotherapy response characteristics in patients with cancer." Cancer Cell vol. 42,5 (2024), [doi:10.1016/j.ccell.2024.04.008](https://doi.org/10.1016/j.ccell.2024.04.008)
 * Mortelecque, Justine et al. "A selection and optimization strategy for single-domain antibodies targeting the PHF6 linear peptide within the Tau intrinsically disordered protein." Journal of Biological Chemistry (2024), [doi:10.1016/j.jbc.2024.107163](https://www.jbc.org/article/S0021-9258(24)01658-2/fulltext)
 * Schmidt, Florian et al. "In-depth analysis of human virus-specific CD8+ T cells delineates unique phenotypic signatures for T cell specificity prediction." Cell Reports vol. 42,10 (2023), [doi:10.1016/j.celrep.2023.113250](https://www.cell.com/cell-reports/fulltext/S2211-1247(23)01262-7)
 * Schuster, Jonas et al. “Combining real-time fluorescence spectroscopy and flow cytometry to reveal new insights in DOC and cell characterization of drinking water.” Frontiers in Environmental Chemistry (2022), [doi:10.3389/fenvc.2022.931067](https://www.frontiersin.org/articles/10.3389/fenvc.2022.931067/full)
