@@ -5,7 +5,7 @@ import copy
 import unittest
 from io import BytesIO
 from flowkit import Session, Workspace, gates
-from .session_tests import test_samples_8c_full_set
+from tests.test_config import test_samples_8c_full_set, quad1_gate, data1_sample
 
 
 class SessionExportTestCase(unittest.TestCase):
@@ -113,3 +113,11 @@ class SessionExportTestCase(unittest.TestCase):
 
         self.assertEqual(wsp_gate.gate_name, gate_name)
         self.assertEqual(wsp_out_gate.gate_name, gate_name)
+
+    def test_export_quadrant_gate_raises(self):
+        session = Session()
+
+        session.add_samples(data1_sample)
+        session.add_gate(quad1_gate, ("root",))
+
+        self.assertRaises(NotImplementedError, session.export_wsp, 'tmp.wsp', group_name='All Samples')

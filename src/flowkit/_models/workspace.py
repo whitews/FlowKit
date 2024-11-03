@@ -27,10 +27,16 @@ class Workspace(object):
         missing FCS files (i.e. not in fcs_samples arg) will still be loaded. If False, warnings
         are issued for FCS files found in the WSP file that were not loaded in the Workspace and
         gate data for these missing files will not be retained. Default is False.
-    :param find_fcs_files_from_wsp: Controls whether to search for FCS files based on `URI` params within the FlowJo
-        workspace file.
+    :param find_fcs_files_from_wsp: Controls whether to search for FCS files based on `URI` params
+        within the FlowJo workspace file.
     """
-    def __init__(self, wsp_file_path, fcs_samples=None, ignore_missing_files=False, find_fcs_files_from_wsp=False):
+    def __init__(
+            self,
+            wsp_file_path,
+            fcs_samples=None,
+            ignore_missing_files=False,
+            find_fcs_files_from_wsp=False
+    ):
         # The sample LUT holds sample IDs (keys) only for loaded samples.
         # The values are the Sample instances
         self._sample_lut = {}
@@ -237,6 +243,26 @@ class Workspace(object):
 
         return samples
 
+    def get_keywords(self, sample_id):
+        """
+        Retrieve a dictionary metadata keywords stored in the workspace
+        for a specific sample. Generally, these will be the same as the
+        metadata attribute in the Sample instance but can contain additional
+        keywords set by the user within FlowJo. Note the keys here will
+        have the '$' character prefix for FCS-defined keywords.
+
+        :param sample_id: a text string representing a Sample instance
+        :return: a dictionary of metadata stored in the FlowJo workspace
+        """
+        sample_dict = self._sample_data_lut[sample_id]
+
+        if sample_dict['keywords'] is not None:
+            keywords = copy.deepcopy(sample_dict['keywords'])
+        else:
+            keywords = None
+
+        return keywords
+
     def get_sample_groups(self):
         """
         Retrieve the list of sample group names defined in the Workspace.
@@ -349,19 +375,20 @@ class Workspace(object):
 
     def get_transforms(self, sample_id):
         """
-        Retrieve the list of transformations for a specific sample.
+        Retrieve a dictionary LUT of transformations for a specific sample.
+        Keys are the transform IDs and values are Transform instances.
 
         :param sample_id: a text string representing a Sample instance
-        :return: a list of Transform instances
+        :return: a dictionary LUT of transform IDs: Transform instances
         """
         sample_dict = self._sample_data_lut[sample_id]
 
         if sample_dict['transforms'] is not None:
-            xforms = copy.deepcopy(list(sample_dict['transforms'].values()))
+            xform_lut = copy.deepcopy(sample_dict['transforms'])
         else:
-            xforms = None
+            xform_lut = None
 
-        return xforms
+        return xform_lut
 
     def get_gate(self, sample_id, gate_name, gate_path=None):
         """
@@ -486,27 +513,32 @@ class Workspace(object):
         # already doing this, so it was getting deep copied twice.
         return pd.concat(all_reports, ignore_index=True, copy=True)
 
-    def _get_processed_events(self, sample_id):
+    def _get_processed_events(self, sample_id, source=None):
         """
         Retrieve a pandas DataFrame containing processed events for specified sample.
         Compensation and transforms will be applied according to the WSP file.
 
         :param sample_id: a text string representing a Sample instance
+        :param source: Determines how events are processed. Values include 'raw', 'comp',
+            'xform', and None (default). If None, events are processed according to the
+            workspace compensation and/or transforms. If 'raw', no processing is applied.
+            If 'comp', only compensation is applied. If 'xform', then the available
+            transformations will be applied (post compensation, if comp matrix exists).
         :return: pandas DataFrame containing the processed sample events
         """
+        # get sample and accompanying comp & transform
         sample = self.get_sample(sample_id)
         comp_matrix = self.get_comp_matrix(sample_id)
-        xforms = self.get_transforms(sample_id)
-
-        xform_lut = {xform.id: xform for xform in xforms if not xform.id.startswith('Comp')}
-
-        # default is 'raw' events
+        xform_lut = self.get_transforms(sample_id)
         event_source = 'raw'
 
-        if comp_matrix is not None:
+        # compensate if source is None, comp, or xform AND a comp matrix exists
+        if comp_matrix is not None and source in [None, 'comp', 'xform']:
             sample.apply_compensation(comp_matrix)
             event_source = 'comp'
-        if xforms is not None:
+
+        # transform if source is None or xform AND xforms exist
+        if xform_lut is not None and source in [None, 'xform']:
             sample.apply_transform(xform_lut)
             event_source = 'xform'
 
@@ -530,7 +562,7 @@ class Workspace(object):
         gating_result = self.get_gating_results(sample_id)
         return gating_result.get_gate_membership(gate_name, gate_path=gate_path)
 
-    def get_gate_events(self, sample_id, gate_name=None, gate_path=None):
+    def get_gate_events(self, sample_id, gate_name=None, gate_path=None, source=None):
         """
         Retrieve gated events for a specific gate & sample as a pandas DataFrame.
         Gated events are processed according to the sample's compensation &
@@ -540,10 +572,15 @@ class Workspace(object):
         :param gate_name: text string of a gate ID. If None, all Sample events will be returned (i.e. un-gated)
         :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
             Required if gate_name is ambiguous
+        :param source: Determines how events are processed. Values include 'raw', 'comp',
+            'xform', and None (default). If None, events are processed according to the
+            workspace compensation and/or transforms. If 'raw', no processing is applied.
+            If 'comp', only compensation is applied. If 'xform', then the available
+            transformations will be applied (post compensation, if comp matrix exists).
         :return: a pandas DataFrames with the gated events, compensated & transformed according
             to the group's compensation matrix and transforms
         """
-        df_events = self._get_processed_events(sample_id)
+        df_events = self._get_processed_events(sample_id, source=source)
 
         if gate_name is not None:
             gate_idx = self.get_gate_membership(sample_id, gate_name, gate_path)
@@ -552,6 +589,7 @@ class Workspace(object):
         # TODO: maybe make an optional kwarg to control column label format
         df_events.columns = [' '.join(col).strip() for col in df_events.columns]
 
+        # TODO: make inclusion of sample_id column a kwarg as well
         df_events.insert(0, 'sample_id', sample_id)
 
         return df_events
@@ -580,10 +618,10 @@ class Workspace(object):
         :param gate_name: Gate name to filter events (only events within the given gate will be plotted)
         :param gate_path: tuple of gate names for full set of gate ancestors.
             Required if gate_name is ambiguous
-        :param subsample_count: Number of events to use as a sub-sample. If the number of
-            events in the Sample is less than the requested sub-sample count, then the
-            maximum number of available events is used for the sub-sample.
-        :param random_seed: Random seed used for sub-sampling events
+        :param subsample_count: Number of events to use as a subsample. If the number of
+            events in the Sample is less than the requested subsample count, then the
+            maximum number of available events is used for the subsample.
+        :param random_seed: Random seed used for subsampling events
         :param x_min: Lower bound of x-axis. If None, channel's min value will
             be used with some padding to keep events off the edge of the plot.
         :param x_max: Upper bound of x-axis. If None, channel's max value will
@@ -665,10 +703,10 @@ class Workspace(object):
         :param gate_name: Gate name to filter events (only events within the given gate will be plotted)
         :param gate_path: tuple of gate names for full set of gate ancestors.
             Required if gate_name is ambiguous
-        :param subsample_count: Number of events to use as a sub-sample. If the number of
-            events in the Sample is less than the requested sub-sample count, then the
-            maximum number of available events is used for the sub-sample.
-        :param random_seed: Random seed used for sub-sampling events
+        :param subsample_count: Number of events to use as a subsample. If the number of
+            events in the Sample is less than the requested subsample count, then the
+            maximum number of available events is used for the subsample.
+        :param random_seed: Random seed used for subsampling events
         :param color_density: Whether to color the events by density, similar
             to a heat map. Default is True.
         :param bin_width: Bin size to use for the color density, in units of
@@ -702,7 +740,7 @@ class Workspace(object):
             x = comp_events[:, x_index]
             y = comp_events[:, y_index]
         else:
-            # not doing sub-sample here, will do later with bool AND
+            # not doing subsample here, will do later with bool AND
             x = sample.get_channel_events(x_index, source='raw', subsample=False)
             y = sample.get_channel_events(y_index, source='raw', subsample=False)
 

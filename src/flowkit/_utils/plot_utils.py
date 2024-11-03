@@ -54,15 +54,6 @@ custom_heat_palette = [
 ]
 
 
-def _get_false_bounds(bool_array):
-    diff = np.diff(np.hstack((0, bool_array, 0)))
-
-    start = np.where(diff == 1)
-    end = np.where(diff == -1)
-
-    return start[0], end[0]
-
-
 def _calculate_extent(data_1d, d_min=None, d_max=None, pad=0.0):
     data_min = np.min(data_1d)
     data_max = np.max(data_1d)
@@ -386,8 +377,18 @@ def plot_scatter(
 
     if len(x) > 0:
         x_min, x_max = _calculate_extent(x, d_min=x_min, d_max=x_max, pad=0.02)
+    else:
+        # empty array, set extents to 0 to avoid errors
+        x_min = x_max = 0
+
+        # turn off color density
+        color_density = False
+
     if len(y) > 0:
         y_min, y_max = _calculate_extent(y, d_min=y_min, d_max=y_max, pad=0.02)
+    else:
+        # empty array, set extents to 0 to avoid errors
+        y_min = y_max = 0
 
     if y_max > x_max:
         radius_dimension = 'y'
@@ -453,7 +454,11 @@ def plot_scatter(
             # re-order the highlight indices to match
             highlight_mask = highlight_mask[idx]
 
-        z_norm = (z - z.min()) / (z.max() - z.min())
+        # check if z max - z min is 0 (e.g. a single data point)
+        if z.max() - z.min() == 0:
+            z_norm = np.zeros(len(x))
+        else:
+            z_norm = (z - z.min()) / (z.max() - z.min())
     else:
         z_norm = np.zeros(len(x))
 
@@ -486,15 +491,16 @@ def plot_scatter(
     p.xaxis.axis_label = x_label
     p.yaxis.axis_label = y_label
 
-    p.circle(
-        x,
-        y,
-        radius=radius,
-        radius_dimension=radius_dimension,
-        fill_color=z_colors,
-        fill_alpha=fill_alpha,
-        line_color=None
-    )
+    if len(x) > 0:
+        p.circle(
+            x,
+            y,
+            radius=radius,
+            radius_dimension=radius_dimension,
+            fill_color=z_colors,
+            fill_alpha=fill_alpha,
+            line_color=None
+        )
 
     return p
 
@@ -621,10 +627,10 @@ def plot_gate(
     :param gate_id: tuple of gate name and gate path (also a tuple)
     :param gating_strategy: GatingStrategy containing gate_id
     :param sample: Sample instance to plot
-    :param subsample_count: Number of events to use as a sub-sample. If the number of
-        events in the Sample is less than the requested sub-sample count, then the
-        maximum number of available events is used for the sub-sample.
-    :param random_seed: Random seed used for sub-sampling events
+    :param subsample_count: Number of events to use as a subsample. If the number of
+        events in the Sample is less than the requested subsample count, then the
+        maximum number of available events is used for the subsample.
+    :param random_seed: Random seed used for subsampling events
     :param event_mask: Boolean array of events to plot (i.e. parent gate event membership)
     :param x_min: Lower bound of x-axis. If None, channel's min value will
         be used with some padding to keep events off the edge of the plot.
@@ -814,7 +820,7 @@ def plot_gate(
         p.renderers.extend(renderers)
     else:
         raise NotImplementedError(
-            "Plotting of %s gates is not supported in this version of FlowKit" % gate.__class__
+            "Plotting of %s gates is not supported in this version of FlowKit" % gate.__class__.__name__
         )
 
     if gate_path is not None:

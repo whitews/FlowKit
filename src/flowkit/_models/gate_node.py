@@ -36,8 +36,9 @@ class GateNode(anytree.Node):
         type, have the same gate name, and the same dimension IDs as the
         GateNode's template gate.
 
-        :param sample_id: text string used to identify the custom gate,
-        :param gate: a Gate instance
+        :param sample_id: text string used to identify the custom gate
+        :param gate: a Gate instance to use for the new custom gate. Must
+            match the template gate type.
         :return: None
         """
         # First, check the gate type matches the template gate
@@ -71,6 +72,16 @@ class GateNode(anytree.Node):
             return True
 
         return False
+
+    def remove_custom_gate(self, sample_id):
+        """
+        Removes a custom gate variation from the node. No error is thrown if a
+        custom gate for the sample ID does not exist.
+
+        :param sample_id: text string used to identify the custom gate
+        :return: None
+        """
+        self.custom_gates.pop(sample_id, None)
 
     def get_gate(self, sample_id=None):
         """

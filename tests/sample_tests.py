@@ -16,9 +16,9 @@ data1_fcs_path = 'data/gate_ref/data1.fcs'
 data1_sample = Sample(data1_fcs_path)
 data1_sample_with_orig = Sample(data1_fcs_path, cache_original_events=True)
 
-xform_logicle = transforms.LogicleTransform('logicle', param_t=10000, param_w=0.5, param_m=4.5, param_a=0)
-xform_biex1 = transforms.WSPBiexTransform('neg0', width=-100.0, negative=0.0)
-xform_biex2 = transforms.WSPBiexTransform('neg1', width=-100.0, negative=1.0)
+xform_logicle = transforms.LogicleTransform(param_t=10000, param_w=0.5, param_m=4.5, param_a=0)
+xform_biex1 = transforms.WSPBiexTransform(width=-100.0, negative=0.0)
+xform_biex2 = transforms.WSPBiexTransform(width=-100.0, negative=1.0)
 
 fcs_file_path = "data/test_comp_example.fcs"
 comp_file_path = "data/comp_complete_example.csv"
@@ -271,6 +271,19 @@ class SampleTestCase(unittest.TestCase):
 
         self.assertRaises(AttributeError, sample.get_events, source='xform')
 
+    def test_get_events_using_event_mast(self):
+        sample = Sample(data1_fcs_path, subsample=500)
+
+        # create event mask selecting all odd events
+        event_mask = np.zeros(sample.event_count, dtype=bool)
+        event_mask[1::2] = True
+
+        events = sample.get_events(source='raw', event_mask=event_mask)
+        events_sub = sample.get_events(source='raw', subsample=True, event_mask=event_mask)
+
+        self.assertEqual(events.shape[0], 6683)
+        self.assertEqual(events_sub.shape[0], 233)
+
     def test_get_events_invalid_source_raises(self):
         sample = test_comp_sample_uncomp
 
@@ -327,6 +340,17 @@ class SampleTestCase(unittest.TestCase):
         self.assertIsInstance(df, pd.DataFrame)
         np.testing.assert_equal(df.values, data1_sample_with_orig.get_events(source='orig'))
 
+    def test_get_events_as_data_frame_col_index(self):
+        # verifies 'col_multi_index' option works as expected
+        # by default the col index will be MultiIndex
+        df_multi = data1_sample.as_dataframe(source='raw')
+
+        # turn off multi-index for simple column index
+        df_simple = data1_sample.as_dataframe(source='raw', col_multi_index=False)
+
+        self.assertIsInstance(df_multi.columns, pd.MultiIndex)
+        self.assertIsInstance(df_simple.columns, pd.Index)
+
     def test_get_events_as_data_frame_column_order(self):
         orig_col_order = ['FSC-H', 'SSC-H', 'FL1-H', 'FL2-H', 'FL3-H', 'FL2-A', 'FL4-H', 'Time']
         new_col_order = ['FSC-H', 'SSC-H', 'FL1-H', 'FL2-H', 'FL2-A', 'FL3-H', 'FL4-H', 'Time']
@@ -346,6 +370,37 @@ class SampleTestCase(unittest.TestCase):
         df = data1_sample.as_dataframe(source='raw', col_names=new_cols)
 
         self.assertListEqual(list(df.columns), new_cols)
+
+    def test_rename_channel(self):
+        sample = copy.deepcopy(data1_sample)
+        chan_orig = 'FL1-H'
+        chan_new = 'CD4-H'
+        chan_pns_new = 'FITC'
+
+        sample.rename_channel(chan_orig, chan_new, new_pns_label=chan_pns_new)
+
+        chan_num = sample.get_channel_number_by_label(chan_new)
+        self.assertEqual(chan_num, 3)
+
+        chan_idx = sample.get_channel_index(chan_new)
+        self.assertEqual(chan_idx, 2)
+
+        pnn_labels = sample.pnn_labels
+        pns_labels = sample.pns_labels
+
+        self.assertEqual(chan_new, pnn_labels[chan_idx])
+        self.assertEqual(chan_pns_new, pns_labels[chan_idx])
+
+        df_channels = sample.channels
+        self.assertEqual(chan_new, df_channels.loc[chan_idx].pnn)
+        self.assertEqual(chan_pns_new, df_channels.loc[chan_idx].pns)
+
+    def test_rename_channel_raises(self):
+        sample = copy.deepcopy(data1_sample)
+        chan_orig = 'asdf'
+        chan_new = 'CD4-H'
+
+        self.assertRaises(ValueError, sample.rename_channel, chan_orig, chan_new)
 
     @staticmethod
     def test_fully_custom_transform():

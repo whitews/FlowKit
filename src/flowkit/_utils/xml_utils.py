@@ -50,9 +50,9 @@ def parse_gating_xml(xml_file_or_path):
         raise ValueError("Gating file format is not supported.")
 
     for c_id, c in comp_matrices.items():
-        gating_strategy.add_comp_matrix(c)
+        gating_strategy.add_comp_matrix(c_id, c)
     for t_id, t in transformations.items():
-        gating_strategy.add_transform(t)
+        gating_strategy.add_transform(t_id, t)
 
     deps = []
     quadrants = []
@@ -157,10 +157,10 @@ def _construct_transforms(root_gml, transform_ns, data_type_ns):
         )
 
         for xform_el in xform_els:
-            xform = _parse_transformation_element(xform_el, transform_ns, data_type_ns)
+            xform_id, xform = _parse_transformation_element(xform_el, transform_ns, data_type_ns)
 
             if xform is not None:
-                transformations[xform.id] = xform
+                transformations[xform_id] = xform
 
     return transformations
 
@@ -176,13 +176,13 @@ def _construct_matrices(root_gml, transform_ns, data_type_ns):
         )
 
         for matrix_el in matrix_els:
-            matrix = _parse_matrix_element(
+            matrix_id, matrix = _parse_matrix_element(
                 matrix_el,
                 transform_ns,
                 data_type_ns
             )
 
-            comp_matrices[matrix.id] = matrix
+            comp_matrices[matrix_id] = matrix
 
     return comp_matrices
 
@@ -444,10 +444,10 @@ def _parse_matrix_element(
 
     matrix = np.array(matrix)
 
-    return Matrix(matrix_id, matrix, detectors, fluorochromes)
+    return matrix_id, Matrix(matrix, detectors, fluorochromes)
 
 
-def _parse_fratio_element(transform_id, fratio_element, transform_namespace, data_type_namespace):
+def _parse_fratio_element(fratio_element, transform_namespace, data_type_namespace):
     # f ratio transform has 3 parameters: A, B, and C
     # these are attributes of the 'fratio' element
     param_a = find_attribute_value(fratio_element, transform_namespace, 'A')
@@ -481,14 +481,12 @@ def _parse_fratio_element(transform_id, fratio_element, transform_namespace, dat
             )
         dim_ids.append(dim_id)
 
-    xform = transforms.RatioTransform(
-        transform_id, dim_ids, param_a, param_b, param_c
-    )
+    xform = transforms.RatioTransform(dim_ids, param_a, param_b, param_c)
 
     return xform
 
 
-def _parse_flog_element(transform_id, flog_element, transform_namespace):
+def _parse_flog_element(flog_element, transform_namespace):
     # f log transform has 2 parameters: T and M
     # these are attributes of the 'flog' element
     param_t = find_attribute_value(flog_element, transform_namespace, 'T')
@@ -503,12 +501,12 @@ def _parse_flog_element(transform_id, flog_element, transform_namespace):
     param_t = float(param_t)
     param_m = float(param_m)
 
-    xform = transforms.LogTransform(transform_id, param_t, param_m)
+    xform = transforms.LogTransform(param_t, param_m)
 
     return xform
 
 
-def _parse_fasinh_element(transform_id, fasinh_element, transform_namespace):
+def _parse_fasinh_element(fasinh_element, transform_namespace):
     # f asinh transform has 3 parameters: T, M, and A
     # these are attributes of the 'fasinh' element
     param_t = find_attribute_value(fasinh_element, transform_namespace, 'T')
@@ -525,12 +523,12 @@ def _parse_fasinh_element(transform_id, fasinh_element, transform_namespace):
     param_m = float(param_m)
     param_a = float(param_a)
 
-    xform = transforms.AsinhTransform(transform_id, param_t, param_m, param_a)
+    xform = transforms.AsinhTransform(param_t, param_m, param_a)
 
     return xform
 
 
-def _parse_hyperlog_element(transform_id, hyperlog_element, transform_namespace):
+def _parse_hyperlog_element(hyperlog_element, transform_namespace):
     # hyperlog transform has 4 parameters: T, W, M, and A
     # these are attributes of the 'hyperlog' element
     param_t = find_attribute_value(hyperlog_element, transform_namespace, 'T')
@@ -550,14 +548,12 @@ def _parse_hyperlog_element(transform_id, hyperlog_element, transform_namespace)
     param_m = float(param_m)
     param_a = float(param_a)
 
-    xform = transforms.HyperlogTransform(
-        transform_id, param_t, param_w, param_m, param_a
-    )
+    xform = transforms.HyperlogTransform(param_t, param_w, param_m, param_a)
 
     return xform
 
 
-def _parse_flin_element(transform_id, flin_element, transform_namespace):
+def _parse_flin_element(flin_element, transform_namespace):
     # f linear transform has 2 parameters: T and A
     # these are attributes of the 'flin' element
     param_t = find_attribute_value(flin_element, transform_namespace, 'T')
@@ -572,12 +568,12 @@ def _parse_flin_element(transform_id, flin_element, transform_namespace):
     param_t = float(param_t)
     param_a = float(param_a)
 
-    xform = transforms.LinearTransform(transform_id, param_t, param_a)
+    xform = transforms.LinearTransform(param_t, param_a)
 
     return xform
 
 
-def _parse_logicle_element(transform_id, logicle_element, transform_namespace):
+def _parse_logicle_element(logicle_element, transform_namespace):
     # logicle transform has 4 parameters: T, W, M, and A
     # these are attributes of the 'logicle' element
     param_t = find_attribute_value(logicle_element, transform_namespace, 'T')
@@ -597,9 +593,7 @@ def _parse_logicle_element(transform_id, logicle_element, transform_namespace):
     param_m = float(param_m)
     param_a = float(param_a)
 
-    xform = transforms.LogicleTransform(
-        transform_id, param_t, param_w, param_m, param_a
-    )
+    xform = transforms.LogicleTransform(param_t, param_w, param_m, param_a)
 
     return xform
 
@@ -625,17 +619,17 @@ def _parse_transformation_element(transformation_element, transform_namespace, d
 
         if xform_type == 'fratio':
             xform = _parse_fratio_element(
-                xform_id, xform_child_el, transform_namespace, data_type_namespace
+                xform_child_el, transform_namespace, data_type_namespace
             )
         elif xform_type == 'flog':
-            xform = _parse_flog_element(xform_id, xform_child_el, transform_namespace)
+            xform = _parse_flog_element(xform_child_el, transform_namespace)
         elif xform_type == 'fasinh':
-            xform = _parse_fasinh_element(xform_id, xform_child_el, transform_namespace)
+            xform = _parse_fasinh_element(xform_child_el, transform_namespace)
         elif xform_type == 'hyperlog':
-            xform = _parse_hyperlog_element(xform_id, xform_child_el, transform_namespace)
+            xform = _parse_hyperlog_element(xform_child_el, transform_namespace)
         elif xform_type == 'flin':
-            xform = _parse_flin_element(xform_id, xform_child_el, transform_namespace)
+            xform = _parse_flin_element(xform_child_el, transform_namespace)
         elif xform_type == 'logicle':
-            xform = _parse_logicle_element(xform_id, xform_child_el, transform_namespace)
+            xform = _parse_logicle_element(xform_child_el, transform_namespace)
 
-    return xform
+    return xform_id, xform

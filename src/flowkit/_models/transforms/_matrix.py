@@ -13,7 +13,6 @@ class Matrix(object):
     Represents a single compensation matrix from a CSV/TSV file, NumPy array or pandas
     DataFrame.
 
-    :param matrix_id: Text string used to identify the matrix (cannot be 'uncompensated' or 'fcs')
     :param spill_data_or_file: matrix data array, can be either:
             - text string from FCS $SPILL or $SPILLOVER metadata value
             - a file path or file handle to a CSV/TSF file
@@ -28,22 +27,15 @@ class Matrix(object):
     """
     def __init__(
             self,
-            matrix_id,
             spill_data_or_file,
             detectors,
             fluorochromes=None,
             null_channels=None
     ):
-        # Technically, the GML 2.0 spec states 'FCS' (note uppercase) is reserved, but we'll cover that case-insensitive
-        if matrix_id == 'uncompensated' or matrix_id.lower() == 'fcs':
-            raise ValueError(
-                "Matrix IDs 'uncompensated' and 'FCS' are reserved compensation references " +
-                "used in Dimension instances to specify that channel data should either be " +
-                "uncompensated or compensated using the spill value from a Sample's metadata"
-            )
-
         # Copy detectors b/c it may be modified
         detectors = copy(detectors)
+
+        # TODO: accept the same CSV w/ headers that is exported & take Pandas DataFrame
 
         if isinstance(spill_data_or_file, np.ndarray):
             spill = spill_data_or_file
@@ -55,7 +47,6 @@ class Matrix(object):
             )
             spill = spill[1:, :]
 
-        self.id = matrix_id
         self.matrix = spill
 
         # Remove any null channels from detector list
@@ -75,10 +66,32 @@ class Matrix(object):
         self.fluorochromes = fluorochromes
 
     def __repr__(self):
-        return (
-            f'{self.__class__.__name__}('
-            f'{self.id}, dims: {len(self.detectors)})'
-        )
+        return f'{self.__class__.__name__}(dims: {len(self.detectors)})'
+
+    def __eq__(self, other):
+        """Tests where 2 matrices share the same attributes."""
+        if self.__class__ == other.__class__:
+            this_attr = copy(self.__dict__)
+            other_attr = copy(other.__dict__)
+
+            # ignore 'private' attributes
+            this_delete = [k for k in this_attr.keys() if k.startswith('_')]
+            other_delete = [k for k in other_attr.keys() if k.startswith('_')]
+            for k in this_delete:
+                del this_attr[k]
+            for k in other_delete:
+                del other_attr[k]
+
+            # pop matrix attribute, need to compare NumPy array differently
+            this_matrix = this_attr.pop('matrix')
+            other_matrix = other_attr.pop('matrix')
+
+            if not np.array_equal(this_matrix, other_matrix):
+                return False
+
+            return this_attr == other_attr
+        else:
+            return False
 
     def apply(self, sample):
         """

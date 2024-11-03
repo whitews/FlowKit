@@ -60,7 +60,8 @@ def load_samples(fcs_samples):
             fcs_paths = glob(os.path.join(fcs_samples, '*.fcs'))
             if len(fcs_paths) > 0:
                 sample_list = _get_samples_from_paths(fcs_paths)
-        elif os.path.isfile(fcs_samples):
+        else:
+            # assume a path to a single FCS file
             sample_list = _get_samples_from_paths([fcs_samples])
 
     return sorted(sample_list)

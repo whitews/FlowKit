@@ -29,7 +29,7 @@ class Sample(object):
     DataFrame.
 
     For Sample plot methods, pay attention to the defaults for the subsample
-    arguments, as most will use the sub-sampled events by default for better
+    arguments, as most will use the subsampled events by default for better
     performance. For compensation and transformation routines, all events are
     always processed.
 
@@ -95,9 +95,9 @@ class Sample(object):
         events are not retained by the Sample class as they are typically not useful. To retrieve the
         original events, set this to True and call the get_events() method with source='orig'.
 
-    :param subsample: The number of events to use for sub-sampling. The number of sub-sampled events
+    :param subsample: The number of events to use for subsampling. The number of subsampled events
         can be changed after instantiation using the `subsample_events` method. The random seed can
-        also be specified using that method. Sub-sampled events are used predominantly for speeding
+        also be specified using that method. Subsampled events are used predominantly for speeding
         up plotting methods.
     """
     def __init__(
@@ -334,7 +334,7 @@ class Sample(object):
         else:
             self.id = sample_id
 
-        # finally, store initial sub-sampled event indices
+        # finally, store initial subsampled event indices
         self.subsample_events(subsample)
 
     def __repr__(self):
@@ -391,7 +391,7 @@ class Sample(object):
         # metadata keywords with values that list the well location (row & column)
         # for each event. The keywords have the format "index sorting locations_1"
         # and the value is a string of semicolon delimited coordinates that
-        # are comma delimited.
+        # are comma-delimited.
         #
         # We'll start by checking for the existence of any keywords
         # starting with the string "index sorting locations"
@@ -428,15 +428,15 @@ class Sample(object):
             random_seed=1
     ):
         """
-        Stores a set of sub-sampled indices for event data. Sub-sampled events
+        Stores a set of subsampled indices for event data. Subsampled events
         can be accessed via the `get_events` method by setting the keyword
-        argument `subsample=True`. The sub-sampled indices are available via
+        argument `subsample=True`. The subsampled indices are available via
         the `subsample_indices` attribute.
 
-        :param subsample_count: Number of events to use as a sub-sample. If the number of
-            events in the Sample is less than the requested sub-sample count, then the
-            maximum number of available events is used for the sub-sample.
-        :param random_seed: Random seed used for sub-sampling events
+        :param subsample_count: Number of events to use as a subsample. If the number of
+            events in the Sample is less than the requested subsample count, then the
+            maximum number of available events is used for the subsample.
+        :param random_seed: Random seed used for subsampling events
         :return: None
         """
         # get raw event count as it might be less than original event count
@@ -461,7 +461,7 @@ class Sample(object):
 
         if (raw_event_count - bad_count) < subsample_count:
             # if total event count is less than requested subsample count,
-            # sub-sample will be all events (minus negative scatter if filter is True)
+            # subsample will be all events (minus negative scatter if filter is True)
             self._subsample_count = self.event_count - bad_count
         else:
             self._subsample_count = subsample_count
@@ -472,7 +472,7 @@ class Sample(object):
 
         self.subsample_indices = shuffled_indices[:self._subsample_count]
 
-    def apply_compensation(self, compensation, comp_id='custom_spill'):
+    def apply_compensation(self, compensation):
         """
         Applies given compensation matrix to Sample events. If any
         transformation has been applied, it will be re-applied after
@@ -492,7 +492,6 @@ class Sample(object):
             If a string, both multi-line traditional CSV, and the single
             line FCS spill formats are supported. If a NumPy array, we
             assume the columns are in the same order as the channel labels.
-        :param comp_id: text ID for identifying compensation matrix (not used if compensation was a Matrix instance)
         :return: None
         """
         if isinstance(compensation, Matrix):
@@ -500,7 +499,7 @@ class Sample(object):
         elif compensation is not None:
             detectors = [self.pnn_labels[i] for i in self.fluoro_indices]
             fluorochromes = [self.pns_labels[i] for i in self.fluoro_indices]
-            tmp_matrix = Matrix(comp_id, compensation, detectors, fluorochromes)
+            tmp_matrix = Matrix(compensation, detectors, fluorochromes)
         else:
             # compensation must be None, we'll clear any stored comp events later
             tmp_matrix = None
@@ -583,7 +582,7 @@ class Sample(object):
 
         return self._transformed_events
 
-    def get_events(self, source='xform', subsample=False):
+    def get_events(self, source='xform', subsample=False, event_mask=None):
         """
         Returns a NumPy array of event data.
 
@@ -593,8 +592,10 @@ class Sample(object):
         :param source: 'orig', 'raw', 'comp', 'xform' for whether the original (no gain applied),
             raw (orig + gain), compensated (raw + comp), or transformed (comp + xform) events will
             be returned
-        :param subsample: Whether to return all events or just the sub-sampled
+        :param subsample: Whether to return all events or just the subsampled
             events. Default is False (all events)
+        :param event_mask: Filter Sample events by a given Boolean array (events marked
+            True will be returned). Can be combined with the subsample option.
         :return: NumPy array of event data
         """
         if source == 'xform':
@@ -611,27 +612,51 @@ class Sample(object):
         if subsample:
             events = events[self.subsample_indices]
 
+            # if event mask is given, subsample it too
+            if event_mask is not None:
+                event_mask = event_mask[self.subsample_indices]
+
+        if event_mask is not None:
+            events = events[event_mask]
+
         return events
 
-    def as_dataframe(self, source='xform', subsample=False, col_order=None, col_names=None):
+    def as_dataframe(
+            self,
+            source='xform',
+            subsample=False,
+            event_mask=None,
+            col_order=None,
+            col_names=None,
+            col_multi_index=True
+    ):
         """
         Returns a pandas DataFrame of event data.
 
         :param source: 'orig', 'raw', 'comp', 'xform' for whether the original (no gain applied),
             raw (orig + gain), compensated (raw + comp), or transformed (comp + xform) events will
             be returned
-        :param subsample: Whether to return all events or just the sub-sampled
+        :param subsample: Whether to return all events or just the subsampled
             events. Default is False (all events)
+        :param event_mask: Filter Sample events by a given Boolean array (events marked
+            True will be returned). Can be combined with the subsample option.
         :param col_order: list of PnN labels. Determines the order of columns
             in the output DataFrame. If None, the column order will match the FCS file.
         :param col_names: list of new column labels. If None (default), the DataFrame
             columns will be a MultiIndex of the PnN / PnS labels.
+        :param col_multi_index: Controls whether the column labels are multi-index. If
+            False, only the PnN labels will be used for a simple column index. Default
+            is True.
         :return: pandas DataFrame of event data
         """
-        events = self.get_events(source=source, subsample=subsample)
+        events = self.get_events(source=source, subsample=subsample, event_mask=event_mask)
 
-        multi_cols = pd.MultiIndex.from_arrays([self.pnn_labels, self.pns_labels], names=['pnn', 'pns'])
-        events_df = pd.DataFrame(data=events, columns=multi_cols)
+        if col_multi_index:
+            col_index = pd.MultiIndex.from_arrays([self.pnn_labels, self.pns_labels], names=['pnn', 'pns'])
+        else:
+            col_index = self.pnn_labels
+
+        events_df = pd.DataFrame(data=events, columns=col_index)
 
         if col_order is not None:
             events_df = events_df[col_order]
@@ -675,7 +700,7 @@ class Sample(object):
 
         return index
 
-    def get_channel_events(self, channel_index, source='xform', subsample=False):
+    def get_channel_events(self, channel_index, source='xform', subsample=False, event_mask=None):
         """
         Returns a NumPy array of event data for the specified channel index.
 
@@ -685,14 +710,43 @@ class Sample(object):
         :param channel_index: channel index for which data is returned
         :param source: 'raw', 'comp', 'xform' for whether the raw, compensated
             or transformed events will be returned
-        :param subsample: Whether to return all events or just the sub-sampled
+        :param subsample: Whether to return all events or just the subsampled
             events. Default is False (all events)
+        :param event_mask: Filter Sample events by a given Boolean array (events marked
+            True will be returned). Can be combined with the subsample option.
         :return: NumPy array of event data for the specified channel index
         """
-        events = self.get_events(source=source, subsample=subsample)
+        events = self.get_events(source=source, subsample=subsample, event_mask=event_mask)
         events = events[:, channel_index]
 
         return events
+
+    def rename_channel(self, current_label, new_label, new_pns_label=None):
+        """
+        Rename a channel label.
+
+        :param current_label: PnN label of a channel
+        :param new_label: new PnN label
+        :param new_pns_label: optional new PnS label
+        :return: None
+        """
+        try:
+            chan_idx = self.pnn_labels.index(current_label)
+        except ValueError:
+            raise ValueError("Label %s was not found in self.pnn_labels")
+
+        self.pnn_labels[chan_idx] = new_label
+
+        # Use same index for PnS label
+        if new_pns_label is not None:
+            self.pns_labels[chan_idx] = new_pns_label
+
+        # Update self.channels
+        self.channels['pnn'] = self.pnn_labels
+        self.channels['pns'] = self.pns_labels
+
+        # Update self._flowjo_pnn_labels
+        self._flowjo_pnn_labels[chan_idx] = new_label.replace('/', '_')
 
     def _transform(self, transform, include_scatter=False):
         if isinstance(transform, _transforms.RatioTransform):
@@ -709,7 +763,12 @@ class Sample(object):
             transformed_events = self._raw_events.copy()
 
         if isinstance(transform, dict):
-            for pnn_label, param_xform in transform.items():
+            for pnn_label in self.pnn_labels:
+                if pnn_label in transform:
+                    param_xform = transform[pnn_label]
+                else:
+                    # not all pnn labels may be present in transform dict
+                    continue
                 param_idx = self.get_channel_index(pnn_label)
 
                 transformed_events[:, param_idx] = param_xform.apply(
@@ -768,8 +827,8 @@ class Sample(object):
         :param source: 'raw', 'comp', 'xform' for whether the raw, compensated
             or transformed events are used for plotting
         :param subsample: Whether to use all events for plotting or just the
-            sub-sampled events. Default is True (sub-sampled events). Plotting
-            sub-sampled events is much faster.
+            subsampled events. Default is True (subsampled events). Plotting
+            subsampled events is much faster.
         :param color_density: Whether to color the events by density, similar
             to a heat map. Default is True.
         :param bin_width: Bin size to use for the color density, in units of
@@ -847,7 +906,7 @@ class Sample(object):
         :param source: 'raw', 'comp', 'xform' for whether the raw, compensated
             or transformed events are used for plotting
         :param subsample: Whether to use all events for plotting or just the
-            sub-sampled events. Default is True (sub-sampled events). Running
+            subsampled events. Default is True (subsampled events). Running
             with all events is not recommended, as the Kernel Density
             Estimation is computationally demanding.
         :param plot_events: Whether to display the event data points in
@@ -920,8 +979,8 @@ class Sample(object):
         :param source: 'raw', 'comp', 'xform' for whether the raw, compensated
             or transformed events are used for plotting
         :param subsample: Whether to use all events for plotting or just the
-            sub-sampled events. Default is True (sub-sampled events). Plotting
-            sub-sampled events is much faster.
+            subsampled events. Default is True (subsampled events). Plotting
+            subsampled events is much faster.
         :param color_density: Whether to color the events by density, similar
             to a heat map. Default is True.
         :param bin_width: Bin size to use for the color density, in units of
@@ -1007,8 +1066,8 @@ class Sample(object):
         :param source: 'raw', 'comp', 'xform' for whether the raw, compensated
             or transformed events are used for plotting
         :param subsample: Whether to use all events for plotting or just the
-            sub-sampled events. Default is True (sub-sampled events). Plotting
-            sub-sampled events is much faster.
+            subsampled events. Default is True (subsampled events). Plotting
+            subsampled events is much faster.
         :param event_mask: Boolean array of events to plot. Takes precedence
             over highlight_mask (i.e. events marked False in event_mask will
             never be plotted).
@@ -1088,7 +1147,7 @@ class Sample(object):
         :param source: 'raw', 'comp', 'xform' for whether the raw, compensated
             or transformed events are used for plotting
         :param subsample: Whether to use all events for plotting or just the
-            sub-sampled events. Default is False (all events).
+            subsampled events. Default is False (all events).
         :param bins: Number of bins to use for the histogram or a string compatible
             with the NumPy histogram function. If None, the number of bins is
             determined by the square root rule.
@@ -1213,7 +1272,7 @@ class Sample(object):
         :param exclude_flagged: Whether to exclude flagged events. Default is False.
         :param exclude_normal: Whether to exclude "normal" events. This is useful for retrieving all
              the "bad" events (neg scatter and/or flagged events). Default is False.
-        :param subsample: Whether to export all events or just the sub-sampled events.
+        :param subsample: Whether to export all events or just the subsampled events.
             Default is False (all events).
         :param include_metadata: Whether to include all key/value pairs from the metadata attribute
             in the output FCS file. Only valid for .fcs file extension. If False, only the minimum

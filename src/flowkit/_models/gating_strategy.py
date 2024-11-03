@@ -71,11 +71,21 @@ class GatingStrategy(object):
         if not isinstance(gate_path, tuple):
             raise TypeError("gate_path must be a tuple not %s" % str(type(gate_path)))
 
+        # make string representation of parent path, used for anytree Resolver later
+        parent_abs_gate_path = "/" + "/".join(gate_path)
+
+        # Verify gate name is not "." or ".." as these are incompatible w/ the
+        # current version of anytree (see open issue https://github.com/c0fec0de/anytree/issues/269)
+        if gate.gate_name in ['.', '..']:
+            raise GateTreeError(
+                "Gate name '%s' is incompatible with FlowKit. Gate was found in path: %s" %
+                (gate.gate_name, parent_abs_gate_path)
+            )
+
         # We need the parent gate (via its node) for 2 reasons:
         #   1) To verify the parent exists when creating a new node
         #   2) Verify the parent is NOT a QuadrantGate, as only
         #      Quadrants of a QuadrantGate can be a parent.
-        parent_abs_gate_path = "/" + "/".join(gate_path)
         try:
             parent_node = self.resolver.get(self._gate_tree, parent_abs_gate_path)
         except anytree.ResolverError:
@@ -175,25 +185,121 @@ class GatingStrategy(object):
 
         self._dag = nx.DiGraph(dag_edges)
 
-    def remove_gate(self, gate_name, gate_path=None, keep_children=False):
+    def _get_successor_node_paths(self, gate_node):
+        gate = gate_node.gate
+
+        # use a set of tuples since a Boolean gate (AND / OR) can
+        # reference >1 gate, the Boolean gate would get referenced
+        # twice. We don't need duplicates.
+        successor_node_tuples = set()
+
+        # some special handling if given a QuadrantGate to remove
+        if isinstance(gate, fk_gates.QuadrantGate):
+            # need to collect the Quadrant references as these
+            # may be referenced in a BooleanGate. In that case,
+            # we won't find the BooleanGate in a normal successor
+            # check of the DAG. See comment about using networkx
+            # to find successors below in non-QuadrantGate case.
+            for quadrant_child_node in gate_node.children:
+                quad_node_tuple = tuple(n.name for n in quadrant_child_node.path)
+                quad_successor_node_tuples = set(self._dag.successors(quad_node_tuple))
+
+                successor_node_tuples.update(quad_successor_node_tuples)
+        else:
+            # Use networkx graph to get dependent gates instead of anytree,
+            # since the DAG keeps track of all dependencies (incl. bool gates),
+            # which also covers bool gate dependencies of the children.
+            # Networkx descendants works for DAGs & returns a set of node strings.
+            node_tuple = tuple(n.name for n in gate_node.path)
+            successor_node_tuples = set(self._dag.successors(node_tuple))
+
+        return successor_node_tuples
+
+    def rename_gate(self, gate_name, new_gate_name, gate_path=None):
         """
-        Remove a gate from the gating strategy. Any descendant gates will also be removed
+        Rename a gate in the gating strategy. Any descendant gates will also be removed
         unless keep_children=True. In all cases, if a BooleanGate exists that references
         the gate to remove, a GateTreeError will be thrown indicating the BooleanGate
         must be removed prior to removing the gate.
 
-        :param gate_name: text string of a gate name
+        :param gate_name: text string of existing gate name
+        :param new_gate_name: text string for new gate name
         :param gate_path: complete ordered tuple of gate names for unique set of gate ancestors.
             Required if gate_name is ambiguous
-        :param keep_children: Whether to keep child gates. If True, the child gates will be
-            remapped to the removed gate's parent. Default is False, which will delete all
-            descendant gates.
         :return: None
         """
         # First, get the gate node from anytree
         # Note, this will raise an error on ambiguous gates so no need
         # to handle that case
         gate_node = self._get_gate_node(gate_name, gate_path=gate_path)
+        gate = gate_node.gate
+        orig_full_gate_path = tuple(n.name for n in gate_node.path)
+
+        # check successors for any Boolean gates that reference the renamed gate
+        # Note, these needs to be retrieved before modifying the gate name
+        successor_node_tuples = self._get_successor_node_paths(gate_node)
+
+        # At this point we're about to modify the tree and
+        # renaming a gate nullifies any previous results,
+        # so clear cached events
+        self.clear_cache()
+
+        # Need to change the gate node name & the gate's gate_name attribute
+        gate_node.name = new_gate_name
+        gate.gate_name = new_gate_name
+        new_full_gate_path = tuple(n.name for n in gate_node.path)
+
+        # check for custom gates, need to change those too
+        for custom_gate in gate_node.custom_gates.values():
+            custom_gate.gate_name = new_gate_name
+
+        # Check successor gates for a Boolean gate.
+        # If present, it references the renamed gate & that reference needs updating
+        for s_tuple in successor_node_tuples:
+            s_gate_node = self._get_gate_node(s_tuple[-1], gate_path=s_tuple[:-1])
+            s_gate = s_gate_node.gate
+
+            if isinstance(s_gate, fk_gates.BooleanGate):
+                bool_gate_refs = s_gate.gate_refs
+                for bool_gate_ref in bool_gate_refs:
+                    # Determine whether the modified gate name's path is
+                    # referenced within the Boolean gate's reference gate.
+                    # This is tricky b/c tuples don't have a built-in
+                    # function like a set's 'issubset' & converting to
+                    # sets won't work b/c we want a matching sequence where
+                    # repeat values can exist.
+                    # The most straight-forward case: the reference is the
+                    # modified gate.
+                    bool_gate_ref_full_path = bool_gate_ref['path'] + tuple((bool_gate_ref['ref'],))
+                    if bool_gate_ref_full_path == orig_full_gate_path:
+                        # just need to change the 'ref' key value
+                        bool_gate_ref['ref'] = new_gate_name
+                    elif len(bool_gate_ref_full_path) >= len(orig_full_gate_path):
+                        # The reference may contain the path of the original gate
+                        #
+                        bgr_path_prefix = bool_gate_ref['path'][:len(orig_full_gate_path)]
+                        bgr_path_postfix = bool_gate_ref['path'][len(orig_full_gate_path):]
+                        if bgr_path_prefix == orig_full_gate_path:
+                            # need to update the Boolean ref 'path' value with
+                            # this the new path
+                            bool_gate_ref['path'] = new_full_gate_path + bgr_path_postfix
+
+                    # Any other case, the reference gate path is longer than the modified gate,
+                    # so not affected by the change.
+
+        # rebuild DAG
+        self._rebuild_dag()
+
+    def _remove_template_gate(self, gate_node, keep_children=False):
+        """
+        Handles case for removing template gate from gate tree.
+
+        :param gate_node: GateNode to remove
+        :param keep_children: Whether to keep child gates. If True, the child gates will be
+            remapped to the removed gate's parent. Default is False, which will delete all
+            descendant gates.
+        :return: None
+        """
         gate = gate_node.gate
 
         # single quadrants can't be removed, their "parent" QuadrantGate must be removed
@@ -203,26 +309,7 @@ class GatingStrategy(object):
                 % (gate.id, gate_node.parent.name)
             )
 
-        # some special handling if given a QuadrantGate to remove
-        if isinstance(gate, fk_gates.QuadrantGate):
-            # need to collect the Quadrant references as these
-            # may be referenced in a BooleanGate. In that case,
-            # we won't find the BooleanGate in a normal successor
-            # check of the DAG. See comment about using networkx
-            # to find successors below in non-QuadrantGate case.
-            successor_node_tuples = []
-            for quadrant_child_node in gate_node.children:
-                quad_node_tuple = tuple(n.name for n in quadrant_child_node.path)
-                quad_successor_node_tuples = list(self._dag.successors(quad_node_tuple))
-
-                successor_node_tuples.extend(quad_successor_node_tuples)
-        else:
-            # Use networkx graph to get dependent gates instead of anytree,
-            # since the DAG keeps track of all dependencies (incl. bool gates),
-            # which also covers bool gate dependencies of the children.
-            # Networkx descendants works for DAGs & returns a set of node strings.
-            node_tuple = tuple(n.name for n in gate_node.path)
-            successor_node_tuples = list(self._dag.successors(node_tuple))
+        successor_node_tuples = self._get_successor_node_paths(gate_node)
 
         # check successor gates for a boolean gate,
         # if present throw a GateTreeError
@@ -231,7 +318,7 @@ class GatingStrategy(object):
             s_gate = s_gate_node.gate
 
             if isinstance(s_gate, fk_gates.BooleanGate):
-                raise GateTreeError("BooleanGate %s references gate %s" % (s_gate.gate_name, gate_name))
+                raise GateTreeError("BooleanGate %s references gate %s" % (s_gate.gate_name, gate.gate_name))
 
         # At this point we're about to modify the tree and
         # removing a gate nullifies any previous results,
@@ -244,7 +331,7 @@ class GatingStrategy(object):
             # quadrant gates need to be handled differently from other gates
             if isinstance(gate, fk_gates.QuadrantGate):
                 # The immediate children will be quadrants, but they will get deleted.
-                # We do need to check if the quadrants have children and  set their
+                # We do need to check if the quadrants have children and set their
                 # parent to the quadrant gate parent.
                 child_nodes = []
                 for quad in gate_node.children:
@@ -262,21 +349,53 @@ class GatingStrategy(object):
         # Now, rebuild the DAG (easier than modifying it)
         self._rebuild_dag()
 
-    def add_transform(self, transform):
+    def remove_gate(self, gate_name, gate_path=None, sample_id=None, keep_children=False):
+        """
+        Remove a gate from the gating strategy. Any descendant gates will also be removed
+        unless keep_children=True. In all cases, if a BooleanGate exists that references
+        the gate to remove, a GateTreeError will be thrown indicating the BooleanGate
+        must be removed prior to removing the gate.
+
+        :param gate_name: text string of a gate name
+        :param gate_path: complete ordered tuple of gate names for unique set of gate ancestors.
+            Required if gate_name is ambiguous
+        :param sample_id: text string for Sample ID to remove only its custom Sample gate and
+            retain the template gate (and other custom gates if they exist).
+        :param keep_children: Whether to keep child gates. If True, the child gates will be
+            remapped to the removed gate's parent. Default is False, which will delete all
+            descendant gates.
+        :return: None
+        """
+        # First, get the gate node from anytree
+        # Note, this will raise an error on ambiguous gates so no need
+        # to handle that case
+        gate_node = self._get_gate_node(gate_name, gate_path=gate_path)
+
+        # determine whether user requested to remove the template gate or a custom Sample gate
+        if sample_id is None:
+            # Remove template gate, which removes the entire node from the tree
+            self._remove_template_gate(gate_node, keep_children=keep_children)
+        else:
+            # Remove custom sample gate, which is simpler.
+            # Stay silent if key doesn't exist.
+            gate_node.remove_custom_gate(sample_id)
+
+    def add_transform(self, transform_id, transform):
         """
         Add a transform to the gating strategy, see `transforms` module. The transform ID must be unique in the
         gating strategy.
 
+        :param transform_id: A string identifying the transform
         :param transform: instance from a subclass of the Transform class
         :return: None
         """
         if not isinstance(transform, Transform):
             raise TypeError("transform must be a sub-class of the Transform class")
 
-        if transform.id in self.transformations:
-            raise KeyError("Transform ID '%s' is already defined" % transform.id)
+        if transform_id in self.transformations:
+            raise KeyError("Transform ID '%s' is already defined" % transform_id)
 
-        self.transformations[transform.id] = transform
+        self.transformations[transform_id] = transform
 
     def get_transform(self, transform_id):
         """
@@ -287,22 +406,32 @@ class GatingStrategy(object):
         """
         return self.transformations[transform_id]
 
-    def add_comp_matrix(self, matrix):
+    def add_comp_matrix(self, matrix_id, matrix):
         """
         Add a compensation matrix to the gating strategy, see `transforms` module. The matrix ID must be unique in the
         gating strategy.
 
+        :param matrix_id: Text string used to identify the matrix (cannot be 'uncompensated' or 'fcs')
         :param matrix: an instance of the Matrix class
         :return: None
         """
+        # Technically, the GML 2.0 spec states 'FCS' (note uppercase) is reserved,
+        # but we'll cover that case-insensitive
+        if matrix_id == 'uncompensated' or matrix_id.lower() == 'fcs':
+            raise ValueError(
+                "Matrix IDs 'uncompensated' and 'FCS' are reserved compensation references " +
+                "used in Dimension instances to specify that channel data should either be " +
+                "uncompensated or compensated using the spill value from a Sample's metadata"
+            )
+
         # Only accept Matrix class instances as we need the ID
         if not isinstance(matrix, Matrix):
             raise TypeError("matrix must be an instance of the Matrix class")
 
-        if matrix.id in self.comp_matrices:
-            raise KeyError("Matrix ID '%s' is already defined" % matrix.id)
+        if matrix_id in self.comp_matrices:
+            raise KeyError("Matrix ID '%s' is already defined" % matrix_id)
 
-        self.comp_matrices[matrix.id] = matrix
+        self.comp_matrices[matrix_id] = matrix
 
     def get_comp_matrix(self, matrix_id):
         """
@@ -459,7 +588,7 @@ class GatingStrategy(object):
     def get_gate_hierarchy(self, output='ascii', **kwargs):
         """
         Retrieve the hierarchy of gates in the gating strategy in several formats, including text,
-        dictionary, or JSON. If output == 'json', extra keyword arguments are passed to json.dumps
+        dictionary, or JSON. If output == 'json', extra keyword arguments are passed to 'json.dumps'
 
         :param output: Determines format of hierarchy returned, either 'ascii',
             'dict', or 'JSON' (default is 'ascii')
@@ -600,7 +729,7 @@ class GatingStrategy(object):
 
             detectors = [sample.pnn_labels[i] for i in sample.fluoro_indices]
             fluorochromes = [sample.pns_labels[i] for i in sample.fluoro_indices]
-            matrix = Matrix('tmp_spill', spill, detectors, fluorochromes, null_channels=sample.null_channels)
+            matrix = Matrix(spill, detectors, fluorochromes, null_channels=sample.null_channels)
         else:
             # lookup specified comp-ref in gating strategy
             matrix = self.comp_matrices[comp_ref]

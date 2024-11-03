@@ -103,7 +103,22 @@ class Session(object):
         """
         self.gating_strategy.add_gate(copy.deepcopy(gate), gate_path=gate_path, sample_id=sample_id)
 
-    def remove_gate(self, gate_name, gate_path=None, keep_children=False):
+    def rename_gate(self, gate_name, new_gate_name, gate_path=None):
+        """
+        Rename a gate in the gating strategy. Any descendant gates will also be removed
+        unless keep_children=True. In all cases, if a BooleanGate exists that references
+        the gate to remove, a GateTreeError will be thrown indicating the BooleanGate
+        must be removed prior to removing the gate.
+
+        :param gate_name: text string of existing gate name
+        :param new_gate_name: text string for new gate name
+        :param gate_path: complete ordered tuple of gate names for unique set of gate ancestors.
+            Required if gate_name is ambiguous
+        :return: None
+        """
+        self.gating_strategy.rename_gate(gate_name, new_gate_name, gate_path=gate_path)
+
+    def remove_gate(self, gate_name, gate_path=None, sample_id=None, keep_children=False):
         """
         Remove a gate from the gate tree. Any descendant gates will also be removed
         unless keep_children=True. In all cases, if a BooleanGate exists that references
@@ -113,30 +128,35 @@ class Session(object):
         :param gate_name: text string of a gate name
         :param gate_path: complete tuple of gate IDs for unique set of gate ancestors.
             Required if gate_name is ambiguous
+        :param sample_id: text string for Sample ID to remove only its custom Sample gate and
+            retain the template gate (and other custom gates if they exist).
         :param keep_children: Whether to keep child gates. If True, the child gates will be
             remapped to the removed gate's parent. Default is False, which will delete all
             descendant gates.
         :return: None
         """
-        self.gating_strategy.remove_gate(gate_name, gate_path=gate_path, keep_children=keep_children)
+        self.gating_strategy.remove_gate(
+            gate_name, gate_path=gate_path, sample_id=sample_id, keep_children=keep_children
+        )
 
-    def add_transform(self, transform):
+    def add_transform(self, transform_id, transform):
         """
         Add a Transform instance to use in the gating strategy.
 
+        :param transform_id: A string identifying the transform
         :param transform: an instance of a Transform subclass
         :return: None
         """
-        self.gating_strategy.add_transform(copy.deepcopy(transform))
+        self.gating_strategy.add_transform(transform_id, copy.deepcopy(transform))
 
     def get_transforms(self):
         """
-        Retrieve the list of Transform instances stored in the gating strategy.
+        Retrieve a dictionary LUT of transformations stored in the GatingStrategy.
+        Keys are the transform IDs and values are Transform instances.
 
-        :return: list of Transform instances
+        :return: a dictionary LUT of transform IDs: Transform instances
         """
-
-        return list(self.gating_strategy.transformations.values())
+        return self.gating_strategy.transformations
 
     def get_transform(self, transform_id):
         """
@@ -147,22 +167,23 @@ class Session(object):
         """
         return self.gating_strategy.get_transform(transform_id)
 
-    def add_comp_matrix(self, matrix):
+    def add_comp_matrix(self, matrix_id, matrix):
         """
         Add a Matrix instance to use in the gating strategy.
 
+        :param matrix_id: A string identifying the matrix
         :param matrix: an instance of the Matrix class
         :return: None
         """
-        self.gating_strategy.add_comp_matrix(copy.deepcopy(matrix))
+        self.gating_strategy.add_comp_matrix(matrix_id, copy.deepcopy(matrix))
 
     def get_comp_matrices(self):
         """
-        Retrieve the list of compensation Matrix instances stored in the gating strategy.
+        Retrieve a dictionary LUT of compensation Matrix instances stored in the gating strategy.
 
-        :return: list of Matrix instances
+        :return: a dictionary LUT of matrix IDs: Matrix instances
         """
-        return list(self.gating_strategy.comp_matrices.values())
+        return self.gating_strategy.comp_matrices
 
     def get_comp_matrix(self, matrix_id):
         """
@@ -437,10 +458,10 @@ class Session(object):
         :param gate_name: Gate name to filter events (only events within the given gate will be plotted)
         :param gate_path: tuple of gate names for full set of gate ancestors.
             Required if gate_name is ambiguous
-        :param subsample_count: Number of events to use as a sub-sample. If the number of
-            events in the Sample is less than the requested sub-sample count, then the
-            maximum number of available events is used for the sub-sample.
-        :param random_seed: Random seed used for sub-sampling events
+        :param subsample_count: Number of events to use as a subsample. If the number of
+            events in the Sample is less than the requested subsample count, then the
+            maximum number of available events is used for the subsample.
+        :param random_seed: Random seed used for subsampling events
         :param x_min: Lower bound of x-axis. If None, channel's min value will
             be used with some padding to keep events off the edge of the plot.
         :param x_max: Upper bound of x-axis. If None, channel's max value will
@@ -520,10 +541,10 @@ class Session(object):
         :param gate_name: Gate name to filter events (only events within the given gate will be plotted)
         :param gate_path: tuple of gate names for full set of gate ancestors.
             Required if gate_name is ambiguous
-        :param subsample_count: Number of events to use as a sub-sample. If the number of
-            events in the Sample is less than the requested sub-sample count, then the
-            maximum number of available events is used for the sub-sample.
-        :param random_seed: Random seed used for sub-sampling events
+        :param subsample_count: Number of events to use as a subsample. If the number of
+            events in the Sample is less than the requested subsample count, then the
+            maximum number of available events is used for the subsample.
+        :param random_seed: Random seed used for subsampling events
         :param color_density: Whether to color the events by density, similar
             to a heat map. Default is True.
         :param bin_width: Bin size to use for the color density, in units of
@@ -564,7 +585,7 @@ class Session(object):
             comp_events = x_comp.apply(sample)
             x = comp_events[:, x_index]
         else:
-            # not doing sub-sample here, will do later with bool AND
+            # not doing subsample here, will do later with bool AND
             x = sample.get_channel_events(x_index, source='raw', subsample=False)
 
         if y_comp_ref is not None and y_comp_ref != 'uncompensated':
@@ -574,7 +595,7 @@ class Session(object):
             comp_events = y_comp.apply(sample)
             y = comp_events[:, y_index]
         else:
-            # not doing sub-sample here, will do later with bool AND
+            # not doing subsample here, will do later with bool AND
             y = sample.get_channel_events(y_index, source='raw', subsample=False)
 
         if x_xform_ref is not None:

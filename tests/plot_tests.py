@@ -3,13 +3,16 @@ Unit tests for plotting functions
 """
 import copy
 import unittest
+
+import bokeh.models
+import numpy as np
 from bokeh.plotting import figure as bk_Figure
 from bokeh.layouts import GridPlot as bk_GridPlot
 import flowkit as fk
 
-fcs_path = 'data/gate_ref/data1.fcs'
-gml_path = 'data/gate_ref/gml/gml_all_gates.xml'
-test_sample = fk.Sample(fcs_path, subsample=2000)
+from tests.test_config import test_sample, gml_path
+
+
 test_gating_strategy = fk.parse_gating_xml(gml_path)
 
 
@@ -21,10 +24,36 @@ class PlotTestCase(unittest.TestCase):
           pixel-level, this TestCase only tests that plots are returned
           from plotting functions.
     """
+    def test_plot_scatter_zero_points(self):
+        # from issue #197
+        arr = np.array([], float)
+        # noinspection PyProtectedMember
+        p = fk._utils.plot_utils.plot_scatter(arr, arr)
+
+        self.assertIsInstance(p, bk_Figure)
+
+    def test_plot_scatter_one_point(self):
+        # from issue #197
+        arr = np.array([1., ], float)
+        # noinspection PyProtectedMember
+        p = fk._utils.plot_utils.plot_scatter(arr, arr)
+
+        self.assertIsInstance(p, bk_Figure)
+
+    def test_plot_scatter_two_points_with_extents(self):
+        # from issue #197
+        # noinspection PyProtectedMember
+        p = fk._utils.plot_utils.plot_scatter(
+            np.array([0.44592386, 0.52033713]),
+            np.array([0.6131338, 0.60149982]),
+            x_min=0, x_max=.997, y_min=0, y_max=.991
+        )
+
+        self.assertIsInstance(p, bk_Figure)
 
     def test_sample_plot_histogram(self):
         sample = copy.deepcopy(test_sample)
-        xform_logicle = fk.transforms.LogicleTransform('logicle', param_t=10000, param_w=0.5, param_m=4.5, param_a=0)
+        xform_logicle = fk.transforms.LogicleTransform(param_t=10000, param_w=0.5, param_m=4.5, param_a=0)
         sample.apply_transform(xform_logicle)
 
         p = sample.plot_histogram(
@@ -40,7 +69,7 @@ class PlotTestCase(unittest.TestCase):
 
     def test_sample_plot_channel(self):
         sample = copy.deepcopy(test_sample)
-        xform_logicle = fk.transforms.LogicleTransform('logicle', param_t=1024, param_w=0.5, param_m=4.5, param_a=0)
+        xform_logicle = fk.transforms.LogicleTransform(param_t=1024, param_w=0.5, param_m=4.5, param_a=0)
         sample.apply_transform(xform_logicle)
 
         flagged_events = list(range(1000))
@@ -56,7 +85,7 @@ class PlotTestCase(unittest.TestCase):
 
     def test_sample_plot_contour(self):
         sample = copy.deepcopy(test_sample)
-        xform_logicle = fk.transforms.LogicleTransform('logicle', param_t=10000, param_w=0.5, param_m=4.5, param_a=0)
+        xform_logicle = fk.transforms.LogicleTransform(param_t=10000, param_w=0.5, param_m=4.5, param_a=0)
         sample.apply_transform(xform_logicle)
 
         p = sample.plot_contour(
@@ -71,7 +100,7 @@ class PlotTestCase(unittest.TestCase):
 
     def test_sample_plot_scatter(self):
         sample = copy.deepcopy(test_sample)
-        xform_logicle = fk.transforms.LogicleTransform('logicle', param_t=10000, param_w=0.5, param_m=4.5, param_a=0)
+        xform_logicle = fk.transforms.LogicleTransform(param_t=10000, param_w=0.5, param_m=4.5, param_a=0)
         sample.apply_transform(xform_logicle)
 
         p = sample.plot_scatter(
@@ -89,7 +118,7 @@ class PlotTestCase(unittest.TestCase):
         # reduce # of events for plotting performance
         sample.subsample_events(500)
 
-        xform_logicle = fk.transforms.LogicleTransform('logicle', param_t=10000, param_w=0.5, param_m=4.5, param_a=0)
+        xform_logicle = fk.transforms.LogicleTransform(param_t=10000, param_w=0.5, param_m=4.5, param_a=0)
         sample.apply_transform(xform_logicle)
 
         grid = sample.plot_scatter_matrix(

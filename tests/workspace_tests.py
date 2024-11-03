@@ -7,13 +7,15 @@ import numpy as np
 import os
 import pandas as pd
 import warnings
-from flowkit import Workspace, Sample, load_samples, Matrix, gates, transforms, extract_wsp_sample_data
+from flowkit import Workspace, Sample, Matrix, gates, transforms, extract_wsp_sample_data
 # noinspection PyProtectedMember
 from flowkit._models.transforms._base_transform import Transform
-from flowkit.exceptions import GateReferenceError
+from flowkit._models.gating_results import GatingResults
+from flowkit.exceptions import GateReferenceError, GateTreeError
+
+from tests.test_config import test_samples_8c_full_set
 
 
-test_samples_8c_full_set = load_samples("data/8_color_data_set/fcs_files")
 wsp_8_color = Workspace(
     "data/8_color_data_set/8_color_ICS.wsp",
     fcs_samples=test_samples_8c_full_set
@@ -114,6 +116,20 @@ class WorkspaceTestCase(unittest.TestCase):
         self.assertEqual(len(loaded_samples), 3)
         self.assertIsInstance(loaded_samples[0], Sample)
 
+    def test_get_keywords_by_sample_id(self):
+        wsp_path = "data/8_color_data_set/8_color_ICS_simple.wsp"
+        sample_id = '101_DEN084Y5_15_E01_008_clean.fcs'
+
+        wsp = Workspace(
+            wsp_path,
+            fcs_samples=copy.deepcopy(test_samples_8c_full_set),
+            ignore_missing_files=True
+        )
+
+        keywords = wsp.get_keywords(sample_id)
+
+        self.assertIsInstance(keywords, dict)
+
     def test_get_comp_matrix_by_sample_id(self):
         wsp_path = "data/8_color_data_set/8_color_ICS_simple.wsp"
         sample_id = '101_DEN084Y5_15_E01_008_clean.fcs'
@@ -138,11 +154,11 @@ class WorkspaceTestCase(unittest.TestCase):
             ignore_missing_files=True
         )
 
-        xforms = wsp.get_transforms(sample_id)
+        xform_lut = wsp.get_transforms(sample_id)
 
-        self.assertEqual(len(xforms), 23)
-        for cm in xforms:
-            self.assertIsInstance(cm, Transform)
+        self.assertEqual(len(xform_lut), 23)
+        for xform in xform_lut.values():
+            self.assertIsInstance(xform, Transform)
 
     def test_get_child_gate_ids(self):
         wsp_path = "data/8_color_data_set/8_color_ICS.wsp"
@@ -187,7 +203,7 @@ class WorkspaceTestCase(unittest.TestCase):
         for gate_path in gate_paths:
             self.assertIn(gate_path, truth)
 
-    def test_get_gated_events(self):
+    def test_get_gate_events(self):
         wsp_path = "data/8_color_data_set/8_color_ICS_simple.wsp"
         sample_id = '101_DEN084Y5_15_E01_008_clean.fcs'
         gate_name = 'CD3+'
@@ -200,13 +216,58 @@ class WorkspaceTestCase(unittest.TestCase):
 
         wsp.analyze_samples(sample_id=sample_id)
 
-        df_gated_events = wsp.get_gate_events(
+        # get auto-processed
+        df_gate_events = wsp.get_gate_events(
             sample_id,
             gate_name
         )
 
-        self.assertIsInstance(df_gated_events, pd.DataFrame)
-        self.assertEqual(len(df_gated_events), 133670)
+        # get raw
+        df_gate_events_raw = wsp.get_gate_events(
+            sample_id,
+            gate_name,
+            source='row'
+        )
+
+        # get comp
+        df_gate_events_comp = wsp.get_gate_events(
+            sample_id,
+            gate_name,
+            source='comp'
+        )
+
+        evt_6_raw = [
+            165875.51562, 136158.00000, 79839.72656,
+            30412.32031, 29198.00000, 68261.58594,
+            146.88000, 68.34000, 145.08000, 126.48000,
+            61.38000, 1475.09998, 393.80002, 3631.10010,
+            1.28000
+        ]
+        evt_6_comp = [
+            165875.51562, 136158.00000, 79839.72656,
+            30412.32031, 29198.00000, 68261.58594,
+            145.23488, -3.66970, 145.08000, 126.48000,
+            47.19370, 1258.81096, 263.90823, 3468.27668,
+            1.28000
+        ]
+        evt_6_xform = [
+            0.63276, 0.51940, 0.30456, 0.11601, 0.11138,
+            0.26040, 0.25399, 0.22562, 0.25396, 0.25044,
+            0.23534, 0.41934, 0.27620, 0.54810, 0.03635
+        ]
+        chan_cols = [
+            'FSC-A', 'FSC-H', 'FSC-W', 'SSC-A', 'SSC-H', 'SSC-W',
+            'TNFa FITC FLR-A', 'CD8 PerCP-Cy55 FLR-A', 'IL2 BV421 FLR-A',
+            'Aqua Amine FLR-A', 'IFNg APC FLR-A', 'CD3 APC-H7 FLR-A',
+            'CD107a PE FLR-A', 'CD4 PE-Cy7 FLR-A', 'Time'
+        ]
+
+        self.assertIsInstance(df_gate_events, pd.DataFrame)
+        self.assertEqual(len(df_gate_events), 133670)
+
+        np.testing.assert_almost_equal(df_gate_events_raw[chan_cols].loc[6].values, evt_6_raw, 5)
+        np.testing.assert_almost_equal(df_gate_events_comp[chan_cols].loc[6].values, evt_6_comp, 5)
+        np.testing.assert_almost_equal(df_gate_events[chan_cols].loc[6].values, evt_6_xform, 5)
 
     def test_load_wsp_single_poly(self):
         wsp_path = "data/simple_line_example/simple_poly_and_rect.wsp"
@@ -343,7 +404,7 @@ class WorkspaceTestCase(unittest.TestCase):
         lut_file_path = os.path.join('data', 'flowjo_xforms', lut_file_name)
         y, x = np.loadtxt(lut_file_path, delimiter=',', usecols=(0, 1), skiprows=1, unpack=True)
 
-        biex_xform = transforms.WSPBiexTransform('biex', negative=neg, width=width)
+        biex_xform = transforms.WSPBiexTransform(negative=neg, width=width)
 
         test_y = biex_xform.apply(x)
 
@@ -364,6 +425,67 @@ class WorkspaceTestCase(unittest.TestCase):
 
         self.assertIsInstance(gate_indices, np.ndarray)
         self.assertEqual(np.sum(gate_indices), 7023)
+
+    def test_parse_wsp_with_invalid_gate_name(self):
+        wsp_path = "data/8_color_data_set/8_color_ICS_dot_gate_name.wsp"
+
+        self.assertRaisesRegex(
+            GateTreeError,
+            r"Gate name '\.' is incompatible with FlowKit\. " 
+            r"Gate was found in path: \/root\/Time\/Singlets\/aAmine-\/CD3\+\/CD4\+",
+            Workspace,
+            wsp_path,
+            ignore_missing_files=True
+        )
+
+    def test_parse_wsp_with_boolean_gates(self):
+        wsp_path = "data/8_color_data_set/8_color_ICS_boolean_gate_testing.wsp"
+        fcs_path = "data/8_color_data_set/fcs_files/101_DEN084Y5_15_E01_008_clean.fcs"
+        sample_id = '101_DEN084Y5_15_E01_008_clean.fcs'
+
+        # Boolean AND gate in CD4+ branch
+        gate_name_01 = 'CD107a+ & IFNg+'
+        gate_path_01 = ('root', 'Time', 'Singlets', 'aAmine-', 'CD3+', 'CD4+')
+
+        # Boolean OR gate in CD4+ branch
+        gate_name_02 = 'CD107a+ or IFNg+'
+        gate_path_02 = ('root', 'Time', 'Singlets', 'aAmine-', 'CD3+', 'CD4+')
+
+        # Boolean NOT gate in CD4+ branch
+        gate_name_03 = 'IL2+-'
+        gate_path_03 = ('root', 'Time', 'Singlets', 'aAmine-', 'CD3+', 'CD4+')
+
+        # Boolean NOT gate in CD4+ branch
+        gate_name_04 = 'TNFa+-'
+        gate_path_04 = ('root', 'Time', 'Singlets', 'aAmine-', 'CD3+', 'CD4+')
+
+        # Boolean NOT gate in CD8+ branch
+        gate_name_05 = 'TNFa+-'
+        gate_path_05 = ('root', 'Time', 'Singlets', 'aAmine-', 'CD3+', 'CD8+')
+
+        # Child of a Boolean gate in CD8+ branch
+        gate_name_06 = 'CD107a+'
+        gate_path_06 = ('root', 'Time', 'Singlets', 'aAmine-', 'CD3+', 'CD8+', 'TNFa+-')
+
+        wsp = Workspace(wsp_path, fcs_samples=fcs_path, ignore_missing_files=True)
+
+        wsp.analyze_samples(sample_id=sample_id)
+        gating_results = wsp.get_gating_results(sample_id)
+
+        gate_count_01 = gating_results.get_gate_count(gate_name_01, gate_path_01)
+        gate_count_02 = gating_results.get_gate_count(gate_name_02, gate_path_02)
+        gate_count_03 = gating_results.get_gate_count(gate_name_03, gate_path_03)
+        gate_count_04 = gating_results.get_gate_count(gate_name_04, gate_path_04)
+        gate_count_05 = gating_results.get_gate_count(gate_name_05, gate_path_05)
+        gate_count_06 = gating_results.get_gate_count(gate_name_06, gate_path_06)
+
+        self.assertIsInstance(gating_results, GatingResults)
+        self.assertEqual(gate_count_01, 0)
+        self.assertEqual(gate_count_02, 72)
+        self.assertEqual(gate_count_03, 82478)
+        self.assertEqual(gate_count_04, 82463)
+        self.assertEqual(gate_count_05, 47157)
+        self.assertEqual(gate_count_06, 70)
 
     def test_get_ambiguous_gate_objects(self):
         wsp_path = "data/8_color_data_set/8_color_ICS.wsp"

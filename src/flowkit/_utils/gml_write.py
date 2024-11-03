@@ -16,9 +16,9 @@ from .._models.gates._gates import \
 from ..exceptions import QuadrantReferenceError
 
 
-def _add_matrix_to_gml(root, matrix, ns_map):
+def _add_matrix_to_gml(root, matrix_id, matrix, ns_map):
     xform_ml = etree.SubElement(root, "{%s}spectrumMatrix" % ns_map['transforms'])
-    xform_ml.set('{%s}id' % ns_map['transforms'], matrix.id)
+    xform_ml.set('{%s}id' % ns_map['transforms'], matrix_id)
 
     fluoros_ml = etree.SubElement(xform_ml, "{%s}fluorochromes" % ns_map['transforms'])
 
@@ -39,9 +39,9 @@ def _add_matrix_to_gml(root, matrix, ns_map):
             coefficient_ml.set('{%s}value' % ns_map['transforms'], str(val))
 
 
-def _add_transform_to_gml(root, transform, ns_map):
+def _add_transform_to_gml(root, transform_id, transform, ns_map):
     xform_ml = etree.SubElement(root, "{%s}transformation" % ns_map['transforms'])
-    xform_ml.set('{%s}id' % ns_map['transforms'], transform.id)
+    xform_ml.set('{%s}id' % ns_map['transforms'], transform_id)
 
     if isinstance(transform, _transforms.RatioTransform):
         ratio_ml = etree.SubElement(xform_ml, "{%s}fratio" % ns_map['transforms'])
@@ -238,11 +238,11 @@ def export_gatingml(gating_strategy, file_handle, sample_id=None):
 
     # process gating strategy transformations
     for xform_id, xform in gating_strategy.transformations.items():
-        _add_transform_to_gml(root, xform, ns_map)
+        _add_transform_to_gml(root, xform_id, xform, ns_map)
 
     # process gating strategy compensation matrices
     for matrix_id, matrix in gating_strategy.comp_matrices.items():
-        _add_matrix_to_gml(root, matrix, ns_map)
+        _add_matrix_to_gml(root, matrix_id, matrix, ns_map)
 
     # get gate hierarchy as a dictionary
     gate_dict = gating_strategy.get_gate_hierarchy('dict')
