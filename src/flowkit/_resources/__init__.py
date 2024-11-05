@@ -1,23 +1,13 @@
 """
 Contains non-code resources used in FlowKit
 """
-from pkg_resources import resource_filename
+
+from importlib import resources
 from lxml import etree
-import os
-import pathlib
 
-resource_path = resource_filename('flowkit', '_resources')
-# force POSIX-style path, even on Windows
-resource_path = pathlib.Path(resource_path).as_posix()
+resource_dir = resources.files("flowkit")
+xsd_file = resource_dir / "_resources" / "Gating-ML.v2.0.xsd"
 
-# We used to edit the import paths for Transformations & DataTypes,
-# but it still caused an XMLSchemaParseError when FlowKit was
-# installed in a location where the path contained "special"
-# characters (i.e. accented letters). Instead, we now change
-# directories temporarily to the XSD location, read in the files,
-# and then change back to the original CWD.
-orig_dir = os.getcwd()
-os.chdir(resource_path)
-gml_tree = etree.parse('Gating-ML.v2.0.xsd')
+with xsd_file.open("rb") as file:
+    gml_tree = etree.parse(file)
 gml_schema = etree.XMLSchema(gml_tree)
-os.chdir(orig_dir)
