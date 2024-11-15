@@ -51,9 +51,9 @@ test_data_range1 = np.linspace(0.0, 10.0, 101)
 poly1_vertices = [[5, 5], [500, 5], [500, 500]]
 poly1_dim1 = fk.Dimension("FL2-H", compensation_ref="FCS")
 poly1_dim2 = fk.Dimension("FL3-H", compensation_ref="FCS")
-poly1_dims1 = [poly1_dim1, poly1_dim2]
+poly1_dims = [poly1_dim1, poly1_dim2]
 
-poly1_gate = fk.gates.PolygonGate("Polygon1", poly1_dims1, poly1_vertices)
+poly1_gate = fk.gates.PolygonGate("Polygon1", poly1_dims, poly1_vertices)
 
 quad1_div1 = fk.QuadrantDivider("FL2", "FL2-H", "FCS", [12.14748])
 quad1_div2 = fk.QuadrantDivider("FL4", "FL4-H", "FCS", [14.22417])
