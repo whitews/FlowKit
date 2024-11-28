@@ -234,6 +234,7 @@ class GatingStrategy(object):
         gate_node = self._get_gate_node(gate_name, gate_path=gate_path)
         gate = gate_node.gate
         orig_full_gate_path = tuple(n.name for n in gate_node.path)
+        new_full_gate_path = orig_full_gate_path[:-1] + (new_gate_name,)  # needed for updating Boolean refs later
 
         # check successors for any Boolean gates that reference the renamed gate
         # Note, these needs to be retrieved before modifying the gate name
@@ -243,15 +244,6 @@ class GatingStrategy(object):
         # renaming a gate nullifies any previous results,
         # so clear cached events
         self.clear_cache()
-
-        # Need to change the gate node name & the gate's gate_name attribute
-        gate_node.name = new_gate_name
-        gate.gate_name = new_gate_name
-        new_full_gate_path = tuple(n.name for n in gate_node.path)
-
-        # check for custom gates, need to change those too
-        for custom_gate in gate_node.custom_gates.values():
-            custom_gate.gate_name = new_gate_name
 
         # Check successor gates for a Boolean gate.
         # If present, it references the renamed gate & that reference needs updating
@@ -286,6 +278,14 @@ class GatingStrategy(object):
 
                     # Any other case, the reference gate path is longer than the modified gate,
                     # so not affected by the change.
+
+        # Need to change the gate node name & the gate's gate_name attribute
+        gate_node.name = new_gate_name
+        gate.gate_name = new_gate_name
+
+        # check for custom gates, need to change those too
+        for custom_gate in gate_node.custom_gates.values():
+            custom_gate.gate_name = new_gate_name
 
         # rebuild DAG
         self._rebuild_dag()

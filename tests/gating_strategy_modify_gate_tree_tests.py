@@ -8,11 +8,7 @@ import flowkit as fk
 # noinspection PyProtectedMember
 from flowkit._models.gating_results import GatingResults
 
-from tests.test_config import (
-    test_samples_8c_full_set_dict,
-    csv_8c_comp_file_path,
-    detectors_8c,
-)
+from tests import test_config
 
 
 class GatingStrategyRemoveGatesTestCase(unittest.TestCase):
@@ -43,8 +39,8 @@ class GatingStrategyRemoveGatesTestCase(unittest.TestCase):
         :return: None
         """
         sample_id = "101_DEN084Y5_15_E01_008_clean.fcs"
-        sample = copy.deepcopy(test_samples_8c_full_set_dict[sample_id])
-        comp = fk.Matrix(csv_8c_comp_file_path, detectors_8c)
+        sample = copy.deepcopy(test_config.test_samples_8c_full_set_dict[sample_id])
+        comp = fk.Matrix(test_config.csv_8c_comp_file_path, test_config.detectors_8c)
 
         session = fk.Session()
         session.add_samples(sample)
@@ -355,6 +351,42 @@ class GatingStrategyRemoveGatesTestCase(unittest.TestCase):
     #
     # Rename gate tests
     #
+    def test_rename_gate_with_children(self):
+        # This test covers the bug reported in issue #231
+        poly1_vertices = test_config.poly1_vertices
+        poly1_dims = test_config.poly1_dims
+
+        top1_gate = fk.gates.PolygonGate("top1", poly1_dims, poly1_vertices)
+        top2_gate = fk.gates.PolygonGate("top2", poly1_dims, poly1_vertices)
+        a_gate = fk.gates.PolygonGate("A", poly1_dims, poly1_vertices)
+        a1_gate = fk.gates.PolygonGate("A1", poly1_dims, poly1_vertices)
+        a2_gate = fk.gates.PolygonGate("A2", poly1_dims, poly1_vertices)
+
+        gs = fk.GatingStrategy()
+        gs.add_gate(top1_gate, gate_path=('root',))
+        gs.add_gate(top2_gate, gate_path=('root',))
+
+        gs.add_gate(a_gate, gate_path=('root', 'top1'))
+        gs.add_gate(copy.deepcopy(a_gate), gate_path=('root', 'top2'))
+
+        gs.add_gate(a1_gate, gate_path=('root', 'top1', 'A'))
+        gs.add_gate(a2_gate, gate_path=('root', 'top1', 'A'))
+
+        gs.add_gate(copy.deepcopy(a1_gate), gate_path=('root', 'top2', 'A'))
+        gs.add_gate(copy.deepcopy(a2_gate), gate_path=('root', 'top2', 'A'))
+
+        # now rename 'top1' > 'A'
+        # This step caused a GateReferenceError prior to #231 fix
+        gs.rename_gate('A', 'A_new', ('root', 'top1'))
+
+        # verify we can retrieve the gate by its new gate name
+        renamed_gate = gs.get_gate('A_new', gate_path=('root', 'top1'))
+        self.assertEqual(renamed_gate.gate_name, 'A_new')
+
+        # And verify the other 'A' gate name didn't change
+        other_a_gate = gs.get_gate('A', gate_path=('root', 'top2'))
+        self.assertEqual(other_a_gate.gate_name, 'A')
+
     def test_rename_gate_with_bool_dep(self):
         gs = copy.deepcopy(self.gating_strategy)
         gate_name_to_rename = "CD3-pos-range"
