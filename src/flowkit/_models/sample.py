@@ -65,6 +65,12 @@ class Sample(object):
         the value will be the filename if given a file. For a NumPy array or Pandas
         DataFrame, a text value is required.
 
+    :param filename_as_id: Boolean option for using the file name (as it exists on the
+        filesystem) for the Sample's ID, default is False. This option is only valid
+        for file-like objects (file paths, filehandles, Pathlib Paths). Note, the
+        'sample_id' kwarg takes precedence, if both are specified, the
+        'filename_as_id' option is ignored.
+
     :param channel_labels: A list of strings or a list of tuples to use for the channel
         labels. Required if fcs_path_or_data is a NumPy array
 
@@ -104,6 +110,7 @@ class Sample(object):
             self,
             fcs_path_or_data,
             sample_id=None,
+            filename_as_id=False,
             channel_labels=None,
             compensation=None,
             null_channel_list=None,
@@ -116,7 +123,11 @@ class Sample(object):
         """
         Create a Sample instance
         """
-        # inspect our fcs_path_or_data argument
+        # Inspect our fcs_path_or_data argument.
+        # Before doing so, set the current_filename attribute to None.
+        # This will get reset by file-like objects (file paths, filehandles, Pathlib objects).
+        self.current_filename = None
+
         if isinstance(fcs_path_or_data, str):
             # if a string, we only handle file paths, so try creating a FlowData object
             flow_data = flowio.FlowData(
@@ -125,6 +136,8 @@ class Sample(object):
                 ignore_offset_discrepancy=ignore_offset_discrepancy,
                 use_header_offsets=use_header_offsets
             )
+            # successfully parsed a file, set current filename
+            self.current_filename = os.path.basename(fcs_path_or_data)
         elif isinstance(fcs_path_or_data, io.IOBase):
             flow_data = flowio.FlowData(
                 fcs_path_or_data,
@@ -132,6 +145,12 @@ class Sample(object):
                 ignore_offset_discrepancy=ignore_offset_discrepancy,
                 use_header_offsets=use_header_offsets
             )
+            # Set current filename if object has a 'name' attribute.
+            # The most common case of IOBAse here would be a simple filehandle,
+            # but some IOBase objects may not have a name.
+            if hasattr(fcs_path_or_data, 'name'):
+                # set current filename
+                self.current_filename = os.path.basename(fcs_path_or_data.name)
         elif isinstance(fcs_path_or_data, Path):
             flow_data = flowio.FlowData(
                 fcs_path_or_data.open('rb'),
@@ -139,8 +158,17 @@ class Sample(object):
                 ignore_offset_discrepancy=ignore_offset_discrepancy,
                 use_header_offsets=use_header_offsets
             )
+            # Pathlib Path objects always have a 'name' attribute that is
+            # the file base name (no need to use os.path.basename)
+            self.current_filename = fcs_path_or_data.name
         elif isinstance(fcs_path_or_data, flowio.FlowData):
             flow_data = fcs_path_or_data
+
+            # FlowData object will have a 'name' attribute that is
+            # populated by the filesystem name (if a file originally),
+            # or has the value 'InMemoryFile' for FlowData objects
+            # created from a non-file source (array, etc.).
+            self.current_filename = flow_data.name
         elif isinstance(fcs_path_or_data, np.ndarray):
             if sample_id is None:
                 raise ValueError("'sample_id' is required for a NumPy array")
@@ -324,15 +352,24 @@ class Sample(object):
         try:
             self.original_filename = self.metadata['fil']
         except KeyError:
-            if isinstance(fcs_path_or_data, str):
-                self.original_filename = os.path.basename(fcs_path_or_data)
-            else:
-                self.original_filename = None
+            # if 'fil' doesn't exist in the metadata, try to use
+            # the file system name. We already parsed this for the
+            # 'current_filename' attribute. Note, this will only work
+            # for file-like objects and could still be None
+            self.original_filename = self.current_filename
 
-        if sample_id is None:
-            self.id = self.original_filename
-        else:
+        # Set the 'id' attribute
+        # First, if the 'sample_id' kwarg is given, it always takes precedence
+        if sample_id is not None:
+            # The user specified an ID, so we use it regardless of any other option
             self.id = sample_id
+        elif filename_as_id and self.current_filename is not None:
+            # Input data was a file-like object and the user specified to
+            # use the current filename as the ID.
+            self.id = self.current_filename
+        else:
+            # In the default case, use the FCS file's metadata
+            self.id = self.original_filename
 
         # finally, store initial subsampled event indices
         self.subsample_events(subsample)

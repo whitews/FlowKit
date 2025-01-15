@@ -7,21 +7,23 @@ import flowio
 from .._models.sample import Sample
 
 
-def _get_samples_from_paths(sample_paths):
+def _get_samples_from_paths(sample_paths, filename_as_id=False):
     """
     Load multiple Sample instances from a list of file paths
 
     :param sample_paths: list of file paths containing FCS files
+    :param filename_as_id: Boolean option for using the file name (as it exists on the
+        filesystem) for the Sample's ID, default is False.
     :return: list of Sample instances
     """
     samples = []
     for path in sample_paths:
-        samples.append(Sample(path))
+        samples.append(Sample(path, filename_as_id=filename_as_id))
 
     return samples
 
 
-def load_samples(fcs_samples):
+def load_samples(fcs_samples, filename_as_id=False):
     """
     Returns a list of Sample instances from a variety of input types (fcs_samples), such as file or
         directory paths, a Sample instance, or lists of the previous types.
@@ -30,6 +32,9 @@ def load_samples(fcs_samples):
             a directory or file path, or a list of directory or file paths. If a directory, any .fcs
             files in the directory will be loaded. If a list, then it must be a list of file paths or a
             list of Sample instances. Lists of mixed types are not supported.
+    :param filename_as_id: Boolean option for using the file name (as it exists on the
+        filesystem) for the Sample's ID, default is False. Only applies to file paths given to the
+        'fcs_samples' argument.
     :return: list of Sample instances
     """
     sample_list = []
@@ -43,13 +48,14 @@ def load_samples(fcs_samples):
 
         if len(sample_types) > 1:
             raise ValueError(
-                "Each item in 'fcs_sample' list must be a FCS file path or Sample instance"
+                "Found multiple object types for 'fcs_samples' option. " 
+                "Each item in 'fcs_samples' list must be of the same type (FCS file path or Sample instance)."
             )
 
         if Sample in sample_types:
             sample_list = fcs_samples
         elif str in sample_types:
-            sample_list = _get_samples_from_paths(fcs_samples)
+            sample_list = _get_samples_from_paths(fcs_samples, filename_as_id=filename_as_id)
     elif isinstance(fcs_samples, Sample):
         # 'fcs_samples' is a single Sample instance
         sample_list = [fcs_samples]
@@ -59,10 +65,10 @@ def load_samples(fcs_samples):
         if os.path.isdir(fcs_samples):
             fcs_paths = glob(os.path.join(fcs_samples, '*.fcs'))
             if len(fcs_paths) > 0:
-                sample_list = _get_samples_from_paths(fcs_paths)
+                sample_list = _get_samples_from_paths(fcs_paths, filename_as_id=filename_as_id)
         else:
             # assume a path to a single FCS file
-            sample_list = _get_samples_from_paths([fcs_samples])
+            sample_list = _get_samples_from_paths([fcs_samples], filename_as_id=filename_as_id)
 
     return sorted(sample_list)
 

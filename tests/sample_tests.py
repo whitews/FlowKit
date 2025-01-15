@@ -9,7 +9,7 @@ import pandas as pd
 import flowio
 import warnings
 
-from flowkit import Sample, transforms, read_multi_dataset_fcs
+from flowkit import Sample, transforms, read_multi_dataset_fcs, load_samples
 from flowkit.exceptions import DataOffsetDiscrepancyError
 
 data1_fcs_path = 'data/gate_ref/data1.fcs'
@@ -46,12 +46,18 @@ class SampleTestCase(unittest.TestCase):
     """Tests for loading FCS files as Sample objects"""
     def test_load_from_fcs_file_path(self):
         """Test creating Sample object from an FCS file path"""
+        # Note, this sample has no $FIL keyword so we'll also check the
+        # Sample.id gets populated with the current file name.
         sample = Sample(fcs_path_or_data=fcs_2d_file_path)
 
         self.assertIsInstance(sample, Sample)
+        self.assertEqual(sample.id, "test_data_2d_01.fcs")
 
     def test_load_from_flowio_flowdata_object(self):
         """Test creating Sample object from an FCS file path"""
+        # Note, this sample has no $FIL keyword so we'll also check the
+        # Sample.id gets populated with the current file name via the
+        # FlowData.name attribute.
         flow_data = flowio.FlowData(fcs_2d_file_path)
 
         self.assertIsInstance(flow_data, flowio.FlowData)
@@ -59,21 +65,28 @@ class SampleTestCase(unittest.TestCase):
         sample = Sample(flow_data)
 
         self.assertIsInstance(sample, Sample)
+        self.assertEqual(sample.id, "test_data_2d_01.fcs")
 
     def test_load_from_pathlib(self):
         """Test creating Sample object from a pathlib Path object"""
+        # Note, this sample has no $FIL keyword so we'll also check the
+        # Sample.id gets populated with the current file name.
         path = Path(fcs_2d_file_path)
         sample = Sample(fcs_path_or_data=path)
 
         self.assertIsInstance(sample, Sample)
+        self.assertEqual(sample.id, "test_data_2d_01.fcs")
 
     def test_load_from_io_base(self):
         """Test creating Sample object from a IOBase object"""
+        # Note, this sample has no $FIL keyword so we'll also check the
+        # Sample.id gets populated with the current file name.
         f = open(fcs_2d_file_path, 'rb')
         sample = Sample(fcs_path_or_data=f)
         f.close()
 
         self.assertIsInstance(sample, Sample)
+        self.assertEqual(sample.id, "test_data_2d_01.fcs")
 
     def test_load_from_numpy_array(self):
         npy_file_path = "data/test_comp_example.npy"
@@ -148,6 +161,38 @@ class SampleTestCase(unittest.TestCase):
     def test_load_from_unsupported_object(self):
         """Test Sample constructor raises ValueError loading an unsupported object"""
         self.assertRaises(ValueError, Sample, object())
+
+    def test_set_id_from_file_name(self):
+        # the test comp sample has a $FIL value of 'PBMC_LRS005_IL10.fcs'
+        # which does not match the filesystem's file name. Use the
+        # 'filename_as_id' option to set the Sample.id attribute to
+        # match the filesystem. Note this file also has the offset
+        # issue, so that option is also used and why we ignore the
+        # warnings.
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            sample_with_file_id = Sample(fcs_file_path, filename_as_id=True, ignore_offset_error=True)
+            sample_with_meta_id = Sample(fcs_file_path, ignore_offset_error=True)
+
+        self.assertEqual(sample_with_file_id.id, "test_comp_example.fcs")
+        self.assertEqual(sample_with_meta_id.id, "PBMC_LRS005_IL10.fcs")
+
+    def test_load_samples_utils_func(self):
+        # Tests for utils 'load_samples' function
+        # Most of the functionality of this function is covered in the
+        # test config file in loading data sets for other tests.
+        # We'll just cover a few edge cases here.
+
+        # Note, this sample has no $FIL keyword so we'll also check the
+        # Sample.id gets populated with the current file name.
+        samples = load_samples([fcs_2d_file_path])
+
+        self.assertIsInstance(samples[0], Sample)
+        self.assertEqual(samples[0].id, "test_data_2d_01.fcs")
+
+        # Test that attempting to load from a list of mixed types fails
+        mixed_sample_list = [samples[0], fcs_2d_file_path]
+        self.assertRaises(ValueError, load_samples, mixed_sample_list)
 
     def test_data_start_offset_discrepancy(self):
         fcs_file = "data/noncompliant/data_start_offset_discrepancy_example.fcs"
