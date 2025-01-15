@@ -9,7 +9,7 @@ import pandas as pd
 import flowio
 import warnings
 
-from flowkit import Sample, transforms, read_multi_dataset_fcs
+from flowkit import Sample, transforms, read_multi_dataset_fcs, load_samples
 from flowkit.exceptions import DataOffsetDiscrepancyError
 
 data1_fcs_path = 'data/gate_ref/data1.fcs'
@@ -176,6 +176,23 @@ class SampleTestCase(unittest.TestCase):
 
         self.assertEqual(sample_with_file_id.id, "test_comp_example.fcs")
         self.assertEqual(sample_with_meta_id.id, "PBMC_LRS005_IL10.fcs")
+
+    def test_load_samples_utils_func(self):
+        # Tests for utils 'load_samples' function
+        # Most of the functionality of this function is covered in the
+        # test config file in loading data sets for other tests.
+        # We'll just cover a few edge cases here.
+
+        # Note, this sample has no $FIL keyword so we'll also check the
+        # Sample.id gets populated with the current file name.
+        samples = load_samples([fcs_2d_file_path])
+
+        self.assertIsInstance(samples[0], Sample)
+        self.assertEqual(samples[0].id, "test_data_2d_01.fcs")
+
+        # Test that attempting to load from a list of mixed types fails
+        mixed_sample_list = [samples[0], fcs_2d_file_path]
+        self.assertRaises(ValueError, load_samples, mixed_sample_list)
 
     def test_data_start_offset_discrepancy(self):
         fcs_file = "data/noncompliant/data_start_offset_discrepancy_example.fcs"
