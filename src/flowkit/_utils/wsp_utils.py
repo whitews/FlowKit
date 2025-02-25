@@ -207,6 +207,25 @@ def _parse_wsp_transforms(transforms_el, transform_ns, data_type_ns):
                 param_m=float(param_m),
                 param_a=float(param_a)
             )
+        elif xform_type == 'hyperlog':
+            # biex transform has 5 parameters, but only 2 are really used
+            # these are attributes of the 'biex' element
+            param_t = find_attribute_value(xform_el, transform_ns, 'T')
+            param_a = find_attribute_value(xform_el, transform_ns, 'A')
+            param_m = find_attribute_value(xform_el, transform_ns, 'M')
+            param_w = find_attribute_value(xform_el, transform_ns, 'W')
+
+            param_length = find_attribute_value(xform_el, transform_ns, 'length')
+
+            if param_length != '256':
+                raise ValueError("hyperlog 'length' parameter value of %s is not supported." % param_length)
+
+            xforms_lut[param_name] = _transforms.HyperlogTransform(
+                param_t=float(param_t),
+                param_w=float(param_w),
+                param_m=float(param_m),
+                param_a=float(param_a)
+            )
         else:
             error_msg = "FlowJo transform type '%s' is undocumented and not supported in FlowKit. " % xform_type
             error_msg += "Please edit the workspace in FlowJo and save all channel transformations as either " \
