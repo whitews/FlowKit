@@ -320,8 +320,11 @@ class Sample(object):
             channel_gain[self.time_index] = 1.0
 
         if 'timestep' in self.metadata and self.time_index is not None:
-            time_step = float(self.metadata['timestep'])
-            raw_events[:, self.time_index] = raw_events[:, self.time_index] * time_step
+            try:
+                time_step = float(self.metadata['timestep'])
+                raw_events[:, self.time_index] = raw_events[:, self.time_index] * time_step
+            except:
+                pass
 
         for i, (decades, log0) in enumerate(channel_lin_log):
             if decades > 0:
