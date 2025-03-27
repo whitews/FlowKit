@@ -78,7 +78,7 @@ def read_multi_dataset_fcs(
         ignore_offset_error=False,
         ignore_offset_discrepancy=False,
         use_header_offsets=False,
-        cache_original_events=False
+        preprocess=True
 ):
     """
     Utility function for reading all data sets in an FCS file containing multiple data sets.
@@ -89,16 +89,11 @@ def read_multi_dataset_fcs(
         and TEXT values for the DATA byte offset location, default is False
     :param use_header_offsets: use the HEADER section for the data offset locations, default is False.
         Setting this option to True also suppresses an error in cases of an offset discrepancy.
-    :param cache_original_events: Original events are the unprocessed events as stored in the FCS binary,
+    :param preprocess: Original events are the unprocessed events as stored in the FCS binary,
         meaning they have not been scaled according to channel gain, corrected for proper lin/log display,
-        or had the time channel scaled by the 'timestep' keyword value (if present). By default, these
-        events are not retained by the Sample class as they are typically not useful. To retrieve the
-        original events, set this to True and call the get_events() method with source='orig'.
-    :param cache_original_events: Original events are the unprocessed events as stored in the FCS binary,
-        meaning they have not been scaled according to channel gain, corrected for proper lin/log display,
-        or had the time channel scaled by the 'timestep' keyword value (if present). By default, these
-        events are not retained by the Sample class as they are typically not useful. To retrieve the
-        original events, set this to True and call the get_events() method with source='orig'.
+        or had the time channel scaled by the 'timestep' keyword value (if present). This option controls
+        whether to perform these preprocessing steps. Unprocessed event data is typically not useful
+        for analysis, so the default is True.
     :return: list of Sample instances
     """
     flow_data_list = flowio.read_multiple_data_sets(
@@ -111,7 +106,7 @@ def read_multi_dataset_fcs(
     samples = []
 
     for fd in flow_data_list:
-        s = Sample(fd, cache_original_events=cache_original_events)
+        s = Sample(fd, preprocess=preprocess)
         samples.append(s)
 
     return samples
