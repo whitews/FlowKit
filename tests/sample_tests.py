@@ -14,7 +14,7 @@ from flowkit.exceptions import DataOffsetDiscrepancyError
 
 data1_fcs_path = 'data/gate_ref/data1.fcs'
 data1_sample = Sample(data1_fcs_path)
-data1_sample_with_orig = Sample(data1_fcs_path, cache_original_events=True)
+data1_sample_with_orig = Sample(data1_fcs_path, preprocess=False)
 
 xform_logicle = transforms.LogicleTransform(param_t=10000, param_w=0.5, param_m=4.5, param_a=0)
 xform_biex1 = transforms.WSPBiexTransform(width=-100.0, negative=0.0)
@@ -145,11 +145,11 @@ class SampleTestCase(unittest.TestCase):
         self.assertRaises(ValueError, Sample, df_data)
 
     def test_load_from_pandas_multi_index(self):
-        sample_orig = Sample("data/100715.fcs", cache_original_events=True)
+        sample_orig = Sample("data/100715.fcs", preprocess=False)
         pnn_orig = sample_orig.pnn_labels
         pns_orig = sample_orig.pns_labels
 
-        df = sample_orig.as_dataframe(source='orig')
+        df = sample_orig.as_dataframe(source='raw')
 
         sample_new = Sample(df, sample_id='my_sample')
         pnn_new = sample_new.pnn_labels
@@ -271,16 +271,11 @@ class SampleTestCase(unittest.TestCase):
         self.assertEqual(len(data_idx_6), 500)
 
     def test_get_subsampled_orig_events(self):
-        sample = Sample(data1_fcs_path, cache_original_events=True, subsample=500)
+        sample = Sample(data1_fcs_path, preprocess=False, subsample=500)
 
-        events = sample.get_events(source='orig', subsample=True)
+        events = sample.get_events(source='raw', subsample=True)
 
         self.assertEqual(events.shape[0], 500)
-
-    def test_get_subsampled_orig_events_not_cached(self):
-        sample = Sample(data1_fcs_path, cache_original_events=False, subsample=500)
-
-        self.assertRaises(ValueError, sample.get_events, source='orig', subsample=True)
 
     def test_get_subsampled_raw_events(self):
         sample = Sample(data1_fcs_path, subsample=500)
@@ -380,10 +375,11 @@ class SampleTestCase(unittest.TestCase):
         np.testing.assert_equal(df.values, data1_sample.get_events(source='raw'))
 
     def test_get_events_as_data_frame_orig(self):
-        df = data1_sample_with_orig.as_dataframe(source='orig')
+        # TODO: what is this actually testing? should we store the static NumPy array as truth?
+        df = data1_sample_with_orig.as_dataframe(source='raw')
 
         self.assertIsInstance(df, pd.DataFrame)
-        np.testing.assert_equal(df.values, data1_sample_with_orig.get_events(source='orig'))
+        np.testing.assert_equal(df.values, data1_sample_with_orig.get_events(source='raw'))
 
     def test_get_events_as_data_frame_col_index(self):
         # verifies 'col_multi_index' option works as expected
