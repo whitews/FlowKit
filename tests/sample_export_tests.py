@@ -39,9 +39,9 @@ class SampleExportTestCase(unittest.TestCase):
         # as the original file's raw events. Here we export the 'orig' events.
         fcs_file_path = "data/100715.fcs"
 
-        sample = Sample(fcs_path_or_data=fcs_file_path, cache_original_events=True)
+        sample = Sample(fcs_path_or_data=fcs_file_path, preprocess=False)
 
-        sample.export("test_fcs_export.fcs", source='orig', directory="data")
+        sample.export("test_fcs_export.fcs", source='raw', directory="data")
 
         exported_fcs_file = "data/test_fcs_export.fcs"
         exported_sample = Sample(fcs_path_or_data=exported_fcs_file)
@@ -63,7 +63,7 @@ class SampleExportTestCase(unittest.TestCase):
         # FlowIO only supports creating FCS files with float data type.
         # A NotImplementedError should be raised when attempting to
         # export this file's original events
-        sample = Sample(fcs_path_or_data=data1_fcs_path, cache_original_events=True)
+        sample = Sample(fcs_path_or_data=data1_fcs_path, preprocess=False)
 
         self.assertRaises(
             NotImplementedError,
