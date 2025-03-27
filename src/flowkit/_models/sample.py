@@ -3,7 +3,6 @@ Sample class
 """
 
 from functools import total_ordering
-import copy
 import flowio
 import os
 from pathlib import Path
@@ -85,7 +84,8 @@ class Sample(object):
     :param null_channel_list: List of PnN labels for acquired channels that do not contain
         useful data. Note, this should only be used if no fluorochromes were used to target
         those detectors. Null channels do not contribute to compensation and should not be
-        included in a compensation matrix for this sample.
+        included in a compensation matrix for this sample. This option is ignored if
+        `fcs_path_or_data` is a FlowData object.
 
     :param ignore_offset_error: option to ignore data offset error (see above note), default is False
 
@@ -95,11 +95,12 @@ class Sample(object):
     :param use_header_offsets: use the HEADER section for the data offset locations, default is False.
         Setting this option to True also suppresses an error in cases of an offset discrepancy.
 
-    :param cache_original_events: Original events are the unprocessed events as stored in the FCS binary,
+    :param preprocess: Original events are the unprocessed events as stored in the FCS binary,
         meaning they have not been scaled according to channel gain, corrected for proper lin/log display,
-        or had the time channel scaled by the 'timestep' keyword value (if present). By default, these
-        events are not retained by the Sample class as they are typically not useful. To retrieve the
-        original events, set this to True and call the get_events() method with source='orig'.
+        or had the time channel scaled by the 'timestep' keyword value (if present). This option controls
+        whether to perform these preprocessing steps. Unprocessed event data is typically not useful
+        for analysis, so the default is True. In either case, the non-compensated, non-transformed
+        event data array is retrievable via the get_events() method with source='raw'.
 
     :param subsample: The number of events to use for subsampling. The number of subsampled events
         can be changed after instantiation using the `subsample_events` method. The random seed can
@@ -117,7 +118,7 @@ class Sample(object):
             ignore_offset_error=False,
             ignore_offset_discrepancy=False,
             use_header_offsets=False,
-            cache_original_events=False,
+            preprocess=True,
             subsample=10000
     ):
         """
@@ -128,13 +129,16 @@ class Sample(object):
         # This will get reset by file-like objects (file paths, filehandles, Pathlib objects).
         self.current_filename = None
 
+        # TODO: Re-evaluate this type detection, the new FlowIO version supports most
+        #  these options now.
         if isinstance(fcs_path_or_data, str):
             # if a string, we only handle file paths, so try creating a FlowData object
             flow_data = flowio.FlowData(
                 fcs_path_or_data,
                 ignore_offset_error=ignore_offset_error,
                 ignore_offset_discrepancy=ignore_offset_discrepancy,
-                use_header_offsets=use_header_offsets
+                use_header_offsets=use_header_offsets,
+                null_channel_list=null_channel_list
             )
             # successfully parsed a file, set current filename
             self.current_filename = os.path.basename(fcs_path_or_data)
@@ -143,7 +147,8 @@ class Sample(object):
                 fcs_path_or_data,
                 ignore_offset_error=ignore_offset_error,
                 ignore_offset_discrepancy=ignore_offset_discrepancy,
-                use_header_offsets=use_header_offsets
+                use_header_offsets=use_header_offsets,
+                null_channel_list=null_channel_list
             )
             # Set current filename if object has a 'name' attribute.
             # The most common case of IOBAse here would be a simple filehandle,
@@ -156,7 +161,8 @@ class Sample(object):
                 fcs_path_or_data.open('rb'),
                 ignore_offset_error=ignore_offset_error,
                 ignore_offset_discrepancy=ignore_offset_discrepancy,
-                use_header_offsets=use_header_offsets
+                use_header_offsets=use_header_offsets,
+                null_channel_list=null_channel_list
             )
             # Pathlib Path objects always have a 'name' attribute that is
             # the file base name (no need to use os.path.basename)
@@ -180,7 +186,7 @@ class Sample(object):
                 channel_names=channel_labels
             )
 
-            flow_data = flowio.FlowData(tmp_file)
+            flow_data = flowio.FlowData(tmp_file, null_channel_list=null_channel_list)
         elif isinstance(fcs_path_or_data, pd.DataFrame):
             if sample_id is None:
                 raise ValueError("'sample_id' is required for a Pandas DataFrame")
@@ -202,132 +208,52 @@ class Sample(object):
                 opt_channel_names=pns_labels
             )
 
-            flow_data = flowio.FlowData(tmp_file)
+            flow_data = flowio.FlowData(tmp_file, null_channel_list=null_channel_list)
         else:
             raise ValueError("'fcs_path_or_data' is not a supported type")
 
-        try:
-            self.version = flow_data.header['version']
-        except KeyError:
-            self.version = None
-
-        # Ensure null channels is a list for checking later
-        if null_channel_list is None:
-            self.null_channels = []
-        else:
-            self.null_channels = null_channel_list
-
+        # Gather attributes from FlowData object
+        # Get the FCS version (don't need the other HEADER info)
+        self.version = flow_data.version
         self.event_count = flow_data.event_count
 
-        # make a temp channels dict, self.channels will be a DataFrame built from it
-        tmp_channels = flow_data.channels
-        self.pnn_labels = list()
-        self.pns_labels = list()
-        self.fluoro_indices = list()
-        self.scatter_indices = list()
-        self.time_index = None
+        # Null channels got passed to FlowData, retrieve it for downstream analysis.
+        # It is critical for compensation and possibly in generating transforms.
+        self.null_channels = flow_data.null_channels
 
-        channel_gain = []
-        channel_lin_log = []
-        channel_range = []
+        # Create self.channels DataFrame from FlowData.channels dict
+        # Convert channel number index (dict keys) to a regular column.
+        self.channels = pd.DataFrame.from_dict(flow_data.channels, orient='index')
+        self.channels.insert(0, 'channel_number', self.channels.index)
+        self.channels.reset_index(drop=True, inplace=True)  # create new zero-based index
+
+        # Copy additional channel info for convenient access
+        self.pnn_labels = flow_data.pnn_labels
+        self.pns_labels = flow_data.pns_labels
+        self.fluoro_indices = flow_data.fluoro_indices
+        self.scatter_indices = flow_data.scatter_indices
+        self.time_index = flow_data.time_index
+
+        # And grab the metadata, keeping as dict
         self.metadata = flow_data.text
 
-        for n in sorted([int(k) for k in tmp_channels.keys()]):
-            channel_label = tmp_channels[str(n)]['PnN']
-            self.pnn_labels.append(channel_label)
-
-            if 'p%dg' % n in self.metadata:
-                channel_gain.append(float(self.metadata['p%dg' % n]))
-            else:
-                channel_gain.append(1.0)
-
-            # PnR range values are required for all channels
-            channel_range.append(float(self.metadata['p%dr' % n]))
-
-            # PnE specifies whether the parameter data is stored in on linear or log scale
-            # and includes 2 values: (f1, f2)
-            # where:
-            #     f1 is the number of log decades (valid values are f1 >= 0)
-            #     f2 is the value to use for log(0) (valid values are f2 >= 0)
-            # Note for log scale, both values must be > 0
-            # linear = (0, 0)
-            # log    = (f1 > 0, f2 > 0)
-            if 'p%de' % n in self.metadata:
-                (decades, log0) = [
-                    float(x) for x in self.metadata['p%de' % n].split(',')
-                ]
-                if log0 == 0 and decades != 0:
-                    log0 = 1.0  # FCS std states to use 1.0 for invalid 0 value
-                channel_lin_log.append((decades, log0))
-            else:
-                channel_lin_log.append((0.0, 0.0))
-
-            # Determine fluoro vs scatter vs time channels
-            # Null channels are excluded from any category.
-            if channel_label in self.null_channels:
-                pass
-            elif channel_label.lower()[:4] not in ['fsc-', 'ssc-', 'time']:
-                self.fluoro_indices.append(n - 1)
-            elif channel_label.lower()[:4] in ['fsc-', 'ssc-']:
-                self.scatter_indices.append(n - 1)
-            elif channel_label.lower() == 'time':
-                self.time_index = n - 1
-
-            if 'PnS' in tmp_channels[str(n)]:
-                self.pns_labels.append(tmp_channels[str(n)]['PnS'])
-            else:
-                self.pns_labels.append('')
-
+        # FlowJo references channels with "/" characters by replacing them
+        # with underscores. Cache FlowJo PnN label versions for downstream
+        # compatibility with FlowJo workspaces.
         self._flowjo_pnn_labels = [label.replace('/', '_') for label in self.pnn_labels]
 
-        # build the self.channels DataFrame
-        self.channels = pd.DataFrame()
-        self.channels['channel_number'] = sorted([int(k) for k in tmp_channels.keys()])
-        self.channels['pnn'] = self.pnn_labels
-        self.channels['pns'] = self.pns_labels
-        self.channels['png'] = channel_gain
-        self.channels['pne'] = channel_lin_log
-        self.channels['pnr'] = channel_range
+        # Get event data. The FlowData.as_array() method converts the list mode
+        # data to a 2-D NumPy array with the option to pre-process the data
+        # according to anti-log scaling, gain scaling, and timestep scaling for
+        # the time channel. This option is controlled by the `preprocess` kwarg.
+        # Note: For accurate downstream analysis (i.e. gating), event data is
+        # stored with double precision.
+        self._raw_events = flow_data.as_array(preprocess=preprocess)
 
-        # Start processing the event data. First, we'll get the unprocessed events
-        # This is the main entry point for event data into FlowKit, and we ensure
-        # the events are double precision because of the pre-processing that will
-        # make even integer FCS data types floating point. The precision is needed
-        # for accurate gating results.
-        tmp_orig_events = np.reshape(
-            np.array(flow_data.events, dtype=np.float64),
-            (-1, flow_data.channel_count)
-        )
+        # Store pre-processed status Boolean for use in export method & for users
+        # to check after instantiation.
+        self.is_preprocessed = preprocess
 
-        if cache_original_events:
-            self._orig_events = tmp_orig_events
-        else:
-            self._orig_events = None
-
-        # Event data must be scaled according to channel gain, as well
-        # as corrected for proper lin/log display, and the time channel
-        # scaled by the 'timestep' keyword value (if present).
-        # This is the only pre-processing we will do on raw events
-        raw_events = copy.deepcopy(tmp_orig_events)
-
-        # Note: The time channel is scaled by the timestep (if present),
-        # but should not be scaled by any gain value present in PnG.
-        # It seems common for cytometers to include a gain value for the
-        # time channel that matches the fluoro channels. Not sure why
-        # they do this, but it makes no sense to have an amplifier gain
-        # on the time data. Here, we set any time gain to 1.0.
-        if self.time_index is not None:
-            channel_gain[self.time_index] = 1.0
-
-        if 'timestep' in self.metadata and self.time_index is not None:
-            time_step = float(self.metadata['timestep'])
-            raw_events[:, self.time_index] = raw_events[:, self.time_index] * time_step
-
-        for i, (decades, log0) in enumerate(channel_lin_log):
-            if decades > 0:
-                raw_events[:, i] = (10 ** (decades * raw_events[:, i] / channel_range[i])) * log0
-
-        self._raw_events = raw_events / channel_gain
         self._comp_events = None
         self._transformed_events = None
         self.compensation = None
@@ -564,21 +490,6 @@ class Sample(object):
         """
         return self.metadata
 
-    def _get_orig_events(self):
-        """
-        Returns 'original' events, i.e. not pre-processed, compensated,
-        or transformed.
-
-        :return: NumPy array of original events
-        """
-        if self._orig_events is None:
-            raise ValueError(
-                "Original events were not cached, to retrieve them create a "
-                "Sample instance with cache_original_events=True"
-            )
-
-        return self._orig_events
-
     def _get_raw_events(self):
         """
         Returns 'raw' events that have been pre-processed to adjust for channel
@@ -626,9 +537,13 @@ class Sample(object):
         Note: This method returns the array directly, not a copy of the array. Be careful if you
         are planning to modify returned event data, and make a copy of the array when appropriate.
 
-        :param source: 'orig', 'raw', 'comp', 'xform' for whether the original (no gain applied),
-            raw (orig + gain), compensated (raw + comp), or transformed (comp + xform) events will
-            be returned
+        :param source: Controls which version of event data to return.Valid values are:
+            'raw', 'comp', or 'xform'. For 'raw', events are returned uncompensated and
+            non-transformed. For 'comp', events are returned compensated according to
+            the stored compensation matrix. For 'xform', events are returned transformed
+            according to the stored transformations and will include any compensation
+            applied beforehand. Note: In all cases, events returned will be based on
+            whether pre-processing was applied when loading the Sample.
         :param subsample: Whether to return all events or just the subsampled
             events. Default is False (all events)
         :param event_mask: Filter Sample events by a given Boolean array (events marked
@@ -641,10 +556,8 @@ class Sample(object):
             events = self._get_comp_events()
         elif source == 'raw':
             events = self._get_raw_events()
-        elif source == 'orig':
-            events = self._get_orig_events()
         else:
-            raise ValueError("source must be one of 'orig', 'raw', 'comp', or 'xform'")
+            raise ValueError("source must be one of 'raw', 'comp', or 'xform'")
         
         if subsample:
             events = events[self.subsample_indices]
@@ -670,9 +583,9 @@ class Sample(object):
         """
         Returns a pandas DataFrame of event data.
 
-        :param source: 'orig', 'raw', 'comp', 'xform' for whether the original (no gain applied),
-            raw (orig + gain), compensated (raw + comp), or transformed (comp + xform) events will
-            be returned
+        :param source: 'raw', 'comp', 'xform' for whether the raw (uncompensated, non-transformed,
+            optionally pre-processed), compensated (raw + comp), or transformed (comp + xform)
+            events are returned
         :param subsample: Whether to return all events or just the subsampled
             events. Default is False (all events)
         :param event_mask: Filter Sample events by a given Boolean array (events marked
