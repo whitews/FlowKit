@@ -22,7 +22,7 @@ fcs_file_paths = ["data/100715.fcs", "data/109567.fcs", "data/113548.fcs"]
 
 # Samples
 data1_sample = fk.Sample(data1_fcs_path)
-data1_sample_with_orig = fk.Sample(data1_fcs_path, cache_original_events=True)
+data1_sample_with_orig = fk.Sample(data1_fcs_path, preprocess=False)
 null_chan_sample = fk.Sample(data1_fcs_path, null_channel_list=['FL1-H'])
 test_sample = fk.Sample(fcs_path, subsample=2000)
 test_samples_base_set = fk.load_samples(fcs_file_paths)
