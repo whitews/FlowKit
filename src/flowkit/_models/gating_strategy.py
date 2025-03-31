@@ -279,13 +279,38 @@ class GatingStrategy(object):
                     # Any other case, the reference gate path is longer than the modified gate,
                     # so not affected by the change.
 
-        # Need to change the gate node name & the gate's gate_name attribute
+        # Need to update both the gate node & the gate.
+        # The gate node name is straight-forward for all cases.
         gate_node.name = new_gate_name
-        gate.gate_name = new_gate_name
 
-        # check for custom gates, need to change those too
-        for custom_gate in gate_node.custom_gates.values():
-            custom_gate.gate_name = new_gate_name
+        if isinstance(gate, fk_gates.Quadrant):
+            # individual quadrants have an 'id' & not a 'gate_name'
+            # attribute since they aren't true gates themselves.
+            gate.id = new_gate_name
+
+            # And their owning QuadrantGate references them via a
+            # dict whose key needs updating as well.
+            owning_quad_gate = gate_node.parent.gate
+            owning_quad_gate.quadrants[new_gate_name] = owning_quad_gate.quadrants.pop(gate_name)
+
+            # Finally, check if the QuadrantGate node has any custom gates.
+            # These Quadrant instances and dict keys need updating too.
+            for custom_quad_gate in gate_node.parent.custom_gates.values():
+                # find quadrant
+                custom_quadrant = custom_quad_gate.quadrants[gate_name]
+
+                # update 'id' attribute
+                custom_quadrant.id = new_gate_name
+
+                # update key
+                custom_quad_gate.quadrants[new_gate_name] = custom_quad_gate.quadrants.pop(gate_name)
+        else:
+            # All other gate types are simpler, and only have gate_name
+            gate.gate_name = new_gate_name
+
+            # check for custom gates, need to change those too
+            for custom_gate in gate_node.custom_gates.values():
+                custom_gate.gate_name = new_gate_name
 
         # rebuild DAG
         self._rebuild_dag()
