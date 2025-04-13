@@ -16,7 +16,7 @@ import warnings
 # noinspection PyProtectedMember
 from .._models.transforms import _transforms
 # noinspection PyProtectedMember
-from .._models.transforms._matrix import Matrix
+from .._models.transforms._matrix import Matrix, SpectralMatrix
 from .._utils import plot_utils
 from ..exceptions import FlowKitException
 
@@ -446,7 +446,7 @@ class Sample(object):
 
         :param compensation: Compensation matrix, which can be a:
 
-                - Matrix instance
+                - Matrix or SpectralMatrix instance
                 - NumPy array
                 - CSV file path
                 - pathlib Path object to a CSV or TSV file
@@ -457,7 +457,7 @@ class Sample(object):
             assume the columns are in the same order as the channel labels.
         :return: None
         """
-        if isinstance(compensation, Matrix):
+        if isinstance(compensation, (Matrix, SpectralMatrix)):
             tmp_matrix = compensation
         elif compensation is not None:
             detectors = [self.pnn_labels[i] for i in self.fluoro_indices]
