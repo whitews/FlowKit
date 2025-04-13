@@ -15,7 +15,7 @@ from .._models import gates as fk_gates
 # noinspection PyProtectedMember
 from .._models.transforms._base_transform import Transform
 # noinspection PyProtectedMember
-from .._models.transforms._matrix import Matrix
+from .._models.transforms._matrix import Matrix, SpectralMatrix
 from .._models.gating_results import GatingResults
 from ..exceptions import GateTreeError, GateReferenceError, QuadrantReferenceError
 
@@ -450,7 +450,7 @@ class GatingStrategy(object):
             )
 
         # Only accept Matrix class instances as we need the ID
-        if not isinstance(matrix, Matrix):
+        if not isinstance(matrix, (Matrix, SpectralMatrix)):
             raise TypeError("matrix must be an instance of the Matrix class")
 
         if matrix_id in self.comp_matrices:
