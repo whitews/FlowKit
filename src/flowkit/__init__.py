@@ -3,7 +3,7 @@ Defines the public API for FlowKit
 """
 from ._models.sample import Sample
 # noinspection PyProtectedMember
-from ._models.transforms._matrix import Matrix
+from ._models.transforms._matrix import Matrix, SpectralMatrix
 from ._models import transforms
 from ._models import gates
 from ._models.gating_strategy import GatingStrategy
