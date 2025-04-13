@@ -12,7 +12,7 @@ from flowio.fcs_keywords import FCS_STANDARD_KEYWORDS
 from .xml_common import find_attribute_value, _get_xml_type
 from .._models.dimension import Dimension
 # noinspection PyProtectedMember
-from .._models.transforms._matrix import Matrix
+from .._models.transforms._matrix import Matrix, SpectralMatrix
 # noinspection PyProtectedMember
 from .._models.transforms import _transforms, _wsp_transforms
 # noinspection PyProtectedMember
@@ -77,6 +77,16 @@ def _parse_wsp_compensation(sample_el, transform_ns, data_type_ns):
     matrix_name = matrix_el.attrib['name']
     matrix_prefix = matrix_el.attrib['prefix']
     matrix_suffix = matrix_el.attrib['suffix']
+    matrix_spectral = matrix_el.attrib['spectral']  # check for conventional vs spectral matrix
+
+    if matrix_spectral == '1':
+        # we have a spectral matrix, check the algo type
+        matrix_spectral = True
+        matrix_spectral_algo = matrix_el.attrib['weightOptAlgorithmType']
+        if matrix_spectral_algo != 'OLS':
+            raise NotImplementedError("Spectral matrices of type %s are not supported." % matrix_spectral_algo)
+    else:
+        matrix_spectral = False
 
     detectors = []
     matrix_array = []
@@ -92,7 +102,12 @@ def _parse_wsp_compensation(sample_el, transform_ns, data_type_ns):
         namespaces=matrix_el.nsmap
     )
 
-    for spill_el in spill_els:
+    # For spectral matrices, the array is not square so we need
+    # to gather to parameter names for the rows & their order.
+    # Each element in spill_els will repeat this full list, we
+    # only need the first.
+    detectors_by_row = []
+    for i, spill_el in enumerate(spill_els):
         matrix_row = []
 
         coefficient_els = spill_el.findall(
@@ -109,14 +124,27 @@ def _parse_wsp_compensation(sample_el, transform_ns, data_type_ns):
 
             matrix_row.append(float(value))
 
+            if i == 0:
+                row_param_name = find_attribute_value(co_el, data_type_ns, 'parameter')
+                detectors_by_row.append(row_param_name)
+
         matrix_array.append(matrix_row)
 
     matrix_array = np.array(matrix_array)
-    matrix = Matrix(
-        matrix_array,
-        detectors=detectors,
-        fluorochromes=['' for _ in detectors]
-    )
+
+    # Create Matrix of SpectralMatrix
+    if matrix_spectral:
+        matrix = SpectralMatrix(
+            matrix_array,
+            detectors=detectors_by_row,
+            true_detectors=detectors
+        )
+    else:
+        matrix = Matrix(
+            matrix_array,
+            detectors=detectors,
+            fluorochromes=['' for _ in detectors]
+        )
 
     matrix_dict = {
         'matrix_name': matrix_name,
