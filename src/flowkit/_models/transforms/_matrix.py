@@ -69,7 +69,11 @@ class Matrix(object):
         return f'{self.__class__.__name__}(dims: {len(self.detectors)})'
 
     def __eq__(self, other):
-        """Tests where 2 matrices share the same attributes."""
+        """
+        Tests where 2 matrices share the same attributes.
+
+        :param other: Matrix instance to compare
+        """
         if self.__class__ == other.__class__:
             this_attr = copy(self.__dict__)
             other_attr = copy(other.__dict__)
@@ -155,3 +159,105 @@ class Matrix(object):
             labels = self.detectors
 
         return pd.DataFrame(self.matrix, columns=labels, index=labels)
+
+
+class SpectralMatrix(object):
+    """
+    Represents a spectral compensation matrix using the ordinary least squares
+    method (OLS). Unlike conventional flow cytometry where one detector is
+    used per fluorochrome, spectral flow cytometry utilizes a larger number of
+    detectors than fluorochromes. The corresponding spectral matrix (M x N) is
+    not square, with more columns than rows (N > M). The rows (M) in the matrix
+    correspond to the "true" fluorochromes (i.e. those detectors with dedicated
+    fluorochromes). Note, there is no inverse method for this method of
+    compensation.
+
+    :param spill_data_array: NumPy array of matrix data
+    :param detectors: The full list of strings for all the detector labels.
+    :param true_detectors: The list of strings for the "true" detector labels
+        with dedicated fluorochromes.
+    """
+    def __init__(
+            self,
+            spill_data_array,
+            detectors,
+            true_detectors
+    ):
+        # Check that the order of the true detectors align with the first
+        # elements in detectors
+        for i, true_detector in enumerate(true_detectors):
+            if true_detector != detectors[i]:
+                raise FlowKitException("`true_detectors` must match the first elements of `detectors`")
+
+        self.matrix = spill_data_array
+        self.detectors = detectors
+        self.true_detectors = true_detectors
+
+    def __repr__(self):
+        return f'{self.__class__.__name__}(detectors: {len(self.detectors)}, true_detectors: {len(self.true_detectors)})'
+
+    def __eq__(self, other):
+        """
+        Tests where 2 matrices share the same attributes.
+
+        :param other: SpectralMatrix instance to compare
+        """
+        if self.__class__ == other.__class__:
+            this_attr = copy(self.__dict__)
+            other_attr = copy(other.__dict__)
+
+            # ignore 'private' attributes
+            this_delete = [k for k in this_attr.keys() if k.startswith('_')]
+            other_delete = [k for k in other_attr.keys() if k.startswith('_')]
+            for k in this_delete:
+                del this_attr[k]
+            for k in other_delete:
+                del other_attr[k]
+
+            # pop matrix attribute, need to compare NumPy array differently
+            this_matrix = this_attr.pop('matrix')
+            other_matrix = other_attr.pop('matrix')
+
+            if not np.array_equal(this_matrix, other_matrix):
+                return False
+
+            return this_attr == other_attr
+        else:
+            return False
+
+    def apply(self, sample):
+        """
+        Apply ordinary least squares (OLS) spectral compensation matrix to
+        given Sample instance.
+
+        :param sample: Sample instance with matching set of detectors
+        :return: NumPy array of compensated events
+        """
+        # Check that matrix detectors is a subset of the sample's fluoro
+        # channels
+        sample_fluoro_labels = [sample.pnn_labels[i] for i in sample.fluoro_indices]
+        if not set(self.detectors).issubset(sample_fluoro_labels):
+            raise FlowKitException("Detectors must be a subset of the Sample channels")
+
+        indices = [
+            sample.get_channel_index(d) for d in self.detectors
+        ]
+        events = sample.get_events(source='raw')
+
+        return flowutils.compensate.compensate_spectral_ols(
+            events,
+            self.matrix,
+            indices
+        )
+
+    def as_dataframe(self):
+        """
+        Returns the spectral compensation matrix as a pandas DataFrame. The columns
+        are all the detectors, the row indices indicate the true detectors.
+
+        :return: pandas DataFrame
+        """
+        detector_labels = self.detectors
+        true_detector_index = self.true_detectors
+
+        return pd.DataFrame(self.matrix, columns=detector_labels, index=true_detector_index)
