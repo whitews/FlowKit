@@ -7,6 +7,8 @@ Functions
 
 .. autofunction:: read_multi_dataset_fcs
 
+.. autofunction:: generate_transforms
+
 .. autofunction:: parse_gating_xml
 
 .. autofunction:: export_gatingml
