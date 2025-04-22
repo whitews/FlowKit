@@ -766,7 +766,9 @@ class Sample(object):
             x_min=None,
             x_max=None,
             y_min=None,
-            y_max=None
+            y_max=None,
+            width=900,
+            aspect_ratio=3
     ):
         """
         Plot a 2-D histogram of the specified channel data with the x-axis as the event index.
@@ -797,6 +799,10 @@ class Sample(object):
             be used with some padding to keep events off the edge of the plot.
         :param y_max: Upper bound of y-axis. If None, channel's max value will
             be used with some padding to keep events off the edge of the plot.
+        :param width: Width of the plot. Default is 900. By default, the width
+            to height ratio is 3:1 (default height of 300 pixels).
+        :param aspect_ratio: The width to height ratio of the plot. Default is
+            3. Set to 1 for a square plot.
         :return: A Bokeh Figure object containing the interactive channel plot.
         """
         channel_index = self.get_channel_index(channel_label_or_number)
@@ -827,8 +833,8 @@ class Sample(object):
             y_max=y_max
         )
 
-        fig.aspect_ratio = 3
-        fig.width = 1000
+        fig.aspect_ratio = aspect_ratio
+        fig.width = width
 
         return fig
 
