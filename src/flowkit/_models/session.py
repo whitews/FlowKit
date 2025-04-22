@@ -647,7 +647,9 @@ class Session(object):
             y_min=y_min,
             y_max=y_max,
             color_density=color_density,
-            bin_width=bin_width
+            bin_width=bin_width,
+            height=height,
+            width=width
         )
 
         p.title = Title(text=sample.id, align='center')
