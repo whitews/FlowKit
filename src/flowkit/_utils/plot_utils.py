@@ -336,7 +336,9 @@ def plot_scatter(
         y_min=None,
         y_max=None,
         color_density=True,
-        bin_width=4
+        bin_width=4,
+        height=600,
+        width=600
 ):
     """
     Creates a Bokeh scatter plot from the two 1-D data arrays.
@@ -363,6 +365,8 @@ def plot_scatter(
     :param bin_width: Bin size to use for the color density, in units of
         event point size. Larger values produce smoother gradients.
         Default is 4 for a 4x4 grid size.
+    :param height: Height of plot in pixels. Default is 600.
+    :param width: Width of plot in pixels. Default is 600.
     :return: A Bokeh Figure object containing the interactive scatter plot.
     """
     # before anything, check for event_mask
@@ -485,7 +489,9 @@ def plot_scatter(
     p = figure(
         tools=tools,
         x_range=(x_min, x_max),
-        y_range=(y_min, y_max)
+        y_range=(y_min, y_max),
+        width=width,
+        height=height
     )
 
     p.xaxis.axis_label = x_label
