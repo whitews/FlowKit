@@ -692,7 +692,9 @@ class Workspace(object):
             x_min=None,
             x_max=None,
             y_min=None,
-            y_max=None
+            y_max=None,
+            height=600,
+            width=600
     ):
         """
         Returns an interactive scatter plot for the specified channel data.
@@ -720,6 +722,8 @@ class Workspace(object):
             be used with some padding to keep events off the edge of the plot.
         :param y_max: Upper bound of y-axis. If None, channel's max value will
             be used with some padding to keep events off the edge of the plot.
+        :param height: Height of plot in pixels. Default is 600.
+        :param width: Width of plot in pixels. Default is 600.
         :return: A Bokeh Figure object containing the interactive scatter plot.
         """
         # Get Sample instance and apply requested subsampling
@@ -787,7 +791,9 @@ class Workspace(object):
             y_min=y_min,
             y_max=y_max,
             color_density=color_density,
-            bin_width=bin_width
+            bin_width=bin_width,
+            height=height,
+            width=width
         )
 
         p.title = Title(text=sample.id, align='center')
