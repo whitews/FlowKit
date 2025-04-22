@@ -530,7 +530,7 @@ class Sample(object):
 
         return self._transformed_events
 
-    def get_events(self, source='xform', subsample=False, event_mask=None):
+    def get_events(self, source='xform', subsample=False, event_mask=None, col_order=None):
         """
         Returns a NumPy array of event data.
 
@@ -548,6 +548,7 @@ class Sample(object):
             events. Default is False (all events)
         :param event_mask: Filter Sample events by a given Boolean array (events marked
             True will be returned). Can be combined with the subsample option.
+        :param col_order: PnN label list for the channel columns and their order
         :return: NumPy array of event data
         """
         if source == 'xform':
@@ -568,6 +569,14 @@ class Sample(object):
 
         if event_mask is not None:
             events = events[event_mask]
+
+        if col_order is not None:
+            col_indices = []
+            for pnn_label in col_order:
+                col_idx = self.get_channel_index(pnn_label)
+                col_indices.append(col_idx)
+
+            events = events[:, col_indices]
 
         return events
 
