@@ -284,7 +284,7 @@ def render_ellipse(center_x, center_y, covariance_matrix, distance_square):
     return ellipse
 
 
-def plot_histogram(x, x_label='x', bins=None):
+def plot_histogram(x, x_label='x', bins=None, width=600, height=600):
     """
     Creates a Bokeh histogram plot of the given 1-D data array.
 
@@ -293,6 +293,8 @@ def plot_histogram(x, x_label='x', bins=None):
     :param bins: Number of bins to use for the histogram or a string compatible
             with the NumPy histogram function. If None, the number of bins is
             determined by the square root rule.
+    :param height: Height of plot in pixels. Default is 600.
+    :param width: Width of plot in pixels. Default is 600.
     :return: Bokeh Figure object containing the histogram
     """
     if bins is None:
@@ -302,7 +304,7 @@ def plot_histogram(x, x_label='x', bins=None):
 
     tools = "crosshair,hover,pan,zoom_in,zoom_out,box_zoom,undo,redo,reset,save,"
 
-    p = figure(tools=tools)
+    p = figure(tools=tools, width=width, height=height)
     p.title.align = 'center'
     p.quad(
         top=hist,
@@ -521,7 +523,9 @@ def plot_contours(
         y_min=None,
         y_max=None,
         plot_events=False,
-        fill=False
+        fill=False,
+        width=600,
+        height=600
 ):
     """
     Create a Bokeh plot of contours from the two 1-D data arrays.
@@ -542,6 +546,8 @@ def plot_contours(
         addition to the contours.
     :param fill: Whether to color fill contours by density, similar
         to a heat map. Default is False.
+    :param height: Height of plot in pixels. Default is 600.
+    :param width: Width of plot in pixels. Default is 600.
     :return: A Bokeh Figure object containing the interactive scatter plot.
     """
     # Calculate Gaussian KDE, using default bandwidth & grid size (maybe expose these later?)
@@ -575,14 +581,17 @@ def plot_contours(
             x, y,
             x_label=x_label, y_label=y_label,
             x_min=x_min, x_max=x_max,
-            y_min=y_min, y_max=y_max
+            y_min=y_min, y_max=y_max,
+            height=height, width=width
         )
     else:
         tools = "crosshair,hover,pan,zoom_in,zoom_out,box_zoom,undo,redo,reset,save,"
         fig = figure(
             tools=tools,
             x_range=(x_min, x_max),
-            y_range=(y_min, y_max)
+            y_range=(y_min, y_max),
+            height=height,
+            width=width
         )
 
         fig.xaxis.axis_label = x_label
@@ -622,7 +631,9 @@ def plot_gate(
         y_min=None,
         y_max=None,
         color_density=True,
-        bin_width=4
+        bin_width=4,
+        width=600,
+        height=600
 ):
     """
     Returns an interactive plot for the specified gate. The type of plot is
@@ -651,6 +662,8 @@ def plot_gate(
     :param bin_width: Bin size to use for the color density, in units of
         event point size. Larger values produce smoother gradients.
         Default is 4 for a 4x4 grid size.
+    :param height: Height of plot in pixels. Default is 600.
+    :param width: Width of plot in pixels. Default is 600.
     :return: A Bokeh Figure object containing the interactive scatter plot.
     """
     (gate_name, gate_path) = gate_id
@@ -782,10 +795,12 @@ def plot_gate(
             y_min=y_min,
             y_max=y_max,
             color_density=color_density,
-            bin_width=bin_width
+            bin_width=bin_width,
+            height=height,
+            width=width
         )
     elif gate_type == 'hist':
-        p = plot_histogram(x, dim_ids[0])
+        p = plot_histogram(x, dim_ids[0], height=height, width=width)
     else:
         raise NotImplementedError("Only histograms and scatter plots are supported in this version of FlowKit")
 
