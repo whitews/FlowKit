@@ -217,10 +217,8 @@ class GatingStrategy(object):
 
     def rename_gate(self, gate_name, new_gate_name, gate_path=None):
         """
-        Rename a gate in the gating strategy. Any descendant gates will also be removed
-        unless keep_children=True. In all cases, if a BooleanGate exists that references
-        the gate to remove, a GateTreeError will be thrown indicating the BooleanGate
-        must be removed prior to removing the gate.
+        Rename a gate in the gating strategy. Any custom sample gates associated with the gate
+        will also be renamed.
 
         :param gate_name: text string of existing gate name
         :param new_gate_name: text string for new gate name
