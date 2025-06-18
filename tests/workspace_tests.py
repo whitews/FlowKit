@@ -542,7 +542,7 @@ class WorkspaceTestCase(unittest.TestCase):
         wsp.analyze_samples(sample_id=sample_id)
         report = wsp.get_analysis_report(group_name=sample_grp)
 
-        self.assertEqual(report['sample'].nunique(), 1)
+        self.assertEqual(report['sample_id'].nunique(), 1)
 
     def test_parse_wsp_sample_without_gates(self):
         wsp_path = "data/8_color_data_set/8_color_ICS_sample_without_gates.wsp"
@@ -570,7 +570,7 @@ class WorkspaceTestCase(unittest.TestCase):
         self.assertEqual(time_count, 257482)
 
         report = wsp.get_analysis_report(group_name=sample_grp)
-        self.assertEqual(2, len(report['sample'].unique()))
+        self.assertEqual(2, len(report['sample_id'].unique()))
 
     def test_extract_sample_data(self):
         wsp_path = "data/8_color_data_set/8_color_ICS.wsp"
