@@ -29,13 +29,17 @@ class Workspace(object):
         gate data for these missing files will not be retained. Default is False.
     :param find_fcs_files_from_wsp: Controls whether to search for FCS files based on `URI` params
         within the FlowJo workspace file.
+    :param filename_as_id: Boolean option for using the file name (as it exists on the filesystem)
+        as Sample ID, default is False. Only applies to file paths given to the 'fcs_samples'
+        argument.
     """
     def __init__(
             self,
             wsp_file_path,
             fcs_samples=None,
             ignore_missing_files=False,
-            find_fcs_files_from_wsp=False
+            find_fcs_files_from_wsp=False,
+            filename_as_id=False
     ):
         # The sample LUT holds sample IDs (keys) only for loaded samples.
         # The values are the Sample instances
@@ -67,7 +71,11 @@ class Workspace(object):
         self._results_lut = {}
         
         # load samples we were given, we'll cross-reference against wsp below
-        tmp_sample_lut = {s.id: s for s in sample_utils.load_samples(fcs_samples)}
+        tmp_sample_lut = {
+            s.id: s for s in sample_utils.load_samples(
+                fcs_samples, filename_as_id=filename_as_id, use_flowjo_labels=True
+            )
+        }
         self._sample_lut = {}
 
         wsp_data = wsp_utils.parse_wsp(wsp_file_path)
@@ -94,7 +102,7 @@ class Workspace(object):
                     continue
 
                 # Read in the sample file
-                sample_filedata = sample_utils.load_samples(path)[0]
+                sample_filedata = sample_utils.load_samples(path, filename_as_id=filename_as_id)[0]
 
                 # Update the ID of the loaded data (otherwise analysis breaks)
                 sample_filedata.id = sample_name
