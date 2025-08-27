@@ -102,6 +102,9 @@ class Sample(object):
         for analysis, so the default is True. In either case, the non-compensated, non-transformed
         event data array is retrievable via the get_events() method with source='raw'.
 
+    :param use_flowjo_labels: FlowJo converts forward slashes ('/') in PnN labels to underscores.
+        This option matches that behavior. Default is False.
+
     :param subsample: The number of events to use for subsampling. The number of subsampled events
         can be changed after instantiation using the `subsample_events` method. The random seed can
         also be specified using that method. Subsampled events are used predominantly for speeding
@@ -119,6 +122,7 @@ class Sample(object):
             ignore_offset_discrepancy=False,
             use_header_offsets=False,
             preprocess=True,
+            use_flowjo_labels=False,
             subsample=10000
     ):
         """
@@ -240,7 +244,8 @@ class Sample(object):
         # FlowJo references channels with "/" characters by replacing them
         # with underscores. Cache FlowJo PnN label versions for downstream
         # compatibility with FlowJo workspaces.
-        self._flowjo_pnn_labels = [label.replace('/', '_') for label in self.pnn_labels]
+        if use_flowjo_labels:
+            self.pnn_labels = [label.replace('/', '_') for label in self.pnn_labels]
 
         # Get event data. The FlowData.as_array() method converts the list mode
         # data to a 2-D NumPy array with the option to pre-process the data
@@ -634,11 +639,7 @@ class Sample(object):
         :param label: PnN channel label
         :return: Channel number (not index)
         """
-        if label in self.pnn_labels:
-            return self.pnn_labels.index(label) + 1
-        else:
-            # as a last resort we can try the FJ labels and fail if no match
-            return self._flowjo_pnn_labels.index(label) + 1
+        return self.pnn_labels.index(label) + 1
 
     def get_channel_index(self, channel_label_or_number):
         """
@@ -703,9 +704,6 @@ class Sample(object):
         # Update self.channels
         self.channels['pnn'] = self.pnn_labels
         self.channels['pns'] = self.pns_labels
-
-        # Update self._flowjo_pnn_labels
-        self._flowjo_pnn_labels[chan_idx] = new_label.replace('/', '_')
 
     def _transform(self, transform, include_scatter=False):
         if isinstance(transform, _transforms.RatioTransform):
