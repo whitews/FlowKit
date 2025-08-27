@@ -715,6 +715,8 @@ def plot_gate(
 
     # Apply requested subsampling
     sample.subsample_events(subsample_count=subsample_count, random_seed=random_seed)
+
+    # TODO: investigate whether caching processed events speeds up plotting
     # noinspection PyProtectedMember
     events = gating_strategy._preprocess_sample_events(
         sample,
