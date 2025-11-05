@@ -23,7 +23,7 @@ class Workspace(object):
         be a list of file paths or a list of Sample instances. Lists of mixed types are not
         supported. Note that only FCS files matching the ones referenced in the .wsp file will
         be retained in the Workspace.
-    :param ignore_missing_files: Controls behavior for missing FCS files. If True, gate data for
+    :param load_missing_file_data: Controls behavior for missing FCS files. If True, gate data for
         missing FCS files (i.e. not in fcs_samples arg) will still be loaded. If False, warnings
         are issued for FCS files found in the WSP file that were not loaded in the Workspace and
         gate data for these missing files will not be retained. Default is False.
@@ -37,7 +37,7 @@ class Workspace(object):
             self,
             wsp_file_path,
             fcs_samples=None,
-            ignore_missing_files=False,
+            load_missing_file_data=False,
             find_fcs_files_from_wsp=False,
             filename_as_id=False
     ):
@@ -120,12 +120,12 @@ class Workspace(object):
                 self._sample_data_lut[sample_id] = sample_dict
             else:
                 # we have gating info for a sample that wasn't loaded
-                if ignore_missing_files:
-                    # we're instructed to ignore missing files, so we'll still
-                    # save the gate info for retrieval purposes
+                if load_missing_file_data:
+                    # We were instructed to load data for missing files, so
+                    # we'll still save the gate info for retrieval purposes
                     self._sample_data_lut[sample_id] = sample_dict
                 else:
-                    # we won't ignore missing files, issue a warning
+                    # we won't load data for missing files, issue a warning
                     # and remove any references to the sample
                     msg = "WSP references %s, but sample was not loaded." % sample_id
                     warnings.warn(msg)
@@ -213,7 +213,7 @@ class Workspace(object):
         else:
             # No group name specified so give user all sample IDs
             # sample data LUT contains all sample IDs, incl. missing IDs
-            # referenced in the wsp (if ignore_missing_files was True)
+            # referenced in the wsp (if load_missing_file_data was True)
             sample_ids = set(self._sample_data_lut.keys())
 
         # check if only loaded samples were requested

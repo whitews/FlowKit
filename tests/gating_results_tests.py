@@ -10,7 +10,7 @@ wsp_path = "data/8_color_data_set/reused_quad_gate_with_child.wsp"
 group_name = 'All Samples'
 sample_id = '101_DEN084Y5_15_E01_008_clean.fcs'
 
-fks = Workspace(wsp_path, fcs_samples=copy.deepcopy(test_samples_8c_full_set), ignore_missing_files=True)
+fks = Workspace(wsp_path, fcs_samples=copy.deepcopy(test_samples_8c_full_set), load_missing_file_data=True)
 fks.analyze_samples(group_name=group_name, sample_id=sample_id)
 results_8c_sample_008 = fks.get_gating_results(sample_id=sample_id)
 

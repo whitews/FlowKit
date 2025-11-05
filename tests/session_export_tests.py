@@ -91,7 +91,7 @@ class SessionExportTestCase(unittest.TestCase):
         gate_name = 'TNFa+'
         gate_path = ('root', 'Time', 'Singlets', 'aAmine-', 'CD3+', 'CD4+')
 
-        wsp = Workspace(wsp_path, fcs_samples=copy.deepcopy(test_samples_8c_full_set), ignore_missing_files=True)
+        wsp = Workspace(wsp_path, fcs_samples=copy.deepcopy(test_samples_8c_full_set), load_missing_file_data=True)
         sample_id = '101_DEN084Y5_15_E03_009_clean.fcs'
         gs = wsp.get_gating_strategy(sample_id)
 
@@ -101,7 +101,7 @@ class SessionExportTestCase(unittest.TestCase):
         session.export_wsp(out_file, sample_grp)
         out_file.seek(0)
 
-        wsp_out = Workspace(out_file, fcs_samples=copy.deepcopy(test_samples_8c_full_set), ignore_missing_files=True)
+        wsp_out = Workspace(out_file, fcs_samples=copy.deepcopy(test_samples_8c_full_set), load_missing_file_data=True)
 
         self.assertIsInstance(wsp_out, Workspace)
 
