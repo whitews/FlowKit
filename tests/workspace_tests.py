@@ -431,7 +431,7 @@ class WorkspaceTestCase(unittest.TestCase):
 
         self.assertRaisesRegex(
             GateTreeError,
-            r"Gate name '\.' is incompatible with FlowKit\. " 
+            r"Gate name '\.' is incompatible with FlowKit\. "
             r"Gate was found in path: \/root\/Time\/Singlets\/aAmine-\/CD3\+\/CD4\+",
             Workspace,
             wsp_path,
