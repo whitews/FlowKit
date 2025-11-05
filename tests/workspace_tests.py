@@ -22,7 +22,7 @@ wsp_8_color = Workspace(
 )
 wsp_8_color_no_files = Workspace(
     "data/8_color_data_set/8_color_ICS.wsp",
-    ignore_missing_files=True
+    load_missing_file_data=True
 )
 
 
@@ -91,7 +91,7 @@ class WorkspaceTestCase(unittest.TestCase):
         wsp = Workspace(
             wsp_path,
             fcs_samples=fcs_set_missing_sample,
-            ignore_missing_files=True  # need to ignore the missing sample
+            load_missing_file_data=True  # need to ignore the missing sample
         )
         loaded_sample_ids = wsp.get_sample_ids()
         all_sample_ids = wsp.get_sample_ids(loaded_only=False)
@@ -123,7 +123,7 @@ class WorkspaceTestCase(unittest.TestCase):
         wsp = Workspace(
             wsp_path,
             fcs_samples=copy.deepcopy(test_samples_8c_full_set),
-            ignore_missing_files=True
+            load_missing_file_data=True
         )
 
         keywords = wsp.get_keywords(sample_id)
@@ -137,7 +137,7 @@ class WorkspaceTestCase(unittest.TestCase):
         wsp = Workspace(
             wsp_path,
             fcs_samples=copy.deepcopy(test_samples_8c_full_set),
-            ignore_missing_files=True
+            load_missing_file_data=True
         )
 
         comp_matrix = wsp.get_comp_matrix(sample_id)
@@ -151,7 +151,7 @@ class WorkspaceTestCase(unittest.TestCase):
         wsp = Workspace(
             wsp_path,
             fcs_samples=copy.deepcopy(test_samples_8c_full_set),
-            ignore_missing_files=True
+            load_missing_file_data=True
         )
 
         xform_lut = wsp.get_transforms(sample_id)
@@ -168,7 +168,7 @@ class WorkspaceTestCase(unittest.TestCase):
         wsp = Workspace(
             wsp_path,
             fcs_samples=copy.deepcopy(test_samples_8c_full_set),
-            ignore_missing_files=True
+            load_missing_file_data=True
         )
 
         child_gate_ids = wsp.get_child_gate_ids(sample_id, gate_name)
@@ -190,7 +190,7 @@ class WorkspaceTestCase(unittest.TestCase):
         wsp = Workspace(
             wsp_path,
             fcs_samples=copy.deepcopy(test_samples_8c_full_set),
-            ignore_missing_files=True
+            load_missing_file_data=True
         )
         gate_paths = wsp.find_matching_gate_paths(sample_id, gate_name)
 
@@ -211,7 +211,7 @@ class WorkspaceTestCase(unittest.TestCase):
         wsp = Workspace(
             wsp_path,
             fcs_samples=copy.deepcopy(test_samples_8c_full_set),
-            ignore_missing_files=True
+            load_missing_file_data=True
         )
 
         wsp.analyze_samples(sample_id=sample_id)
@@ -418,7 +418,7 @@ class WorkspaceTestCase(unittest.TestCase):
         gate_name = 'ellipse1'
         gate_path = ('root', 'Time', 'Singlets', 'aAmine-', 'CD3+')
 
-        wsp = Workspace(wsp_path, fcs_samples=fcs_path, ignore_missing_files=True)
+        wsp = Workspace(wsp_path, fcs_samples=fcs_path, load_missing_file_data=True)
 
         wsp.analyze_samples(sample_id=sample_id)
         gate_indices = wsp.get_gate_membership(sample_id, gate_name, gate_path=gate_path)
@@ -435,7 +435,7 @@ class WorkspaceTestCase(unittest.TestCase):
             r"Gate was found in path: \/root\/Time\/Singlets\/aAmine-\/CD3\+\/CD4\+",
             Workspace,
             wsp_path,
-            ignore_missing_files=True
+            load_missing_file_data=True
         )
 
     def test_parse_wsp_with_boolean_gates(self):
@@ -467,7 +467,7 @@ class WorkspaceTestCase(unittest.TestCase):
         gate_name_06 = 'CD107a+'
         gate_path_06 = ('root', 'Time', 'Singlets', 'aAmine-', 'CD3+', 'CD8+', 'TNFa+-')
 
-        wsp = Workspace(wsp_path, fcs_samples=fcs_path, ignore_missing_files=True)
+        wsp = Workspace(wsp_path, fcs_samples=fcs_path, load_missing_file_data=True)
 
         wsp.analyze_samples(sample_id=sample_id)
         gating_results = wsp.get_gating_results(sample_id)
@@ -494,7 +494,7 @@ class WorkspaceTestCase(unittest.TestCase):
         gate_name = 'TNFa+'
         gate_path = ('root', 'Time', 'Singlets', 'aAmine-', 'CD3+', 'CD4+')
 
-        wsp = Workspace(wsp_path, fcs_samples=fcs_path, ignore_missing_files=True)
+        wsp = Workspace(wsp_path, fcs_samples=fcs_path, load_missing_file_data=True)
 
         wsp.analyze_samples(sample_id=sample_id)
         gate_indices = wsp.get_gate_membership(sample_id, gate_name, gate_path=gate_path)
@@ -507,7 +507,7 @@ class WorkspaceTestCase(unittest.TestCase):
         group_name = 'DEN'
         gate_name = 'IFNg+'
 
-        wsp = Workspace(wsp_path, ignore_missing_files=True)
+        wsp = Workspace(wsp_path, load_missing_file_data=True)
         sample_ids = wsp.get_sample_ids(group_name, loaded_only=False)
 
         self.assertRaises(GateReferenceError, wsp.get_child_gate_ids, sample_ids[0], gate_name)
@@ -515,7 +515,7 @@ class WorkspaceTestCase(unittest.TestCase):
     def test_parse_wsp_reused_gate_with_child(self):
         wsp_path = "data/8_color_data_set/reused_quad_gate_with_child.wsp"
 
-        wsp = Workspace(wsp_path, fcs_samples=copy.deepcopy(test_samples_8c_full_set), ignore_missing_files=True)
+        wsp = Workspace(wsp_path, fcs_samples=copy.deepcopy(test_samples_8c_full_set), load_missing_file_data=True)
         group_name = 'All Samples'
         gate_name = 'some_child_gate'
 
@@ -552,7 +552,7 @@ class WorkspaceTestCase(unittest.TestCase):
         wsp = Workspace(
             wsp_path, 
             fcs_samples=copy.deepcopy(test_samples_8c_full_set), 
-            ignore_missing_files=False
+            load_missing_file_data=False
         )
 
         sample_ids = wsp.get_sample_ids(group_name=sample_grp)
