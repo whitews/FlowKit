@@ -614,7 +614,8 @@ class Workspace(object):
             y_min=None,
             y_max=None,
             color_density=True,
-            bin_width=4
+            bin_width=4,
+            hist_bins=None
     ):
         """
         Returns an interactive plot for the specified gate. The type of plot is
@@ -643,6 +644,10 @@ class Workspace(object):
         :param bin_width: Bin size to use for the color density, in units of
             event point size. Larger values produce smoother gradients.
             Default is 4 for a 4x4 grid size.
+        :param hist_bins: If the gate is only in 1 dimension, this option
+            controls the number of bins to use for the histogram. If None,
+            the number of bins is determined by the square root rule. This
+            option is ignored for any gates in more than 1 dimension.
         :return: A Bokeh Figure object containing the interactive scatter plot.
         """
         if gate_path is None:
@@ -681,7 +686,8 @@ class Workspace(object):
             y_min=y_min,
             y_max=y_max,
             color_density=color_density,
-            bin_width=bin_width
+            bin_width=bin_width,
+            hist_bins=hist_bins
         )
 
         return p

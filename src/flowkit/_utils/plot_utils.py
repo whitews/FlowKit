@@ -632,6 +632,7 @@ def plot_gate(
         y_max=None,
         color_density=True,
         bin_width=4,
+        hist_bins=None,
         width=600,
         height=600
 ):
@@ -662,6 +663,10 @@ def plot_gate(
     :param bin_width: Bin size to use for the color density, in units of
         event point size. Larger values produce smoother gradients.
         Default is 4 for a 4x4 grid size.
+    :param hist_bins: If the gate is only in 1 dimension, this option
+        controls the number of bins to use for the histogram. If None,
+        the number of bins is determined by the square root rule. This
+        option is ignored for any gates in more than 1 dimension.
     :param height: Height of plot in pixels. Default is 600.
     :param width: Width of plot in pixels. Default is 600.
     :return: A Bokeh Figure object containing the interactive scatter plot.
@@ -802,7 +807,7 @@ def plot_gate(
             width=width
         )
     elif gate_type == 'hist':
-        p = plot_histogram(x, dim_ids[0], height=height, width=width)
+        p = plot_histogram(x, dim_ids[0], height=height, width=width, bins=hist_bins)
     else:
         raise NotImplementedError("Only histograms and scatter plots are supported in this version of FlowKit")
 
