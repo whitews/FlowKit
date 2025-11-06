@@ -95,12 +95,13 @@ class Sample(object):
     :param use_header_offsets: use the HEADER section for the data offset locations, default is False.
         Setting this option to True also suppresses an error in cases of an offset discrepancy.
 
-    :param preprocess: Original events are the unprocessed events as stored in the FCS binary,
-        meaning they have not been scaled according to channel gain, corrected for proper lin/log display,
-        or had the time channel scaled by the 'timestep' keyword value (if present). This option controls
-        whether to perform these preprocessing steps. Unprocessed event data is typically not useful
-        for analysis, so the default is True. In either case, the non-compensated, non-transformed
-        event data array is retrievable via the get_events() method with source='raw'.
+    :param preprocess: Controls whether preprocessing is applied to the 'raw' data (retrievable
+        via the get_events() method with source='raw'). Binary events in an FCS file are stored
+        unprocessed, meaning they have not been scaled according to channel gain, corrected for
+        proper lin/log display, or had the time channel scaled by the 'timestep' keyword value
+        (if present). Unprocessed event data is typically not useful for analysis, so the default
+        is True. Preprocessing does not include compensation or transformation (e.g. biex, Logicle)
+        which are separate operations.
 
     :param use_flowjo_labels: FlowJo converts forward slashes ('/') in PnN labels to underscores.
         This option matches that behavior. Default is False.
