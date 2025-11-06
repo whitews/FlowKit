@@ -126,6 +126,14 @@ class SampleTestCase(unittest.TestCase):
 
         self.assertRaises(ValueError, Sample, npy_data, channel_labels=channels)
 
+    def test_load_numpy_array_no_labels_raises(self):
+        npy_file_path = "data/test_comp_example.npy"
+        # noinspection SpellCheckingInspection
+
+        npy_data = np.fromfile(npy_file_path)
+
+        self.assertRaises(ValueError, Sample, npy_data, sample_id="my_sample")
+
     def test_load_dataframe_no_id_raises(self):
         npy_file_path = "data/test_comp_example.npy"
         # noinspection SpellCheckingInspection

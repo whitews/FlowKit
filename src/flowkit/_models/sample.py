@@ -183,6 +183,9 @@ class Sample(object):
             if sample_id is None:
                 raise ValueError("'sample_id' is required for a NumPy array")
 
+            if channel_labels is None:
+                raise ValueError("'channel_labels' is required for a NumPy array")
+
             tmp_file = TemporaryFile()
             flowio.create_fcs(
                 tmp_file,
