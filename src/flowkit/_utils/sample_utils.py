@@ -7,25 +7,64 @@ import flowio
 from .._models.sample import Sample
 
 
-def _get_samples_from_paths(sample_paths, filename_as_id=False, use_flowjo_labels=False):
+def _get_samples_from_paths(
+        sample_paths,
+        filename_as_id=False,
+        compensation=None,
+        null_channel_list=None,
+        preprocess=True,
+        use_flowjo_labels=False
+):
     """
     Load multiple Sample instances from a list of file paths
 
     :param sample_paths: list of file paths containing FCS files
     :param filename_as_id: Boolean option for using the file name (as it exists on the
         filesystem) for the Sample's ID, default is False.
+    :param compensation: Compensation matrix. The matrix must be applicable to all samples in
+        'fcs_samples'. Acceptable types include a Matrix instance, NumPy array, CSV file path,
+        pathlib Path object to a CSV or TSV file, or a string of CSV text
+    :param null_channel_list: List of PnN labels for acquired channels that do not contain
+        useful data. Note, this should only be used if no fluorochromes were used to target
+        those detectors. Null channels do not contribute to compensation and should not be
+        included in a compensation matrix for this sample. This option is ignored if
+        `fcs_path_or_data` is a FlowData object. The null channel list must be applicable
+        to all samples.
+    :param preprocess: Controls whether preprocessing is applied to the 'raw' data (retrievable
+        via Sample.get_events() with source='raw'). Binary events in an FCS file are stored
+        unprocessed, meaning they have not been scaled according to channel gain, corrected for
+        proper lin/log display, or had the time channel scaled by the 'timestep' keyword value
+        (if present). Unprocessed event data is typically not useful for analysis, so the default
+        is True. Preprocessing does not include compensation or transformation (e.g. biex, Logicle)
+        which are separate operations.
     :param use_flowjo_labels: FlowJo converts forward slashes ('/') in PnN labels to underscores.
         This option matches that behavior. Default is False.
     :return: list of Sample instances
     """
     samples = []
     for path in sample_paths:
-        samples.append(Sample(path, filename_as_id=filename_as_id, use_flowjo_labels=use_flowjo_labels))
+        samples.append(
+            Sample(
+                path,
+                filename_as_id=filename_as_id,
+                compensation=compensation,
+                null_channel_list=null_channel_list,
+                preprocess=preprocess,
+                use_flowjo_labels=use_flowjo_labels
+            )
+        )
 
     return samples
 
 
-def load_samples(fcs_samples, filename_as_id=False, use_flowjo_labels=False):
+def load_samples(
+        fcs_samples,
+        filename_as_id=False,
+        compensation=None,
+        null_channel_list=None,
+        preprocess=True,
+        use_flowjo_labels=False
+):
     """
     Returns a list of Sample instances from a variety of input types (fcs_samples), such as file or
         directory paths, a Sample instance, or lists of the previous types.
@@ -37,11 +76,28 @@ def load_samples(fcs_samples, filename_as_id=False, use_flowjo_labels=False):
     :param filename_as_id: Boolean option for using the file name (as it exists on the
         filesystem) for the Sample's ID, default is False. Only applies to file paths given to the
         'fcs_samples' argument.
+    :param compensation: Compensation matrix. The matrix must be applicable to all samples in
+        'fcs_samples'. Acceptable types include a Matrix instance, NumPy array, CSV file path,
+        pathlib Path object to a CSV or TSV file, or a string of CSV text
+    :param null_channel_list: List of PnN labels for acquired channels that do not contain
+        useful data. Note, this should only be used if no fluorochromes were used to target
+        those detectors. Null channels do not contribute to compensation and should not be
+        included in a compensation matrix for this sample. This option is ignored if
+        `fcs_path_or_data` is a FlowData object. The null channel list must be applicable
+        to all samples.
+    :param preprocess: Controls whether preprocessing is applied to the 'raw' data (retrievable
+        via Sample.get_events() with source='raw'). Binary events in an FCS file are stored
+        unprocessed, meaning they have not been scaled according to channel gain, corrected for
+        proper lin/log display, or had the time channel scaled by the 'timestep' keyword value
+        (if present). Unprocessed event data is typically not useful for analysis, so the default
+        is True. Preprocessing does not include compensation or transformation (e.g. biex, Logicle)
+        which are separate operations.
     :param use_flowjo_labels: FlowJo converts forward slashes ('/') in PnN labels to underscores.
         This option matches that behavior. Default is False.
     :return: list of Sample instances
     """
     sample_list = []
+    load_from_paths = None
 
     if isinstance(fcs_samples, list):
         # 'fcs_samples' is a list of either file paths or Sample instances
@@ -56,12 +112,13 @@ def load_samples(fcs_samples, filename_as_id=False, use_flowjo_labels=False):
                 "Each item in 'fcs_samples' list must be of the same type (FCS file path or Sample instance)."
             )
 
+        # Returning a list of Sample instances given that same list of samples
+        # seems pointless. This is here for other classes (Session, Workspace)
+        # to load samples without having to do any type checking.
         if Sample in sample_types:
             sample_list = fcs_samples
         elif str in sample_types:
-            sample_list = _get_samples_from_paths(
-                fcs_samples, filename_as_id=filename_as_id, use_flowjo_labels=use_flowjo_labels
-            )
+            load_from_paths = fcs_samples
     elif isinstance(fcs_samples, Sample):
         # 'fcs_samples' is a single Sample instance
         sample_list = [fcs_samples]
@@ -71,14 +128,20 @@ def load_samples(fcs_samples, filename_as_id=False, use_flowjo_labels=False):
         if os.path.isdir(fcs_samples):
             fcs_paths = glob(os.path.join(fcs_samples, '*.fcs'))
             if len(fcs_paths) > 0:
-                sample_list = _get_samples_from_paths(
-                    fcs_paths, filename_as_id=filename_as_id, use_flowjo_labels=use_flowjo_labels
-                )
+                load_from_paths = fcs_paths
         else:
             # assume a path to a single FCS file
-            sample_list = _get_samples_from_paths(
-                [fcs_samples], filename_as_id=filename_as_id, use_flowjo_labels=use_flowjo_labels
-            )
+            load_from_paths = [fcs_samples]
+
+    if load_from_paths is not None:
+        sample_list = _get_samples_from_paths(
+            load_from_paths,
+            filename_as_id=filename_as_id,
+            compensation=compensation,
+            null_channel_list=null_channel_list,
+            preprocess=preprocess,
+            use_flowjo_labels=use_flowjo_labels
+        )
 
     return sorted(sample_list)
 
