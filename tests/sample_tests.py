@@ -198,6 +198,14 @@ class SampleTestCase(unittest.TestCase):
         self.assertIsInstance(samples[0], Sample)
         self.assertEqual(samples[0].id, "test_data_2d_01.fcs")
 
+        # Test loading from Path object
+        samples_from_path_obj = load_samples(Path(fcs_2d_file_path))
+        self.assertIsInstance(samples_from_path_obj[0], Sample)
+
+        # Test loading from directory
+        samples_from_dir = load_samples(Path('data/simple_line_example/'))
+        self.assertIsInstance(samples_from_dir[0], Sample)
+
         # Test that attempting to load from a list of mixed types fails
         mixed_sample_list = [samples[0], fcs_2d_file_path]
         self.assertRaises(ValueError, load_samples, mixed_sample_list)
