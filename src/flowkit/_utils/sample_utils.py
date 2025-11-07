@@ -3,6 +3,7 @@ Utilities for meta & bulk Sample operations
 """
 import os
 from glob import glob
+from pathlib import Path
 import flowio
 from .._models.sample import Sample
 
@@ -16,7 +17,7 @@ def _get_samples_from_paths(
         use_flowjo_labels=False
 ):
     """
-    Load multiple Sample instances from a list of file paths
+    Load multiple Sample instances from a list of file paths or Path-like objects.
 
     :param sample_paths: list of file paths containing FCS files
     :param filename_as_id: Boolean option for using the file name (as it exists on the
@@ -66,8 +67,9 @@ def load_samples(
         use_flowjo_labels=False
 ):
     """
-    Returns a list of Sample instances from a variety of input types (fcs_samples), such as file or
-        directory paths, a Sample instance, or lists of the previous types.
+    Returns a list of Sample instances from a variety of input types (fcs_samples), such as a file or
+        directory path string, Path object, a Sample instance, or a list of the previous types. Lists
+        of mixed types are not supported.
 
     :param fcs_samples: Sample, str, or list. Allowed types: a Sample instance, list of Sample instances,
             a directory or file path, or a list of directory or file paths. If a directory, any .fcs
@@ -117,12 +119,12 @@ def load_samples(
         # to load samples without having to do any type checking.
         if Sample in sample_types:
             sample_list = fcs_samples
-        elif str in sample_types:
+        elif str in sample_types or Path in sample_types:
             load_from_paths = fcs_samples
     elif isinstance(fcs_samples, Sample):
         # 'fcs_samples' is a single Sample instance
         sample_list = [fcs_samples]
-    elif isinstance(fcs_samples, str):
+    elif isinstance(fcs_samples, (str, Path)):
         # 'fcs_samples' is a str to either a single FCS file or a directory
         # If directory, search non-recursively for files w/ .fcs extension
         if os.path.isdir(fcs_samples):
