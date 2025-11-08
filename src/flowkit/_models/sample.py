@@ -187,6 +187,11 @@ class Sample(object):
             if channel_labels is None:
                 raise ValueError("'channel_labels' is required for a NumPy array")
 
+            # TODO: Given a NumPy array should we just populate _raw_events directly
+            #       and bypass this FlowIO conversion process?
+            #       This would be faster and avoid a 32-bit conversion that will
+            #       slightly alter values if given a 64-bit array.
+            #       Though doing this may require re-factoring this constructor.
             tmp_file = TemporaryFile()
             flowio.create_fcs(
                 tmp_file,
