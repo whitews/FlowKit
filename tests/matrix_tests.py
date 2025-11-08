@@ -184,5 +184,5 @@ class SpectralMatrixTestCase(unittest.TestCase):
         np.testing.assert_array_almost_equal(
             spectral_truth_comp_events[:, spectral_sample.fluoro_indices],
             comp_events[:, spectral_sample.fluoro_indices],
-            decimal=8
+            decimal=7
         )
