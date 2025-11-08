@@ -2,6 +2,7 @@
 Configuration of test data
 """
 import numpy as np
+import os
 import warnings
 import flowkit as fk
 
@@ -13,10 +14,9 @@ fcs_file_path = "data/test_comp_example.fcs"
 comp_file_path = "data/comp_complete_example.csv"
 fcs_2d_file_path = "data/test_data_2d_01.fcs"
 fcs_index_sorted_path = "data/index_sorted/index_sorted_example.fcs"
-sample_id_with_spill = "101_DEN084Y5_15_E01_008_clean.fcs"
 csv_8c_comp_file_path = "data/8_color_data_set/den_comp.csv"
 csv_8c_comp_null_channel_file_path = "data/8_color_data_set/den_comp_null_channel.csv"
-
+spectral_data_dir = "data/spectral_data"
 
 fcs_file_paths = ["data/100715.fcs", "data/109567.fcs", "data/113548.fcs"]
 
@@ -28,6 +28,7 @@ test_sample = fk.Sample(fcs_path, subsample=2000)
 test_samples_base_set = fk.load_samples(fcs_file_paths)
 test_samples_8c_full_set = fk.load_samples("data/8_color_data_set/fcs_files")
 test_samples_8c_full_set_dict = {s.id: s for s in test_samples_8c_full_set}
+sample_id_with_spill = "101_DEN084Y5_15_E01_008_clean.fcs"
 sample_with_spill = test_samples_8c_full_set_dict[sample_id_with_spill]
 
 with warnings.catch_warnings():
@@ -199,6 +200,40 @@ spill01_fluoros = ["FITC", "PE", "PerCP"]
 spill01_detectors = ["FL1-H", "FL2-H", "FL3-H"]
 spill01_data = np.array([[1, 0.02, 0.06], [0.11, 1, 0.07], [0.09, 0.01, 1]])
 comp_matrix_01 = fk.Matrix(spill01_data, spill01_detectors, spill01_fluoros)
+
+#
+# Spectral Matrix
+#
+spectral_event_data = np.load(os.path.join(spectral_data_dir, "spectral_raw_events.npy"))
+spectral_fluoro_indices = np.load(os.path.join(spectral_data_dir, "spectral_fluoro_indices.npy"))
+spectral_all_detectors = [
+    'B510-A', 'B537-A', 'B602-A', 'B660-A', 'B675-A', 'B710-A', 'B750-A', 'B810-A',
+    'R675-A', 'R710-A', 'R780-A', 'UV379-A', 'UV446-A', 'UV515-A', 'UV585-A', 'UV610-A',
+    'UV660-A', 'UV736-A', 'UV809-A', 'V427-A', 'V450-A', 'V510-A', 'V540-A', 'V576-A', 'V595-A',
+    'V660-A', 'V710-A', 'V750-A', 'V785-A', 'YG585-A', 'YG602-A', 'YG730-A', 'YG780-A', 'B576-A',
+    'R660-A', 'R680-A', 'R730-A', 'UV540-A', 'UV695-A', 'V470-A', 'V615-A', 'V680-A',
+    'V845-A', 'YG660-A', 'YG670-A', 'YG695-A', 'YG750-A', 'YG825-A'
+]
+spectral_true_detectors = [
+    'B510-A', 'B537-A', 'B602-A', 'B660-A', 'B675-A', 'B710-A', 'B750-A', 'B810-A',
+    'R675-A', 'R710-A', 'R780-A', 'UV379-A', 'UV446-A', 'UV515-A', 'UV585-A', 'UV610-A',
+    'UV660-A', 'UV736-A', 'UV809-A', 'V427-A', 'V450-A', 'V510-A', 'V540-A', 'V576-A', 'V595-A',
+    'V660-A', 'V710-A', 'V750-A', 'V785-A', 'YG585-A', 'YG602-A', 'YG730-A', 'YG780-A'
+]
+spectral_sample_labels = [
+    'Time', 'FSC-A', 'FSC-W', 'FSC-H','SSC-A', 'SSC-W', 'SSC-H',
+    'UV379-A', 'UV446-A', 'UV515-A', 'UV540-A', 'UV585-A', 'UV610-A', 'UV660-A', 'UV695-A',
+    'UV736-A', 'UV809-A', 'V427-A', 'V450-A', 'V470-A', 'V510-A', 'V540-A', 'V576-A',
+    'V595-A', 'V615-A', 'V660-A', 'V680-A', 'V710-A', 'V750-A', 'V785-A', 'V845-A',
+    'B510-A', 'B537-A', 'B576-A', 'B602-A', 'B660-A', 'B675-A', 'B710-A', 'B750-A',
+    'B810-A', 'YG585-A', 'YG602-A', 'YG660-A', 'YG670-A', 'YG695-A', 'YG730-A', 'YG750-A',
+    'YG780-A', 'YG825-A', 'R660-A', 'R675-A', 'R680-A', 'R710-A', 'R730-A', 'R780-A'
+]
+spectral_sample = fk.Sample(
+    spectral_event_data, sample_id='spectral_sample.fcs', channel_labels=spectral_sample_labels
+)
+spectral_comp_matrix = np.load(os.path.join(spectral_data_dir, "spectral_comp_matrix.npy"))
+spectral_truth_comp_events = np.load(os.path.join(spectral_data_dir, "truth", "spectral_comp_events.npy"))
 
 # pnn, pns lists
 

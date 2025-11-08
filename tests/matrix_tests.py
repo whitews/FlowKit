@@ -16,6 +16,13 @@ from tests.test_config import (
     detectors_8c,
     fluorochromes_8c,
     csv_8c_comp_null_channel_file_path,
+    spectral_event_data,
+    spectral_fluoro_indices,
+    spectral_comp_matrix,
+    spectral_all_detectors,
+    spectral_true_detectors,
+    spectral_sample,
+    spectral_truth_comp_events
 )
 
 
@@ -109,3 +116,73 @@ class MatrixTestCase(unittest.TestCase):
 
         self.assertIsInstance(comp_events1, np.ndarray)
         self.assertIsInstance(comp_events2, np.ndarray)
+
+class SpectralMatrixTestCase(unittest.TestCase):
+    """
+    Tests related to the SpectralMatrix class
+    """
+    def setUp(self):
+        self.spectral_event_data = spectral_event_data
+        self.spectral_fluoro_indices = spectral_fluoro_indices
+        self.spectral_comp_matrix = spectral_comp_matrix
+        self.spectral_all_detectors = spectral_all_detectors
+        self.spectral_true_detectors = spectral_true_detectors
+
+    def test_spectral_matrix_create(self):
+        spec_matrix = fk.SpectralMatrix(
+            self.spectral_comp_matrix,
+            detectors=self.spectral_all_detectors,
+            true_detectors=self.spectral_true_detectors
+        )
+        self.assertIsInstance(spec_matrix, fk.SpectralMatrix)
+
+    def test_spectral_matrix_equal(self):
+        spec_matrix = fk.SpectralMatrix(
+            self.spectral_comp_matrix,
+            detectors=self.spectral_all_detectors,
+            true_detectors=self.spectral_true_detectors
+        )
+        spec_matrix2 = copy.deepcopy(spec_matrix)
+
+        self.assertEqual(spec_matrix, spec_matrix2)
+
+    def test_spectral_matrix_not_equal(self):
+        spec_matrix = fk.SpectralMatrix(
+            self.spectral_comp_matrix,
+            detectors=self.spectral_all_detectors,
+            true_detectors=self.spectral_true_detectors
+        )
+        spec_matrix2 = copy.deepcopy(spec_matrix)
+        spec_matrix2.matrix += 0.00001
+
+        self.assertNotEqual(spec_matrix, spec_matrix2)
+
+    def test_spectral_matrix_as_dataframe(self):
+        spec_matrix = fk.SpectralMatrix(
+            self.spectral_comp_matrix,
+            detectors=self.spectral_all_detectors,
+            true_detectors=self.spectral_true_detectors
+        )
+        df_spec_matrix = spec_matrix.as_dataframe()
+
+        self.assertIsInstance(df_spec_matrix, pd.DataFrame)
+        self.assertListEqual(list(df_spec_matrix.columns), spec_matrix.detectors)
+        self.assertListEqual(list(df_spec_matrix.index), spec_matrix.true_detectors)
+
+    def test_spectral_matrix_apply(self):
+        spec_matrix = fk.SpectralMatrix(
+            self.spectral_comp_matrix,
+            detectors=self.spectral_all_detectors,
+            true_detectors=self.spectral_true_detectors
+        )
+        comp_events = spec_matrix.apply(spectral_sample)
+
+        # Compare only the fluoro channel events
+        # The spectral Sample was created from a npy array and
+        # went through the FlowIO conversion process so the events
+        # are slightly different.
+        np.testing.assert_array_almost_equal(
+            spectral_truth_comp_events[:, spectral_sample.fluoro_indices],
+            comp_events[:, spectral_sample.fluoro_indices],
+            decimal=8
+        )
