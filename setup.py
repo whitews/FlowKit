@@ -15,17 +15,17 @@ with open("README.md", "r", encoding='utf-8') as fh:
     long_description = fh.read()
 
 reqs = [
-    'anytree>=2.12',
-    'bokeh>=3.4',
-    'contourpy>=1.2.0',
+    'anytree>=2.13',
+    'bokeh>=3.5',
+    'contourpy>=1.3.1',
     'flowio>=1.4.0,<1.5',
     'flowutils>=1.2.2,<1.3',
-    'lxml>=5.3',
-    'networkx>=3.2.1',
+    'lxml>=6.0',
+    'networkx>=3.3',
     'numpy>2',
-    'pandas>=2.1',
-    'psutil>=6',
-    'scipy>=1.13'
+    'pandas>=2.2',
+    'psutil>=7',
+    'scipy>=1.14'
 ]
 
 setup(
@@ -47,7 +47,6 @@ setup(
         'Programming Language :: Python :: 3.13',
         'Programming Language :: Python :: 3.12',
         'Programming Language :: Python :: 3.11',
-        'Programming Language :: Python :: 3.10',
-        'Programming Language :: Python :: 3.9'
+        'Programming Language :: Python :: 3.10'
     ]
 )
