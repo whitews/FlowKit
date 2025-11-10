@@ -33,6 +33,11 @@ pandas>=2.2
 #     - 7 supports 3.6+
 psutil>=7
 
+# pyarrow notes:
+#     - Only needed for Feather export, so can be conservative here
+#     - 18 supports python 3.9+
+pyarrow>=18
+
 # scipy notes:
 #     - 1.14 supports 3.10+
 scipy>=1.14

@@ -25,6 +25,7 @@ reqs = [
     'numpy>2',
     'pandas>=2.2',
     'psutil>=7',
+    'pyarrow>=18',
     'scipy>=1.14'
 ]
 
