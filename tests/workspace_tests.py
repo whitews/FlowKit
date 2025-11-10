@@ -589,3 +589,61 @@ class WorkspaceTestCase(unittest.TestCase):
         sample_keyword_count = len(sample_keywords)
 
         self.assertGreaterEqual(sample_keyword_count, 0)
+
+    def test_archive_results(self):
+        wsp_path = "data/8_color_data_set/8_color_ICS_simple.wsp"
+        sample_grp = 'DEN'
+
+        wsp = Workspace(wsp_path, fcs_samples=copy.deepcopy(test_samples_8c_full_set))
+        wsp.analyze_samples(group_name=sample_grp)
+
+        sample_metadata = {
+            '101_DEN084Y5_15_E01_008_clean.fcs': {'stim': 'Unstim'},
+            '101_DEN084Y5_15_E03_009_clean.fcs': {'stim': 'CMV'},
+            '101_DEN084Y5_15_E05_010_clean.fcs': {'stim': 'CEF'}
+        }
+        df_sample_metadata = pd.DataFrame.from_dict(sample_metadata, orient='index')
+
+        # set archive dir to local sub-dir here
+        archive_dir = 'data/archive_tmp'
+
+        wsp.archive_results(
+            sample_grp,
+            archive_dir,
+            output_prefix='8c_simple',
+            df_sample_metadata=df_sample_metadata,
+            overwrite=False
+        )
+
+        # test that all files were output
+        archive_file_listing = sorted(os.listdir(archive_dir))
+        archive_file_listing_truth = [
+            '8c_simple_all_events.feather',
+            '8c_simple_gate_id_lut.feather',
+             '8c_simple_gate_membership.feather',
+             '8c_simple_gate_tree.txt',
+             '8c_simple_gating_report.feather',
+             '8c_simple_panel.csv'
+        ]
+
+        self.assertListEqual(archive_file_listing, archive_file_listing_truth)
+
+        # test that the data-like files have the correct shapes
+        df_all_events = pd.read_feather(os.path.join(archive_dir, '8c_simple_all_events.feather'))
+        df_gate_lut = pd.read_feather(os.path.join(archive_dir, '8c_simple_gate_id_lut.feather'))
+        df_gate_membership = pd.read_feather(os.path.join(archive_dir, '8c_simple_gate_membership.feather'))
+        df_gating_report = pd.read_feather(os.path.join(archive_dir, '8c_simple_gating_report.feather'))
+        df_panel = pd.read_csv(os.path.join(archive_dir, '8c_simple_panel.csv'))
+
+        self.assertEqual(df_all_events.shape, (859431, 17))
+        self.assertEqual(df_gate_lut.shape, (4, 3))
+        self.assertEqual(df_gate_membership.shape, (859431, 6))
+        self.assertEqual(df_gating_report.shape, (12, 11))
+        self.assertEqual(df_panel.shape, (15, 3))
+
+        # clean up archive files & directory
+        for f in archive_file_listing:
+            file_path = os.path.join(archive_dir, f)
+            os.unlink(file_path)
+
+        os.rmdir(archive_dir)
