@@ -602,6 +602,166 @@ class Workspace(object):
 
         return df_events
 
+    def archive_results(self, group_name, out_dir, output_prefix=None, df_sample_metadata=None, overwrite=False):
+        """
+        Archive group results to PyArrow Feather files for language-agnostic downstream analysis.
+        Requires having previously run the `analyze_samples` method. The following archive
+        files will be created:
+            - Sample panel (CSV file)
+            - Gate tree (text file)
+            - Gate ID lookup table (Feather file)
+            - Gating report (Feather file)
+            - Gate membership (feather file)
+            - All preprocessed events (Feather file)
+
+        :param group_name: Workspace group name to archive
+        :param out_dir: string path for the output file directory
+        :param output_prefix: Optional string prefix for the output file names
+        :param df_sample_metadata: Optional pandas DataFrame of Sample metadata. Must have a
+            Sample ID as an index, with distinct rows for each Sample ID. Sample metadata
+            will be merged with the archived gating report, gate membership, and preprocessed
+            events feather files.
+        :param overwrite: force overwriting existing files (default=False)
+        :return: None
+        """
+        if not os.path.exists(out_dir):
+            os.makedirs(out_dir)
+
+        # set file write mode
+        if overwrite:
+            file_write_mode = 'w'
+        else:
+            file_write_mode = 'x'
+
+        # parse output_prefix arg
+        if output_prefix is not None:
+            # add an underscore for separation with remaining file names
+            output_prefix = output_prefix + '_'
+        else:
+            # no prefix, set to empty string
+            output_prefix = ''
+
+        # Check if any output files exist (unless overwrite=True)
+        panel_file_path = os.path.join(out_dir, output_prefix + 'panel.csv')
+        gate_tree_file_path = os.path.join(out_dir, output_prefix + 'gate_tree.txt')
+        gate_lut_file_path = os.path.join(out_dir, output_prefix + 'gate_id_lut.feather')
+        report_file_path = os.path.join(out_dir, output_prefix + 'gating_report.feather')
+        events_file_path = os.path.join(out_dir, output_prefix + 'all_events.feather')
+        member_file_path = os.path.join(out_dir, output_prefix + 'gate_membership.feather')
+        if not overwrite:
+            for fp in [panel_file_path, gate_lut_file_path, gate_lut_file_path, report_file_path, events_file_path, member_file_path]:
+                if os.path.exists(fp):
+                    raise FileExistsError(
+                        "%s already exists, set `overwrite=True` to overwrite file" % os.path.basename(fp)
+                    )
+
+        # Get Sample IDs, normally they correspond to the FCS file names.
+        sample_ids = self.get_sample_ids(group_name=group_name)
+
+        # grab first sample to extract panel info (channels)
+        proto_sample = self.get_sample(sample_ids[0])
+
+        # get gate hierarchy from first sample
+        gate_tree = self.get_gate_hierarchy(sample_id=sample_ids[0])
+
+        # get gate IDs from first sample & save gate IDs as LUT with
+        # full ID string joined with "/" and the gate name and gate path tuple
+        gate_ids = self.get_gate_ids(sample_id=sample_ids[0])
+        gate_lut_list = []  # list of dictionaries
+        for gate_name, gate_path in gate_ids:
+            gate_id_str = '/'.join(gate_path + (gate_name,))
+            gate_lut_list.append(
+                {
+                    'gate_id': gate_id_str,
+                    'gate_path': gate_path,
+                    'gate_name': gate_name
+                }
+            )
+        df_gate_lut = pd.DataFrame(gate_lut_list)
+
+        # gate report
+        report = self.get_analysis_report(group_name=group_name)
+
+        # Export processed sample events
+        df_s_events_list = []
+        for s_id in sample_ids:
+            # extract full array of pre-processed events for sample
+            df_s_preproc_events = self.get_gate_events(sample_id=s_id)
+            df_s_events_list.append(df_s_preproc_events)
+
+        df_events_all = pd.concat(df_s_events_list, ignore_index=True)
+
+        # Now extract the gate membership Boolean arrays for each gate in each sample
+        gate_membership_all_samples = []
+
+        for s_id in sample_ids:
+            gate_membership_dict = {}
+
+            for gate_name, gate_path in gate_ids:
+                gate_id_str = '/'.join(gate_path + (gate_name,))
+
+                gate_membership = self.get_gate_membership(s_id, gate_name, gate_path=gate_path)
+                gate_membership_dict[gate_id_str] = gate_membership
+
+            df_gate_membership = pd.DataFrame(gate_membership_dict)
+            df_gate_membership.insert(0, 'sample_id', s_id)
+            # df_gate_membership.insert(1, 'subject_id', subject_id)
+            gate_membership_all_samples.append(df_gate_membership)
+
+        df_gate_membership_all_samples = pd.concat(gate_membership_all_samples, ignore_index=True)
+
+        # merge sample metadata if given
+        if df_sample_metadata is not None:
+            # Prior to merging, build the new column list so the metadata columns are first
+            # but after the 'sample' column
+            first_col = 'sample_id'
+            meta_cols = df_sample_metadata.columns.tolist()
+
+            remaining_report_cols = report.columns.tolist()
+            remaining_report_cols.remove(first_col)
+            new_report_col_order = [first_col] + meta_cols + remaining_report_cols
+
+            # Now merge and rearrange the column order
+            report = pd.merge(report, df_sample_metadata, left_on='sample_id', right_index=True)
+            report = report.reindex(columns=new_report_col_order)
+
+            remaining_events_cols = df_events_all.columns.tolist()
+            remaining_events_cols.remove(first_col)
+            new_events_col_order = [first_col] + meta_cols + remaining_events_cols
+
+            # Now merge and rearrange the column order
+            df_events_all = pd.merge(df_events_all, df_sample_metadata, left_on='sample_id', right_index=True)
+            df_events_all = df_events_all.reindex(columns=new_events_col_order)
+
+            remaining_membership_cols = df_gate_membership_all_samples.columns.tolist()
+            remaining_membership_cols.remove(first_col)
+            new_membership_col_order = [first_col] + meta_cols + remaining_membership_cols
+
+            # Now merge and rearrange the column order
+            df_gate_membership_all_samples = pd.merge(
+                df_gate_membership_all_samples,
+                df_sample_metadata,
+                left_on='sample_id',
+                right_index=True
+            )
+            df_gate_membership_all_samples = df_gate_membership_all_samples.reindex(columns=new_membership_col_order)
+
+        # Save all data to filesystem
+        # Save panel to file
+        proto_sample.channels[['channel_number', 'pnn', 'pns']].to_csv(panel_file_path, index=False)
+        # Save gate tree
+        gate_tree_file = open(gate_tree_file_path, file_write_mode)
+        gate_tree_file.write(gate_tree)
+        gate_tree_file.close()
+        # Save gate LUT
+        df_gate_lut.to_feather(gate_lut_file_path)
+        # Save gate report
+        report.to_feather(report_file_path)
+        # Save all events
+        df_events_all.to_feather(events_file_path)
+        # Save gate membership
+        df_gate_membership_all_samples.to_feather(member_file_path)
+
     def plot_gate(
             self,
             sample_id,
