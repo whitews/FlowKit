@@ -1163,12 +1163,13 @@ class Sample(object):
         metadata_dict = {}
         ignore_keywords = ['timestep']
 
-        # If the original events were requested, need to make sure
+        # If source='raw' and preprocessing was not requested, need to make sure
         # some metadata is included and has certain values. This
         # ensures the events can be interpreted correctly.
-        # For non-orig sources, the event values have already been
+        # For other cases, the event values have already been
         # processed to account for the metadata.
-        if source == 'orig':
+        if source == 'raw' and not self.is_preprocessed:
+            # TODO: add test for this case
             if 'timestep' in self.metadata and self.time_index is not None:
                 metadata_dict['TIMESTEP'] = self.metadata['timestep']
 
@@ -1195,7 +1196,7 @@ class Sample(object):
 
                 ignore_keywords.extend([gain_keyword, scale_keyword, range_keyword])
         else:
-            # for 'raw', 'comp', or 'xform' cases, set data type to float
+            # for 'raw' (preprocessed), 'comp', or 'xform' cases, set data type to float
             metadata_dict['datatype'] = 'F'
 
             # And set proper values for channel metadata
