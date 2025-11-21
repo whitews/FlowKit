@@ -440,3 +440,24 @@ class ExportPlotTestCase(unittest.TestCase):
                 subsample=True,
                 export=plot_dir/"test_plot.png"
             ))
+
+    def test_export_multiple_html(self):
+        export_paths = {s:(plot_dir/p).with_suffix("."+s) for s in ["pdf", "html", "svg"] for p in ["test_plot", "test_figure"]}
+        sample = copy.deepcopy(test_sample)
+        xform_logicle = fk.transforms.LogicleTransform(param_t=10000, param_w=0.5, param_m=4.5, param_a=0)
+        sample.apply_transform(xform_logicle)
+        for format, file_path in export_paths.items():
+            with self.subTest(file_path=file_path, format=format):
+                sample.plot_contour(
+                    'FL1-H',
+                    'FL2-H',
+                    source='xform',
+                    plot_events=True,
+                    subsample=True,
+                    export=file_path
+                )
+
+                # check if path exists
+                self.assertTrue(file_path.exists())
+                # check if file is readable
+                self.assertTrue(os.access(file_path, os.R_OK))
