@@ -4,11 +4,16 @@ Utility functions related to plotting
 import numpy as np
 from scipy.interpolate import interpn
 import contourpy
-from bokeh.plotting import figure
+from bokeh.plotting import figure, output_file, save
 from bokeh.models import Ellipse, Patch, Span, BoxAnnotation, Rect, ColumnDataSource, Title
+from bokeh.io import export_svgs
 from scipy.stats import gaussian_kde
 from .._models import gates, dimension
 from .._models.gating_strategy import GatingStrategy
+from pathlib import Path
+from asyncio import run
+from pyppeteer import launch
+
 
 
 LINE_COLOR_DEFAULT = "#1F77B4"
@@ -876,3 +881,61 @@ def plot_gate(
     )
 
     return p
+
+def export_bokeh(plot, paths, **kwargs):
+    '''Function to export bokeh plots to svg, html and/or pdf.'''
+
+    async def convert_html_to_pdf(html_path, pdf_path, width="2400px", height="1600px", scale=2):
+        clean = not html_path is None
+        if clean:
+            html_path = pdf_path.with_suffix(".pdf")
+
+        browser = await launch(headless=True, args=["--no-sandbox"], executablePath="/usr/bin/google-chrome")
+        try:
+            page = await browser.newPage()
+            await page.setViewport({'width': int(width.rstrip("px")), 'height': int(height.rstrip("px"))})
+            await page.goto(f"file://{html_path}",
+                            )
+            await page.pdf({
+                "path": str(pdf_path),
+                "printBackground": True,
+                "displayHeaderFooter": False,
+                "width": width,
+                "height": height,
+                "scale":scale
+            })
+            print(f"Clean PDF exported to {pdf_path}")
+            
+        except Exception as e:
+            print(f"Export failed: {e}")
+
+        finally:
+            await browser.close()
+            if clean and html_path.exists():
+                html_path.unlink()
+
+    if not isinstance(paths, list):
+        paths = [paths]
+
+    suffixes = [f.suffix for f in paths]
+    html_path = None
+    for path in paths:
+        if not isinstance(path, Path):
+            path = Path(path)
+        if path.suffix == ".svg":
+            export_svgs(plot, path)
+        
+        elif path.suffix == ".html":
+            output_file(html_path, mode='absolute')
+            save(plot)
+            if ".pdf" in suffixes:
+                html_path = path
+        elif path.suffix == ".pdf":
+            run(convert_html_to_pdf(
+                html_path=html_path,
+                pdf_path=path,
+                **kwargs
+                ))
+        else:
+            raise NotImplementedError(
+                f"Format {path.suffix} in {path} not implemented.\nPlease use one of '.pdf', '.svg', '.html'.")
