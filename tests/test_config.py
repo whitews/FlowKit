@@ -5,6 +5,7 @@ import numpy as np
 import os
 import warnings
 import flowkit as fk
+from pathlib import Path
 
 # Paths
 data1_fcs_path = "data/gate_ref/data1.fcs"
@@ -17,6 +18,9 @@ fcs_index_sorted_path = "data/index_sorted/index_sorted_example.fcs"
 csv_8c_comp_file_path = "data/8_color_data_set/den_comp.csv"
 csv_8c_comp_null_channel_file_path = "data/8_color_data_set/den_comp_null_channel.csv"
 spectral_data_dir = "data/spectral_data"
+
+plot_dir = Path("tests/plots")
+test_export_paths = {s:(plot_dir/"test_plot").with_suffix("."+s) for s in ["pdf", "svg", "html"]}
 
 fcs_file_paths = ["data/100715.fcs", "data/109567.fcs", "data/113548.fcs"]
 

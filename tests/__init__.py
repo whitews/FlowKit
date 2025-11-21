@@ -20,7 +20,7 @@ from tests.matrix_tests import MatrixTestCase, SpectralMatrixTestCase
 from tests.transform_tests import TransformsTestCase
 from tests.gate_tests import GateTestCase
 from tests.string_repr_tests import StringReprTestCase
-from tests.plot_tests import PlotTestCase
+from tests.plot_tests import PlotTestCase, ExportPlotTestCase
 
 if __name__ == "__main__":
     unittest.main()
