@@ -75,11 +75,12 @@ class SampleExportTestCase(unittest.TestCase):
         )
 
     def test_export_fcs_as_raw_with_gain(self):
-        # This test uses a file where the preprocessing makes the orig & raw events different.
+        # This test uses a file where the preprocessing makes the preprocessed &
+        # non-preprocessed raw events different.
         # File data1.fcs has 2 channels that specify a gain value other than 1.0.
         # The purpose here is to verify that importing the exported file has the same raw events
         # as the original file's raw events.
-        sample = Sample(fcs_path_or_data=data1_fcs_path)
+        sample = Sample(fcs_path_or_data=data1_fcs_path)  # preprocess=True by default
 
         sample.export("test_fcs_export.fcs", source='raw', directory="data", include_metadata=True)
 
@@ -97,6 +98,37 @@ class SampleExportTestCase(unittest.TestCase):
             sample._raw_events.astype(np.float32),
             exported_sample._raw_events.astype(np.float32)
         )
+
+    # def test_export_fcs_as_raw_with_gain_no_preprocess(self):
+    #     # This test uses a file where the preprocessing makes the preprocessed &
+    #     # non-preprocessed raw events different.
+    #     # File data1.fcs has 2 channels that specify a gain value other than 1.0.
+    #     # The purpose here is to verify that importing the exported file has the same raw events
+    #     # as the original file's raw events.
+    #     sample_preproc = Sample(fcs_path_or_data=data1_fcs_path, preprocess=True)
+    #     sample = Sample(fcs_path_or_data=data1_fcs_path, preprocess=False)
+    #
+    #     # we have to change the data type from 'I' to 'F' b/c FlowIO doesn't
+    #     # support creating FCS files with 'I' data types yet
+    #     # TODO: revisit when FlowIO supports creating with 'I' data type
+    #     sample.metadata['datatype'] = 'F'
+    #
+    #     sample.export("test_no_preprocess_fcs_export.fcs", source='raw', directory="data", include_metadata=True)
+    #
+    #     exported_fcs_file = "data/test_no_preprocess_fcs_export.fcs"
+    #     exported_sample = Sample(fcs_path_or_data=exported_fcs_file)
+    #     os.unlink(exported_fcs_file)
+    #
+    #     self.assertIsInstance(exported_sample, Sample)
+    #
+    #     # When the events are exported, they are saved as single precision (32-bit). We'll test the
+    #     # arrays with the original sample data converted to 32-bit float. The original sample data
+    #     # was also originally in 32-bit. Comparing both in single precision is then the most
+    #     # "correct" thing to do here.
+    #     np.testing.assert_array_equal(
+    #         sample._raw_events.astype(np.float32),
+    #         exported_sample._raw_events.astype(np.float32)
+    #     )
 
     def test_export_fcs_as_raw(self):
         # This test uses a file where the preprocessing makes the orig & raw events different.
