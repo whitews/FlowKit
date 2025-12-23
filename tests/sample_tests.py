@@ -185,31 +185,6 @@ class SampleTestCase(unittest.TestCase):
         self.assertEqual(sample_with_file_id.id, "test_comp_example.fcs")
         self.assertEqual(sample_with_meta_id.id, "PBMC_LRS005_IL10.fcs")
 
-    def test_load_samples_utils_func(self):
-        # Tests for utils 'load_samples' function
-        # Most of the functionality of this function is covered in the
-        # test config file in loading data sets for other tests.
-        # We'll just cover a few edge cases here.
-
-        # Note, this sample has no $FIL keyword so we'll also check the
-        # Sample.id gets populated with the current file name.
-        samples = load_samples([fcs_2d_file_path])
-
-        self.assertIsInstance(samples[0], Sample)
-        self.assertEqual(samples[0].id, "test_data_2d_01.fcs")
-
-        # Test loading from Path object
-        samples_from_path_obj = load_samples(Path(fcs_2d_file_path))
-        self.assertIsInstance(samples_from_path_obj[0], Sample)
-
-        # Test loading from directory
-        samples_from_dir = load_samples(Path('data/simple_line_example/'))
-        self.assertIsInstance(samples_from_dir[0], Sample)
-
-        # Test that attempting to load from a list of mixed types fails
-        mixed_sample_list = [samples[0], fcs_2d_file_path]
-        self.assertRaises(ValueError, load_samples, mixed_sample_list)
-
     def test_data_start_offset_discrepancy(self):
         fcs_file = "data/noncompliant/data_start_offset_discrepancy_example.fcs"
         self.assertRaises(DataOffsetDiscrepancyError, Sample, fcs_file)
@@ -518,6 +493,33 @@ class SampleTestCase(unittest.TestCase):
 
         # there are 384 events in the file, each should have a well location
         self.assertEqual(len(idx_sorted_locations), 0)
+
+
+class SampleUtilsTestCase(unittest.TestCase):
+    def test_load_samples_utils_func(self):
+        # Tests for utils 'load_samples' function
+        # Most of the functionality of this function is covered in the
+        # test config file in loading data sets for other tests.
+        # We'll just cover a few edge cases here.
+
+        # Note, this sample has no $FIL keyword so we'll also check the
+        # Sample.id gets populated with the current file name.
+        samples = load_samples([fcs_2d_file_path])
+
+        self.assertIsInstance(samples[0], Sample)
+        self.assertEqual(samples[0].id, "test_data_2d_01.fcs")
+
+        # Test loading from Path object
+        samples_from_path_obj = load_samples(Path(fcs_2d_file_path))
+        self.assertIsInstance(samples_from_path_obj[0], Sample)
+
+        # Test loading from directory
+        samples_from_dir = load_samples(Path('data/simple_line_example/'))
+        self.assertIsInstance(samples_from_dir[0], Sample)
+
+        # Test that attempting to load from a list of mixed types fails
+        mixed_sample_list = [samples[0], fcs_2d_file_path]
+        self.assertRaises(ValueError, load_samples, mixed_sample_list)
 
     def test_load_multi_dataset_file(self):
         sample_file_path = "data/multi_dataset_fcs/coulter.lmd"

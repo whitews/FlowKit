@@ -3,7 +3,7 @@ FlowKit Test Suites
 """
 import unittest
 
-from tests.sample_tests import SampleTestCase
+from tests.sample_tests import SampleTestCase, SampleUtilsTestCase
 from tests.sample_export_tests import SampleExportTestCase
 from tests.gatingml_tests import GatingMLTestCase
 from tests.gating_strategy_prog_gate_tests import GatingTestCase
