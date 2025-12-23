@@ -9,7 +9,7 @@ import pandas as pd
 import flowio
 import warnings
 
-from flowkit import Sample, transforms, read_multi_dataset_fcs, load_samples
+from flowkit import Sample, transforms, extract_fcs_metadata, read_multi_dataset_fcs, load_samples
 from flowkit.exceptions import DataOffsetDiscrepancyError
 
 data1_fcs_path = 'data/gate_ref/data1.fcs'
@@ -496,6 +496,17 @@ class SampleTestCase(unittest.TestCase):
 
 
 class SampleUtilsTestCase(unittest.TestCase):
+    def test_extract_fcs_metadata(self):
+        data1_metadata = extract_fcs_metadata(data1_fcs_path)
+
+        self.assertIsInstance(data1_metadata, dict)
+
+        # and just check a specific key/value to make sure the dict isn't empty
+        self.assertIn('cyt', data1_metadata)
+
+        cyt_value = data1_metadata['cyt']
+        self.assertEqual(cyt_value, 'FACSCalibur')
+
     def test_load_samples_utils_func(self):
         # Tests for utils 'load_samples' function
         # Most of the functionality of this function is covered in the
