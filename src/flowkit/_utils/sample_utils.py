@@ -149,7 +149,7 @@ def load_samples(
 
 
 def read_multi_dataset_fcs(
-        filename_or_handle,
+        fcs_file,
         ignore_offset_error=False,
         ignore_offset_discrepancy=False,
         use_header_offsets=False,
@@ -158,8 +158,9 @@ def read_multi_dataset_fcs(
     """
     Utility function for reading all data sets in an FCS file containing multiple data sets.
 
-    :param filename_or_handle: a path string or a file handle for an FCS file
-    :param ignore_offset_error: option to ignore data offset error (see above note), default is False
+    :param fcs_file: a file path string, Path instance, or file handle to an FCS file
+    :param ignore_offset_error: option to ignore data offset error (see notes in Sample class docstring),
+        default is False
     :param ignore_offset_discrepancy: option to ignore discrepancy between the HEADER
         and TEXT values for the DATA byte offset location, default is False
     :param use_header_offsets: use the HEADER section for the data offset locations, default is False.
@@ -172,7 +173,7 @@ def read_multi_dataset_fcs(
     :return: list of Sample instances
     """
     flow_data_list = flowio.read_multiple_data_sets(
-        filename_or_handle,
+        fcs_file,
         ignore_offset_error=ignore_offset_error,
         ignore_offset_discrepancy=ignore_offset_discrepancy,
         use_header_offsets=use_header_offsets
@@ -185,3 +186,19 @@ def read_multi_dataset_fcs(
         samples.append(s)
 
     return samples
+
+
+def extract_fcs_metadata(fcs_file):
+    """
+    Extract only the metadata from an FCS file without parsing the event data. This
+    significantly speeds up parsing FCS files for the use case of retrieving just
+    the metadata.
+
+    :param fcs_file: a file path string, Path instance, or file handle to an FCS file
+    :return:
+    """
+    # Using 'use_header_offsets' to avoid and DATA offset discrepancies, we don't
+    # need to worry about those for just getting the TEXT metadata
+    fd = flowio.FlowData(fcs_file, only_text=True, use_header_offsets=True)
+
+    return fd.text

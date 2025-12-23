@@ -13,7 +13,7 @@ from ._models.dimension import Dimension, RatioDimension, QuadrantDivider
 from ._utils.xml_utils import parse_gating_xml
 from ._utils.gml_write import export_gatingml
 from ._utils.wsp_utils import parse_wsp, extract_wsp_sample_data
-from ._utils.sample_utils import load_samples, read_multi_dataset_fcs
+from ._utils.sample_utils import load_samples, read_multi_dataset_fcs, extract_fcs_metadata
 from ._utils.transform_utils import generate_transforms
 from . import exceptions
 
@@ -34,6 +34,7 @@ __all__ = [
     'export_gatingml',
     'parse_wsp',
     'extract_wsp_sample_data',
+    'extract_fcs_metadata',
     'load_samples',
     'read_multi_dataset_fcs',
     'generate_transforms',
