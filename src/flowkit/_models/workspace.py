@@ -919,8 +919,8 @@ class Workspace(object):
             y = comp_events[:, y_index]
         else:
             # not doing subsample here, will do later with bool AND
-            x = sample.get_channel_events(x_index, source='raw', subsample=False)
-            y = sample.get_channel_events(y_index, source='raw', subsample=False)
+            x = sample.get_channel_events(x_label, source='raw', subsample=False)
+            y = sample.get_channel_events(y_label, source='raw', subsample=False)
 
         if x_xform is not None:
             x = x_xform.apply(x)

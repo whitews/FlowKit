@@ -669,14 +669,14 @@ class Sample(object):
 
         return index
 
-    def get_channel_events(self, channel_index, source='xform', subsample=False, event_mask=None):
+    def get_channel_events(self, channel_label_or_number, source='xform', subsample=False, event_mask=None):
         """
         Returns a NumPy array of event data for the specified channel index.
 
         Note: This method returns the array directly, not a copy of the array. Be careful if you
         are planning to modify returned event data, and make a copy of the array when appropriate.
 
-        :param channel_index: channel index for which data is returned
+        :param channel_label_or_number: A channel's PnN label or number
         :param source: 'raw', 'comp', 'xform' for whether the raw, compensated
             or transformed events will be returned
         :param subsample: Whether to return all events or just the subsampled
@@ -685,6 +685,7 @@ class Sample(object):
             True will be returned). Can be combined with the subsample option.
         :return: NumPy array of event data for the specified channel index
         """
+        channel_index = self.get_channel_index(channel_label_or_number)
         events = self.get_events(source=source, subsample=subsample, event_mask=event_mask)
         events = events[:, channel_index]
 
@@ -822,7 +823,7 @@ class Sample(object):
         :return: A Bokeh Figure object containing the interactive channel plot.
         """
         channel_index = self.get_channel_index(channel_label_or_number)
-        channel_data = self.get_channel_events(channel_index, source=source, subsample=subsample)
+        channel_data = self.get_channel_events(channel_label_or_number, source=source, subsample=subsample)
 
         if subsample:
             x_idx = self.subsample_indices
@@ -898,8 +899,8 @@ class Sample(object):
         x_index = self.get_channel_index(x_label_or_number)
         y_index = self.get_channel_index(y_label_or_number)
 
-        x = self.get_channel_events(x_index, source=source, subsample=subsample)
-        y = self.get_channel_events(y_index, source=source, subsample=subsample)
+        x = self.get_channel_events(x_label_or_number, source=source, subsample=subsample)
+        y = self.get_channel_events(y_label_or_number, source=source, subsample=subsample)
 
         if self.pns_labels[x_index] != '':
             x_label = '%s (%s)' % (self.pns_labels[x_index], self.pnn_labels[x_index])
@@ -980,8 +981,8 @@ class Sample(object):
         x_index = self.get_channel_index(x_label_or_number)
         y_index = self.get_channel_index(y_label_or_number)
 
-        x = self.get_channel_events(x_index, source=source, subsample=subsample)
-        y = self.get_channel_events(y_index, source=source, subsample=subsample)
+        x = self.get_channel_events(x_label_or_number, source=source, subsample=subsample)
+        y = self.get_channel_events(y_label_or_number, source=source, subsample=subsample)
         if highlight_mask is not None and subsample:
             highlight_mask = highlight_mask[self.subsample_indices]
         if event_mask is not None:
@@ -1137,7 +1138,7 @@ class Sample(object):
         """
 
         channel_index = self.get_channel_index(channel_label_or_number)
-        channel_data = self.get_channel_events(channel_index, source=source, subsample=subsample)
+        channel_data = self.get_channel_events(channel_label_or_number, source=source, subsample=subsample)
 
         if data_min is not None:
             channel_data = channel_data[channel_data >= data_min]

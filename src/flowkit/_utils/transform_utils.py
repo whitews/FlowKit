@@ -127,7 +127,8 @@ def generate_transforms(
         elif chan_idx == sample.time_index:
             if time_xform_instance is None:
                 # for time, the top of range is max time
-                max_time = sample.get_channel_events(chan_idx, source='raw').max()
+                # Use the channel index to get the label to retrieve channel events
+                max_time = sample.get_channel_events(channel['pnn'], source='raw').max()
                 chan_xform = _create_transform(
                     time_xform_class,
                     max_time
