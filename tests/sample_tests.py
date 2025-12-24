@@ -233,7 +233,8 @@ class SampleTestCase(unittest.TestCase):
 
     @staticmethod
     def test_get_channel_events_raw():
-        data_idx_0 = data1_sample.get_channel_events(0, source='raw')
+        chan_label_0 = data1_sample.pnn_labels[0]
+        data_idx_0 = data1_sample.get_channel_events(chan_label_0, source='raw')
 
         np.testing.assert_equal(data1_sample._raw_events[:, 0], data_idx_0)
 
@@ -241,7 +242,8 @@ class SampleTestCase(unittest.TestCase):
     def test_get_channel_events_comp():
         sample = test_comp_sample
 
-        data_idx_6 = sample.get_channel_events(6, source='comp')
+        chan_label_6 = sample.pnn_labels[6]
+        data_idx_6 = sample.get_channel_events(chan_label_6, source='comp')
 
         np.testing.assert_equal(sample._comp_events[:, 6], data_idx_6)
 
@@ -250,14 +252,16 @@ class SampleTestCase(unittest.TestCase):
         sample = copy.deepcopy(test_comp_sample)
         sample.apply_transform(xform_logicle)
 
-        data_idx_6 = sample.get_channel_events(6, source='xform')
+        chan_label_6 = sample.pnn_labels[6]
+        data_idx_6 = sample.get_channel_events(chan_label_6, source='xform')
 
         np.testing.assert_equal(sample._transformed_events[:, 6], data_idx_6)
 
     def test_get_channel_events_subsample(self):
         sample = Sample(data1_fcs_path, subsample=500)
 
-        data_idx_6 = sample.get_channel_events(6, source='raw', subsample=True)
+        chan_label_6 = sample.pnn_labels[6]
+        data_idx_6 = sample.get_channel_events(chan_label_6, source='raw', subsample=True)
 
         self.assertEqual(len(data_idx_6), 500)
 
@@ -326,18 +330,19 @@ class SampleTestCase(unittest.TestCase):
         sample = copy.deepcopy(test_comp_sample)
         sample.apply_transform(xform_logicle, include_scatter=False)
 
-        fsc_a_index = sample.get_channel_index('FSC-A')
-        data_fsc_a = sample.get_channel_events(fsc_a_index, source='xform')
+        data_fsc_a = sample.get_channel_events('FSC-A', source='xform')
 
+        fsc_a_index = sample.get_channel_index('FSC-A')
         np.testing.assert_equal(sample._raw_events[:, fsc_a_index], data_fsc_a)
 
     def test_get_transformed_events_include_scatter(self):
         sample = copy.deepcopy(test_comp_sample)
         sample.apply_transform(xform_logicle, include_scatter=True)
 
+        data_fsc_a_xform = sample.get_channel_events('FSC-A', source='xform')
+        data_fsc_a_raw = sample.get_channel_events('FSC-A', source='raw')
+
         fsc_a_index = sample.get_channel_index('FSC-A')
-        data_fsc_a_xform = sample.get_channel_events(fsc_a_index, source='xform')
-        data_fsc_a_raw = sample.get_channel_events(fsc_a_index, source='raw')
 
         np.testing.assert_equal(sample._transformed_events[:, fsc_a_index], data_fsc_a_xform)
         self.assertEqual(data_fsc_a_raw[0], 118103.25)
@@ -450,13 +455,13 @@ class SampleTestCase(unittest.TestCase):
         sample1.apply_transform(xform_biex1)
         sample2.apply_transform(custom_xforms)
 
-        fl2_idx = sample1.get_channel_index('FL2-H')
-        fl3_idx = sample1.get_channel_index('FL3-H')
+        fl2_label = 'FL2-H'
+        fl3_label = 'FL3-H'
 
-        s1_fl2 = sample1.get_channel_events(fl2_idx, source='xform')
-        s2_fl2 = sample2.get_channel_events(fl2_idx, source='xform')
-        s1_fl3 = sample1.get_channel_events(fl3_idx, source='xform')
-        s2_fl3 = sample2.get_channel_events(fl3_idx, source='xform')
+        s1_fl2 = sample1.get_channel_events(fl2_label, source='xform')
+        s2_fl2 = sample2.get_channel_events(fl2_label, source='xform')
+        s1_fl3 = sample1.get_channel_events(fl3_label, source='xform')
+        s2_fl3 = sample2.get_channel_events(fl3_label, source='xform')
 
         np.testing.assert_equal(s1_fl2, s2_fl2)
         np.testing.assert_raises(AssertionError, np.testing.assert_equal, s1_fl3, s2_fl3)

@@ -199,7 +199,7 @@ class TransformsTestCase(unittest.TestCase):
         self.assertIsInstance(xform_lut[fluoro_label], transforms.LogicleTransform)
 
         # verify time use max time
-        time_max = data1_sample.get_channel_events(data1_sample.time_index, source='raw').max()
+        time_max = data1_sample.get_channel_events('Time', source='raw').max()
         self.assertEqual(xform_lut['Time'].param_t, time_max)
 
     def test_generate_transforms_default_asinh(self):
