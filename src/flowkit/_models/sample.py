@@ -134,8 +134,8 @@ class Sample(object):
         # This will get reset by file-like objects (file paths, filehandles, Pathlib objects).
         self.current_filename = None
 
-        # TODO: Re-evaluate this type detection, the new FlowIO version supports most
-        #  these options now.
+        # FlowIO now supports most these options, but still need the conditionals for
+        # the various ways to get the file name.
         if isinstance(fcs_path_or_data, str):
             # if a string, we only handle file paths, so try creating a FlowData object
             flow_data = flowio.FlowData(
