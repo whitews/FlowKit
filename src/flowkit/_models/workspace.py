@@ -611,7 +611,7 @@ class Workspace(object):
             - Gate tree (text file)
             - Gate ID lookup table (Feather file)
             - Gating report (Feather file)
-            - Gate membership (feather file)
+            - Gate membership (Feather file)
             - All preprocessed events (Feather file)
 
         :param group_name: Workspace group name to archive
