@@ -452,3 +452,21 @@ class GatingStrategyRemoveGatesTestCase(unittest.TestCase):
         cd4_gate_custom = gs.get_gate(new_gate_name, sample_id=sample_id)
         self.assertEqual(cd4_gate_custom.gate_name, new_gate_name)
         self.assertEqual(cd4_gate_custom.vertices, new_poly_vertices)
+
+    def test_rename_gate_rename_quadrant(self):
+        # test renaming a Quadrant of a QuadrantGate
+        # These are important to test as they are structured
+        # differently than other gates.
+        gs = copy.deepcopy(self.gating_strategy)
+
+        # rename a quadrant, don't need path b/c name is unique in tree
+        gs.rename_gate('CD4N-CD8P', 'CD4neg-CD8pos')
+
+        # get parent QuadrantGate and check the Quadrant
+        owning_quad_gate = gs.get_gate('Q-CD4-CD8')
+
+        self.assertIn('CD4neg-CD8pos', owning_quad_gate.quadrants)
+        self.assertNotIn('CD4N-CD8P', owning_quad_gate.quadrants)
+
+        quadrant = owning_quad_gate.quadrants['CD4neg-CD8pos']
+        self.assertEqual(quadrant.id, 'CD4neg-CD8pos')

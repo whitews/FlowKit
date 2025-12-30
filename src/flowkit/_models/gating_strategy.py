@@ -15,7 +15,7 @@ from .._models import gates as fk_gates
 # noinspection PyProtectedMember
 from .._models.transforms._base_transform import Transform
 # noinspection PyProtectedMember
-from .._models.transforms._matrix import Matrix
+from .._models.transforms._matrix import Matrix, SpectralMatrix
 from .._models.gating_results import GatingResults
 from ..exceptions import GateTreeError, GateReferenceError, QuadrantReferenceError
 
@@ -217,10 +217,8 @@ class GatingStrategy(object):
 
     def rename_gate(self, gate_name, new_gate_name, gate_path=None):
         """
-        Rename a gate in the gating strategy. Any descendant gates will also be removed
-        unless keep_children=True. In all cases, if a BooleanGate exists that references
-        the gate to remove, a GateTreeError will be thrown indicating the BooleanGate
-        must be removed prior to removing the gate.
+        Rename a gate in the gating strategy. Any custom sample gates associated with the gate
+        will also be renamed.
 
         :param gate_name: text string of existing gate name
         :param new_gate_name: text string for new gate name
@@ -279,13 +277,38 @@ class GatingStrategy(object):
                     # Any other case, the reference gate path is longer than the modified gate,
                     # so not affected by the change.
 
-        # Need to change the gate node name & the gate's gate_name attribute
+        # Need to update both the gate node & the gate.
+        # The gate node name is straight-forward for all cases.
         gate_node.name = new_gate_name
-        gate.gate_name = new_gate_name
 
-        # check for custom gates, need to change those too
-        for custom_gate in gate_node.custom_gates.values():
-            custom_gate.gate_name = new_gate_name
+        if isinstance(gate, fk_gates.Quadrant):
+            # individual quadrants have an 'id' & not a 'gate_name'
+            # attribute since they aren't true gates themselves.
+            gate.id = new_gate_name
+
+            # And their owning QuadrantGate references them via a
+            # dict whose key needs updating as well.
+            owning_quad_gate = gate_node.parent.gate
+            owning_quad_gate.quadrants[new_gate_name] = owning_quad_gate.quadrants.pop(gate_name)
+
+            # Finally, check if the QuadrantGate node has any custom gates.
+            # These Quadrant instances and dict keys need updating too.
+            for custom_quad_gate in gate_node.parent.custom_gates.values():
+                # find quadrant
+                custom_quadrant = custom_quad_gate.quadrants[gate_name]
+
+                # update 'id' attribute
+                custom_quadrant.id = new_gate_name
+
+                # update key
+                custom_quad_gate.quadrants[new_gate_name] = custom_quad_gate.quadrants.pop(gate_name)
+        else:
+            # All other gate types are simpler, and only have gate_name
+            gate.gate_name = new_gate_name
+
+            # check for custom gates, need to change those too
+            for custom_gate in gate_node.custom_gates.values():
+                custom_gate.gate_name = new_gate_name
 
         # rebuild DAG
         self._rebuild_dag()
@@ -425,7 +448,7 @@ class GatingStrategy(object):
             )
 
         # Only accept Matrix class instances as we need the ID
-        if not isinstance(matrix, Matrix):
+        if not isinstance(matrix, (Matrix, SpectralMatrix)):
             raise TypeError("matrix must be an instance of the Matrix class")
 
         if matrix_id in self.comp_matrices:

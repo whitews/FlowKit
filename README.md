@@ -28,7 +28,7 @@
 
 ## Overview
 
-FlowKit is a Python toolkit for flow cytometry analysis and visualization, with full support for the [GatingML 2.0 standard](http://flowcyt.sourceforge.net/gating/latest.pdf) and limited support for FlowJo 10 workspace files.
+FlowKit is a Python toolkit for flow cytometry analysis and visualization, with full support for the [GatingML 2.0 standard](https://sourceforge.net/projects/flowcyt/files/Gating-ML/Gating-ML%202.0/) and limited support for FlowJo 10 workspace files. Please see the [changelogs for the latest API changes](https://github.com/whitews/FlowKit/releases).
 
 <img alt="FlowKit Overview" src="https://raw.githubusercontent.com/whitews/FlowKit/master/docs/_static/flowkit_overview.jpg" style="width:400px;" />
 
@@ -73,7 +73,7 @@ FlowKit is a Python toolkit for flow cytometry analysis and visualization, with 
 
 ## Requirements
 
-FlowKit supports Python version 3.9 - 3.12. All dependencies are installable 
+FlowKit supports Python version 3.10 - 3.14. All dependencies are installable 
 via pip, and are listed below.
 
 > **NOTE**: FlowUtils uses C extensions for significant performance 
@@ -84,17 +84,18 @@ via pip, and are listed below.
 
 Required Python dependencies:
 
-* [flowio](https://github.com/whitews/flowio) >= 1.3.0
-* [flowutils](https://github.com/whitews/flowutils) >= 1.1.0
-* anytree >= 2.12
-* bokeh >= 3.4
-* contourpy >= 1.2.0
-* lxml >= 5.1
-* networkx >= 3.2
-* numpy >= 1.22, <2
-* pandas >= 2.1
-* psutils >= 5.9
-* scipy >= 1.11.1
+* [flowio](https://github.com/whitews/flowio) >= 1.4.0
+* [flowutils](https://github.com/whitews/flowutils) >= 1.2.2
+* anytree >= 2.13
+* bokeh >= 3.5
+* contourpy >= 1.3.1
+* lxml >= 6.0
+* networkx >= 3.3
+* numpy >2
+* pandas >= 2.2
+* psutils >= 7
+* pyarrow>=18
+* scipy >= 1.14
 
 ## Installation
 

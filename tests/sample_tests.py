@@ -9,12 +9,12 @@ import pandas as pd
 import flowio
 import warnings
 
-from flowkit import Sample, transforms, read_multi_dataset_fcs, load_samples
+from flowkit import Sample, transforms, extract_fcs_metadata, read_multi_dataset_fcs, load_samples
 from flowkit.exceptions import DataOffsetDiscrepancyError
 
 data1_fcs_path = 'data/gate_ref/data1.fcs'
 data1_sample = Sample(data1_fcs_path)
-data1_sample_with_orig = Sample(data1_fcs_path, cache_original_events=True)
+data1_sample_with_orig = Sample(data1_fcs_path, preprocess=False)
 
 xform_logicle = transforms.LogicleTransform(param_t=10000, param_w=0.5, param_m=4.5, param_a=0)
 xform_biex1 = transforms.WSPBiexTransform(width=-100.0, negative=0.0)
@@ -126,6 +126,14 @@ class SampleTestCase(unittest.TestCase):
 
         self.assertRaises(ValueError, Sample, npy_data, channel_labels=channels)
 
+    def test_load_numpy_array_no_labels_raises(self):
+        npy_file_path = "data/test_comp_example.npy"
+        # noinspection SpellCheckingInspection
+
+        npy_data = np.fromfile(npy_file_path)
+
+        self.assertRaises(ValueError, Sample, npy_data, sample_id="my_sample")
+
     def test_load_dataframe_no_id_raises(self):
         npy_file_path = "data/test_comp_example.npy"
         # noinspection SpellCheckingInspection
@@ -145,11 +153,11 @@ class SampleTestCase(unittest.TestCase):
         self.assertRaises(ValueError, Sample, df_data)
 
     def test_load_from_pandas_multi_index(self):
-        sample_orig = Sample("data/100715.fcs", cache_original_events=True)
+        sample_orig = Sample("data/100715.fcs", preprocess=False)
         pnn_orig = sample_orig.pnn_labels
         pns_orig = sample_orig.pns_labels
 
-        df = sample_orig.as_dataframe(source='orig')
+        df = sample_orig.as_dataframe(source='raw')
 
         sample_new = Sample(df, sample_id='my_sample')
         pnn_new = sample_new.pnn_labels
@@ -176,23 +184,6 @@ class SampleTestCase(unittest.TestCase):
 
         self.assertEqual(sample_with_file_id.id, "test_comp_example.fcs")
         self.assertEqual(sample_with_meta_id.id, "PBMC_LRS005_IL10.fcs")
-
-    def test_load_samples_utils_func(self):
-        # Tests for utils 'load_samples' function
-        # Most of the functionality of this function is covered in the
-        # test config file in loading data sets for other tests.
-        # We'll just cover a few edge cases here.
-
-        # Note, this sample has no $FIL keyword so we'll also check the
-        # Sample.id gets populated with the current file name.
-        samples = load_samples([fcs_2d_file_path])
-
-        self.assertIsInstance(samples[0], Sample)
-        self.assertEqual(samples[0].id, "test_data_2d_01.fcs")
-
-        # Test that attempting to load from a list of mixed types fails
-        mixed_sample_list = [samples[0], fcs_2d_file_path]
-        self.assertRaises(ValueError, load_samples, mixed_sample_list)
 
     def test_data_start_offset_discrepancy(self):
         fcs_file = "data/noncompliant/data_start_offset_discrepancy_example.fcs"
@@ -242,7 +233,8 @@ class SampleTestCase(unittest.TestCase):
 
     @staticmethod
     def test_get_channel_events_raw():
-        data_idx_0 = data1_sample.get_channel_events(0, source='raw')
+        chan_label_0 = data1_sample.pnn_labels[0]
+        data_idx_0 = data1_sample.get_channel_events(chan_label_0, source='raw')
 
         np.testing.assert_equal(data1_sample._raw_events[:, 0], data_idx_0)
 
@@ -250,7 +242,8 @@ class SampleTestCase(unittest.TestCase):
     def test_get_channel_events_comp():
         sample = test_comp_sample
 
-        data_idx_6 = sample.get_channel_events(6, source='comp')
+        chan_label_6 = sample.pnn_labels[6]
+        data_idx_6 = sample.get_channel_events(chan_label_6, source='comp')
 
         np.testing.assert_equal(sample._comp_events[:, 6], data_idx_6)
 
@@ -259,28 +252,25 @@ class SampleTestCase(unittest.TestCase):
         sample = copy.deepcopy(test_comp_sample)
         sample.apply_transform(xform_logicle)
 
-        data_idx_6 = sample.get_channel_events(6, source='xform')
+        chan_label_6 = sample.pnn_labels[6]
+        data_idx_6 = sample.get_channel_events(chan_label_6, source='xform')
 
         np.testing.assert_equal(sample._transformed_events[:, 6], data_idx_6)
 
     def test_get_channel_events_subsample(self):
         sample = Sample(data1_fcs_path, subsample=500)
 
-        data_idx_6 = sample.get_channel_events(6, source='raw', subsample=True)
+        chan_label_6 = sample.pnn_labels[6]
+        data_idx_6 = sample.get_channel_events(chan_label_6, source='raw', subsample=True)
 
         self.assertEqual(len(data_idx_6), 500)
 
     def test_get_subsampled_orig_events(self):
-        sample = Sample(data1_fcs_path, cache_original_events=True, subsample=500)
+        sample = Sample(data1_fcs_path, preprocess=False, subsample=500)
 
-        events = sample.get_events(source='orig', subsample=True)
+        events = sample.get_events(source='raw', subsample=True)
 
         self.assertEqual(events.shape[0], 500)
-
-    def test_get_subsampled_orig_events_not_cached(self):
-        sample = Sample(data1_fcs_path, cache_original_events=False, subsample=500)
-
-        self.assertRaises(ValueError, sample.get_events, source='orig', subsample=True)
 
     def test_get_subsampled_raw_events(self):
         sample = Sample(data1_fcs_path, subsample=500)
@@ -340,18 +330,19 @@ class SampleTestCase(unittest.TestCase):
         sample = copy.deepcopy(test_comp_sample)
         sample.apply_transform(xform_logicle, include_scatter=False)
 
-        fsc_a_index = sample.get_channel_index('FSC-A')
-        data_fsc_a = sample.get_channel_events(fsc_a_index, source='xform')
+        data_fsc_a = sample.get_channel_events('FSC-A', source='xform')
 
+        fsc_a_index = sample.get_channel_index('FSC-A')
         np.testing.assert_equal(sample._raw_events[:, fsc_a_index], data_fsc_a)
 
     def test_get_transformed_events_include_scatter(self):
         sample = copy.deepcopy(test_comp_sample)
         sample.apply_transform(xform_logicle, include_scatter=True)
 
+        data_fsc_a_xform = sample.get_channel_events('FSC-A', source='xform')
+        data_fsc_a_raw = sample.get_channel_events('FSC-A', source='raw')
+
         fsc_a_index = sample.get_channel_index('FSC-A')
-        data_fsc_a_xform = sample.get_channel_events(fsc_a_index, source='xform')
-        data_fsc_a_raw = sample.get_channel_events(fsc_a_index, source='raw')
 
         np.testing.assert_equal(sample._transformed_events[:, fsc_a_index], data_fsc_a_xform)
         self.assertEqual(data_fsc_a_raw[0], 118103.25)
@@ -380,10 +371,11 @@ class SampleTestCase(unittest.TestCase):
         np.testing.assert_equal(df.values, data1_sample.get_events(source='raw'))
 
     def test_get_events_as_data_frame_orig(self):
-        df = data1_sample_with_orig.as_dataframe(source='orig')
+        # TODO: what is this actually testing? should we store the static NumPy array as truth?
+        df = data1_sample_with_orig.as_dataframe(source='raw')
 
         self.assertIsInstance(df, pd.DataFrame)
-        np.testing.assert_equal(df.values, data1_sample_with_orig.get_events(source='orig'))
+        np.testing.assert_equal(df.values, data1_sample_with_orig.get_events(source='raw'))
 
     def test_get_events_as_data_frame_col_index(self):
         # verifies 'col_multi_index' option works as expected
@@ -463,13 +455,13 @@ class SampleTestCase(unittest.TestCase):
         sample1.apply_transform(xform_biex1)
         sample2.apply_transform(custom_xforms)
 
-        fl2_idx = sample1.get_channel_index('FL2-H')
-        fl3_idx = sample1.get_channel_index('FL3-H')
+        fl2_label = 'FL2-H'
+        fl3_label = 'FL3-H'
 
-        s1_fl2 = sample1.get_channel_events(fl2_idx, source='xform')
-        s2_fl2 = sample2.get_channel_events(fl2_idx, source='xform')
-        s1_fl3 = sample1.get_channel_events(fl3_idx, source='xform')
-        s2_fl3 = sample2.get_channel_events(fl3_idx, source='xform')
+        s1_fl2 = sample1.get_channel_events(fl2_label, source='xform')
+        s2_fl2 = sample2.get_channel_events(fl2_label, source='xform')
+        s1_fl3 = sample1.get_channel_events(fl3_label, source='xform')
+        s2_fl3 = sample2.get_channel_events(fl3_label, source='xform')
 
         np.testing.assert_equal(s1_fl2, s2_fl2)
         np.testing.assert_raises(AssertionError, np.testing.assert_equal, s1_fl3, s2_fl3)
@@ -506,6 +498,44 @@ class SampleTestCase(unittest.TestCase):
 
         # there are 384 events in the file, each should have a well location
         self.assertEqual(len(idx_sorted_locations), 0)
+
+
+class SampleUtilsTestCase(unittest.TestCase):
+    def test_extract_fcs_metadata(self):
+        data1_metadata = extract_fcs_metadata(data1_fcs_path)
+
+        self.assertIsInstance(data1_metadata, dict)
+
+        # and just check a specific key/value to make sure the dict isn't empty
+        self.assertIn('cyt', data1_metadata)
+
+        cyt_value = data1_metadata['cyt']
+        self.assertEqual(cyt_value, 'FACSCalibur')
+
+    def test_load_samples_utils_func(self):
+        # Tests for utils 'load_samples' function
+        # Most of the functionality of this function is covered in the
+        # test config file in loading data sets for other tests.
+        # We'll just cover a few edge cases here.
+
+        # Note, this sample has no $FIL keyword so we'll also check the
+        # Sample.id gets populated with the current file name.
+        samples = load_samples([fcs_2d_file_path])
+
+        self.assertIsInstance(samples[0], Sample)
+        self.assertEqual(samples[0].id, "test_data_2d_01.fcs")
+
+        # Test loading from Path object
+        samples_from_path_obj = load_samples(Path(fcs_2d_file_path))
+        self.assertIsInstance(samples_from_path_obj[0], Sample)
+
+        # Test loading from directory
+        samples_from_dir = load_samples(Path('data/simple_line_example/'))
+        self.assertIsInstance(samples_from_dir[0], Sample)
+
+        # Test that attempting to load from a list of mixed types fails
+        mixed_sample_list = [samples[0], fcs_2d_file_path]
+        self.assertRaises(ValueError, load_samples, mixed_sample_list)
 
     def test_load_multi_dataset_file(self):
         sample_file_path = "data/multi_dataset_fcs/coulter.lmd"

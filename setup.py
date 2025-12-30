@@ -15,17 +15,18 @@ with open("README.md", "r", encoding='utf-8') as fh:
     long_description = fh.read()
 
 reqs = [
-    'anytree>=2.9',
-    'bokeh>=3.1',
-    'contourpy>=1.1.0',
-    'flowio>=1.3.0,<1.4',
-    'flowutils>=1.1.0,<1.2',
-    'lxml>=4.9',
-    'networkx>=3.1',
-    'numpy>=1.22,<2',
-    'pandas>=2.0',
-    'psutil>=5.8',
-    'scipy>=1.8'
+    'anytree>=2.13',
+    'bokeh>=3.5',
+    'contourpy>=1.3.1',
+    'flowio>=1.4.0,<1.5',
+    'flowutils>=1.2.2,<1.3',
+    'lxml>=6.0',
+    'networkx>=3.3',
+    'numpy>2',
+    'pandas>=2.2',
+    'psutil>=7',
+    'pyarrow>=18',
+    'scipy>=1.14'
 ]
 
 setup(
@@ -44,9 +45,9 @@ setup(
     ext_modules=[],
     install_requires=reqs,
     classifiers=[
+        'Programming Language :: Python :: 3.13',
         'Programming Language :: Python :: 3.12',
         'Programming Language :: Python :: 3.11',
-        'Programming Language :: Python :: 3.10',
-        'Programming Language :: Python :: 3.9'
+        'Programming Language :: Python :: 3.10'
     ]
 )

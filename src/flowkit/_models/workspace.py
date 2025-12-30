@@ -23,19 +23,23 @@ class Workspace(object):
         be a list of file paths or a list of Sample instances. Lists of mixed types are not
         supported. Note that only FCS files matching the ones referenced in the .wsp file will
         be retained in the Workspace.
-    :param ignore_missing_files: Controls behavior for missing FCS files. If True, gate data for
+    :param load_missing_file_data: Controls behavior for missing FCS files. If True, gate data for
         missing FCS files (i.e. not in fcs_samples arg) will still be loaded. If False, warnings
         are issued for FCS files found in the WSP file that were not loaded in the Workspace and
         gate data for these missing files will not be retained. Default is False.
     :param find_fcs_files_from_wsp: Controls whether to search for FCS files based on `URI` params
         within the FlowJo workspace file.
+    :param filename_as_id: Boolean option for using the file name (as it exists on the filesystem)
+        as Sample ID, default is False. Only applies to file paths given to the 'fcs_samples'
+        argument.
     """
     def __init__(
             self,
             wsp_file_path,
             fcs_samples=None,
-            ignore_missing_files=False,
-            find_fcs_files_from_wsp=False
+            load_missing_file_data=False,
+            find_fcs_files_from_wsp=False,
+            filename_as_id=False
     ):
         # The sample LUT holds sample IDs (keys) only for loaded samples.
         # The values are the Sample instances
@@ -67,7 +71,11 @@ class Workspace(object):
         self._results_lut = {}
         
         # load samples we were given, we'll cross-reference against wsp below
-        tmp_sample_lut = {s.id: s for s in sample_utils.load_samples(fcs_samples)}
+        tmp_sample_lut = {
+            s.id: s for s in sample_utils.load_samples(
+                fcs_samples, filename_as_id=filename_as_id, use_flowjo_labels=True
+            )
+        }
         self._sample_lut = {}
 
         wsp_data = wsp_utils.parse_wsp(wsp_file_path)
@@ -94,7 +102,7 @@ class Workspace(object):
                     continue
 
                 # Read in the sample file
-                sample_filedata = sample_utils.load_samples(path)[0]
+                sample_filedata = sample_utils.load_samples(path, filename_as_id=filename_as_id)[0]
 
                 # Update the ID of the loaded data (otherwise analysis breaks)
                 sample_filedata.id = sample_name
@@ -112,12 +120,12 @@ class Workspace(object):
                 self._sample_data_lut[sample_id] = sample_dict
             else:
                 # we have gating info for a sample that wasn't loaded
-                if ignore_missing_files:
-                    # we're instructed to ignore missing files, so we'll still
-                    # save the gate info for retrieval purposes
+                if load_missing_file_data:
+                    # We were instructed to load data for missing files, so
+                    # we'll still save the gate info for retrieval purposes
                     self._sample_data_lut[sample_id] = sample_dict
                 else:
-                    # we won't ignore missing files, issue a warning
+                    # we won't load data for missing files, issue a warning
                     # and remove any references to the sample
                     msg = "WSP references %s, but sample was not loaded." % sample_id
                     warnings.warn(msg)
@@ -205,7 +213,7 @@ class Workspace(object):
         else:
             # No group name specified so give user all sample IDs
             # sample data LUT contains all sample IDs, incl. missing IDs
-            # referenced in the wsp (if ignore_missing_files was True)
+            # referenced in the wsp (if load_missing_file_data was True)
             sample_ids = set(self._sample_data_lut.keys())
 
         # check if only loaded samples were requested
@@ -594,6 +602,166 @@ class Workspace(object):
 
         return df_events
 
+    def archive_results(self, group_name, out_dir, output_prefix=None, df_sample_metadata=None, overwrite=False):
+        """
+        Archive group results to PyArrow Feather files for language-agnostic downstream analysis.
+        Requires having previously run the `analyze_samples` method. The following archive
+        files will be created:
+            - Sample panel (CSV file)
+            - Gate tree (text file)
+            - Gate ID lookup table (Feather file)
+            - Gating report (Feather file)
+            - Gate membership (Feather file)
+            - All preprocessed events (Feather file)
+
+        :param group_name: Workspace group name to archive
+        :param out_dir: string path for the output file directory
+        :param output_prefix: Optional string prefix for the output file names
+        :param df_sample_metadata: Optional pandas DataFrame of Sample metadata. Must have a
+            'sample_id' column as an index, with distinct rows for each Sample ID. Sample metadata
+            will be merged with the archived gating report, gate membership, and preprocessed
+            events feather files.
+        :param overwrite: force overwriting existing files (default=False)
+        :return: None
+        """
+        if not os.path.exists(out_dir):
+            os.makedirs(out_dir)
+
+        # set file write mode
+        if overwrite:
+            file_write_mode = 'w'
+        else:
+            file_write_mode = 'x'
+
+        # parse output_prefix arg
+        if output_prefix is not None:
+            # add an underscore for separation with remaining file names
+            output_prefix = output_prefix + '_'
+        else:
+            # no prefix, set to empty string
+            output_prefix = ''
+
+        # Check if any output files exist (unless overwrite=True)
+        panel_file_path = os.path.join(out_dir, output_prefix + 'panel.csv')
+        gate_tree_file_path = os.path.join(out_dir, output_prefix + 'gate_tree.txt')
+        gate_lut_file_path = os.path.join(out_dir, output_prefix + 'gate_id_lut.feather')
+        report_file_path = os.path.join(out_dir, output_prefix + 'gating_report.feather')
+        events_file_path = os.path.join(out_dir, output_prefix + 'all_events.feather')
+        member_file_path = os.path.join(out_dir, output_prefix + 'gate_membership.feather')
+        if not overwrite:
+            for fp in [panel_file_path, gate_lut_file_path, gate_lut_file_path, report_file_path, events_file_path, member_file_path]:
+                if os.path.exists(fp):
+                    raise FileExistsError(
+                        "%s already exists, set `overwrite=True` to overwrite file" % os.path.basename(fp)
+                    )
+
+        # Get Sample IDs, normally they correspond to the FCS file names.
+        sample_ids = self.get_sample_ids(group_name=group_name)
+
+        # grab first sample to extract panel info (channels)
+        proto_sample = self.get_sample(sample_ids[0])
+
+        # get gate hierarchy from first sample
+        gate_tree = self.get_gate_hierarchy(sample_id=sample_ids[0])
+
+        # get gate IDs from first sample & save gate IDs as LUT with
+        # full ID string joined with "/" and the gate name and gate path tuple
+        gate_ids = self.get_gate_ids(sample_id=sample_ids[0])
+        gate_lut_list = []  # list of dictionaries
+        for gate_name, gate_path in gate_ids:
+            gate_id_str = '/'.join(gate_path + (gate_name,))
+            gate_lut_list.append(
+                {
+                    'gate_id': gate_id_str,
+                    'gate_path': gate_path,
+                    'gate_name': gate_name
+                }
+            )
+        df_gate_lut = pd.DataFrame(gate_lut_list)
+
+        # gate report
+        report = self.get_analysis_report(group_name=group_name)
+
+        # Export processed sample events
+        df_s_events_list = []
+        for s_id in sample_ids:
+            # extract full array of pre-processed events for sample
+            df_s_preproc_events = self.get_gate_events(sample_id=s_id)
+            df_s_events_list.append(df_s_preproc_events)
+
+        df_events_all = pd.concat(df_s_events_list, ignore_index=True)
+
+        # Now extract the gate membership Boolean arrays for each gate in each sample
+        gate_membership_all_samples = []
+
+        for s_id in sample_ids:
+            gate_membership_dict = {}
+
+            for gate_name, gate_path in gate_ids:
+                gate_id_str = '/'.join(gate_path + (gate_name,))
+
+                gate_membership = self.get_gate_membership(s_id, gate_name, gate_path=gate_path)
+                gate_membership_dict[gate_id_str] = gate_membership
+
+            df_gate_membership = pd.DataFrame(gate_membership_dict)
+            df_gate_membership.insert(0, 'sample_id', s_id)
+            # df_gate_membership.insert(1, 'subject_id', subject_id)
+            gate_membership_all_samples.append(df_gate_membership)
+
+        df_gate_membership_all_samples = pd.concat(gate_membership_all_samples, ignore_index=True)
+
+        # merge sample metadata if given
+        if df_sample_metadata is not None:
+            # Prior to merging, build the new column list so the metadata columns are first
+            # but after the 'sample' column
+            first_col = 'sample_id'
+            meta_cols = df_sample_metadata.columns.tolist()
+
+            remaining_report_cols = report.columns.tolist()
+            remaining_report_cols.remove(first_col)
+            new_report_col_order = [first_col] + meta_cols + remaining_report_cols
+
+            # Now merge and rearrange the column order
+            report = pd.merge(report, df_sample_metadata, left_on='sample_id', right_index=True)
+            report = report.reindex(columns=new_report_col_order)
+
+            remaining_events_cols = df_events_all.columns.tolist()
+            remaining_events_cols.remove(first_col)
+            new_events_col_order = [first_col] + meta_cols + remaining_events_cols
+
+            # Now merge and rearrange the column order
+            df_events_all = pd.merge(df_events_all, df_sample_metadata, left_on='sample_id', right_index=True)
+            df_events_all = df_events_all.reindex(columns=new_events_col_order)
+
+            remaining_membership_cols = df_gate_membership_all_samples.columns.tolist()
+            remaining_membership_cols.remove(first_col)
+            new_membership_col_order = [first_col] + meta_cols + remaining_membership_cols
+
+            # Now merge and rearrange the column order
+            df_gate_membership_all_samples = pd.merge(
+                df_gate_membership_all_samples,
+                df_sample_metadata,
+                left_on='sample_id',
+                right_index=True
+            )
+            df_gate_membership_all_samples = df_gate_membership_all_samples.reindex(columns=new_membership_col_order)
+
+        # Save all data to filesystem
+        # Save panel to file
+        proto_sample.channels[['channel_number', 'pnn', 'pns']].to_csv(panel_file_path, index=False)
+        # Save gate tree
+        gate_tree_file = open(gate_tree_file_path, file_write_mode)
+        gate_tree_file.write(gate_tree)
+        gate_tree_file.close()
+        # Save gate LUT
+        df_gate_lut.to_feather(gate_lut_file_path)
+        # Save gate report
+        report.to_feather(report_file_path)
+        # Save all events
+        df_events_all.to_feather(events_file_path)
+        # Save gate membership
+        df_gate_membership_all_samples.to_feather(member_file_path)
+
     def plot_gate(
             self,
             sample_id,
@@ -606,7 +774,8 @@ class Workspace(object):
             y_min=None,
             y_max=None,
             color_density=True,
-            bin_width=4
+            bin_width=4,
+            hist_bins=None
     ):
         """
         Returns an interactive plot for the specified gate. The type of plot is
@@ -635,6 +804,10 @@ class Workspace(object):
         :param bin_width: Bin size to use for the color density, in units of
             event point size. Larger values produce smoother gradients.
             Default is 4 for a 4x4 grid size.
+        :param hist_bins: If the gate is only in 1 dimension, this option
+            controls the number of bins to use for the histogram. If None,
+            the number of bins is determined by the square root rule. This
+            option is ignored for any gates in more than 1 dimension.
         :return: A Bokeh Figure object containing the interactive scatter plot.
         """
         if gate_path is None:
@@ -673,7 +846,8 @@ class Workspace(object):
             y_min=y_min,
             y_max=y_max,
             color_density=color_density,
-            bin_width=bin_width
+            bin_width=bin_width,
+            hist_bins=hist_bins
         )
 
         return p
@@ -692,7 +866,9 @@ class Workspace(object):
             x_min=None,
             x_max=None,
             y_min=None,
-            y_max=None
+            y_max=None,
+            height=600,
+            width=600
     ):
         """
         Returns an interactive scatter plot for the specified channel data.
@@ -720,6 +896,8 @@ class Workspace(object):
             be used with some padding to keep events off the edge of the plot.
         :param y_max: Upper bound of y-axis. If None, channel's max value will
             be used with some padding to keep events off the edge of the plot.
+        :param height: Height of plot in pixels. Default is 600.
+        :param width: Width of plot in pixels. Default is 600.
         :return: A Bokeh Figure object containing the interactive scatter plot.
         """
         # Get Sample instance and apply requested subsampling
@@ -741,8 +919,8 @@ class Workspace(object):
             y = comp_events[:, y_index]
         else:
             # not doing subsample here, will do later with bool AND
-            x = sample.get_channel_events(x_index, source='raw', subsample=False)
-            y = sample.get_channel_events(y_index, source='raw', subsample=False)
+            x = sample.get_channel_events(x_label, source='raw', subsample=False)
+            y = sample.get_channel_events(y_label, source='raw', subsample=False)
 
         if x_xform is not None:
             x = x_xform.apply(x)
@@ -787,7 +965,9 @@ class Workspace(object):
             y_min=y_min,
             y_max=y_max,
             color_density=color_density,
-            bin_width=bin_width
+            bin_width=bin_width,
+            height=height,
+            width=width
         )
 
         p.title = Title(text=sample.id, align='center')

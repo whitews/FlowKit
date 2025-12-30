@@ -105,10 +105,8 @@ class Session(object):
 
     def rename_gate(self, gate_name, new_gate_name, gate_path=None):
         """
-        Rename a gate in the gating strategy. Any descendant gates will also be removed
-        unless keep_children=True. In all cases, if a BooleanGate exists that references
-        the gate to remove, a GateTreeError will be thrown indicating the BooleanGate
-        must be removed prior to removing the gate.
+        Rename a gate in the gating strategy. Any custom sample gates associated with the gate
+        will also be renamed.
 
         :param gate_name: text string of existing gate name
         :param new_gate_name: text string for new gate name
@@ -446,7 +444,8 @@ class Session(object):
             y_min=None,
             y_max=None,
             color_density=True,
-            bin_width=4
+            bin_width=4,
+            hist_bins=None
     ):
         """
         Returns an interactive plot for the specified gate. The type of plot is
@@ -475,6 +474,10 @@ class Session(object):
         :param bin_width: Bin size to use for the color density, in units of
             event point size. Larger values produce smoother gradients.
             Default is 4 for a 4x4 grid size.
+        :param hist_bins: If the gate is only in 1 dimension, this option
+            controls the number of bins to use for the histogram. If None,
+            the number of bins is determined by the square root rule. This
+            option is ignored for any gates in more than 1 dimension.
         :return: A Bokeh Figure object containing the interactive scatter plot.
         """
         if gate_path is None:
@@ -511,7 +514,8 @@ class Session(object):
             y_min=y_min,
             y_max=y_max,
             color_density=color_density,
-            bin_width=bin_width
+            bin_width=bin_width,
+            hist_bins=hist_bins
         )
 
         return p
@@ -530,7 +534,9 @@ class Session(object):
             x_min=None,
             x_max=None,
             y_min=None,
-            y_max=None
+            y_max=None,
+            height=600,
+            width=600
     ):
         """
         Returns an interactive scatter plot for the specified channel data.
@@ -558,6 +564,8 @@ class Session(object):
             be used with some padding to keep events off the edge of the plot.
         :param y_max: Upper bound of y-axis. If None, channel's max value will
             be used with some padding to keep events off the edge of the plot.
+        :param height: Height of plot in pixels. Default is 600.
+        :param width: Width of plot in pixels. Default is 600.
         :return: A Bokeh Figure object containing the interactive scatter plot.
         """
         # Get Sample instance and apply requested subsampling
@@ -586,7 +594,8 @@ class Session(object):
             x = comp_events[:, x_index]
         else:
             # not doing subsample here, will do later with bool AND
-            x = sample.get_channel_events(x_index, source='raw', subsample=False)
+            # get channel events using the label
+            x = sample.get_channel_events(x_dim.id, source='raw', subsample=False)
 
         if y_comp_ref is not None and y_comp_ref != 'uncompensated':
             # this is likely unnecessary as the x & y comp should be the same
@@ -596,7 +605,7 @@ class Session(object):
             y = comp_events[:, y_index]
         else:
             # not doing subsample here, will do later with bool AND
-            y = sample.get_channel_events(y_index, source='raw', subsample=False)
+            y = sample.get_channel_events(y_dim.id, source='raw', subsample=False)
 
         if x_xform_ref is not None:
             x_xform = self.gating_strategy.get_transform(x_xform_ref)
@@ -643,7 +652,9 @@ class Session(object):
             y_min=y_min,
             y_max=y_max,
             color_density=color_density,
-            bin_width=bin_width
+            bin_width=bin_width,
+            height=height,
+            width=width
         )
 
         p.title = Title(text=sample.id, align='center')

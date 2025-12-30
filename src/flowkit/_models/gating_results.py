@@ -21,7 +21,7 @@ class GatingResults(object):
     @staticmethod
     def _get_pd_result_dict(res_dict, gate_name):
         return {
-            'sample': res_dict['sample'],
+            'sample_id': res_dict['sample'],
             'gate_path': res_dict['gate_path'],
             'parent': res_dict['parent'],
             'gate_name': gate_name,
@@ -60,7 +60,7 @@ class GatingResults(object):
         df = pd.DataFrame(
             pd_list,
             columns=[
-                'sample',
+                'sample_id',
                 'gate_path',
                 'gate_name',
                 'gate_type',
@@ -71,12 +71,12 @@ class GatingResults(object):
                 'relative_percent'
             ]
         )
-        df['level'] = df.gate_path.map(lambda x: len(x) - 1)
+        df['level'] = df.gate_path.map(len)
 
-        self.report = df.sort_values(['sample', 'level', 'gate_name'])
+        self.report = df.sort_values(['sample_id', 'level', 'gate_name'])
 
     def _filter_gate_report(self, gate_name, gate_path=None):
-        results = self.report[(self.report['sample'] == self.sample_id) & (self.report['gate_name'] == gate_name)]
+        results = self.report[(self.report['sample_id'] == self.sample_id) & (self.report['gate_name'] == gate_name)]
 
         if gate_path is not None:
             results = results[results.gate_path == gate_path]
@@ -87,7 +87,7 @@ class GatingResults(object):
 
     def get_gate_membership(self, gate_name, gate_path=None):
         """
-        Retrieve a boolean array indicating gate membership for the events in the GatingResults sample.
+        Retrieve a boolean array indicating gate membership for the Sample events in the GatingResults.
         Note, the same gate ID may be found in multiple gate paths, i.e. the gate ID can be ambiguous.
         In this case, specify the full gate path to retrieve gate indices.
 
@@ -106,7 +106,7 @@ class GatingResults(object):
             gate_path = gate_paths[0]
 
         # need to check for quadrant gates, as they need to be handled differently
-        gate_data = self.report[(self.report['sample'] == self.sample_id) & (self.report.gate_name == gate_name)]
+        gate_data = self.report[(self.report['sample_id'] == self.sample_id) & (self.report.gate_name == gate_name)]
         quad_parent_values = set(gate_data.quadrant_parent.to_list())
 
         if len(quad_parent_values) == 1 and None in quad_parent_values:

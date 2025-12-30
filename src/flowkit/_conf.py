@@ -7,6 +7,7 @@ import platform
 # Used to detect PyCharm's debugging mode to turn off multiprocessing for debugging with tests
 get_trace = getattr(sys, 'gettrace', lambda: None)
 
+# TODO: this seems to no longer work for recent versions of PyCharm
 if get_trace() is None:
     debug = False
 else:
@@ -19,9 +20,10 @@ else:
 _platform = platform.system().lower()
 
 if _platform in ['linux', 'darwin']:
-    mp_context = 'fork'
+    # 'fork' is no longer favored, esp. on MacOS
+    mp_context = 'forkserver'
 else:
-    # fork not available on Windows
+    # 'fork' not available on Windows
     mp_context = 'spawn'
 
 # if for any reason multiprocessing is not available, turn it off
