@@ -618,7 +618,7 @@ class Workspace(object):
         :param out_dir: string path for the output file directory
         :param output_prefix: Optional string prefix for the output file names
         :param df_sample_metadata: Optional pandas DataFrame of Sample metadata. Must have a
-            Sample ID as an index, with distinct rows for each Sample ID. Sample metadata
+            'sample_id' column as an index, with distinct rows for each Sample ID. Sample metadata
             will be merged with the archived gating report, gate membership, and preprocessed
             events feather files.
         :param overwrite: force overwriting existing files (default=False)
