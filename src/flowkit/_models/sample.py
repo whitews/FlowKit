@@ -237,6 +237,7 @@ class Sample(object):
         # Create self.channels DataFrame from FlowData.channels dict
         # Convert channel number index (dict keys) to a regular column.
         self.channels = pd.DataFrame.from_dict(flow_data.channels, orient='index')
+        self.channels.sort_index(inplace=True)  # ensure channels sorted by channel number
         self.channels.insert(0, 'channel_number', self.channels.index)
         self.channels.reset_index(drop=True, inplace=True)  # create new zero-based index
 
