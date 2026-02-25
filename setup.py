@@ -23,7 +23,7 @@ reqs = [
     'lxml>=6.0',
     'networkx>=3.3',
     'numpy>2',
-    'pandas>=2.2',
+    'pandas>=2.2,<3',
     'psutil>=7',
     'pyarrow>=18',
     'scipy>=1.14'
