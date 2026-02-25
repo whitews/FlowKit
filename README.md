@@ -162,6 +162,11 @@ Want to get involved in the development of FlowKit?
 
 The following projects and publications have utilized FlowKit. If you have a package or publication where FlowKit was used, and you want it listed here, feel free to [submit an issue](https://github.com/whitews/FlowKit/issues/new/) letting me know.
 
+* van den Berg, Nathan et al. "Emergent collective alignment gives competitive advantage to longer cells during range expansion." Nature Communications (December 2025), [doi:10.1038/s41467-025-67791-5](https://doi.org/10.1038/s41467-025-67791-5) 
+* Furtwängler, Benjamin et al. "Mapping early human blood cell differentiation using single-cell proteomics and transcriptomics." Science, 390(6770), eadr8785 (October 2025), [doi:https:10.1126/science.adr8785](https://doi.org/10.1126/science.adr8785)
+* Yue, Alice et al. "AI in flow cytometry: Current applications and future directions." Cytometry Part B Clinical Cytometry, 108(5), 404-420 (September 2025), [doi:10.1002/cyto.b.22255](https://doi.org/10.1002/cyto.b.22255) 
+* Prigge, Michael J. et al. "Comparative mutant analyses reveal a novel mechanism of ARF regulation in land plants." Nature Plants 821-835 - (April 2025), [doi:10.1038/s41477-025-01973-3](https://doi.org/10.1038/s41477-025-01973-3)
+* Spies, Nicholas C. et al. "Machine Learning Methods in Clinical Flow Cytometry." Cancers 17(3), 483 (February 2025), [doi:10.3390/cancers17030483](https://doi.org/10.3390/cancers17030483) 
 * Ishii, Hiroto et al. "Establishing a method for the cryopreservation of viable peripheral blood mononuclear cells in the International Space Station." npj Microgravity vol. 10, Article number: 84 (2024), [doi:10.1038/s41526-024-00423-2](https://doi.org/10.1038/s41526-024-00423-2)
 * Dyikanov, Daniiar et al. "Comprehensive peripheral blood immunoprofiling reveals five immunotypes with immunotherapy response characteristics in patients with cancer." Cancer Cell vol. 42,5 (2024), [doi:10.1016/j.ccell.2024.04.008](https://doi.org/10.1016/j.ccell.2024.04.008)
 * Mortelecque, Justine et al. "A selection and optimization strategy for single-domain antibodies targeting the PHF6 linear peptide within the Tau intrinsically disordered protein." Journal of Biological Chemistry (2024), [doi:10.1016/j.jbc.2024.107163](https://www.jbc.org/article/S0021-9258(24)01658-2/fulltext)
