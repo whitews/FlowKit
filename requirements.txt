@@ -27,7 +27,7 @@ numpy>2
 
 # pandas notes:
 #     - 2.2 suppports 3.9+
-pandas>=2.2
+pandas>=2.2,<3
 
 # psutil notes:
 #     - 7 supports 3.6+
