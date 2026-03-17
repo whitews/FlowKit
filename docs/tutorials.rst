@@ -24,4 +24,5 @@ Advanced Examples
     notebooks/advanced/dimension_reduction_on_gated_populations.ipynb
     notebooks/advanced/compare-mfi-of-gated-events.ipynb
     notebooks/advanced/replicate-flowjo-wsp.ipynb
+    notebooks/advanced/boolean_combinations_of_gates.ipynb
     notebooks/advanced/scanpy_creating_and_using_AnnData_objects.ipynb
