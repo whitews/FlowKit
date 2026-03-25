@@ -77,7 +77,7 @@ def _parse_wsp_compensation(sample_el, transform_ns, data_type_ns):
     matrix_name = matrix_el.attrib['name']
     matrix_prefix = matrix_el.attrib['prefix']
     matrix_suffix = matrix_el.attrib['suffix']
-    matrix_spectral = matrix_el.attrib['spectral']  # check for conventional vs spectral matrix
+    matrix_spectral = matrix_el.attrib.get('spectral')  # check for conventional vs spectral matrix
 
     if matrix_spectral == '1':
         # we have a spectral matrix, check the algo type
