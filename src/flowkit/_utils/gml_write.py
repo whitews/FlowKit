@@ -77,6 +77,24 @@ def _add_transform_to_gml(root, transform_id, transform, ns_map):
         lin_ml = etree.SubElement(xform_ml, "{%s}flin" % ns_map['transforms'])
         lin_ml.set('{%s}T' % ns_map['transforms'], str(transform.param_t))
         lin_ml.set('{%s}A' % ns_map['transforms'], str(transform.param_a))
+    else:
+        # The transformation element and its id are created above, before the
+        # type is known, so falling through here left an empty element in the
+        # document: <transforms:transformation transforms:id="..."/>. That is
+        # invalid against Transformations.v2.0.xsd, and every gate whose
+        # dimensions reference the id reimported with no transform applied --
+        # evaluating the gate on an untransformed scale.
+        #
+        # This is reached by WSPBiexTransform and WSPLogTransform, which model
+        # FlowJo transforms with no GatingML 2.0 equivalent. They are what
+        # parse_wsp() produces, so the path that hits it is: import a .wsp,
+        # export GatingML to share it, silently lose every transform.
+        raise NotImplementedError(
+            "Transform '%s' is a %s, which has no GatingML 2.0 representation "
+            "and cannot be exported. Convert it to a LogicleTransform or "
+            "HyperlogTransform, both of which export and round-trip."
+            % (transform_id, type(transform).__name__)
+        )
 
 
 def _add_gate_to_gml(root, gate, ns_map):

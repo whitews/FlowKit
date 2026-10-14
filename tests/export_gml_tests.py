@@ -1009,3 +1009,66 @@ class ExportGMLComplementTestCase(unittest.TestCase):
 
         gs_out = fk.parse_gating_xml(out_file)
         assert gs_out.get_gate('Poly').use_complement is False
+
+
+
+class ExportGMLUnsupportedTransformTestCase(unittest.TestCase):
+    """FlowJo's biex and log transforms have no GatingML 2.0 equivalent.
+
+    Exporting one used to emit an empty <transformation/> element carrying only
+    its id: invalid against the schema, and gates referencing the id reimported
+    with no transform applied.
+    """
+
+    @staticmethod
+    def _strategy_with(transform):
+        gs = fk.GatingStrategy()
+        gs.add_transform('xform1', transform)
+
+        dims = [
+            fk.Dimension('FSC-H', transformation_ref='xform1'),
+            fk.Dimension('SSC-H', transformation_ref='xform1')
+        ]
+        vertices = [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0]]
+        gs.add_gate(fk.gates.PolygonGate('Poly', dims, vertices), ('root',))
+        return gs
+
+    def test_export_wsp_biex_transform_raises(self):
+        gs = self._strategy_with(fk.transforms.WSPBiexTransform())
+
+        self.assertRaises(NotImplementedError, fk.export_gatingml, gs, BytesIO())
+
+    def test_export_wsp_log_transform_raises(self):
+        gs = self._strategy_with(fk.transforms.WSPLogTransform(offset=0.5, decades=4.5))
+
+        self.assertRaises(NotImplementedError, fk.export_gatingml, gs, BytesIO())
+
+    def test_unsupported_transform_error_names_the_transform(self):
+        gs = self._strategy_with(fk.transforms.WSPBiexTransform())
+
+        with self.assertRaises(NotImplementedError) as context:
+            fk.export_gatingml(gs, BytesIO())
+
+        self.assertIn('xform1', str(context.exception))
+
+    @staticmethod
+    def test_no_empty_transformation_element_is_written():
+        # A supported transform must still produce a populated element.
+        gs = fk.GatingStrategy()
+        gs.add_transform(
+            'logicle1', fk.transforms.LogicleTransform(262144.0, 0.5, 4.0, 0.0)
+        )
+        dims = [
+            fk.Dimension('FSC-H', transformation_ref='logicle1'),
+            fk.Dimension('SSC-H', transformation_ref='logicle1')
+        ]
+        vertices = [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0]]
+        gs.add_gate(fk.gates.PolygonGate('Poly', dims, vertices), ('root',))
+
+        out_file = BytesIO()
+        fk.export_gatingml(gs, out_file)
+        xml = out_file.getvalue().decode()
+
+        pattern = r"<[^>]*transformation[^>]*/>"
+        assert re.search(pattern, xml) is None, "an empty transformation element was written"
+        assert 'logicle' in xml
