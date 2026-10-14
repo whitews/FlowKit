@@ -80,6 +80,21 @@ def _add_transform_to_gml(root, transform_id, transform, ns_map):
 
 
 def _add_gate_to_gml(root, gate, ns_map):
+    # GatingML 2.0 has no complement attribute for RectangleGate or
+    # PolygonGate. The 'use-as-complement' attribute exists only on a
+    # gateReference inside a BooleanGate, so a complemented rectangle or
+    # polygon cannot be represented. Exporting one anyway produced a document
+    # that read back as the inverse population, with nothing raised.
+    if getattr(gate, 'use_complement', False):
+        raise NotImplementedError(
+            "Gate '%s' sets use_complement, which GatingML 2.0 cannot express "
+            "for a %s (the 'use-as-complement' attribute applies only to gate "
+            "references within a BooleanGate). Exporting would describe the "
+            "inverse population. Either give the gate explicit boundaries, or "
+            "reference it from a 'not' BooleanGate, which does round-trip."
+            % (gate.gate_name, type(gate).__name__)
+        )
+
     if isinstance(gate, RectangleGate):
         gate_ml = etree.SubElement(root, "{%s}RectangleGate" % ns_map['gating'])
     elif isinstance(gate, PolygonGate):
