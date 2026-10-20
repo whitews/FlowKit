@@ -7,7 +7,7 @@ from tests.sample_tests import SampleTestCase, SampleUtilsTestCase
 from tests.sample_export_tests import SampleExportTestCase
 from tests.gatingml_tests import GatingMLTestCase
 from tests.gating_strategy_prog_gate_tests import GatingTestCase
-from tests.export_gml_tests import ExportGMLTestCase
+from tests.export_gml_tests import ExportGMLTestCase, ExportGMLComplementTestCase, ExportGMLUnsupportedTransformTestCase
 from tests.gating_strategy_tests import GatingStrategyTestCase
 from tests.gating_strategy_reused_gates_tests import GatingStrategyReusedGatesTestCase
 from tests.gating_strategy_modify_gate_tree_tests import GatingStrategyRemoveGatesTestCase
