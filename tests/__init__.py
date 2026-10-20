@@ -17,7 +17,7 @@ from tests.session_export_tests import SessionExportTestCase
 from tests.workspace_tests import WorkspaceTestCase
 from tests.gating_results_tests import GatingResultsTestCase
 from tests.matrix_tests import MatrixTestCase, SpectralMatrixTestCase
-from tests.transform_tests import TransformsTestCase
+from tests.transform_tests import TransformsTestCase, LogicleParameterTestCase
 from tests.gate_tests import GateTestCase
 from tests.string_repr_tests import StringReprTestCase
 from tests.plot_tests import PlotTestCase
