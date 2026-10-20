@@ -8,6 +8,7 @@ from io import BytesIO
 import numpy as np
 import pandas as pd
 
+import flowkit as fk
 from flowkit import Session
 from tests.test_config import data1_sample
 
@@ -949,3 +950,125 @@ class ExportGMLTestCase(unittest.TestCase):
                 truth_dict[row.gate_name],
                 gs_results.get_gate_membership(row.gate_name)
             )
+
+
+class ExportGMLComplementTestCase(unittest.TestCase):
+    """GatingML 2.0 cannot express a complemented rectangle or polygon gate.
+
+    Exporting one used to succeed and produce a document that read back as the
+    inverse population, with nothing raised.
+    """
+
+    @staticmethod
+    def _complement_strategy():
+        dims = [fk.Dimension('FSC-H'), fk.Dimension('SSC-H')]
+        vertices = [[0.0, 0.0], [100.0, 0.0], [100.0, 100.0], [0.0, 100.0]]
+        gate = fk.gates.PolygonGate('CompPoly', dims, vertices, use_complement=True)
+
+        gs = fk.GatingStrategy()
+        gs.add_gate(gate, ('root',))
+        return gs
+
+    def test_export_complement_polygon_gate_raises(self):
+        gs = self._complement_strategy()
+
+        self.assertRaises(NotImplementedError, fk.export_gatingml, gs, BytesIO())
+
+    def test_export_complement_rectangle_gate_raises(self):
+        dims = [
+            fk.Dimension('FSC-H', range_min=10, range_max=500),
+            fk.Dimension('SSC-H', range_min=10, range_max=500)
+        ]
+        gate = fk.gates.RectangleGate('CompRect', dims, use_complement=True)
+
+        gs = fk.GatingStrategy()
+        gs.add_gate(gate, ('root',))
+
+        self.assertRaises(NotImplementedError, fk.export_gatingml, gs, BytesIO())
+
+    def test_complement_error_names_the_gate(self):
+        gs = self._complement_strategy()
+
+        with self.assertRaises(NotImplementedError) as context:
+            fk.export_gatingml(gs, BytesIO())
+
+        self.assertIn('CompPoly', str(context.exception))
+
+    @staticmethod
+    def test_export_non_complement_gate_still_works():
+        dims = [fk.Dimension('FSC-H'), fk.Dimension('SSC-H')]
+        vertices = [[0.0, 0.0], [100.0, 0.0], [100.0, 100.0], [0.0, 100.0]]
+        gate = fk.gates.PolygonGate('Poly', dims, vertices)
+
+        gs = fk.GatingStrategy()
+        gs.add_gate(gate, ('root',))
+
+        out_file = BytesIO()
+        fk.export_gatingml(gs, out_file)
+        out_file.seek(0)
+
+        gs_out = fk.parse_gating_xml(out_file)
+        assert gs_out.get_gate('Poly').use_complement is False
+
+
+
+class ExportGMLUnsupportedTransformTestCase(unittest.TestCase):
+    """FlowJo's biex and log transforms have no GatingML 2.0 equivalent.
+
+    Exporting one used to emit an empty <transformation/> element carrying only
+    its id: invalid against the schema, and gates referencing the id reimported
+    with no transform applied.
+    """
+
+    @staticmethod
+    def _strategy_with(transform):
+        gs = fk.GatingStrategy()
+        gs.add_transform('xform1', transform)
+
+        dims = [
+            fk.Dimension('FSC-H', transformation_ref='xform1'),
+            fk.Dimension('SSC-H', transformation_ref='xform1')
+        ]
+        vertices = [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0]]
+        gs.add_gate(fk.gates.PolygonGate('Poly', dims, vertices), ('root',))
+        return gs
+
+    def test_export_wsp_biex_transform_raises(self):
+        gs = self._strategy_with(fk.transforms.WSPBiexTransform())
+
+        self.assertRaises(NotImplementedError, fk.export_gatingml, gs, BytesIO())
+
+    def test_export_wsp_log_transform_raises(self):
+        gs = self._strategy_with(fk.transforms.WSPLogTransform(offset=0.5, decades=4.5))
+
+        self.assertRaises(NotImplementedError, fk.export_gatingml, gs, BytesIO())
+
+    def test_unsupported_transform_error_names_the_transform(self):
+        gs = self._strategy_with(fk.transforms.WSPBiexTransform())
+
+        with self.assertRaises(NotImplementedError) as context:
+            fk.export_gatingml(gs, BytesIO())
+
+        self.assertIn('xform1', str(context.exception))
+
+    @staticmethod
+    def test_no_empty_transformation_element_is_written():
+        # A supported transform must still produce a populated element.
+        gs = fk.GatingStrategy()
+        gs.add_transform(
+            'logicle1', fk.transforms.LogicleTransform(262144.0, 0.5, 4.0, 0.0)
+        )
+        dims = [
+            fk.Dimension('FSC-H', transformation_ref='logicle1'),
+            fk.Dimension('SSC-H', transformation_ref='logicle1')
+        ]
+        vertices = [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0]]
+        gs.add_gate(fk.gates.PolygonGate('Poly', dims, vertices), ('root',))
+
+        out_file = BytesIO()
+        fk.export_gatingml(gs, out_file)
+        xml = out_file.getvalue().decode()
+
+        pattern = r"<[^>]*transformation[^>]*/>"
+        assert re.search(pattern, xml) is None, "an empty transformation element was written"
+        assert 'logicle' in xml
