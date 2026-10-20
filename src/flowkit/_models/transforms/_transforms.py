@@ -5,6 +5,34 @@ import flowutils
 from ._base_transform import Transform
 
 
+def _check_logicle_params(xform_name, param_t, param_w, param_m, param_a, zero_width_allowed):
+    """
+    Raise ValueError unless the parameters meet the GatingML 2.0 bounds shared by
+    the logicle and hyperlog transforms: T > 0, M > 0, W >= 0 (logicle) or W > 0
+    (hyperlog), W <= M/2, and -W <= A <= M - 2W. Outside them, flowutils returns
+    a distorted scale or -1 for every event rather than raising.
+    """
+    # written as 'not x > 0' rather than 'x <= 0' so that NaN fails every check
+    if not param_t > 0:
+        raise ValueError(f"{xform_name} param_t must be > 0, got {param_t}")
+    if not param_m > 0:
+        raise ValueError(f"{xform_name} param_m must be > 0, got {param_m}")
+    if zero_width_allowed:
+        if not param_w >= 0:
+            raise ValueError(f"{xform_name} param_w must be >= 0, got {param_w}")
+    elif not param_w > 0:
+        raise ValueError(f"{xform_name} param_w must be > 0, got {param_w}")
+    if not param_w <= param_m / 2:
+        raise ValueError(
+            f"{xform_name} param_w must be <= param_m / 2 ({param_m / 2}), got {param_w}"
+        )
+    if not -param_w <= param_a <= param_m - 2 * param_w:
+        raise ValueError(
+            f"{xform_name} param_a must be between -param_w ({-param_w}) and "
+            f"param_m - 2 * param_w ({param_m - 2 * param_w}), got {param_a}"
+        )
+
+
 class RatioTransform(Transform):
     """
     Parametrized ratio transformation, implemented as defined in the
@@ -202,6 +230,9 @@ class HyperlogTransform(Transform):
     :param param_m: parameter for desired number of decades
     :param param_w: parameter for the approximate number of decades in the linear region
     :param param_a: parameter for the additional number of negative decades
+    :raises ValueError: if the parameters are outside the GatingML 2.0 bounds:
+        param_t > 0, param_m > 0, 0 < param_w <= param_m / 2, and
+        -param_w <= param_a <= param_m - 2 * param_w
     """
     def __init__(
         self,
@@ -211,6 +242,8 @@ class HyperlogTransform(Transform):
         param_a
     ):
         Transform.__init__(self)
+
+        _check_logicle_params('HyperlogTransform', param_t, param_w, param_m, param_a, zero_width_allowed=False)
 
         self.param_a = param_a
         self.param_m = param_m
@@ -284,6 +317,9 @@ class LogicleTransform(Transform):
     :param param_m: parameter for the number of decades the true logarithmic scale
         approaches at the high end of the scale
     :param param_a: parameter for the additional number of negative decades
+    :raises ValueError: if the parameters are outside the GatingML 2.0 bounds:
+        param_t > 0, param_m > 0, 0 <= param_w <= param_m / 2, and
+        -param_w <= param_a <= param_m - 2 * param_w
     """
     def __init__(
         self,
@@ -293,6 +329,8 @@ class LogicleTransform(Transform):
         param_a
     ):
         Transform.__init__(self)
+
+        _check_logicle_params('LogicleTransform', param_t, param_w, param_m, param_a, zero_width_allowed=True)
 
         self.param_a = param_a
         self.param_m = param_m

@@ -322,3 +322,47 @@ class TransformsTestCase(unittest.TestCase):
         self.assertIsInstance(time_xform, transforms.LinearTransform)
 
         self.assertEqual(time_xform.param_t, time_max)
+
+
+class LogicleParameterTestCase(unittest.TestCase):
+    """
+    LogicleTransform and HyperlogTransform reject parameters outside the
+    GatingML 2.0 bounds: T > 0, M > 0, W <= M/2 and -W <= A <= M - 2W.
+    Logicle allows W = 0; hyperlog needs W > 0.
+    """
+    xform_classes = (transforms.LogicleTransform, transforms.HyperlogTransform)
+
+    def test_parameters_on_the_bounds_are_accepted(self):
+        # W = M/2, A = -W and A = M - 2W are all inside the bounds
+        for xform_class in self.xform_classes:
+            for param_w, param_a in ((2.0, 0.0), (0.5, -0.5), (0.5, 3.0)):
+                with self.subTest(xform_class=xform_class.__name__, param_w=param_w, param_a=param_a):
+                    xform = xform_class(param_t=262144, param_w=param_w, param_m=4.0, param_a=param_a)
+                    self.assertEqual(xform.param_w, param_w)
+
+    def test_logicle_accepts_zero_width(self):
+        xform = transforms.LogicleTransform(param_t=262144, param_w=0.0, param_m=4.0, param_a=0.0)
+        self.assertEqual(xform.param_w, 0.0)
+
+    def test_hyperlog_rejects_zero_width(self):
+        with self.assertRaisesRegex(ValueError, 'param_w'):
+            transforms.HyperlogTransform(param_t=262144, param_w=0.0, param_m=4.0, param_a=0.0)
+
+    def test_out_of_range_parameters_raise(self):
+        cases = (
+            # (param_t, param_w, param_m, param_a, name of the parameter at fault)
+            (0.0, 0.5, 4.0, 0.0, 'param_t'),
+            (-262144, 0.5, 4.0, 0.0, 'param_t'),
+            (262144, 0.5, 0.0, 0.0, 'param_m'),
+            (262144, -0.1, 4.0, 0.0, 'param_w'),
+            (262144, 2.5, 4.0, 0.0, 'param_w'),  # M/2 < W < M: a crushed scale, no error before
+            (262144, 5.0, 4.0, 0.0, 'param_w'),  # W >= M: -1 for every event before
+            (262144, float('nan'), 4.0, 0.0, 'param_w'),
+            (262144, 0.5, 4.0, -0.6, 'param_a'),  # A < -W
+            (262144, 0.5, 4.0, 3.5, 'param_a'),  # A > M - 2W
+        )
+        for xform_class in self.xform_classes:
+            for param_t, param_w, param_m, param_a, name in cases:
+                with self.subTest(xform_class=xform_class.__name__, t=param_t, w=param_w, m=param_m, a=param_a):
+                    with self.assertRaisesRegex(ValueError, name):
+                        xform_class(param_t=param_t, param_w=param_w, param_m=param_m, param_a=param_a)
