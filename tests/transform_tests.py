@@ -326,10 +326,11 @@ class TransformsTestCase(unittest.TestCase):
 
 class LogicleParameterTestCase(unittest.TestCase):
     """
-    LogicleTransform rejects parameters outside the GatingML 2.0 bounds:
-    T > 0, M > 0, 0 <= W <= M/2 and -W <= A <= M - 2W.
+    LogicleTransform and HyperlogTransform reject parameters outside the
+    GatingML 2.0 bounds: T > 0, M > 0, W <= M/2 and -W <= A <= M - 2W.
+    Logicle allows W = 0; hyperlog needs W > 0.
     """
-    xform_classes = (transforms.LogicleTransform,)
+    xform_classes = (transforms.LogicleTransform, transforms.HyperlogTransform)
 
     def test_parameters_on_the_bounds_are_accepted(self):
         # W = M/2, A = -W and A = M - 2W are all inside the bounds
@@ -342,6 +343,10 @@ class LogicleParameterTestCase(unittest.TestCase):
     def test_logicle_accepts_zero_width(self):
         xform = transforms.LogicleTransform(param_t=262144, param_w=0.0, param_m=4.0, param_a=0.0)
         self.assertEqual(xform.param_w, 0.0)
+
+    def test_hyperlog_rejects_zero_width(self):
+        with self.assertRaisesRegex(ValueError, 'param_w'):
+            transforms.HyperlogTransform(param_t=262144, param_w=0.0, param_m=4.0, param_a=0.0)
 
     def test_out_of_range_parameters_raise(self):
         cases = (

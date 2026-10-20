@@ -230,6 +230,9 @@ class HyperlogTransform(Transform):
     :param param_m: parameter for desired number of decades
     :param param_w: parameter for the approximate number of decades in the linear region
     :param param_a: parameter for the additional number of negative decades
+    :raises ValueError: if the parameters are outside the GatingML 2.0 bounds:
+        param_t > 0, param_m > 0, 0 < param_w <= param_m / 2, and
+        -param_w <= param_a <= param_m - 2 * param_w
     """
     def __init__(
         self,
@@ -239,6 +242,8 @@ class HyperlogTransform(Transform):
         param_a
     ):
         Transform.__init__(self)
+
+        _check_logicle_params('HyperlogTransform', param_t, param_w, param_m, param_a, zero_width_allowed=False)
 
         self.param_a = param_a
         self.param_m = param_m
