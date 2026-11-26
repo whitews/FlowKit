@@ -450,6 +450,13 @@ class Sample(object):
 
         self.subsample_indices = shuffled_indices[:self._subsample_count]
 
+    def _get_orig_pnn_labels(self):
+        return [
+            self.metadata[f'p{i}n']
+            for i in range(1, len(self.pnn_labels) + 1)
+            if f'p{i}n' in self.metadata
+        ]
+
     def apply_compensation(self, compensation):
         """
         Applies given compensation matrix to Sample events. If any
@@ -477,7 +484,22 @@ class Sample(object):
         elif compensation is not None:
             detectors = [self.pnn_labels[i] for i in self.fluoro_indices]
             fluorochromes = [self.pns_labels[i] for i in self.fluoro_indices]
-            tmp_matrix = Matrix(compensation, detectors, fluorochromes)
+            # Do not forward null_channels to Matrix here: detectors are already
+            # derived from self.fluoro_indices, and filtering by stale null_channels
+            # names would reject an active detector renamed to a vacated null name.
+            # Keep declared null_channels in orig_channel_labels so ambiguous numeric
+            # null names still block positional fallback consistently with GatingStrategy.
+            orig_channel_labels = self._get_orig_pnn_labels()
+            if self.null_channels:
+                orig_channel_labels.extend(self.null_channels)
+            tmp_matrix = Matrix(
+                compensation,
+                detectors,
+                fluorochromes,
+                channel_labels=self.pnn_labels,
+                orig_channel_labels=orig_channel_labels,
+                fluoro_indices=self.fluoro_indices
+            )
         else:
             # compensation must be None, we'll clear any stored comp events later
             tmp_matrix = None
