@@ -2,10 +2,214 @@
 Matrix class
 """
 from copy import copy
+import os
+from pathlib import Path
 import numpy as np
 import pandas as pd
 import flowutils
 from ...exceptions import FlowKitException
+
+_NON_FLUORO_CHANNELS = (
+    'FSC-A',
+    'FSC-H',
+    'FSC-W',
+    'SSC-A',
+    'SSC-H',
+    'SSC-W',
+    'Time',
+)
+
+
+def _build_label_mismatch_error(header_labels, fluoro_labels):
+    in_fcs_not_comp = [label for label in fluoro_labels if label not in header_labels]
+    in_comp_not_fcs = [label for label in header_labels if label not in fluoro_labels]
+
+    error_lines = ["Matrix labels do not match given fluorescent labels"]
+
+    if in_fcs_not_comp:
+        error_lines.extend(
+            [
+                "",
+                "Labels in FCS file not found in comp matrix (null channels?):",
+                ", ".join(in_fcs_not_comp),
+                "",
+                "Null channels can be specified when creating a Sample instance",
+            ]
+        )
+
+    if in_comp_not_fcs:
+        error_lines.extend(
+            [
+                "",
+                "Labels in comp matrix not found in FCS file (wrong matrix chosen?):",
+                ", ".join(in_comp_not_fcs),
+            ]
+        )
+
+    return "\n".join(error_lines)
+
+
+def _read_spill_text(spill_data_or_file):
+    if isinstance(spill_data_or_file, Path):
+        with spill_data_or_file.open('r') as fh:
+            return fh.read()
+
+    if isinstance(spill_data_or_file, str):
+        try:
+            is_file = os.path.isfile(spill_data_or_file)
+        except (TypeError, ValueError, OSError):
+            is_file = False
+
+        if is_file:
+            with open(spill_data_or_file, 'r') as fh:
+                return fh.read()
+
+        return spill_data_or_file
+
+    return None
+
+
+def _parse_spill_matrix(
+        spill_data_or_file,
+        detectors,
+        null_channels=None,
+        channel_labels=None,
+        orig_channel_labels=None,
+        fluoro_indices=None
+):
+    matrix_text = _read_spill_text(spill_data_or_file)
+
+    if matrix_text is not None and not isinstance(detectors, str):
+        lines = matrix_text.splitlines()
+        if len(lines) == 1:
+            tokens = lines[0].split(',')
+            try:
+                n = int(tokens[0].strip())
+            except (IndexError, ValueError):
+                n = None
+
+            if n is not None and n > 0 and len(tokens) == 1 + n + n * n:
+                headers = [item.strip() for item in tokens[1:n + 1]]
+
+                non_fluoro = set(_NON_FLUORO_CHANNELS)
+                if null_channels is not None:
+                    non_fluoro.update(null_channels)
+                expected_detectors = [
+                    label for label in detectors if label not in non_fluoro
+                ]
+
+                # Exact $PnN label match always takes precedence over 1-based channel indices.
+                exact_match = (
+                    len(headers) == len(expected_detectors)
+                    and set(headers) == set(expected_detectors)
+                )
+
+                if not exact_match and channel_labels is not None:
+                    source_channel_labels = list(channel_labels)
+                    known_channel_labels = set(source_channel_labels)
+                    if orig_channel_labels is not None:
+                        known_channel_labels.update(orig_channel_labels)
+                    if null_channels is not None:
+                        known_channel_labels.update(null_channels)
+
+                    # Only fall back to 1-based channel indices when channel_labels is
+                    # explicitly provided and zero header tokens match any current,
+                    # original, or declared-null $PnN channel name.
+                    # Otherwise, delegate to standard $PnN label validation to prevent
+                    # silent channel mis-mapping (e.g., after Sample.rename_channel or
+                    # when numeric $PnN names overlap 1-based indices).
+                    if set(headers).isdisjoint(known_channel_labels):
+                        channel_number_map = {
+                            str(idx): idx - 1
+                            for idx in range(1, len(source_channel_labels) + 1)
+                        }
+
+                        if all(h in channel_number_map for h in headers):
+                            if len(set(headers)) != len(headers):
+                                raise ValueError(
+                                    "Spillover matrix contains duplicate channel indices: %s"
+                                    % ", ".join(headers)
+                                )
+
+                            resolved_idx0 = [channel_number_map[h] for h in headers]
+                            resolved_headers = [
+                                source_channel_labels[idx0] for idx0 in resolved_idx0
+                            ]
+                            value_tokens = [item.strip() for item in tokens[n + 1:]]
+                            matrix = np.reshape(
+                                list(map(float, value_tokens)),
+                                (n, n)
+                            )
+
+                            if fluoro_indices is not None:
+                                fluoro_idx_list = list(fluoro_indices)
+                                if (
+                                    len(set(fluoro_idx_list)) != len(fluoro_idx_list)
+                                    or any(
+                                        not isinstance(i, (int, np.integer))
+                                        or isinstance(i, bool)
+                                        or i < 0
+                                        or i >= len(source_channel_labels)
+                                        for i in fluoro_idx_list
+                                    )
+                                ):
+                                    raise ValueError(
+                                        "Invalid fluoro_indices for channel_labels of length %d"
+                                        % len(source_channel_labels)
+                                    )
+
+                                if (
+                                    len(resolved_idx0) != len(fluoro_idx_list)
+                                    or set(resolved_idx0) != set(fluoro_idx_list)
+                                ):
+                                    if set(resolved_headers) != set(expected_detectors):
+                                        raise ValueError(
+                                            _build_label_mismatch_error(
+                                                resolved_headers,
+                                                expected_detectors
+                                            )
+                                        )
+                                    raise ValueError(
+                                        "Spillover matrix channel indices do not match "
+                                        "fluorescent channel indices"
+                                    )
+
+                            duplicate_labels = [
+                                label for label in resolved_headers
+                                if source_channel_labels.count(label) > 1
+                            ]
+                            if duplicate_labels:
+                                raise ValueError(
+                                    "Cannot resolve numeric spillover indices because "
+                                    "channel labels are not unique: %s"
+                                    % ", ".join(dict.fromkeys(duplicate_labels))
+                                )
+
+                            if (
+                                any(label in non_fluoro for label in resolved_headers)
+                                or len(resolved_headers) != len(expected_detectors)
+                                or len(set(resolved_headers)) != len(resolved_headers)
+                                or set(resolved_headers) != set(expected_detectors)
+                            ):
+                                raise ValueError(
+                                    _build_label_mismatch_error(
+                                        resolved_headers,
+                                        expected_detectors
+                                    )
+                                )
+
+                            idx_order = [
+                                resolved_headers.index(label)
+                                for label in expected_detectors
+                            ]
+                            return matrix[idx_order, :][:, idx_order]
+
+    spill = flowutils.compensate.parse_compensation_matrix(
+        spill_data_or_file,
+        detectors,
+        null_channels=null_channels
+    )
+    return spill[1:, :]
 
 
 class Matrix(object):
@@ -24,13 +228,34 @@ class Matrix(object):
         but do not contain useful data. Note, this should only be used if there were
         truly no fluorochromes used targeting those detectors and the channels
         do not contribute to compensation.
+    :param channel_labels: Optional full ordered list of physical FCS $PnN channel
+        labels (including scatter, time, and null channels). Required to resolve
+        non-standard FCS $SPILLOVER headers that specify 1-based channel numbers
+        instead of $PnN labels (such as Beckman Coulter Navios LMD/FCS files);
+        when omitted (None), numeric headers are not resolved positionally and
+        delegate directly to standard $PnN label validation. Positional resolution
+        is also refused whenever any header token matches a current, original, or
+        declared-null $PnN channel name in the file, or when any resolved display
+        label appears more than once in channel_labels.
+    :param orig_channel_labels: Optional original raw FCS $PnN channel labels
+        prior to in-memory renames (e.g., Sample.rename_channel). Checked
+        alongside channel_labels so renamed numeric $PnN headers are never
+        silently reinterpreted as 1-based channel indices.
+    :param fluoro_indices: Optional 0-based physical fluorescent channel indices
+        into channel_labels. When supplied, 1-based numeric spillover headers must
+        resolve to the exact set of physical fluorescent indices, rejecting scatter,
+        time, or null channel indices even if their display labels alias a
+        fluorescent channel.
     """
     def __init__(
             self,
             spill_data_or_file,
             detectors,
             fluorochromes=None,
-            null_channels=None
+            null_channels=None,
+            channel_labels=None,
+            orig_channel_labels=None,
+            fluoro_indices=None
     ):
         # Copy detectors b/c it may be modified
         detectors = copy(detectors)
@@ -40,12 +265,14 @@ class Matrix(object):
         if isinstance(spill_data_or_file, np.ndarray):
             spill = spill_data_or_file
         else:
-            spill = flowutils.compensate.parse_compensation_matrix(
+            spill = _parse_spill_matrix(
                 spill_data_or_file,
                 detectors,
-                null_channels=null_channels
+                null_channels=null_channels,
+                channel_labels=channel_labels,
+                orig_channel_labels=orig_channel_labels,
+                fluoro_indices=fluoro_indices
             )
-            spill = spill[1:, :]
 
         self.matrix = spill
 
